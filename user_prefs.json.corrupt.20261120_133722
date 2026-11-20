@@ -1,0 +1,30 @@
+{
+  "directory_card_display": {
+    "density_mode": "standard",
+    "show_location_row": true,
+    "location_granularity": "full",
+    "show_status_badge": true,
+    "show_author_citation": false,
+    "unknown_taxon_fallback": "unknown",
+    "visible_badge_categories": {
+      "reviewed": true,
+      "taxonomy": true,
+      "provenance": true,
+      "physical": true,
+      "media": true,
+      "conflicts": true,
+      "general_err": true,
+      "unreviewed": true
+    },
+    "badge_priority_preset": "default",
+    "accent_strip_mode": "problems",
+    "visible_meta_tags": {
+      "family": true,
+      "photos": true,
+      "loan": true,
+      "unknown": true,
+      "unvalidated": true
+    },
+    "show_directory_view_strip": false
+  }
+}

@@ -8,6 +8,11 @@ from .tutorial_runner import TutorialRunner, ActionStep
 from .review_tutorial import start_review_tutorial
 from .discrepancy_tutorial import start_discrepancy_tutorial
 from .database_tutorial import start_database_tutorial
+from .micro_guides import (
+    start_hallway_followup_guide,
+    start_armed_shelf_guide,
+    start_image_controls_guide,
+)
 
 __all__ = [
     "SandboxManager",
@@ -15,5 +20,8 @@ __all__ = [
     "ActionStep",
     "start_review_tutorial",
     "start_discrepancy_tutorial",
-    "start_database_tutorial"
+    "start_database_tutorial",
+    "start_hallway_followup_guide",
+    "start_armed_shelf_guide",
+    "start_image_controls_guide",
 ]

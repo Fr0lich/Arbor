@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 # ── Dynamic / Hidden Imports ──────────────────────────────────────────────────
@@ -26,13 +27,17 @@ hiddenimports += [
     'cachetools',
     'tifffile',
     'marshmallow',
+    'requests',
 ]
 
 # ── Bundled Data Files ────────────────────────────────────────────────────────
 datas = [
     ('ignored_words.json', '.'),
     ('USER_GUIDE.md', '.'),
+    ('MOBILE_COMPANION_USER_GUIDE.md', '.'),
 ]
+if os.path.exists('data/demo_collection.xlsx'):
+    datas.append(('data/demo_collection.xlsx', 'data'))
 datas += collect_data_files('pytablericons')
 datas += collect_data_files('flask')
 datas += collect_data_files('jinja2')

@@ -14,7 +14,7 @@ from .sandbox_manager import SandboxManager
 
 class ActionStep:
     def __init__(self, step_id, title, instruction, target_id=None,
-                 action_hint=None, on_enter=None, validator=None):
+                 action_hint=None, on_enter=None, validator=None, keycaps=None):
         self.step_id = step_id
         self.title = title
         self.instruction = instruction
@@ -22,6 +22,7 @@ class ActionStep:
         self.action_hint = action_hint
         self.on_enter = on_enter
         self.validator = validator
+        self.keycaps = list(keycaps) if keycaps else []
 
 
 class TutorialHighlight:
@@ -44,9 +45,10 @@ class TutorialHighlight:
 
         self.canvas = tk.Canvas(self.win, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
-        self.rect = self.canvas.create_rectangle(0, 0, 10, 10, outline="#00c8ff", width=4)
+        self.rect = self.canvas.create_rectangle(0, 0, 10, 10, outline="#3a7d44", width=4)
 
         self._anim_idx = 0
+        self._last_geom = None
         self.win.deiconify()
         self.win.lift()
         self.update_position()
@@ -57,12 +59,18 @@ class TutorialHighlight:
             if not self.target_widget or not self.target_widget.winfo_exists() or not self.target_widget.winfo_viewable():
                 if self.win.winfo_exists():
                     self.win.withdraw()
+                self._last_geom = None
                 return
 
             x = self.target_widget.winfo_rootx()
             y = self.target_widget.winfo_rooty()
             w = self.target_widget.winfo_width()
             h = self.target_widget.winfo_height()
+
+            geom_key = (x, y, w, h)
+            if geom_key == self._last_geom:
+                return
+            self._last_geom = geom_key
 
             pad = 4
             if self.win.winfo_exists():
@@ -79,7 +87,7 @@ class TutorialHighlight:
     def animate(self):
         if not self.win.winfo_exists():
             return
-        colors = ["#00c8ff", "#0088ff", "#0055ff", "#0088ff"]
+        colors = ["#3a7d44", "#52b765", "#85e89d", "#52b765"]
         try:
             self.canvas.itemconfig(self.rect, outline=colors[self._anim_idx])
         except Exception:
@@ -101,11 +109,14 @@ class TutorialHighlight:
 
 class TutorialRunner:
     """Drives step progression and UI synchronization for an action-driven tutorial."""
-    def __init__(self, ui, steps, tutorial_name="Interactive Tutorial", on_complete=None):
+    def __init__(self, ui, steps, tutorial_name="Interactive Tutorial", on_complete=None,
+                 use_sandbox=True, badge_text=None):
         self.ui = ui
         self.steps = steps
         self.tutorial_name = tutorial_name
         self.on_complete = on_complete
+        self.use_sandbox = use_sandbox
+        self.badge_text = badge_text or ("TUTORIAL SANDBOX" if use_sandbox else "30-SEC QUICK GUIDE")
         self.current_idx = 0
 
         self.hud_win = None
@@ -121,24 +132,24 @@ class TutorialRunner:
         self.hud_win.title(f"Arbor Tutorial - {self.tutorial_name}")
         self.hud_win.attributes("-topmost", True)
         self.hud_win.resizable(False, False)
-        self.hud_win.config(bg="#1e1e2d")
+        self.hud_win.config(bg="#181c19")
         self.hud_win.protocol("WM_DELETE_WINDOW", self.exit_tutorial)
         self.hud_win.bind("<Escape>", lambda e: self.exit_tutorial())
 
         # Main HUD container
-        frame = tk.Frame(self.hud_win, bg="#1e1e2d", padx=sc(16), pady=sc(14))
+        frame = tk.Frame(self.hud_win, bg="#181c19", padx=sc(16), pady=sc(14), highlightbackground="#3a7d44", highlightthickness=1)
         frame.pack(fill="both", expand=True)
 
         # Header Row: Badge & Progress
-        hdr_row = tk.Frame(frame, bg="#1e1e2d")
+        hdr_row = tk.Frame(frame, bg="#181c19")
         hdr_row.pack(fill="x", pady=(0, sc(6)))
 
         self.badge_lbl = tk.Label(
             hdr_row,
-            text="TUTORIAL MODE (SANDBOX)",
-            font=("Segoe UI", sc(8), "bold"),
-            bg="#2e384d",
-            fg="#00c8ff",
+            text=self.badge_text,
+            font=("JetBrains Mono", sc(8), "bold"),
+            bg="#1e3a24",
+            fg="#85e89d",
             padx=sc(6),
             pady=sc(2)
         )
@@ -147,18 +158,25 @@ class TutorialRunner:
         self.step_counter_lbl = tk.Label(
             hdr_row,
             text=f"STEP 1 OF {len(self.steps)}",
-            font=("Segoe UI", sc(8), "bold"),
-            bg="#1e1e2d",
-            fg="#a0a5b5"
+            font=("JetBrains Mono", sc(8), "bold"),
+            bg="#181c19",
+            fg="#a2aba5"
         )
         self.step_counter_lbl.pack(side="right")
+
+        # Progress bar track
+        self.progress_track = tk.Frame(frame, bg="#2c302e", height=sc(4))
+        self.progress_track.pack(fill="x", pady=(0, sc(10)))
+        self.progress_track.pack_propagate(False)
+        self.progress_fill = tk.Frame(self.progress_track, bg="#3a7d44", height=sc(4), width=1)
+        self.progress_fill.place(x=0, y=0, relheight=1.0, relwidth=1.0 / max(1, len(self.steps)))
 
         # Step Title
         self.title_lbl = tk.Label(
             frame,
             text="",
-            font=("Segoe UI", sc(12), "bold"),
-            bg="#1e1e2d",
+            font=("Inter", sc(12), "bold"),
+            bg="#181c19",
             fg="#ffffff",
             anchor="w",
             justify="left"
@@ -169,40 +187,44 @@ class TutorialRunner:
         self.instruction_lbl = tk.Label(
             frame,
             text="",
-            font=("Segoe UI", sc(10)),
-            bg="#1e1e2d",
-            fg="#e0e0e0",
+            font=("Inter", sc(10)),
+            bg="#181c19",
+            fg="#e8ebe9",
             anchor="w",
             justify="left",
             wraplength=sc(380)
         )
         self.instruction_lbl.pack(fill="x", pady=(0, sc(12)))
 
+        # Floating visual keycaps row (shown on steps with keyboard shortcuts)
+        self.keycaps_frame = tk.Frame(frame, bg="#181c19")
+        self.keycaps_frame.pack(fill="x", pady=(0, sc(10)))
+
         # Action hint bar
-        self.hint_frame = tk.Frame(frame, bg="#141420", padx=sc(8), pady=sc(6))
+        self.hint_frame = tk.Frame(frame, bg="#212622", padx=sc(10), pady=sc(7), highlightbackground="#2e4a33", highlightthickness=1)
         self.hint_frame.pack(fill="x", pady=(0, sc(14)))
 
         self.hint_lbl = tk.Label(
             self.hint_frame,
             text="",
-            font=("Segoe UI", sc(9), "italic"),
-            bg="#141420",
-            fg="#00e5ff",
+            font=("Inter", sc(9), "italic"),
+            bg="#212622",
+            fg="#85e89d",
             anchor="w",
             justify="left"
         )
         self.hint_lbl.pack(fill="x")
 
         # Footer Button Bar
-        btn_bar = tk.Frame(frame, bg="#1e1e2d")
+        btn_bar = tk.Frame(frame, bg="#181c19")
         btn_bar.pack(fill="x")
 
         self.exit_btn = tk.Button(
             btn_bar,
             text="Exit Tutorial",
-            font=("Segoe UI", sc(9)),
-            bg="#2c2c3e",
-            fg="#ff7b72",
+            font=("Inter", sc(9)),
+            bg="#212622",
+            fg="#ff8a80",
             relief="flat",
             cursor="hand2",
             padx=sc(8),
@@ -214,12 +236,12 @@ class TutorialRunner:
         self.next_btn = tk.Button(
             btn_bar,
             text="Skip Step →",
-            font=("Segoe UI", sc(9)),
-            bg="#00c8ff",
-            fg="#000000",
+            font=("Inter", sc(9), "bold"),
+            bg="#3a7d44",
+            fg="#ffffff",
             relief="flat",
             cursor="hand2",
-            padx=sc(10),
+            padx=sc(12),
             pady=sc(4),
             command=self.next_step
         )
@@ -228,9 +250,9 @@ class TutorialRunner:
         self.prev_btn = tk.Button(
             btn_bar,
             text="← Back",
-            font=("Segoe UI", sc(9)),
-            bg="#2c2c3e",
-            fg="#ffffff",
+            font=("Inter", sc(9)),
+            bg="#212622",
+            fg="#e8ebe9",
             relief="flat",
             cursor="hand2",
             padx=sc(8),
@@ -283,6 +305,47 @@ class TutorialRunner:
         self.title_lbl.config(text=step.title)
         self.instruction_lbl.config(text=step.instruction)
 
+        # Render visual keycaps if defined on this step
+        if hasattr(self, "keycaps_frame") and self.keycaps_frame.winfo_exists():
+            for child in self.keycaps_frame.winfo_children():
+                child.destroy()
+            if getattr(step, "keycaps", None):
+                self.keycaps_frame.pack(fill="x", pady=(0, sc(10)), before=self.hint_frame)
+                tk.Label(
+                    self.keycaps_frame,
+                    text="SHORTCUT:",
+                    font=("JetBrains Mono", sc(8), "bold"),
+                    bg="#181c19",
+                    fg="#848f87",
+                ).pack(side="left", padx=(0, sc(6)))
+                for idx_k, key_text in enumerate(step.keycaps):
+                    if idx_k > 0:
+                        tk.Label(
+                            self.keycaps_frame,
+                            text="+",
+                            font=("JetBrains Mono", sc(9), "bold"),
+                            bg="#181c19",
+                            fg="#848f87",
+                        ).pack(side="left", padx=sc(3))
+                    cap = tk.Frame(
+                        self.keycaps_frame,
+                        bg="#263128",
+                        highlightbackground="#52b765",
+                        highlightthickness=1,
+                        padx=sc(8),
+                        pady=sc(2),
+                    )
+                    cap.pack(side="left")
+                    tk.Label(
+                        cap,
+                        text=key_text,
+                        font=("JetBrains Mono", sc(9), "bold"),
+                        bg="#263128",
+                        fg="#b0f3a9",
+                    ).pack()
+            else:
+                self.keycaps_frame.pack_forget()
+
         if step.action_hint:
             self.hint_frame.pack(fill="x", pady=(0, sc(14)))
             self.hint_lbl.config(text=f"Action: {step.action_hint}")
@@ -291,7 +354,15 @@ class TutorialRunner:
 
         self.prev_btn.config(state="normal" if self.current_idx > 0 else "disabled")
         is_last = (self.current_idx == len(self.steps) - 1)
-        self.next_btn.config(text="Finish ✓" if is_last else "Skip Step →")
+        if is_last:
+            self.next_btn.config(text="Finish ✓")
+        elif step.validator:
+            self.next_btn.config(text="Skip Step →")
+        else:
+            self.next_btn.config(text="Next →")
+        if hasattr(self, "progress_fill") and self.progress_fill.winfo_exists():
+            frac = min(1.0, (self.current_idx + 1) / max(1, len(self.steps)))
+            self.progress_fill.place(x=0, y=0, relheight=1.0, relwidth=frac)
 
         # Trigger on_enter callback if specified
         if step.on_enter:
@@ -368,7 +439,8 @@ class TutorialRunner:
 
     def finish_tutorial(self):
         self._cleanup()
-        SandboxManager().exit_sandbox(self.ui)
+        if self.use_sandbox:
+            SandboxManager().exit_sandbox(self.ui)
         if self.on_complete:
             try:
                 self.on_complete()
@@ -377,7 +449,8 @@ class TutorialRunner:
 
     def exit_tutorial(self):
         self._cleanup()
-        SandboxManager().exit_sandbox(self.ui)
+        if self.use_sandbox:
+            SandboxManager().exit_sandbox(self.ui)
 
     def _cleanup(self):
         self._cleanup_highlight()

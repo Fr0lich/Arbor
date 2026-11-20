@@ -1971,3 +1971,14 @@ def test_vault_offline_storage_queue_contract():
         assert "saveLocalStorageQueue" in tmpl, f"{tmpl_name} template missing saveLocalStorageQueue function"
         assert "flushQueuedMutations" in tmpl, f"{tmpl_name} template missing flushQueuedMutations"
 
+
+def test_mobile_v2_three_step_walkthrough_contract():
+    """Phase 2: Verify Mobile V2 includes the zero-build 3-step hallway walkthrough & replay button."""
+    from backend.mobile_server import INDEX_TEMPLATE_V2
+
+    assert 'id="walkthroughModal"' in INDEX_TEMPLATE_V2
+    assert "arbor_v2_walkthrough_seen" in INDEX_TEMPLATE_V2
+    assert "WALKTHROUGH_SLIDES" in INDEX_TEMPLATE_V2
+    assert "openWalkthroughModal" in INDEX_TEMPLATE_V2
+    assert "maybeShowFirstRunWalkthrough" in INDEX_TEMPLATE_V2
+

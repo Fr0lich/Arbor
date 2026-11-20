@@ -40,6 +40,14 @@ if %ERRORLEVEL% NEQ 0 (
 :: 2. Clean old build artifacts
 echo.
 echo [1/3] Cleaning previous build artifacts...
+if exist "dist\Arbor.exe" (
+    del /f /q "dist\Arbor.exe" 2>nul
+    if exist "dist\Arbor.exe" (
+        echo [ERROR] dist\Arbor.exe is currently running or locked by another process.
+        echo Please close Arbor.exe before running the build pipeline.
+        goto :build_failed
+    )
+)
 if exist "build" (
     rmdir /s /q "build" 2>nul
 )
@@ -71,6 +79,17 @@ if exist "USER_GUIDE.md" (
     echo [WARNING] USER_GUIDE.md not found in root.
 )
 
+if exist "MOBILE_COMPANION_USER_GUIDE.md" (
+    copy /Y "MOBILE_COMPANION_USER_GUIDE.md" "dist\MOBILE_COMPANION_USER_GUIDE.md" >nul
+    if !ERRORLEVEL! NEQ 0 (
+        echo [WARNING] Failed to copy MOBILE_COMPANION_USER_GUIDE.md to dist.
+    ) else (
+        echo   - MOBILE_COMPANION_USER_GUIDE.md copied
+    )
+) else (
+    echo [WARNING] MOBILE_COMPANION_USER_GUIDE.md not found in root.
+)
+
 if exist "ignored_words.json" (
     copy /Y "ignored_words.json" "dist\ignored_words.json" >nul
     if !ERRORLEVEL! NEQ 0 (
@@ -80,6 +99,16 @@ if exist "ignored_words.json" (
     )
 ) else (
     echo [WARNING] ignored_words.json not found in root.
+)
+
+if exist "data\demo_collection.xlsx" (
+    if not exist "dist\data" mkdir "dist\data"
+    copy /Y "data\demo_collection.xlsx" "dist\data\demo_collection.xlsx" >nul
+    if !ERRORLEVEL! NEQ 0 (
+        echo [WARNING] Failed to copy demo_collection.xlsx to dist\data.
+    ) else (
+        echo   - data\demo_collection.xlsx copied
+    )
 )
 
 echo.

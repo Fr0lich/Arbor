@@ -389,14 +389,18 @@ class BulkEditWindow:
         reg_dict = self.main_window._get_reg_dict() if hasattr(self.main_window, "_get_reg_dict") else {}
         obs_dict = self.main_window._get_obs_dict() if hasattr(self.main_window, "_get_obs_dict") else {}
 
-        # Snapshot undo state efficiently
+        # Snapshot undo state efficiently (per-object + single-action batch rollback)
+        batch_snapshot = {"oids": list(oids), "reg": {}, "obs": {}}
         for oid in oids:
-            reg_snap = reg_dict.get(oid, {}).copy() if reg_dict else (reg_df.loc[oid].copy() if (reg_df is not None and oid in reg_df.index) else {})
-            obs_snap = obs_dict.get(oid, {}).copy() if obs_dict else (obs_df.loc[oid].copy() if (obs_df is not None and oid in obs_df.index) else {})
+            reg_snap = reg_dict.get(oid, {}).copy() if reg_dict else (reg_df.loc[oid].to_dict() if (reg_df is not None and oid in reg_df.index) else {})
+            obs_snap = obs_dict.get(oid, {}).copy() if obs_dict else (obs_df.loc[oid].to_dict() if (obs_df is not None and oid in obs_df.index) else {})
+            batch_snapshot["reg"][oid] = reg_snap
+            batch_snapshot["obs"][oid] = obs_snap
             self.main_window.app.undo_stacks.setdefault(oid, []).append({
                 "reg": reg_snap,
                 "obs": obs_snap,
             })
+        self.app._last_bulk_edit_snapshot = batch_snapshot
 
         problem_keys = {f["name"] for f in self.app.config.get("ui_sections", {}).get("problems", [])}
         problem_keys.update({"Reviewed", "Images_Missing", "Images_Problem", "Images_Wrong", "Online_Images_Exist"})
@@ -417,18 +421,20 @@ class BulkEditWindow:
         valid_reg_oids = [oid for oid in oids if reg_df is not None and oid in reg_df.index]
         valid_obs_oids = [oid for oid in oids if obs_df is not None and oid in obs_df.index]
 
-        for key, val in reg_updates.items():
-            reg_df.loc[valid_reg_oids, key] = val
-            if key == "Loaned out":
-                loaned_date = now_str if utils.parse_bool(val) else ""
-                if "Loaned out date" in reg_df.columns:
-                    reg_df.loc[valid_reg_oids, "Loaned out date"] = loaned_date
+        from contextlib import nullcontext
+        with (getattr(self.app, "df_lock", None) or nullcontext()):
+            for key, val in reg_updates.items():
+                reg_df.loc[valid_reg_oids, key] = val
+                if key == "Loaned out":
+                    loaned_date = now_str if utils.parse_bool(val) else ""
+                    if "Loaned out date" in reg_df.columns:
+                        reg_df.loc[valid_reg_oids, "Loaned out date"] = loaned_date
 
-        for key, val in obs_updates.items():
-            obs_df.loc[valid_obs_oids, key] = val
-            if key == "Reviewed" and val:
-                if REVIEWED_AT_COLUMN in obs_df.columns:
-                    obs_df.loc[valid_obs_oids, REVIEWED_AT_COLUMN] = now_str
+            for key, val in obs_updates.items():
+                obs_df.loc[valid_obs_oids, key] = val
+                if key == "Reviewed" and val:
+                    if REVIEWED_AT_COLUMN in obs_df.columns:
+                        obs_df.loc[valid_obs_oids, REVIEWED_AT_COLUMN] = now_str
 
         # Surgically sync in-memory row caches
         if getattr(self.main_window, "_cached_reg_dict", None) is not None:
@@ -469,13 +475,78 @@ class BulkEditWindow:
             if hasattr(self.main_window, "_problem_cache") and self.main_window._problem_cache is not None:
                 self.main_window._problem_cache.pop(oid, None)
 
+        # Record BULK_EDIT audit log entry for traceability
+        if hasattr(self.main_window, "log_action"):
+            try:
+                reg_fields = list(reg_updates.keys())
+                reg_vals = [f'{k} -> "{v}"' for k, v in reg_updates.items()]
+                obs_fields = list(obs_updates.keys())
+                obs_vals = [f'{k} -> "{v}"' for k, v in obs_updates.items()]
+                self.main_window.log_action(
+                    "BULK_EDIT",
+                    reg_fields,
+                    reg_vals,
+                    obs_fields,
+                    obs_vals,
+                    oid=f"BULK({len(oids)} specimens)",
+                )
+            except Exception:
+                pass
+
         self.main_window._hide_progress("Bulk apply complete")
         self.app.dirty = True
         app_bus.publish(DATABASE_UPDATED, refresh_list=True, invalidate_search=True)
-        
+
         # If currently looking at one of the affected, reload
         if self.app.current_object_id in oids:
             self.main_window.load_object(self.app.current_object_id)
-            
+
         self.win.destroy()
         messagebox.showinfo("Success", f"Successfully updated {len(oids)} objects.")
+
+
+def undo_last_bulk_edit(main_window) -> bool:
+    """Revert the most recent Bulk Edit batch in one action."""
+    app = getattr(main_window, "app", None)
+    snap = getattr(app, "_last_bulk_edit_snapshot", None) if app is not None else None
+    if not snap or not snap.get("oids"):
+        if hasattr(main_window, "show_toast"):
+            main_window.show_toast("No recent Bulk Edit to undo.", "info")
+        return False
+
+    from contextlib import nullcontext
+    oids = snap["oids"]
+    with (getattr(app, "df_lock", None) or nullcontext()):
+        if app.df_reg is not None:
+            for oid, row_data in snap.get("reg", {}).items():
+                if oid in app.df_reg.index and isinstance(row_data, dict):
+                    for col, val in row_data.items():
+                        if col in app.df_reg.columns:
+                            app.df_reg.at[oid, col] = val
+        if app.df_obs is not None:
+            for oid, row_data in snap.get("obs", {}).items():
+                if oid in app.df_obs.index and isinstance(row_data, dict):
+                    for col, val in row_data.items():
+                        if col in app.df_obs.columns:
+                            app.df_obs.at[oid, col] = val
+
+    app._last_bulk_edit_snapshot = None
+    app.dirty = True
+    if hasattr(main_window, "_invalidate_row_cache"):
+        main_window._invalidate_row_cache()
+    if hasattr(main_window, "invalidate_search_index"):
+        main_window.invalidate_search_index()
+    if hasattr(main_window, "log_action"):
+        try:
+            main_window.log_action("UNDO_BULK_EDIT", oid=f"BULK({len(oids)} specimens)")
+        except Exception:
+            pass
+    app_bus.publish(DATABASE_UPDATED, refresh_list=True, invalidate_search=True)
+    if hasattr(main_window, "load_object") and app.current_object_id is not None:
+        try:
+            main_window.load_object(app.current_object_id, skip_commit=True)
+        except Exception:
+            pass
+    if hasattr(main_window, "show_toast"):
+        main_window.show_toast(f"⎌ Reverted Bulk Edit across {len(oids)} specimens", "success")
+    return True

@@ -109,6 +109,10 @@ class FilterDialogController:
             FilterDialogController.apply_filter_with_history(ui, win)
 
         make_btn(right_header, "🎯 Hallway Follow-Up (REV+ERR)", apply_hallway_followup)
+        def _open_hallway_guide():
+            from ui.tutorials import start_hallway_followup_guide
+            start_hallway_followup_guide(ui)
+        make_btn(right_header, "?", _open_hallway_guide)
         make_btn(right_header, "Load Preset...", lambda: FilterDialogController.load_filter_preset(ui))
         make_btn(right_header, "Save Preset...", lambda: FilterDialogController.save_filter_preset(ui))
 

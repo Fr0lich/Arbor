@@ -30,94 +30,89 @@ The **Arbor Mobile Companion** is a dedicated, zero-install mobile web applicati
 
 * **📶 LAN only [Fast & Offline]**:
   * **When to use**: When your laptop and phone are connected to a private home Wi-Fi network or a portable travel router inside an underground vault with no internet access.
-  * **Why**: Direct, ultra-low latency peer-to-peer connection without sending any traffic through the outside web.
+  * **Why**: Direct local Wi-Fi connection without sending any traffic through the outside web.
 
 ### Pairing Options
-* **QR Code**: Open your phone's camera or barcode scanner and tap the prompt. The secure session token is embedded in the link—no passwords required.
-* **Copy Link Button**: Click **📋 Copy** in the desktop pairing window to copy the full URL to your clipboard for instant sharing via chat or email.
-* **4-Digit PIN**: If opening a saved bookmark or bare URL on your phone without the token, enter the 4-digit PIN displayed on your laptop screen.
+* **QR Code**: Open your phone's camera app and tap the link that appears on screen. The secure session link logs you in automatically — no passwords required.
+* **Copy Link Button**: Click **📋 Copy** in the desktop pairing window to copy the full URL to your clipboard for instant sharing.
+* **4-Digit PIN**: If opening a saved bookmark on your phone, enter the 4-digit PIN displayed on your desktop screen.
+* **First-Time 3-Step Guide**: The first time your phone connects, Arbor displays a quick 3-slide visual guide (with a **Skip** button) walking you through searching, 1-tap shelf stamping, and flagging issues. You can replay it anytime from **⚙ Settings → 🎓 3-Step Guide**.
 
 ---
 
-## 2. The Vault Walkthrough & Offline Trust Engine
+## 2. Offline Concrete Vaults & Automatic Sync
 
-Herbarium vaults are often located in basements or shielded behind heavy steel doors where Wi-Fi drops completely. The Mobile Companion is engineered with an **offline-first trust architecture**:
+Herbarium vaults are often located in basements or shielded behind heavy steel doors where Wi-Fi drops completely. The Mobile Companion is built to keep working smoothly offline:
 
 ```
-📱 Curator Edits Specimen
+📱 Trainee Edits Specimen
          │
          ▼
 [Is Wi-Fi Connected?]
-   ├── YES ──► Saved immediately to Workstation (✓ Synced)
+   ├── YES ──► Saved immediately to Desktop (✓ Synced)
    │
-   └── NO ───► Saved immediately to Phone's IndexedDB Queue
+   └── NO ───► Saved safely in Phone's Offline Storage
                Banner shows: "⚠️ Offline — 4 edits queued on device"
                (Zero data loss; phone retains all values)
                      │
-                     ▼ (Curator walks back into Wi-Fi range)
-               Automatic Reconnection & Auto-Flush
+                     ▼ (Walk back into Wi-Fi range)
+               Automatic Reconnection & Auto-Sync
                Banner shows: "🔄 Connected — Syncing 4 queued edits..."
                Desktop receives: "📥 Synced 4 offline edits"
 ```
 
-### Tri-State Psychological Feedback
-1. **While Typing / Editing**: Inputs register changes immediately.
-2. **Auto-Save on Blur / Debounce**: Edits are committed immediately when you tap away or pause typing (800ms).
-3. **Sync Confirmation**:
-   * When connected, a toast confirms: `✓ Saved & synchronized`.
-   * When offline, a confident badge confirms: `💾 Saved offline (queued for sync)`.
+### Clear Save Feedback
+1. **Auto-Save While Working**: Edits save automatically when you tap away from a field or pause typing for a moment.
+2. **Sync Confirmation**:
+   * When connected, a confirmation badge shows: `✓ Saved & synchronized`.
+   * When offline, a reassuring badge shows: `💾 Saved offline (queued for sync)`.
 
-> [!IMPORTANT]
-> **Never worry about losing data in the vault:**
-> If you lose connection, continue auditing normally! All coordinate changes, review checkmarks, and field edits are preserved in hardware-backed storage on your mobile device and will flush automatically to the desktop the instant connection is restored.
+> **Never worry about losing data in the vault:**  
+> If you lose Wi-Fi behind a steel door, keep auditing normally! All storage coordinates, review checkmarks, and notes stay safely saved on your phone and sync automatically to your desktop the moment Wi-Fi returns.
 
 ---
 
-## 3. Curatorial Auditing Workflows
+## 3. Hallway Auditing Workflows
 
-### 3.1. Specimen Lookup & Rapid Stepping
-* **Universal Search**: Type genus, species, accession number, or cabinet into the top search bar.
-* **Filter Pills**: Tap `🕒 Unreviewed` or `⚠ Flagged` to step strictly through specimens requiring attention.
-* **Steppers**: Use the **← Prev** and **Next →** buttons in the header to advance through specimen sheets consecutively without returning to the list.
+### 3.1. Search-First Number Lookup
+* **Numeric Keypad Default**: Pull a physical box, read its accession number, and type it in the top search bar. Use the **`[123 / Aa]`** button to switch between numbers and plant names.
+* **Automatic Zero & Prefix Handling**: Typing `001`, `1`, or `O-V-1` all find Specimen `#1`. When you tap `< Back` to return to the list, Arbor automatically clears and focuses the search bar for the next box.
 
-### 3.2. Physical Coordinate Auditing (Location Tab)
-The **Location Tab** provides tactile, high-speed coordinate entry:
-* **Building**: Dropdown matching active museum collections (e.g., *Økern*, *Lid's hus*).
-* **Floor**: Signed continuous integer stepping (`−` / `+` or direct value).
-* **Cabinet & Shelf**: 
-  * Tap `−` / `+` to increment/decrement shelf numbers.
-  * Or **tap the number directly** to open the mobile numeric keypad for rapid 2-digit entry.
-* **Stored As**: 1-tap storage presets (*Herbarium Sheet*, *Box*, *Envelope*, *Jar*, *Packet*, *Custom*).
+### 3.2. The 1-Tap Armed Target Shelf (Auditing 30–50 Boxes at Once)
+Opening a specimen **never** overwrites its coordinates automatically — so mistyping a number (like `#101` instead of `#1001`) can never corrupt another record.
+1. **Set Your Shelf Once**: Pick the Building, Floor, Cabinet, and Shelf you are standing in front of. Arbor arms that shelf as your active target.
+2. **1-Tap Stamping**: On every next box from that shelf, a green thumb banner appears right under the plant name:
+   `⚡ Armed Target: Cab 21 · Sh 01  [ Stamp Target ]`
+3. Tap **Stamp Target** once to assign all coordinates in a single tap! (If a specimen already belongs to a different cabinet, the button turns amber **`⚠️ Relocate to Cab 21`** so you never relocate a specimen by accident.)
 
-### 3.3. "Copy from Previous" (1-Tap Replication)
-When auditing a folder containing 20 specimen sheets that all share the same physical cabinet, shelf, and floor:
-1. Set the correct coordinates on the first specimen.
-2. Advance to the next specimen.
-3. Tap **📋 Copy from Previous** at the top of the Location tab.
-4. All physical coordinates duplicate instantly, saving dozens of repetitive keystrokes.
+### 3.3. Non-Coercive Review Safeguard
+If you tap **`✓ Mark Reviewed`** on a specimen that has no Storage Location yet while a shelf is armed, Arbor politely asks:
+* **`✓ Yes, Stamp to Target & Review`**: Assigns your armed shelf and marks the specimen Reviewed.
+* **`✕ No, Keep Location & Review`**: Saves your edits, notes, and problem flags and marks Reviewed **without changing its location**.
 
-### 3.4. Batch Location Registrator
-To relocate an entire stack of specimen folders to a new room or cabinet:
-1. Tap the **📦 Batch Relocation** icon in the header toolbar.
-2. Set your **Target Location Anchor** (Building, Cabinet, Shelf).
-3. Scan barcodes or enter Object IDs into the rapid accession queue.
-4. Tap **Commit Batch Location** to update all scanned records simultaneously.
+### 3.4. Flagging Issues While Still Marking Reviewed (`REV + [N] ISSUES`)
+Found a crushed box or unreadable 19th-century handwriting?
+* Check the problem box (e.g., `Box_Label_Problem`) and **still tap `✓ Mark Reviewed`**.
+* The badge turns amber (**`REV + 1 ISSUE`**). This confirms you physically held the box and verified its shelf while queueing the issue for office desktop follow-up (**`🎯 Hallway Follow-Up (REV+ERR)`**).
 
-### 3.5. Tactical Haptic Feedback & Glove Calibration
-Auditing specimens requires looking back and forth between physical cabinet tags, shelf boxes, and the phone screen. The Mobile Companion delivers sensory vibration confirmations without requiring constant eye contact:
-* **Steppers**: Crisp vibration tick on Cabinet/Shelf `−` / `+` clicks.
-* **Review Status**: Double confirmation pulse when marked Reviewed; single pulse when cleared.
-* **Copy Previous Location**: Distinct tactile acknowledgment.
-* **Flag Problem**: Noticeable warning pulse when flagging a discrepancy.
+### 3.5. Viewport-Reclaimed Photo Folio
+If a specimen has no verified online scan yet, Arbor automatically collapses the empty photo frame into a compact single-line bar (`📷 Scan: None verified online`), keeping metadata and problem checkboxes right under your thumb.
 
-> [!TIP]
-> **Adjusting Haptic Strength**:
-> Open **⚙ Settings** on your phone to toggle haptics or adjust intensity:
-> * **Light**: Subtle clicks for bare hands in quiet offices.
-> * **Medium** *(Default)*: Balanced tactile response for standard nitrile gloves.
-> * **Strong**: Firm pulses for heavy archival cotton gloves.
-> * **⚡ Test Button**: Tap `⚡ Test` in the settings drawer to test the selected strength on your handheld device immediately.
-> *(Note: The Web Vibration API is natively supported on Android Chrome/Firefox; iOS Safari WebKit restricts vibration).*
+### 3.6. Batch Location Registrator
+To move a stack of specimen folders to a new cabinet at once:
+1. Tap **📦 Batch Relocation** in the header toolbar.
+2. Set your **Target Location** (Building, Floor, Cabinet, Shelf).
+3. Enter the Specimen IDs into the rapid list.
+4. Tap **Commit Batch Location** to update all listed specimens together.
+
+### 3.7. Gentle Vibration Feedback (Glove Calibration)
+Auditing specimens requires looking between physical shelf tags and your phone screen. Gentle vibration feedback confirms every action without needing constant eye contact:
+* **Steppers**: Crisp tick on Cabinet/Shelf `−` / `+` clicks.
+* **Mark Reviewed**: Double confirmation pulse when marked Reviewed.
+* **Flag Problem**: Distinct warning pulse when checking a problem flag.
+
+> **Adjusting Vibration Strength:**  
+> Open **⚙ Settings** on your phone to toggle vibration or choose **Light** (bare hands), **Medium** (standard nitrile gloves), or **Strong** (heavy cotton archival gloves), and tap `⚡ Test` to feel it immediately. *(Supported on Android Chrome/Firefox; iOS Safari restricts browser vibration.)*
 
 ### 3.6. Accidental Refresh & Tab Closure Guard
 If you accidentally swipe down to refresh or swipe backwards to close the browser tab in the vault:

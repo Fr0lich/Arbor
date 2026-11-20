@@ -661,20 +661,32 @@ class SQLiteRepository:
 
                 if not df_photo_save.empty:
                     if "Photo" in existing_tables:
-                        cursor = conn.cursor()
-                        cursor.execute("DELETE FROM Photo;")
-                        df_photo_save.to_sql("Photo", conn, if_exists="append", index=False)
+                        db_cols = db_table_cols.get("Photo", set())
+                        if set(df_photo_save.columns).issubset(db_cols):
+                            cursor = conn.cursor()
+                            cursor.execute("DELETE FROM Photo;")
+                            df_photo_save.to_sql("Photo", conn, if_exists="append", index=False)
+                        else:
+                            df_photo_save.to_sql("Photo", conn, if_exists="replace", index=False)
                     else:
                         df_photo_save.to_sql("Photo", conn, if_exists="replace", index=False)
+                elif "Photo" in existing_tables:
+                    conn.cursor().execute("DELETE FROM Photo;")
 
                 if df_log is not None and not df_log.empty:
                     df_log_save = _normalise_log_dataframe(df_log)
                     if "Log" in existing_tables:
-                        cursor = conn.cursor()
-                        cursor.execute("DELETE FROM Log;")
-                        df_log_save.to_sql("Log", conn, if_exists="append", index=False)
+                        db_cols = db_table_cols.get("Log", set())
+                        if set(df_log_save.columns).issubset(db_cols):
+                            cursor = conn.cursor()
+                            cursor.execute("DELETE FROM Log;")
+                            df_log_save.to_sql("Log", conn, if_exists="append", index=False)
+                        else:
+                            df_log_save.to_sql("Log", conn, if_exists="replace", index=False)
                     else:
                         df_log_save.to_sql("Log", conn, if_exists="replace", index=False)
+                elif "Log" in existing_tables:
+                    conn.cursor().execute("DELETE FROM Log;")
 
                 if df_unvalidated is not None and not df_unvalidated.empty:
                     df_unval_save = _deduplicate_columns(_normalise_unvalidated_dataframe(df_unvalidated))

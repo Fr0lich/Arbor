@@ -111,6 +111,7 @@ def sanitize_df_for_excel(df: pd.DataFrame) -> pd.DataFrame:
         df_safe.columns = new_cols
 
     dangerous_starts = ('=', '+', '-', '@', '\t', '\r')
+    safe_numeric_or_dash_re = re.compile(r'^(?:-|[+-]?\d+(?:\.\d+)?)$')
 
     # ILLEGAL_CHARACTERS_RE pattern from openpyxl/cell/cell.py
     ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
@@ -135,10 +136,12 @@ def sanitize_df_for_excel(df: pd.DataFrame) -> pd.DataFrame:
             if isinstance(x, (pd.Timestamp, datetime)) and getattr(x, "tzinfo", None) is not None:
                 x = x.tz_localize(None) if isinstance(x, pd.Timestamp) else x.replace(tzinfo=None)
 
-            # 2. Sanitize strings
+            # 2. Sanitize strings (preserve plain numeric strings like "-1", "-2" and standalone "-")
             if isinstance(x, str):
-                if x.lstrip().startswith(dangerous_starts) or x.lstrip().lower().startswith("cmd|"):
-                    x = f"'{x}"
+                stripped = x.lstrip()
+                if not safe_numeric_or_dash_re.match(x.strip()):
+                    if stripped.startswith(dangerous_starts) or stripped.lower().startswith("cmd|"):
+                        x = f"'{x}"
                 x = ILLEGAL_CHARACTERS_RE.sub('', x)
             return x
 
@@ -266,14 +269,18 @@ def _ensure_logger_configured() -> None:
             except Exception:
                 return True
 
-        # Console sink with clean timestamp and level formatting
-        logger.add(
-            sys.stdout,
-            format="[{time:YYYY-MM-DD HH:mm:ss}] [{level}] {message}",
-            filter=_log_filter,
-            backtrace=False,
-            diagnose=False
-        )
+        # Console sink with clean timestamp and level formatting (guarded for windowed/frozen GUI mode)
+        if sys.stdout is not None:
+            try:
+                logger.add(
+                    sys.stdout,
+                    format="[{time:YYYY-MM-DD HH:mm:ss}] [{level}] {message}",
+                    filter=_log_filter,
+                    backtrace=False,
+                    diagnose=False
+                )
+            except Exception:
+                pass
 
         # File sink with automatic 10MB rotation, 7-day retention, zip compression, and lockless async enqueue
         try:

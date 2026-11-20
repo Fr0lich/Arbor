@@ -25,6 +25,8 @@ class SandboxManager:
             self.initialized = True
             self.is_sandboxed = False
             self.snapshot = None
+            self._practice_banner = None
+            self._active_runner = None
 
     def enter_sandbox(self, ui, mock_type="review"):
         """Snapshots the active state and loads isolated mock data."""
@@ -96,8 +98,75 @@ class SandboxManager:
                     except Exception:
                         pass
 
+            self._show_practice_banner(ui)
+
         except Exception as e:
             debug_error("SandboxManager.enter_sandbox", str(e))
+
+    def _show_practice_banner(self, ui):
+        """Mount a persistent zero-fear Practice Mode banner at the top of the window."""
+        self._hide_practice_banner()
+        root = getattr(ui, "root", None)
+        if root is None:
+            return
+        try:
+            import tkinter as tk
+            from config import sc
+            if not root.winfo_exists():
+                return
+            banner = tk.Frame(root, bg="#1e4620", padx=sc(12), pady=sc(5))
+            # Pack at the very top before existing children if any
+            children = root.winfo_children()
+            packed_children = [c for c in children if c is not banner and c.winfo_manager() == "pack"]
+            if packed_children:
+                banner.pack(side="top", fill="x", before=packed_children[0])
+            else:
+                banner.pack(side="top", fill="x")
+
+            tk.Label(
+                banner,
+                text="🛡️ PRACTICE MODE — Nothing you do here affects real museum files. Saving is safely paused.",
+                font=("Segoe UI", sc(9), "bold"),
+                bg="#1e4620",
+                fg="#d8f5dc",
+                anchor="w",
+            ).pack(side="left", fill="x", expand=True)
+
+            def _exit_now():
+                runner = getattr(self, "_active_runner", None)
+                if runner is not None and hasattr(runner, "exit_tutorial"):
+                    runner.exit_tutorial()
+                else:
+                    self.exit_sandbox(ui)
+
+            tk.Button(
+                banner,
+                text="Exit Practice Mode",
+                font=("Segoe UI", sc(8.5), "bold"),
+                bg="#2e6b32",
+                fg="#ffffff",
+                activebackground="#3a7d44",
+                activeforeground="#ffffff",
+                relief="flat",
+                cursor="hand2",
+                padx=sc(8),
+                pady=sc(2),
+                command=_exit_now,
+            ).pack(side="right")
+            self._practice_banner = banner
+        except Exception:
+            self._practice_banner = None
+
+    def _hide_practice_banner(self):
+        banner = getattr(self, "_practice_banner", None)
+        if banner is not None:
+            try:
+                if banner.winfo_exists():
+                    banner.destroy()
+            except Exception:
+                pass
+        self._practice_banner = None
+        self._active_runner = None
 
     def exit_sandbox(self, ui):
         """Restores the original workspace state from snapshot."""
@@ -105,6 +174,7 @@ class SandboxManager:
             return
 
         try:
+            self._hide_practice_banner()
             self.is_sandboxed = False
             if not self.snapshot:
                 return
@@ -168,7 +238,7 @@ class SandboxManager:
             debug_error("SandboxManager.exit_sandbox", str(e))
 
     def _create_mock_datasets(self, mock_type):
-        """Creates sample in-memory DataFrames for tutorials."""
+        """Creates sample in-memory DataFrames matching Arbor's real workbook columns."""
         reg_data = [
             {
                 "ObjectID": "1001",
@@ -179,9 +249,9 @@ class SandboxManager:
                 "Author": "L.",
                 "Collector": "E. Dahl",
                 "CollectorNumber": "142",
-                "Day": "15",
-                "Month": "07",
+                "Collection Date": "1965-07-15",
                 "Year": "1965",
+                "Collection Place": "Dovrefjell, Kongsvoll",
                 "Locality": "Dovrefjell, Kongsvoll",
                 "Country": "Norway",
                 "Reviewed": False,
@@ -198,15 +268,15 @@ class SandboxManager:
                 "Author": "L.",
                 "Collector": "J. M. Norman",
                 "CollectorNumber": "89",
-                "Day": "04",
-                "Month": "08",
-                "Year": "1882",
+                "Collection Date": "2008",
+                "Year": "2008",
+                "Collection Place": "Alvdal, Hedmark",
                 "Locality": "Alvdal, Hedmark",
                 "Country": "Norway",
                 "Reviewed": False,
                 "Reviewed_By": "",
                 "Reviewed_At": "",
-                "Problem_Flags": "Taxon_Mismatch"
+                "Problem_Flags": "Collection_Date_Problem"
             },
             {
                 "ObjectID": "1003",
@@ -217,9 +287,9 @@ class SandboxManager:
                 "Author": "L.",
                 "Collector": "R. F. Fristedt",
                 "CollectorNumber": "304",
-                "Day": "22",
-                "Month": "06",
+                "Collection Date": "1853-06-22",
                 "Year": "1853",
+                "Collection Place": "Jotunheimen",
                 "Locality": "Jotunheimen",
                 "Country": "Norway",
                 "Reviewed": True,
@@ -232,24 +302,51 @@ class SandboxManager:
         obs_data = [
             {
                 "ObjectID": "1001",
+                "Reviewed": False,
+                "ReviewedAt": "",
+                "Building": "Lid's hus",
+                "Floor": "1",
+                "Cabinet": "21",
+                "Shelf": "01",
+                "Stored as": "Box",
                 "Genus_Problem": False,
                 "Species_Problem": False,
+                "Collection_Date_Problem": False,
+                "Box_Label_Problem": False,
                 "Taxon_Mismatch": False,
                 "Coordinate_Problem": False,
                 "Unidentified": False
             },
             {
                 "ObjectID": "1002",
+                "Reviewed": False,
+                "ReviewedAt": "",
+                "Building": "Lid's hus",
+                "Floor": "1",
+                "Cabinet": "21",
+                "Shelf": "01",
+                "Stored as": "Box",
                 "Genus_Problem": False,
                 "Species_Problem": False,
+                "Collection_Date_Problem": True,
+                "Box_Label_Problem": False,
                 "Taxon_Mismatch": True,
                 "Coordinate_Problem": False,
                 "Unidentified": False
             },
             {
                 "ObjectID": "1003",
+                "Reviewed": True,
+                "ReviewedAt": "10.01.2026 14:30",
+                "Building": "Lid's hus",
+                "Floor": "1",
+                "Cabinet": "21",
+                "Shelf": "01",
+                "Stored as": "Box",
                 "Genus_Problem": False,
                 "Species_Problem": False,
+                "Collection_Date_Problem": False,
+                "Box_Label_Problem": False,
                 "Taxon_Mismatch": False,
                 "Coordinate_Problem": False,
                 "Unidentified": False
@@ -263,16 +360,27 @@ class SandboxManager:
         df_unval = pd.DataFrame()
 
         mock_hist = []
-        if mock_type == "discrepancy":
-            # Add historical discrepancies for 1001
+        if mock_type in ("discrepancy", "review"):
             hist_books = pd.DataFrame([
                 {
                     "ObjectID": "1001",
                     "Taxon": "Betula pendula",
                     "Author": "Roth",
                     "Family": "Betulaceae",
+                    "Collection Place": "Dovre, Kongsvold",
                     "Locality": "Dovre, Kongsvold",
+                    "Collection Date": "1965",
                     "Year": "1965"
+                },
+                {
+                    "ObjectID": "1002",
+                    "Genus": "Pinus",
+                    "Species": "sylvestris",
+                    "Taxon": "Pinus sylvestris",
+                    "Family": "Pinaceae",
+                    "Collection Date": "1998",
+                    "Year": "1998",
+                    "Collection Place": "Alvdal, Hedmark"
                 }
             ]).set_index("ObjectID", drop=False)
 

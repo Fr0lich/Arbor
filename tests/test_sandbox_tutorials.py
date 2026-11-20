@@ -201,6 +201,83 @@ class TestSandboxTutorials(unittest.TestCase):
         self.assertEqual(runner.current_idx, 1)
         runner.exit_tutorial()
 
+    def test_sandbox_practice_banner_and_physical_scenario_columns(self):
+        """Phase 1: Practice Mode banner mounts/unmounts cleanly and mock 1002 has Cabinet 21 scenario."""
+        self.sm.enter_sandbox(self.ui, mock_type="review")
+        self.assertIsNotNone(self.sm._practice_banner)
+        self.assertTrue(self.sm._practice_banner.winfo_exists())
+        self.assertEqual(self.ui.app.df_reg.loc["1002", "Collection Date"], "2008")
+        self.assertEqual(self.ui.app.df_obs.loc["1002", "Cabinet"], "21")
+        self.assertFalse(bool(self.ui.app.df_obs.loc["1002", "Box_Label_Problem"]))
+        self.assertFalse(bool(self.ui.app.df_obs.loc["1002", "Reviewed"]))
+        self.assertTrue(len(self.ui.app.historical_dbs) >= 1)
+
+        self.sm.exit_sandbox(self.ui)
+        self.assertIsNone(self.sm._practice_banner)
+
+    def test_sandbox_blocks_disk_saves_and_autosaves(self):
+        """Phase 1: Disk saves and autosaves must be blocked while SandboxManager.is_sandboxed is True."""
+        from ui.database_ops import DatabaseOpsMixin
+        from ui.autosave_handler import AutosaveMixin
+
+        class SaveGuardUI(DatabaseOpsMixin, AutosaveMixin):
+            def __init__(self, mock_ui):
+                self.root = mock_ui.root
+                self.app = mock_ui.app
+                self.toasts = []
+                self.committed = False
+                self._autosave_job = None
+
+            def show_toast(self, msg, level="info"):
+                self.toasts.append(msg)
+
+            def commit_current_object(self):
+                self.committed = True
+
+            def _schedule_autosave(self):
+                pass
+
+        self.sm.enter_sandbox(self.ui, mock_type="review")
+        self.ui.app.dirty = True
+        guard_ui = SaveGuardUI(self.ui)
+        callback_result = []
+        guard_ui.save_session("SAVE", on_complete=lambda ok, err=None: callback_result.append((ok, err)))
+        self.assertFalse(guard_ui.committed)
+        self.assertEqual(callback_result, [(False, "Practice Mode")])
+        self.assertTrue(any("Practice Mode" in t for t in guard_ui.toasts))
+
+        # Autosave tick must also skip commit/disk write while sandboxed
+        guard_ui._autosave_tick()
+        self.assertFalse(guard_ui.committed)
+        self.sm.exit_sandbox(self.ui)
+
+    def test_tutorial_runner_renders_keycap_pills(self):
+        """Phase 2: ActionStep.keycaps renders visual keycap widgets in HUD and hides when empty."""
+        s1 = ActionStep(step_id="k1", title="With Keycaps", instruction="Press shortcut", keycaps=["Ctrl", "Enter"])
+        s2 = ActionStep(step_id="k2", title="No Keycaps", instruction="Click finish")
+        runner = TutorialRunner(self.ui, [s1, s2], tutorial_name="Keycap Test")
+        self.assertTrue(len(runner.keycaps_frame.winfo_children()) > 0)
+        runner.next_step()
+        self.assertEqual(len(runner.keycaps_frame.winfo_children()), 0)
+        runner.exit_tutorial()
+
+    def test_contextual_micro_guides_run_without_sandbox(self):
+        """Phase 3: Micro-guides run in-place (use_sandbox=False) without entering or resetting SandboxManager."""
+        from ui.tutorials import (
+            start_hallway_followup_guide,
+            start_armed_shelf_guide,
+            start_image_controls_guide,
+        )
+        orig_path = self.ui.app.excel_path
+        for launcher in (start_hallway_followup_guide, start_armed_shelf_guide, start_image_controls_guide):
+            runner = launcher(self.ui)
+            self.assertFalse(self.sm.is_sandboxed)
+            self.assertFalse(runner.use_sandbox)
+            self.assertIn("QUICK GUIDE", runner.badge_lbl.cget("text"))
+            runner.finish_tutorial()
+            self.assertEqual(self.ui.app.excel_path, orig_path)
+            self.assertFalse(self.sm.is_sandboxed)
+
     def test_show_main_help_window_creation(self):
         from ui.help_dialogs import show_main_help
         # Calling show_main_help should construct a top-level window without raising exceptions

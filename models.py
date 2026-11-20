@@ -40,8 +40,9 @@ class AppState:
         # ObjectID of the item currently displayed in the detail panel
         self.current_object_id: str | None = None
 
-        # True when there are unsaved changes
-        self.dirty: bool = False
+        # True when there are unsaved changes; _mutation_seq increments on every dirty mark
+        self._dirty: bool = False
+        self._mutation_seq: int = 0
 
         # List of additional historical database dicts for comparison
         self.historical_dbs: list[dict] = []
@@ -54,6 +55,16 @@ class AppState:
         # Use acquire() before .copy() in any worker thread to avoid read-during-write
         # races when the main thread commits an edit mid-save.
         self.df_lock: threading.RLock = threading.RLock()
+
+    @property
+    def dirty(self) -> bool:
+        return self._dirty
+
+    @dirty.setter
+    def dirty(self, value: bool) -> None:
+        self._dirty = bool(value)
+        if self._dirty:
+            self._mutation_seq += 1
 
 
 # P1-F: Single source of truth for per-object undo/redo stack depth.

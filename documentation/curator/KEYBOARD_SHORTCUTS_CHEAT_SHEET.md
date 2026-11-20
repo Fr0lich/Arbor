@@ -27,7 +27,9 @@
 ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
 │ [ CTRL ] + [ K ]                │ OMNI-SEARCH & COMMAND PALETTE (Type #ID or command name)    │
 │ [ CTRL ] + [ F ]                │ JUMP TO SEARCH BAR (Type genus, species, or accession #)    │
-│ [ CTRL ] + [ G ]                │ FILTER MENU (Show only unreviewed, problem cards, or photos)│
+│ [ CTRL ] + [ G ]                │ FILTER OBJECTS MENU (Filter by status, problem, or location)│
+│ [ CTRL ] + [ SHIFT ] + [ F ]    │ HISTORICAL FILTER TAB (Search historical ledger books)      │
+│ [ 🎯 Hallway Follow-Up ]        │ 1-CLICK PRESET IN FILTER (Shows vault-reviewed items with flags)
 │ [ ALT ] + [ ← ]  /  [ → ]       │ BROWSING HISTORY (Go back or forward in recent records)     │
 └─────────────────────────────────┴─────────────────────────────────────────────────────────────┘
 ```
@@ -42,6 +44,8 @@
 ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
 │ [ CTRL ] + [ E ]  or  [ I ]     │ JUMP TO FIRST FORM FIELD (Start typing botanical details)   │
 │ [ CTRL ] + [ L ]  or  [ F4 ]    │ JUMP TO STORAGE LOCATION (Start typing Cabinet or Shelf)    │
+│ [ CTRL ] + [ ALT ] + [ K ]      │ APPLY STORAGE PRESET (Stamps saved Building/Cabinet/Shelf)  │
+│ [ F3 ]                          │ FOCUS PROBLEM CHECKBOXES (Then press Space to toggle)       │
 │ [ CTRL ] + [ Z ]  /  [ Y ]      │ UNDO / REDO (Reverts or re-applies your last text change)   │
 │ [ CTRL ] + [ SHIFT ] + [ M ]    │ INSERT `unknown:missing` (?m) - Missing from paper label    │
 │ [ CTRL ] + [ SHIFT ] + [ I ]    │ INSERT `unknown:indecipherable` (?i) - Unreadable / damaged │
@@ -81,7 +85,7 @@
 | **`[ PROV ]`** | **Amber** | Collector name, date, or locality missing | `Collector_Problem = TRUE` / `Date_Problem = TRUE` |
 | **`[ BOX ]`** | **Brown** | Storage box mismatch, damaged housing | `Box_Label_Problem = TRUE` |
 | **`[ IMG ]`** | **Blue** | Photo scan is missing, blurry, or unlinked | `Images_Problem = TRUE` / `Images_Missing = TRUE` |
-| **`[ CFCT ]`** | **Purple**| Historical ledger book or GBIF disagrees | Mismatch against loaded Historical Books |
+| **`[ CFCT ]`** | **Slate Blue**| Historical ledger book or GBIF disagrees | Mismatch against loaded Historical Books |
 | **`[ UNREV ]`** | **Gray** | New or pending record waiting for review | `Reviewed = FALSE` (or blank) |
 
 ---

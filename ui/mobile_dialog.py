@@ -63,11 +63,13 @@ class MobileDialog:
             on_end_session=self._end_session,
             on_edit=self._on_mobile_edit,
             reuse_server=self.server,
+            parent_ui=self.parent_ui,
         )
 
-        # Store server reference on parent UI and app state for future reuse
-        self.parent_ui._mobile_server_instance = self.panel.server
-        self.app_state._mobile_server_instance = self.panel.server
+        # Store server reference on parent UI and app state if already running
+        if self.panel.server is not None:
+            self.parent_ui._mobile_server_instance = self.panel.server
+            self.app_state._mobile_server_instance = self.panel.server
 
         self.win.protocol("WM_DELETE_WINDOW", self._end_session)
 
@@ -129,6 +131,23 @@ class MobileDialog:
                         self.parent_ui.save_database()
 
         self.win.destroy()
+
+        # Notify desktop curator if REV+ERR specimens are ready for office follow-up
+        try:
+            df_obs = getattr(self.app_state, "df_obs", None)
+            if df_obs is not None and not df_obs.empty and "Reviewed" in df_obs.columns:
+                rev_mask = df_obs["Reviewed"].fillna(False).astype(bool)
+                prob_cols = [c for c in df_obs.columns if c.endswith("_Problem") or c == "Other_problem"]
+                if prob_cols:
+                    prob_mask = df_obs[prob_cols].fillna(False).astype(bool).any(axis=1)
+                    rev_err_count = int((rev_mask & prob_mask).sum())
+                    if rev_err_count > 0 and hasattr(self.parent_ui, "show_toast"):
+                        self.parent_ui.show_toast(
+                            f"Mobile sync complete · {rev_err_count} specimen(s) ready for Hallway Follow-Up (REV+ERR)",
+                            "info",
+                        )
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Edit callback — notify desktop UI of each incoming mobile edit

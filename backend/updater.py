@@ -373,6 +373,12 @@ def execute_swap_and_restart(app=None):
 
     # Step 4: Terminate current process cleanly
     if app and hasattr(app, "root") and app.root.winfo_exists():
-        app.root.after(100, lambda: sys.exit(0))
+        def _clean_exit():
+            try:
+                app.root.quit()
+                app.root.destroy()
+            except Exception:
+                pass
+        app.root.after(100, _clean_exit)
     else:
         sys.exit(0)

@@ -649,14 +649,6 @@ class RegistryPanel:
                 if frame.winfo_manager() == "grid":
                     frame.grid_remove()
 
-        if focus_active:
-            for field_name, check_var in ui.focus_visibility_vars.items():
-                frame = ui.reg_row_frames.get(field_name)
-                if frame and not check_var.get():
-                    if frame.winfo_manager() == "grid":
-                        visible_count -= 1
-                    frame.grid_remove()
-
         if hasattr(ui, "no_problems_msg_label"):
             if focus_active and visible_count <= 0:
                 ui.no_problems_msg_label.config(text="No fields visible in Focus mode.")

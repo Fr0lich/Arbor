@@ -246,9 +246,9 @@ def test_historical_resolver_logging():
             log_row = main_app.app.df_log.iloc[0]
             assert log_row["Action"] == "RESOLVE_HISTORICAL_CONFLICT"
             assert log_row["ChangedFields"] == "Genus"
-            assert log_row["ChangedValues"] == 'Genus: "CurrentGenus"  "OldGenus1"'
+            assert log_row["ChangedValues"] == 'Genus: "CurrentGenus" -> "OldGenus1"'
             assert log_row["ProblemsChanged"] == "Genus_Problem"
-            assert log_row["ProblemsChangedValues"] == 'Genus_Problem: "True"  "False"'
+            assert log_row["ProblemsChangedValues"] == 'Genus_Problem: "True" -> "False"'
     finally:
         root.destroy()
 

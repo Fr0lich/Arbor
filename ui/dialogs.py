@@ -1063,17 +1063,24 @@ class StartupDialog:
         CreateCollectionDialog(self.win, self.app, self.on_new_db_created)
 
     def load_demo_project(self):
-        demo_path = os.path.abspath(os.path.join("data", "demo_collection.xlsx"))
+        import utils
+        demo_path = utils.get_resource_path(os.path.join("data", "demo_collection.xlsx"))
+        if not os.path.exists(demo_path):
+            demo_path = os.path.abspath(os.path.join("data", "demo_collection.xlsx"))
         if not os.path.exists(demo_path):
             try:
                 from scripts.create_demo_dataset import create_demo_subset
                 create_demo_subset()
+                demo_path = os.path.abspath(os.path.join("data", "demo_collection.xlsx"))
             except Exception as e:
                 messagebox.showerror("Demo Not Found", f"Could not create demo dataset:\n{e}", parent=self.win)
                 return
         self.db_path_var.set(demo_path)
         self.db_var.set("Økonomisk Botanisk")
-        self.image_mode.set("online")
+        if hasattr(self, "_set_image_mode"):
+            self._set_image_mode("online")
+        else:
+            self.image_mode.set("online")
         self._refresh_launch_state()
         if hasattr(self, "ready_status_label"):
             self.ready_status_label.config(
@@ -1146,9 +1153,13 @@ class StartupDialog:
 
         # Set image mode properties for main to read
         mode = self.image_mode.get()
-        if mode == "folder" and not self.image_folder_var.get():
-            messagebox.showerror("Error", "Please select a local image directory or switch to Online/Offline mode.")
-            return False
+        if mode == "folder" and not self.image_folder_var.get().strip():
+            # Graceful offline-first fallback when user didn't pick a local image folder
+            mode = "offline"
+            if hasattr(self, "_set_image_mode"):
+                self._set_image_mode("offline")
+            else:
+                self.image_mode.set("offline")
 
         if mode == "folder":
             import config
@@ -1178,11 +1189,14 @@ class StartupDialog:
         self.win.destroy()
 
     def show_help(self):
-        from ui.help_dialogs import show_main_help
+        from ui.help_dialogs import show_main_help, show_shortcuts
 
         menu = tk.Menu(self.win, tearoff=0)
-        menu.add_command(label="Setup Help", command=self._show_setup_help_msg)
-        menu.add_command(label="User Guide", command=lambda: show_main_help(self.win))
+        menu.add_command(label="🧭 Getting Started & Setup Guide", command=self._show_setup_help_msg)
+        menu.add_separator()
+        menu.add_command(label="📖 Desktop Work Manual", command=lambda: show_main_help(self.win, initial_tab="desktop"))
+        menu.add_command(label="📱 Mobile Vault Guide", command=lambda: show_main_help(self.win, initial_tab="mobile"))
+        menu.add_command(label="⌨️ Keyboard Shortcuts", command=lambda: show_shortcuts(self.win))
 
         try:
             if hasattr(self, "help_btn") and self.help_btn.winfo_exists():
@@ -1201,22 +1215,168 @@ class StartupDialog:
                 pass
 
     def _show_setup_help_msg(self):
-        messagebox.showinfo(
-            "Setup Help",
-            "SETUP STEPS\n\n"
-            "REQUIRED\n"
-            "1. Select or Create a Database\n"
-            "   - Choose a .xlsx, .db, or .sqlite file\n"
-            "   - Select or verify the matching Configuration Profile\n"
-            "   - Or click '+ Create New Database' to build a custom field profile\n\n"
-            "RECOMMENDED\n"
-            "2. Choose Image Source\n"
-            "   - Online = images loaded from remote repository\n"
-            "   - Local Directory = specify local high-res photo folder\n"
-            "   - Offline = work without specimen imagery\n\n"
-            "Click LAUNCH SYSTEM to start, or Mobile Companion to serve over LAN.\n\n"
-            "TIP: You can change all settings later in the main application."
-        )
+        """Display a calm, styled Arbor Setup Guide window (replaces raw system messagebox)."""
+        import utils
+        from ui.help_dialogs import show_main_help
+
+        win = tk.Toplevel(self.win)
+        win.title("Arbor — Getting Started & Setup Guide")
+        win.transient(self.win)
+        win.configure(bg=self.C_BG)
+        utils.center_and_fit_toplevel(win, sc(580), sc(520))
+        win.bind("<Escape>", lambda e: win.destroy())
+
+        body = tk.Frame(win, bg=self.C_BG, padx=sc(22), pady=sc(18))
+        body.pack(fill="both", expand=True)
+
+        tk.Label(
+            body,
+            text="Getting Started with Arbor",
+            font=("Lora", sc(15), "bold"),
+            bg=self.C_BG,
+            fg=self.C_ON_SURFACE,
+            anchor="w",
+        ).pack(fill="x")
+
+        tk.Label(
+            body,
+            text="Three simple steps to open your collection — nothing can be broken from this screen.",
+            font=("Inter", sc(9.5)),
+            bg=self.C_BG,
+            fg=self.C_MUTED,
+            anchor="w",
+        ).pack(fill="x", pady=(sc(2), sc(14)))
+
+        steps = [
+            (
+                "1",
+                "Pick Your Excel Collection (or Try the Demo)",
+                "Select your .xlsx museum workbook and matching layout profile, or click '+ Create New Database'. "
+                "Just learning? Click '🌿 Explore Demo Project' to practice on 220 safe sample specimens first."
+            ),
+            (
+                "2",
+                "Choose How to View Specimen Photos (Optional)",
+                "Pick Online scans, a Local Folder of photos, or Offline mode. "
+                "Not sure? You can skip this — Arbor safely starts in Offline mode and you can change it anytime."
+            ),
+            (
+                "3",
+                "Work at Your Desk or Walk the Vault Aisles",
+                "Click LAUNCH SYSTEM for normal desktop curation, or Mobile Companion to connect your phone "
+                "for 1-tap hallway shelf auditing (works even in concrete vaults without internet)."
+            ),
+        ]
+
+        for num, title, desc in steps:
+            card = tk.Frame(
+                body,
+                bg=self.C_CARD,
+                highlightbackground=self.C_OUTLINE,
+                highlightthickness=1,
+                padx=sc(12),
+                pady=sc(10),
+            )
+            card.pack(fill="x", pady=sc(5))
+
+            hdr = tk.Frame(card, bg=self.C_CARD)
+            hdr.pack(fill="x")
+
+            tk.Label(
+                hdr,
+                text=f" {num} ",
+                font=("JetBrains Mono", sc(9), "bold"),
+                bg="#3a7d44",
+                fg="#ffffff",
+                padx=sc(4),
+                pady=sc(1),
+            ).pack(side="left", padx=(0, sc(8)))
+
+            tk.Label(
+                hdr,
+                text=title,
+                font=("Inter", sc(10), "bold"),
+                bg=self.C_CARD,
+                fg=self.C_ON_SURFACE,
+                anchor="w",
+            ).pack(side="left", fill="x", expand=True)
+
+            tk.Label(
+                card,
+                text=desc,
+                font=("Inter", sc(9)),
+                bg=self.C_CARD,
+                fg=self.C_MUTED,
+                wraplength=sc(500),
+                justify="left",
+                anchor="w",
+            ).pack(fill="x", pady=(sc(5), 0))
+
+        footer = tk.Frame(body, bg=self.C_BG)
+        footer.pack(fill="x", side="bottom", pady=(sc(14), 0))
+
+        def _load_demo_and_close():
+            win.destroy()
+            self.load_demo_project()
+
+        tk.Button(
+            footer,
+            text="🌿 Load Demo Project",
+            font=("Inter", sc(9), "bold"),
+            bg="#eaf5ec",
+            fg="#1b5e20",
+            activebackground="#d4ecd9",
+            relief="flat",
+            highlightbackground="#3a7d44",
+            highlightthickness=1,
+            padx=sc(10),
+            pady=sc(5),
+            cursor="hand2",
+            command=_load_demo_and_close,
+        ).pack(side="left", padx=(0, sc(6)))
+
+        tk.Button(
+            footer,
+            text="📖 Desktop Guide",
+            font=("Inter", sc(9)),
+            bg=self.C_CARD,
+            fg=self.C_ON_SURFACE,
+            relief="flat",
+            highlightbackground=self.C_OUTLINE,
+            highlightthickness=1,
+            padx=sc(10),
+            pady=sc(5),
+            cursor="hand2",
+            command=lambda: (win.destroy(), show_main_help(self.win, initial_tab="desktop")),
+        ).pack(side="left", padx=(0, sc(6)))
+
+        tk.Button(
+            footer,
+            text="📱 Phone Guide",
+            font=("Inter", sc(9)),
+            bg=self.C_CARD,
+            fg=self.C_ON_SURFACE,
+            relief="flat",
+            highlightbackground=self.C_OUTLINE,
+            highlightthickness=1,
+            padx=sc(10),
+            pady=sc(5),
+            cursor="hand2",
+            command=lambda: (win.destroy(), show_main_help(self.win, initial_tab="mobile")),
+        ).pack(side="left")
+
+        tk.Button(
+            footer,
+            text="Close",
+            font=("Inter", sc(9), "bold"),
+            bg=self.C_PRIMARY,
+            fg="#ffffff",
+            relief="flat",
+            padx=sc(14),
+            pady=sc(5),
+            cursor="hand2",
+            command=win.destroy,
+        ).pack(side="right")
 
 
 

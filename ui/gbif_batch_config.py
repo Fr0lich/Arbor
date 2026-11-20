@@ -591,25 +591,28 @@ class GBIFBatchConfigDialog(tk.Toplevel):
 
         def worker():
             import backend.gbif
+            stats = {}
             try:
                 diff_results = backend.gbif.batch_gbif_match(
                     items,
                     progress_callback=on_progress,
                     cancel_event=self.cancel_event,
-                    exclude_undetermined=exclude_undet
+                    exclude_undetermined=exclude_undet,
+                    stats_out=stats
                 )
             except Exception as e:
                 diff_results = []
+                stats["error_count"] = stats.get("error_count", 0) + 1
                 print(f"Error in batch GBIF worker: {e}")
 
             if not self.cancel_event.is_set():
                 from backend.task_queue import app_worker
-                app_worker.task_queue.put(lambda: self._on_analysis_complete(diff_results))
+                app_worker.task_queue.put(lambda: self._on_analysis_complete(diff_results, stats))
 
         self._worker_thread = threading.Thread(target=worker, daemon=True)
         self._worker_thread.start()
 
-    def _on_analysis_complete(self, diff_results):
+    def _on_analysis_complete(self, diff_results, stats=None):
         if not self.winfo_exists():
             return
         parent_ref = self.parent
@@ -619,11 +622,21 @@ class GBIFBatchConfigDialog(tk.Toplevel):
         self.destroy()
 
         if not diff_results:
-            messagebox.showinfo(
-                "GBIF Review",
-                "All checked taxonomy records are up to date with GBIF (no changes detected).",
-                parent=parent_ref
-            )
+            err_count = (stats or {}).get("error_count", 0)
+            total_taxa = (stats or {}).get("total_taxa", 0)
+            if err_count > 0:
+                messagebox.showwarning(
+                    "GBIF Offline or Unreachable",
+                    f"Could not reach the GBIF online catalog ({err_count} of {total_taxa or err_count} lookups failed).\n\n"
+                    "Please check your internet connection and try again.",
+                    parent=parent_ref
+                )
+            else:
+                messagebox.showinfo(
+                    "GBIF Review",
+                    "All checked taxonomy records are up to date with GBIF (no changes detected).",
+                    parent=parent_ref
+                )
             return
 
         from ui.gbif_review import GBIFReviewDialog

@@ -1168,7 +1168,7 @@ class MobileServer:
                 session['token'] = token
                 session['session_id'] = sid
                 session['authenticated'] = True
-                return redirect(url_for('index', token=token))
+                return redirect(url_for('index_v2', token=token))
 
             error = None
             if request.method == 'POST':
@@ -1184,7 +1184,7 @@ class MobileServer:
                     session['token'] = token
                     session['session_id'] = sid
                     session['authenticated'] = True
-                    return redirect(url_for('index', token=token))
+                    return redirect(url_for('index_v2', token=token))
                 else:
                     lockout_resp = self._record_failure(ip)
                     if lockout_resp:
@@ -1321,6 +1321,7 @@ class MobileServer:
             sw_script = """
 const CACHE_NAME = 'arbor-companion-v2';
 const ASSETS = [
+    '/v2',
     '/login',
     'https://cdn.tailwindcss.com',
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap'
@@ -1328,7 +1329,9 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+        caches.open(CACHE_NAME).then((cache) =>
+            Promise.allSettled(ASSETS.map((url) => cache.add(url).catch(() => {})))
+        )
     );
     self.skipWaiting();
 });
@@ -1349,9 +1352,31 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
-    if (url.pathname === '/' || url.pathname === '/v2' || url.pathname.startsWith('/api/') || event.request.method !== 'GET') {
+    if (url.pathname.startsWith('/api/') || event.request.method !== 'GET') {
         return;
     }
+
+    // App shell network-first with cache fallback for /v2 and /
+    if (url.pathname === '/v2' || url.pathname === '/') {
+        event.respondWith(
+            fetch(event.request)
+                .then((networkResponse) => {
+                    if (networkResponse && networkResponse.ok && !networkResponse.redirected) {
+                        const cloned = networkResponse.clone();
+                        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cloned));
+                    }
+                    return networkResponse;
+                })
+                .catch(() => {
+                    return caches.match('/v2').then((cached) => {
+                        if (cached) return cached;
+                        return caches.match(event.request);
+                    });
+                })
+        );
+        return;
+    }
+
     // Stale-While-Revalidate strategy for static assets
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
@@ -3086,8 +3111,18 @@ INDEX_TEMPLATE = """
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
+  <style id="arbor-offline-fallback">
+    .hidden { display: none !important; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f3f3f3; color: #191e1a; }
+    button { cursor: pointer; }
+    input, select, textarea { box-sizing: border-box; }
+    .fixed { position: fixed; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .flex { display: flex; }
+    .grid { display: grid; }
+  </style>
   <script>
-    tailwind.config = {
+    if (typeof tailwind !== 'undefined') tailwind.config = {
       theme: {
         extend: {
           colors: {
@@ -7717,8 +7752,18 @@ INDEX_TEMPLATE_V2 = """
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
 
+  <style id="arbor-offline-fallback">
+    .hidden { display: none !important; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f3f3f3; color: #191e1a; }
+    button { cursor: pointer; }
+    input, select, textarea { box-sizing: border-box; }
+    .fixed { position: fixed; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .flex { display: flex; }
+    .grid { display: grid; }
+  </style>
   <script>
-    tailwind.config = {
+    if (typeof tailwind !== 'undefined') tailwind.config = {
       theme: {
         extend: {
           colors: {
@@ -7910,7 +7955,55 @@ INDEX_TEMPLATE_V2 = """
           </div>
         </div>
 
-        <!-- 1b. Vault Storage Location Quick Filter Bar (Collapsed by default during inventory) -->
+        <!-- 1b. In-Vault Audit Station Launchpad & Armed Station Banner -->
+        <div id="auditStationLaunchpad" class="px-3.5 py-1.5 bg-emerald-50/80 border-t border-b border-fern/20 text-xs">
+          <!-- Active Station Pill (shown when armed) -->
+          <div id="activeStationPill" class="hidden flex items-center justify-between">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="text-xs">🎯</span>
+              <span class="font-mono text-[10px] text-muted">Auditing:</span>
+              <span class="font-mono text-xs font-bold text-fern-dark truncate" id="activeStationPillText">Lid's hus · Cab 21 · Sh 01</span>
+            </div>
+            <button type="button" onclick="openStationSetup()" class="text-[10px] font-mono text-fern-dark hover:underline font-bold px-1.5 py-0.5 rounded hover:bg-emerald-100">
+              [Change Shelf]
+            </button>
+          </div>
+
+          <!-- Setup Card (shown when unanchored or when editing station) -->
+          <div id="stationSetupCard" class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-[10.5px] font-bold text-fern-dark flex items-center gap-1">
+                <span>📍</span>
+                <span>Active Audit Station</span>
+              </span>
+              <button type="button" onclick="dismissStationSetup()" class="text-[10px] font-mono text-muted hover:text-ink">
+                Skip & Browse
+              </button>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5 text-xs font-mono">
+              <div class="col-span-2 bg-white rounded border border-bordercol px-2 py-0.5">
+                <span class="text-[9px] uppercase font-bold text-muted block">Bldg</span>
+                <select id="launchBldgSelect" class="w-full bg-transparent font-bold text-ink outline-none text-xs">
+                  <option value="Lid's hus">Lid's hus</option>
+                  <option value="Økern">Økern</option>
+                </select>
+              </div>
+              <div class="bg-white rounded border border-bordercol px-2 py-0.5">
+                <span class="text-[9px] uppercase font-bold text-muted block">Cab</span>
+                <input type="text" inputmode="numeric" id="launchCabInput" placeholder="21" class="w-full bg-transparent font-bold text-ink outline-none text-xs" />
+              </div>
+              <div class="bg-white rounded border border-bordercol px-2 py-0.5">
+                <span class="text-[9px] uppercase font-bold text-muted block">Shelf</span>
+                <input type="text" inputmode="numeric" id="launchShelfInput" placeholder="01" class="w-full bg-transparent font-bold text-ink outline-none text-xs" />
+              </div>
+            </div>
+            <button type="button" onclick="applyStationSetup()" class="w-full py-1.5 px-3 bg-fern hover:bg-fern-dark text-white rounded text-xs font-mono font-bold shadow-2xs tap-active flex items-center justify-center gap-1.5">
+              <span>🚀 Arm Station & Audit</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 1c. Vault Storage Location Quick Filter Bar (Collapsed by default during inventory) -->
         <div id="storageLocationFilterBar" class="hidden px-3.5 py-1.5 bg-stone-50 border-t border-stone-200 flex items-center gap-2">
           <span class="text-[11px] font-mono font-semibold text-ink-muted shrink-0">📍 Vault Loc:</span>
           <div class="flex-1 flex items-center gap-1.5 min-w-0">
@@ -7951,8 +8044,11 @@ INDEX_TEMPLATE_V2 = """
 
         <!-- Metrics & Sort Row -->
         <div class="px-3.5 py-2 bg-alabaster/70 border-t border-bordercol flex items-center justify-between text-[11px]">
-          <div class="font-mono text-ink-muted">
-            Showing <span class="font-bold text-ink" id="matchingCount">0</span> matching records
+          <div class="flex items-center gap-2 font-mono text-ink-muted">
+            <span>Showing <span class="font-bold text-ink" id="matchingCount">0</span> matching records</span>
+            <button type="button" id="btnOpenStationSetup" onclick="openStationSetup()" class="hidden text-[10px] font-mono font-bold text-fern-dark hover:underline px-1.5 py-0.5 rounded bg-emerald-50 border border-fern/30">
+              📍 Set Target Shelf
+            </button>
           </div>
           <div class="flex items-center space-x-1.5">
             <div class="relative inline-flex items-center">
@@ -8095,6 +8191,7 @@ INDEX_TEMPLATE_V2 = """
           <button id="tabBtnLocation" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[36px] flex items-center justify-center gap-1.5 text-muted tap-highlight-transparent" data-tab-index="1" onclick="switchDetailTab('location')">
             <svg class="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
             <span>Location</span>
+            <span class="font-mono text-[10px] font-bold px-1.5 rounded-full shadow-2xs hidden" id="tabLocationBadge"></span>
           </button>
           <button id="tabBtnProblems" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[36px] flex items-center justify-center gap-1.5 text-muted tap-highlight-transparent" data-tab-index="2" onclick="switchDetailTab('problems')">
             <svg class="w-3.5 h-3.5 text-brick stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
@@ -8298,25 +8395,28 @@ INDEX_TEMPLATE_V2 = """
       </div>
 
       <!-- Sticky Action Bar in Detail View: Mark Reviewed & Flag Issue -->
-      <footer class="flex-none bg-surface border-t border-bordercol px-4 py-2.5 flex items-center justify-between gap-3 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-30">
-        <button
-          type="button"
-          id="btnDetailMarkReviewed"
-          onclick="toggleReviewed()"
-          class="flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-50 text-fern-dark border-fern hover:bg-emerald-100"
-        >
-          <span id="btnDetailReviewedIcon" class="text-sm">✓</span>
-          <span id="btnDetailReviewedLabel">Mark Reviewed</span>
-        </button>
-        <button
-          type="button"
-          onclick="openAddDiscrepancyModal()"
-          class="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-sans font-semibold text-xs flex items-center justify-center gap-1.5 tap-active"
-          title="Flag Physical Issue"
-        >
-          <span>⚑</span>
-          <span>Flag Issue</span>
-        </button>
+      <footer class="flex-none bg-surface border-t border-bordercol px-4 py-2.5 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-30">
+        <div class="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            id="btnDetailMarkReviewed"
+            onclick="handleReviewButtonClick()"
+            class="flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-50 text-fern-dark border-fern hover:bg-emerald-100"
+          >
+            <span id="btnDetailReviewedIcon" class="text-sm">✓</span>
+            <span id="btnDetailReviewedLabel">Mark Reviewed</span>
+          </button>
+          <button
+            type="button"
+            onclick="openAddDiscrepancyModal()"
+            class="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-sans font-semibold text-xs flex items-center justify-center gap-1.5 tap-active"
+            title="Flag Physical Issue"
+          >
+            <span>⚑</span>
+            <span>Flag Issue</span>
+          </button>
+        </div>
+        <p id="reviewHelperText" class="text-[10px] font-sans text-subdued text-center mt-1.5 truncate"></p>
       </footer>
     </div>
 
@@ -8333,7 +8433,7 @@ INDEX_TEMPLATE_V2 = """
           </button>
           <div class="flex flex-col min-w-0">
             <span class="font-serif font-bold text-sm text-ink leading-tight truncate">Batch Location Registrator</span>
-            <span class="font-mono text-[10px] text-muted truncate">Rapid shelf assignment · vascular_plants.csv</span>
+            <span class="font-mono text-[10px] text-muted truncate">Rapid shelf assignment · Active Collection</span>
           </div>
         </div>
         <div class="flex items-center gap-1.5">
@@ -8609,10 +8709,41 @@ INDEX_TEMPLATE_V2 = """
             </div>
           </div>
 
-          <div class="pt-2 border-t border-tonal2 flex justify-end gap-2">
-            <button type="button" onclick="closeSettingsModal()" class="px-3 py-1.5 border border-bordercol text-ink-muted hover:bg-surface rounded text-xs font-medium">Cancel</button>
-            <button type="button" onclick="saveSettings()" class="px-3 py-1.5 bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold">Save</button>
+          <div class="pt-2 border-t border-tonal2 flex items-center justify-between gap-2">
+            <button type="button" onclick="closeSettingsModal(); openWalkthroughModal(0);" class="px-2.5 py-1.5 border border-fern/40 bg-fern-light text-fern hover:bg-fern hover:text-white rounded text-[11px] font-bold transition-colors">🎓 3-Step Guide</button>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="closeSettingsModal()" class="px-3 py-1.5 border border-bordercol text-ink-muted hover:bg-surface rounded text-xs font-medium">Cancel</button>
+              <button type="button" onclick="saveSettings()" class="px-3 py-1.5 bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold">Save</button>
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: First-Time 3-Step Hallway Walkthrough -->
+    <div id="walkthroughModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-surface border border-bordercol rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div class="px-4 py-3 bg-fern text-white flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🎓</span>
+            <span class="font-sans font-bold text-xs tracking-wide uppercase">Hallway Quick Guide</span>
+          </div>
+          <button type="button" onclick="closeWalkthroughModal(true)" class="text-white/80 hover:text-white text-xs font-bold px-2 py-0.5 rounded">Skip</button>
+        </div>
+        <div class="p-4 space-y-3">
+          <div id="walkthroughStepBadge" class="inline-block px-2 py-0.5 rounded-full bg-fern-light text-fern font-mono text-[10px] font-bold">STEP 1 OF 3</div>
+          <h3 id="walkthroughTitle" class="font-sans font-bold text-base text-ink leading-snug">Search by Accession Number</h3>
+          <p id="walkthroughBody" class="font-sans text-xs text-ink-muted leading-relaxed"></p>
+          <div id="walkthroughCallout" class="p-2.5 rounded-lg bg-tonal border border-bordercol font-mono text-[11px] text-ink"></div>
+          <div class="flex items-center justify-center gap-1.5 pt-1">
+            <span id="wtDot0" class="w-2 h-2 rounded-full bg-fern"></span>
+            <span id="wtDot1" class="w-2 h-2 rounded-full bg-stone-300"></span>
+            <span id="wtDot2" class="w-2 h-2 rounded-full bg-stone-300"></span>
+          </div>
+        </div>
+        <div class="px-4 py-3 bg-tonal border-t border-bordercol flex items-center justify-between gap-2">
+          <button id="wtBackBtn" type="button" onclick="prevWalkthroughSlide()" class="hidden px-3 py-1.5 border border-bordercol bg-surface text-ink-muted rounded text-xs font-semibold">← Back</button>
+          <button id="wtNextBtn" type="button" onclick="nextWalkthroughSlide()" class="ml-auto px-4 py-2 bg-fern hover:bg-fern-dark text-white rounded-lg text-xs font-bold shadow-xs">Next →</button>
         </div>
       </div>
     </div>
@@ -9145,11 +9276,159 @@ INDEX_TEMPLATE_V2 = """
     }
 
     // -------------------------------------------------------------
+    // AUDIT STATION LAUNCHPAD
+    // -------------------------------------------------------------
+    function getSchemaBuildingChoices() {
+      let bldgChoices = [];
+      if (state.activeSchema && state.activeSchema.ui_sections && Array.isArray(state.activeSchema.ui_sections.location)) {
+        const bldgField = state.activeSchema.ui_sections.location.find(f => f && f.name === 'Building' && Array.isArray(f.choices));
+        if (bldgField) bldgChoices = bldgField.choices;
+      }
+      if ((!bldgChoices || bldgChoices.length === 0) && state.activeSchema && state.activeSchema.vocabulary && Array.isArray(state.activeSchema.vocabulary.Building)) {
+        bldgChoices = state.activeSchema.vocabulary.Building;
+      }
+      if (!bldgChoices || bldgChoices.length === 0) {
+        bldgChoices = ['Økern', "Lid's hus"];
+      }
+      return bldgChoices;
+    }
+
+    function populateLaunchBuildingOptions(selectedVal = null) {
+      const bldgSelect = document.getElementById('launchBldgSelect');
+      if (!bldgSelect) return;
+      const prev = selectedVal || bldgSelect.value || (state.armedLocation && state.armedLocation.building) || '';
+      const choices = Array.from(new Set([...getSchemaBuildingChoices(), prev])).filter(Boolean);
+      bldgSelect.innerHTML = choices.map(b => `<option value="${b.replace(/"/g, '&quot;')}">${b}</option>`).join('');
+      if (prev && choices.includes(prev)) {
+        bldgSelect.value = prev;
+      }
+    }
+
+    function initStationLaunchpad() {
+      let armed = state.armedLocation;
+      if (!armed) {
+        try {
+          const raw = localStorage.getItem('arbor_armed_location');
+          if (raw) {
+            armed = JSON.parse(raw);
+            state.armedLocation = armed;
+          }
+        } catch (e) {}
+      }
+
+      const launchpad = document.getElementById('auditStationLaunchpad');
+      const activePill = document.getElementById('activeStationPill');
+      const pillText = document.getElementById('activeStationPillText');
+      const setupCard = document.getElementById('stationSetupCard');
+      const bldgSelect = document.getElementById('launchBldgSelect');
+      const cabInput = document.getElementById('launchCabInput');
+      const shelfInput = document.getElementById('launchShelfInput');
+      const reopenBtn = document.getElementById('btnOpenStationSetup');
+
+      if (!launchpad || !activePill || !setupCard) return;
+
+      populateLaunchBuildingOptions(armed ? armed.building : null);
+
+      const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
+
+      if (hasArmed) {
+        launchpad.classList.remove('hidden');
+        if (reopenBtn) reopenBtn.classList.add('hidden');
+        const bldg = armed.building || (bldgSelect ? bldgSelect.value : "Lid's hus");
+        const cab = armed.cabinet ? String(armed.cabinet).padStart(2, '0') : '—';
+        const shelf = armed.shelf ? String(armed.shelf).padStart(2, '0') : '—';
+        if (pillText) pillText.textContent = `${bldg} · Cab ${cab} · Sh ${shelf}`;
+        activePill.classList.remove('hidden');
+        setupCard.classList.add('hidden');
+
+        if (bldgSelect && armed.building) bldgSelect.value = armed.building;
+        if (cabInput && armed.cabinet) cabInput.value = armed.cabinet;
+        if (shelfInput && armed.shelf) shelfInput.value = armed.shelf;
+      } else {
+        launchpad.classList.remove('hidden');
+        if (reopenBtn) reopenBtn.classList.add('hidden');
+        activePill.classList.add('hidden');
+        setupCard.classList.remove('hidden');
+      }
+    }
+
+    function openStationSetup() {
+      const launchpad = document.getElementById('auditStationLaunchpad');
+      const activePill = document.getElementById('activeStationPill');
+      const setupCard = document.getElementById('stationSetupCard');
+      const cabInput = document.getElementById('launchCabInput');
+      const reopenBtn = document.getElementById('btnOpenStationSetup');
+      if (launchpad) launchpad.classList.remove('hidden');
+      if (reopenBtn) reopenBtn.classList.add('hidden');
+      if (activePill) activePill.classList.add('hidden');
+      if (setupCard) setupCard.classList.remove('hidden');
+      if (cabInput) {
+        cabInput.focus();
+        cabInput.select();
+      }
+    }
+
+    function dismissStationSetup() {
+      const launchpad = document.getElementById('auditStationLaunchpad');
+      const setupCard = document.getElementById('stationSetupCard');
+      const activePill = document.getElementById('activeStationPill');
+      const reopenBtn = document.getElementById('btnOpenStationSetup');
+      const armed = state.armedLocation;
+      const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
+
+      if (hasArmed) {
+        if (setupCard) setupCard.classList.add('hidden');
+        if (activePill) activePill.classList.remove('hidden');
+      } else {
+        if (setupCard) setupCard.classList.add('hidden');
+        if (launchpad) launchpad.classList.add('hidden');
+        if (reopenBtn) reopenBtn.classList.remove('hidden');
+      }
+    }
+
+    function applyStationSetup() {
+      const bldgSelect = document.getElementById('launchBldgSelect');
+      const cabInput = document.getElementById('launchCabInput');
+      const shelfInput = document.getElementById('launchShelfInput');
+
+      const bldg = bldgSelect ? bldgSelect.value : "Lid's hus";
+      let cab = cabInput ? cabInput.value.trim() : '';
+      let shelf = shelfInput ? shelfInput.value.trim() : '';
+
+      if (!cab && !shelf) {
+        showToast('Please enter at least a Cabinet or Shelf number');
+        return;
+      }
+
+      if (cab && /^[0-9]+$/.test(cab)) cab = cab.padStart(2, '0');
+      if (shelf && /^[0-9]+$/.test(shelf)) shelf = shelf.padStart(2, '0');
+
+      state.armedLocation = {
+        building: bldg,
+        floor: '1',
+        cabinet: cab,
+        shelf: shelf,
+        storedAs: ''
+      };
+      state.lastSavedLocation = { ...state.armedLocation };
+
+      try {
+        localStorage.setItem('arbor_armed_location', JSON.stringify(state.armedLocation));
+        localStorage.setItem('arbor_last_location', JSON.stringify(state.lastSavedLocation));
+      } catch (e) {}
+
+      initStationLaunchpad();
+      triggerHaptic('stepper');
+      showToast(`🎯 Station armed: Cab ${cab || '—'} · Sh ${shelf || '—'}`);
+    }
+
+    // -------------------------------------------------------------
     // INITIALIZATION & SSE CONNECTION
     // -------------------------------------------------------------
     async function init() {
       await initIndexedDB();
       applyFilterPillVisibility();
+      initStationLaunchpad();
       await fetchSchema();
       await fetchObjects();
       setupEventSource();
@@ -9179,7 +9458,23 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
+    let _v2ReconnectTimer = null;
+    let _v2ReconnectDelay = 2000;
+
+    function scheduleV2Reconnect() {
+      if (_v2ReconnectTimer) return;
+      _v2ReconnectTimer = setTimeout(() => {
+        _v2ReconnectTimer = null;
+        setupEventSource();
+      }, _v2ReconnectDelay);
+      _v2ReconnectDelay = Math.min(_v2ReconnectDelay * 1.5, 30000);
+    }
+
     function setupEventSource() {
+      if (_v2ReconnectTimer) {
+        clearTimeout(_v2ReconnectTimer);
+        _v2ReconnectTimer = null;
+      }
       if (eventSource) {
         try { eventSource.close(); } catch(e) {}
         eventSource = null;
@@ -9187,18 +9482,43 @@ INDEX_TEMPLATE_V2 = """
       const sseUrl = '/api/events' + (TOKEN ? '?token=' + encodeURIComponent(TOKEN) : '');
       eventSource = new EventSource(sseUrl);
       eventSource.onopen = () => {
+        _v2ReconnectDelay = 2000;
         flushQueuedMutations();
       };
       eventSource.onerror = () => {
         updateOfflineBannerQueueCount();
+        if (eventSource) {
+          try { eventSource.close(); } catch(e) {}
+          eventSource = null;
+        }
+        scheduleV2Reconnect();
       };
       eventSource.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data);
-          if (msg.type === 'record_updated') {
-            if (state.currentOid && String(msg.id) === String(state.currentOid)) {
-              fetchObjectDetail(state.currentOid, false);
+          const events = msg.type === 'batch' && Array.isArray(msg.events) ? msg.events : [msg];
+          let shouldRefreshList = false;
+          for (const evt of events) {
+            if (!evt || !evt.type) continue;
+            if (evt.type === 'record_updated' || evt.type === 'object_updated') {
+              const updatedId = String((evt.data && (evt.data.id || evt.data.oid)) || evt.id || '');
+              if (state.currentOid && updatedId && updatedId === String(state.currentOid)) {
+                fetchObjectDetail(state.currentOid, false);
+              }
+              shouldRefreshList = true;
+            } else if (evt.type === 'push_navigation') {
+              const targetId = String((evt.data && (evt.data.id || evt.data.oid)) || evt.id || '');
+              if (targetId && typeof openDetailView === 'function') {
+                openDetailView(targetId);
+                if (typeof showToast === 'function') showToast(`Opened #${targetId} from desktop`, 'info');
+              }
+            } else if (evt.type === 'session_ended') {
+              if (typeof showToast === 'function') {
+                showToast('Desktop mobile session ended — reconnect to continue syncing', 'warning');
+              }
             }
+          }
+          if (shouldRefreshList) {
             fetchObjects(false);
           }
         } catch(err) {}
@@ -9232,6 +9552,9 @@ INDEX_TEMPLATE_V2 = """
           }
           if (typeof populateDetailBuildingOptions === 'function') {
             populateDetailBuildingOptions();
+          }
+          if (typeof populateLaunchBuildingOptions === 'function') {
+            populateLaunchBuildingOptions();
           }
         }
       } catch(err) {
@@ -9491,6 +9814,7 @@ INDEX_TEMPLATE_V2 = """
       document.getElementById('listView').classList.remove('hidden');
       document.getElementById('detailView').classList.add('hidden');
       document.getElementById('batchLocationView').classList.add('hidden');
+      initStationLaunchpad();
       const searchBox = document.getElementById('searchBox');
       if (searchBox) {
         searchBox.value = '';
@@ -9591,6 +9915,24 @@ INDEX_TEMPLATE_V2 = """
           detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-50 text-fern-dark border-fern hover:bg-emerald-100 shadow-2xs';
           if (detailRevLabel) detailRevLabel.textContent = 'Mark Reviewed';
           if (detailRevIcon) detailRevIcon.textContent = '✓';
+        }
+      }
+
+      // Reassurance micro-copy
+      const helperEl = document.getElementById('reviewHelperText');
+      if (helperEl) {
+        if (state.isReviewed) {
+          if (hasFlags) {
+            helperEl.textContent = '✓ Location recorded. Issues flagged for desktop curation.';
+          } else {
+            helperEl.textContent = '✓ Location recorded & verified. Specimen clean.';
+          }
+        } else {
+          if (hasFlags) {
+            helperEl.textContent = 'Physical check needed. Unresolved issues will be preserved on review.';
+          } else {
+            helperEl.textContent = 'Verify physical label & location, then mark reviewed.';
+          }
         }
       }
 
@@ -9750,19 +10092,7 @@ INDEX_TEMPLATE_V2 = """
       const select = document.getElementById('detailBuildingSelect');
       if (!select) return;
 
-      let bldgChoices = [];
-      if (state.activeSchema && state.activeSchema.ui_sections && Array.isArray(state.activeSchema.ui_sections.location)) {
-        const bldgField = state.activeSchema.ui_sections.location.find(f => f && f.name === 'Building' && Array.isArray(f.choices));
-        if (bldgField) {
-          bldgChoices = bldgField.choices;
-        }
-      }
-      if ((!bldgChoices || bldgChoices.length === 0) && state.activeSchema && state.activeSchema.vocabulary && Array.isArray(state.activeSchema.vocabulary.Building)) {
-        bldgChoices = state.activeSchema.vocabulary.Building;
-      }
-      if (!bldgChoices || bldgChoices.length === 0) {
-        bldgChoices = ['Økern', "Lid's hus"];
-      }
+      const bldgChoices = getSchemaBuildingChoices();
 
       const activeVal = (currentBldg !== undefined && currentBldg !== null)
         ? String(currentBldg).trim()
@@ -9932,6 +10262,7 @@ INDEX_TEMPLATE_V2 = """
         localStorage.setItem('arbor_last_location', JSON.stringify(state.lastSavedLocation));
       } catch(e) {}
       updateArmedShelfBannerUI(state.currentRecord?.observation || {});
+      initStationLaunchpad();
     }
 
     function stampArmedLocation() {
@@ -9943,6 +10274,16 @@ INDEX_TEMPLATE_V2 = """
       }
       state.currentRecord.observation = state.currentRecord.observation || {};
       const obs = state.currentRecord.observation;
+
+      const prevLoc = {
+        Building: obs.Building,
+        Floor: obs.Floor,
+        Cabinet: obs.Cabinet,
+        Shelf: obs.Shelf,
+        'Stored as': obs['Stored as']
+      };
+      const curCab = String(obs.Cabinet || '').trim();
+      const wasRelocation = Boolean(curCab && curCab !== '—' && curCab !== String(armed.cabinet || '').trim());
 
       if (armed.building) { obs.Building = armed.building; markDirty('Building'); }
       if (armed.floor !== undefined && armed.floor !== '—') { obs.Floor = String(armed.floor); markDirty('Floor'); }
@@ -9957,7 +10298,31 @@ INDEX_TEMPLATE_V2 = """
       updateArmedShelfBannerUI(obs);
       triggerAutoSave();
       triggerHaptic('copy_prev');
-      showToast('📍 Stamped to armed target shelf');
+
+      const armedCab = String(armed.cabinet || '—').padStart(2, '0');
+      const armedShelf = String(armed.shelf || '—').padStart(2, '0');
+      if (wasRelocation) {
+        showToast(`⚠️ Relocated from Cab ${prevLoc.Cabinet || '?'} to Cab ${armedCab}`, {
+          actionText: '↩ Undo',
+          duration: 5000,
+          onAction: () => {
+            if (prevLoc.Building !== undefined) { obs.Building = prevLoc.Building; markDirty('Building'); }
+            if (prevLoc.Floor !== undefined) { obs.Floor = prevLoc.Floor; markDirty('Floor'); }
+            if (prevLoc.Cabinet !== undefined) { obs.Cabinet = prevLoc.Cabinet; markDirty('Cabinet'); }
+            if (prevLoc.Shelf !== undefined) { obs.Shelf = prevLoc.Shelf; markDirty('Shelf'); }
+            if (prevLoc['Stored as'] !== undefined) { obs['Stored as'] = prevLoc['Stored as']; markDirty('Stored as'); }
+            renderCoordinateSteppers(obs);
+            populateDetailBuildingOptions(obs.Building);
+            renderDetailStoredAsPills(obs['Stored as']);
+            updateDetailLocBreadcrumbs(obs);
+            updateArmedShelfBannerUI(obs);
+            triggerAutoSave();
+            showToast('↩ Relocation undone');
+          }
+        });
+      } else {
+        showToast(`📍 Stamped to Cab ${armedCab} · Sh ${armedShelf}`);
+      }
     }
 
     function updateArmedShelfBannerUI(obs = {}) {
@@ -9979,15 +10344,42 @@ INDEX_TEMPLATE_V2 = """
       const armedShelf = String(armed.shelf || '—').padStart(2, '0');
       label.textContent = `Cab ${armedCab} · Sh ${armedShelf}`;
 
+      const normCoord = (v) => {
+        const s = String(v ?? '').trim();
+        if (!s || s === '—') return '';
+        if (/^\\d+$/.test(s)) return s.replace(/^0+/, '') || '0';
+        return s.toLowerCase();
+      };
+
+      const armedBldg = normCoord(armed.building);
+      const armedFloor = normCoord(armed.floor);
+      const armedCabNorm = normCoord(armed.cabinet);
+      const armedShelfNorm = normCoord(armed.shelf);
+
+      const curBldg = normCoord(obs.Building);
+      const curFloor = normCoord(obs.Floor);
       const curCab = String(obs.Cabinet || '').trim();
-      const curShelf = String(obs.Shelf || '').trim();
-      const matches = (curCab === String(armed.cabinet || '').trim()) && (curShelf === String(armed.shelf || '').trim());
+      const curCabNorm = normCoord(obs.Cabinet);
+      const curShelfNorm = normCoord(obs.Shelf);
+
+      const bldgMatches = !armedBldg || (curBldg === armedBldg);
+      const floorMatches = !armedFloor || (curFloor === armedFloor);
+      const matches = bldgMatches && floorMatches && (curCabNorm === armedCabNorm) && (curShelfNorm === armedShelfNorm);
 
       if (stampBtn) {
         if (matches) {
           stampBtn.classList.add('hidden');
         } else {
           stampBtn.classList.remove('hidden');
+          const hasExistingLoc = Boolean(curCabNorm || curShelfNorm || curBldg || curFloor);
+          const isRelocating = hasExistingLoc && !matches;
+          if (isRelocating) {
+            stampBtn.className = 'px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-mono font-bold text-[10px] shadow-2xs tap-active flex items-center gap-1 transition-all';
+            stampBtn.innerHTML = `<span>⚠️</span><span>Relocate to Cab ${armedCab}</span>`;
+          } else {
+            stampBtn.className = 'px-2.5 py-1 rounded bg-fern hover:bg-fern-dark text-white font-mono font-bold text-[10px] shadow-2xs tap-active flex items-center gap-1 transition-all';
+            stampBtn.innerHTML = `<span>⚡</span><span>Stamp Target (Cab ${armedCab})</span>`;
+          }
         }
       }
     }
@@ -10020,31 +10412,53 @@ INDEX_TEMPLATE_V2 = """
         }
       }
 
+      // Update Tab Location Badge
+      const locBadge = document.getElementById('tabLocationBadge');
+      if (locBadge) {
+        locBadge.classList.remove('hidden');
+        if (obs.Cabinet && String(obs.Cabinet).trim() && String(obs.Cabinet).trim() !== '—') {
+          locBadge.textContent = `Cab ${String(obs.Cabinet).trim().padStart(2, '0')}`;
+          locBadge.className = 'font-mono text-[10px] font-bold px-1.5 rounded-full bg-emerald-600 text-white shadow-2xs';
+        } else {
+          locBadge.textContent = 'Unset ⚠️';
+          locBadge.className = 'font-mono text-[10px] font-bold px-1.5 rounded-full bg-amber-500 text-white shadow-2xs';
+        }
+      }
+
       // Safe update of armed shelf banner without passive cache corruption
       updateArmedShelfBannerUI(obs);
     }
 
-    // Non-Coercive Armed Shelf Confirmation & Review Handlers
+    // Smart Non-Coercive Review Handler
     function handleReviewButtonClick() {
       if (!state.currentRecord) return;
-      if (state.isReviewed) {
-        // Unmarking an already reviewed record toggles off directly
+      const armed = state.armedLocation || state.lastSavedLocation;
+      const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
+
+      // If already reviewed (unmarking) or no target shelf armed, toggle directly
+      if (state.isReviewed || !hasArmed) {
         toggleReviewed();
         return;
       }
 
-      const armed = state.armedLocation || state.lastSavedLocation;
       const obs = state.currentRecord.observation || {};
-      const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
       const curCab = String(obs.Cabinet || '').trim();
       const curShelf = String(obs.Shelf || '').trim();
-      const armedCab = String(armed?.cabinet || '').trim();
-      const armedShelf = String(armed?.shelf || '').trim();
 
-      const matchesArmed = hasArmed && (curCab === armedCab) && (curShelf === armedShelf);
-
-      // If location already matches armed target, or no armed target exists:
-      if (!hasArmed || matchesArmed) {
+      const normCoord = (v) => {
+        const s = String(v ?? '').trim();
+        if (!s || s === '—') return '';
+        if (/^\\d+$/.test(s)) return s.replace(/^0+/, '') || '0';
+        return s.toLowerCase();
+      };
+      const armedBldg = normCoord(armed.building);
+      const armedFloor = normCoord(armed.floor);
+      const bldgMatches = !armedBldg || (normCoord(obs.Building) === armedBldg);
+      const floorMatches = !armedFloor || (normCoord(obs.Floor) === armedFloor);
+      const matches = bldgMatches && floorMatches &&
+        (normCoord(obs.Cabinet) === normCoord(armed.cabinet)) &&
+        (normCoord(obs.Shelf) === normCoord(armed.shelf));
+      if (matches) {
         toggleReviewed();
         return;
       }
@@ -10758,6 +11172,7 @@ INDEX_TEMPLATE_V2 = """
       state.currentRecord.observation[probName] = nextVal;
       markDirty(probName);
       triggerAutoSave();
+      triggerHaptic('discrepancy');
       renderProblemsAndDiscrepancies(state.currentRecord);
       showToast(nextVal ? `⚠ Flagged ${probName}` : `✓ Cleared flag ${probName}`);
     }
@@ -11239,6 +11654,7 @@ INDEX_TEMPLATE_V2 = """
         });
         if (res && res.success) {
           dirtyFields.clear();
+          triggerHaptic('save_success');
           showToast('✓ Saved & synchronized');
         } else if (res && res.error) {
           showToast(`⚠️ Sync failed: ${res.error}`);
@@ -11522,7 +11938,8 @@ INDEX_TEMPLATE_V2 = """
         reviewed_off: 12,
         copy_prev: [10, 20, 10],
         discrepancy: [25, 25, 25],
-        scan: 15
+        scan: 15,
+        save_success: 10
       },
       medium: {
         stepper: 15,
@@ -11530,7 +11947,8 @@ INDEX_TEMPLATE_V2 = """
         reviewed_off: 20,
         copy_prev: [15, 30, 15],
         discrepancy: [45, 40, 45],
-        scan: 30
+        scan: 30,
+        save_success: [12, 24]
       },
       strong: {
         stepper: 28,
@@ -11538,7 +11956,8 @@ INDEX_TEMPLATE_V2 = """
         reviewed_off: 35,
         copy_prev: [25, 40, 25],
         discrepancy: [70, 50, 70],
-        scan: 50
+        scan: 50,
+        save_success: [20, 40]
       }
     };
 
@@ -11607,11 +12026,103 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
+    // 3-Step First-Run Hallway Walkthrough
+    const WALKTHROUGH_SLIDES = [
+      {
+        badge: 'STEP 1 OF 3 · FAST LOOKUP',
+        title: 'Search by Accession Number',
+        body: 'Pull a physical specimen box and type its catalog number into the search bar. Leading zeros and prefixes are handled automatically.',
+        callout: 'Tip: Typing "001" or "O-V-1" both find Specimen #1. Use [123 / Aa] to switch between number pad and plant names.'
+      },
+      {
+        badge: 'STEP 2 OF 3 · ARMED TARGET SHELF',
+        title: 'Set Your Cabinet Once, Stamp in 1 Tap',
+        body: 'Set your current Cabinet & Shelf once. Opening a specimen never overwrites its coordinates — tap the green Stamp Target banner to stamp 30+ items on the same shelf in 1 tap.',
+        callout: '⚡ Armed Target: Cab 21 · Sh 01  →  [ Stamp Target ]'
+      },
+      {
+        badge: 'STEP 3 OF 3 · MARK REVIEWED',
+        title: 'Flag Issues & Still Mark Reviewed',
+        body: 'Found a crushed box or unreadable label? Check the problem flag and still tap ✓ Mark Reviewed. The badge turns amber (REV + ISSUES) so your office desktop queues it for follow-up.',
+        callout: '🟠 REV + 1 ISSUE = Physically verified + safely queued for office triage.'
+      }
+    ];
+    let _wtIndex = 0;
+
+    function renderWalkthroughSlide() {
+      const s = WALKTHROUGH_SLIDES[_wtIndex] || WALKTHROUGH_SLIDES[0];
+      const badge = document.getElementById('walkthroughStepBadge');
+      const title = document.getElementById('walkthroughTitle');
+      const body = document.getElementById('walkthroughBody');
+      const callout = document.getElementById('walkthroughCallout');
+      const backBtn = document.getElementById('wtBackBtn');
+      const nextBtn = document.getElementById('wtNextBtn');
+      if (badge) badge.textContent = s.badge;
+      if (title) title.textContent = s.title;
+      if (body) body.textContent = s.body;
+      if (callout) callout.textContent = s.callout;
+      if (backBtn) backBtn.classList.toggle('hidden', _wtIndex === 0);
+      if (nextBtn) {
+        nextBtn.textContent = (_wtIndex === WALKTHROUGH_SLIDES.length - 1) ? 'Set My Cabinet & Start →' : 'Next →';
+      }
+      for (let i = 0; i < WALKTHROUGH_SLIDES.length; i++) {
+        const dot = document.getElementById('wtDot' + i);
+        if (dot) {
+          dot.className = i === _wtIndex ? 'w-2.5 h-2.5 rounded-full bg-fern' : 'w-2 h-2 rounded-full bg-stone-300';
+        }
+      }
+    }
+
+    function openWalkthroughModal(startIdx = 0) {
+      _wtIndex = startIdx;
+      renderWalkthroughSlide();
+      const modal = document.getElementById('walkthroughModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeWalkthroughModal(markSeen = true) {
+      const modal = document.getElementById('walkthroughModal');
+      if (modal) modal.classList.add('hidden');
+      if (markSeen) {
+        try { localStorage.setItem('arbor_v2_walkthrough_seen', 'true'); } catch(e) {}
+      }
+    }
+
+    function nextWalkthroughSlide() {
+      if (_wtIndex < WALKTHROUGH_SLIDES.length - 1) {
+        _wtIndex += 1;
+        renderWalkthroughSlide();
+      } else {
+        closeWalkthroughModal(true);
+      }
+    }
+
+    function prevWalkthroughSlide() {
+      if (_wtIndex > 0) {
+        _wtIndex -= 1;
+        renderWalkthroughSlide();
+      }
+    }
+
+    function maybeShowFirstRunWalkthrough() {
+      try {
+        if (localStorage.getItem('arbor_v2_walkthrough_seen') !== 'true') {
+          openWalkthroughModal(0);
+        }
+      } catch(e) {}
+    }
+
+    // Register Service Worker for offline vault resilience
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js').catch(err => console.warn('ServiceWorker registration error:', err));
+    }
+
     // Start App
     if (document.readyState === 'loading') {
-      window.addEventListener('DOMContentLoaded', init);
+      window.addEventListener('DOMContentLoaded', () => { init(); maybeShowFirstRunWalkthrough(); });
     } else {
       init();
+      maybeShowFirstRunWalkthrough();
     }
   </script>
 </body>

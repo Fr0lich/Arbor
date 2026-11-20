@@ -20,6 +20,9 @@ def _render_markdown_to_text(txt_widget, md_text, is_dark=False):
     bg_code = "#2d333b" if is_dark else "#ebeff2"
     bg_block = "#1e242c" if is_dark else "#f3f5f4"
     fg_dim = "#8b949e" if is_dark else "#7f8c8d"
+    bg_callout = "#1e3a24" if is_dark else "#eef6ef"
+    fg_callout = "#b0f3a9" if is_dark else "#1e4620"
+    fg_link = "#64b5f6" if is_dark else "#2e7d32"
 
     # Define Tags
     txt_widget.tag_configure("h1", font=("Segoe UI", sc(14), "bold"), foreground=fg_h1, spacing1=sc(8), spacing3=sc(6))
@@ -29,19 +32,49 @@ def _render_markdown_to_text(txt_widget, md_text, is_dark=False):
     txt_widget.tag_configure("bold", font=("Segoe UI", sc(9.5), "bold"), foreground=fg_text)
     txt_widget.tag_configure("italic", font=("Segoe UI", sc(9.5), "italic"), foreground=fg_text)
     txt_widget.tag_configure("bullet", font=("Segoe UI", sc(9.5)), foreground=fg_text, lmargin1=sc(16), lmargin2=sc(28))
+    txt_widget.tag_configure("callout", font=("Segoe UI", sc(9.5)), foreground=fg_callout, background=bg_callout, lmargin1=sc(14), lmargin2=sc(14), rmargin=sc(14), spacing1=sc(3), spacing3=sc(3))
     txt_widget.tag_configure("code_inline", font=("Consolas", sc(9), "bold"), foreground=fg_code, background=bg_code)
     txt_widget.tag_configure("code_block", font=("Consolas", sc(8.5)), foreground=fg_text, background=bg_block, lmargin1=sc(12), lmargin2=sc(12))
     txt_widget.tag_configure("table", font=("Consolas", sc(8.5)), foreground=fg_text)
+    txt_widget.tag_configure("table_hdr", font=("Consolas", sc(8.5), "bold"), foreground=fg_h2, background=bg_block)
     txt_widget.tag_configure("hr", font=("Segoe UI", sc(3)), foreground=fg_dim)
 
     in_code_block = False
+    in_table = False
     bookmarks = []
+    anchor_map = {}
+
+    def _slugify(title_str):
+        slug = re.sub(r'[^a-z0-9\s-]', '', title_str.lower()).strip()
+        return re.sub(r'\s+', '-', slug)
+
+    def _jump_to_anchor(slug):
+        mark = anchor_map.get(slug)
+        if not mark:
+            for k, m in anchor_map.items():
+                if slug in k or k in slug:
+                    mark = m
+                    break
+        if mark:
+            txt_widget.see(mark)
 
     def insert_inline(line_text, base_tag=None):
-        parts = re.split(r'(`[^`]+`|\*\*[^*]+\*\*)', line_text)
+        parts = re.split(r'(\[[^\]]+\]\(#[^)]+\)|`[^`]+`|\*\*[^*]+\*\*)', line_text)
         for part in parts:
             if not part:
                 continue
+            if part.startswith('[') and '](#' in part and part.endswith(')'):
+                m = re.match(r'^\[([^\]]+)\]\(#([^)]+)\)$', part)
+                if m:
+                    lbl_txt, anchor_slug = m.group(1), m.group(2)
+                    link_tag = f"link_{anchor_slug}_{len(txt_widget.tag_names())}"
+                    txt_widget.tag_configure(link_tag, font=("Segoe UI", sc(9.5), "underline"), foreground=fg_link)
+                    txt_widget.tag_bind(link_tag, "<Button-1>", lambda e, s=anchor_slug: _jump_to_anchor(s))
+                    txt_widget.tag_bind(link_tag, "<Enter>", lambda e: txt_widget.config(cursor="hand2"))
+                    txt_widget.tag_bind(link_tag, "<Leave>", lambda e: txt_widget.config(cursor=""))
+                    tags = (link_tag, base_tag) if base_tag else (link_tag,)
+                    txt_widget.insert("end", lbl_txt, tags)
+                    continue
             if part.startswith('`') and part.endswith('`') and len(part) >= 2:
                 txt_widget.insert("end", part[1:-1], "code_inline")
             elif part.startswith('**') and part.endswith('**') and len(part) >= 4:
@@ -71,200 +104,412 @@ def _render_markdown_to_text(txt_widget, md_text, is_dark=False):
 
         # Headers and Bookmark registration
         if line.startswith("# "):
+            in_table = False
             title = line[2:].strip()
             mark_id = f"bm_{len(bookmarks)}"
             txt_widget.mark_set(mark_id, txt_widget.index("end-1c"))
             txt_widget.mark_gravity(mark_id, "left")
             bookmarks.append((title, mark_id))
+            anchor_map[_slugify(title)] = mark_id
             txt_widget.insert("end", title + "\n", "h1")
         elif line.startswith("## "):
+            in_table = False
             title = line[3:].strip()
             mark_id = f"bm_{len(bookmarks)}"
             txt_widget.mark_set(mark_id, txt_widget.index("end-1c"))
             txt_widget.mark_gravity(mark_id, "left")
             bookmarks.append((title, mark_id))
+            anchor_map[_slugify(title)] = mark_id
             txt_widget.insert("end", title + "\n", "h2")
         elif line.startswith("### "):
+            in_table = False
             txt_widget.insert("end", line[4:].strip() + "\n", "h3")
+        elif line.startswith("> "):
+            in_table = False
+            insert_inline("  " + line[2:].strip(), base_tag="callout")
+            txt_widget.insert("end", "\n", "callout")
         elif line.startswith("|") and line.endswith("|"):
-            txt_widget.insert("end", raw_line + "\n", "table")
+            # Skip markdown alignment separator lines like | :--- | :--- |
+            if re.match(r'^\|[\s:\-|]+\|$', line):
+                continue
+            tag = "table_hdr" if not in_table else "table"
+            in_table = True
+            clean_row = "  " + " │ ".join(c.strip() for c in line.strip("|").split("|"))
+            txt_widget.insert("end", clean_row + "\n", tag)
+        elif re.match(r'^\d+\.\s+', line):
+            in_table = False
+            insert_inline(line, base_tag="bullet")
+            txt_widget.insert("end", "\n")
         elif line.startswith("* ") or line.startswith("- "):
+            in_table = False
             txt_widget.insert("end", "• ", "bullet")
             insert_inline(line[2:], base_tag="bullet")
             txt_widget.insert("end", "\n")
         elif line.startswith("  * ") or line.startswith("  - "):
+            in_table = False
             txt_widget.insert("end", "    - ", "bullet")
             insert_inline(line[4:], base_tag="bullet")
             txt_widget.insert("end", "\n")
         elif line.strip() == "":
+            in_table = False
             txt_widget.insert("end", "\n")
         else:
+            in_table = False
             insert_inline(raw_line)
             txt_widget.insert("end", "\n")
 
     return bookmarks
 
 
-def show_main_help(root_or_ui):
+def _load_guide_markdown(filename, fallback_title):
+    """Locate and read a markdown guide file with PyInstaller + repo fallbacks."""
+    import utils
+
+    candidate_paths = []
+    try:
+        candidate_paths.append(utils.get_resource_path(filename))
+    except Exception:
+        pass
+
+    if getattr(sys, "frozen", False):
+        base_dir = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+        candidate_paths.append(os.path.join(base_dir, filename))
+        if filename == "USER_GUIDE.md":
+            candidate_paths.append(os.path.join(base_dir, "documentation", "curator", "CURATOR_USER_GUIDE.md"))
+    else:
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        candidate_paths.append(os.path.join(repo_root, filename))
+        if filename == "USER_GUIDE.md":
+            candidate_paths.append(os.path.join(repo_root, "documentation", "curator", "CURATOR_USER_GUIDE.md"))
+
+    for p in candidate_paths:
+        if p and os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception as e:
+                return f"# {fallback_title}\n\nCould not read guide file: {e}"
+
+    return f"# {fallback_title}\n\n`{filename}` could not be found at standard resource paths."
+
+
+def show_main_help(root_or_ui, initial_tab="desktop", initial_chapter=None):
     """
-    Display the full Arbor System User Guide window loaded from USER_GUIDE.md,
-    featuring chapter jump navigation bookmarks and the Arbor <-> Excel translation bridge.
+    Display the unified Arbor Guide Reader (Desktop Work Manual + Mobile Vault Guide)
+    with a clickable left-hand chapter sidebar, Find-in-Guide (Ctrl+F), and quick links.
+    Works from StartupDialog, MobileHostApp, normal desktop sessions, and Practice Mode.
     """
     import utils
 
     root = getattr(root_or_ui, "root", root_or_ui)
     is_dark = getattr(root_or_ui, "dark_mode_active", False)
-
-    # Locate USER_GUIDE.md with robust multi-directory fallback
-    candidate_paths = []
-    try:
-        candidate_paths.append(utils.get_resource_path("USER_GUIDE.md"))
-    except Exception:
-        pass
-
-    if getattr(sys, 'frozen', False):
-        base_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
-        candidate_paths.append(os.path.join(base_dir, "USER_GUIDE.md"))
-        candidate_paths.append(os.path.join(base_dir, "documentation", "curator", "CURATOR_USER_GUIDE.md"))
-    else:
-        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        candidate_paths.append(os.path.join(repo_root, "USER_GUIDE.md"))
-        candidate_paths.append(os.path.join(repo_root, "documentation", "curator", "CURATOR_USER_GUIDE.md"))
-
-    guide_path = None
-    for p in candidate_paths:
-        if p and os.path.exists(p):
-            guide_path = p
-            break
-
-    content = ""
-    if guide_path and os.path.exists(guide_path):
-        try:
-            with open(guide_path, "r", encoding="utf-8") as f:
-                content = f.read()
-        except Exception as e:
-            content = f"# Arbor System User Guide\n\nFailed to load guide file: {e}"
-    else:
-        content = (
-            "# Arbor Herbarium Curation Suite — Trainee Work Manual\n\n"
-            "USER_GUIDE.md could not be found at standard resource paths."
-        )
+    has_main_ui = hasattr(root_or_ui, "app") and hasattr(root_or_ui, "start_tutorial_flow")
 
     win = tk.Toplevel(root)
-    win.title("Arbor System User Guide & Excel Bridge")
-    w_width = sc(820)
-    w_height = sc(800)
+    win.title("Arbor System User Guide — Desktop & Mobile Manuals")
+    w_width = sc(960)
+    w_height = sc(760)
     utils.center_and_fit_toplevel(win, w_width, w_height)
     win.bind("<Escape>", lambda e: win.destroy())
 
-    bg_color = "#181c19" if is_dark else "#fafbfa"
-    fg_color = "#e8ebe9" if is_dark else "#2c302e"
-    accent_col = "#389e63" if is_dark else "#2d7a4c"
-    win.configure(background=bg_color)
+    # Arbor AI_UI_GUIDE.md Design Tokens
+    bg_outer = "#181c19" if is_dark else "#fbfaf8"
+    bg_sidebar = "#1c211d" if is_dark else "#f2f5f1"
+    bg_surface = "#212622" if is_dark else "#ffffff"
+    fg_text = "#e8ebe9" if is_dark else "#2c302e"
+    fg_muted = "#a2aba5" if is_dark else "#757d77"
+    border_col = "#2c302e" if is_dark else "#c4c7c7"
+    accent_col = "#389e63" if is_dark else "#3a7d44"
+    accent_soft = "#1e3a24" if is_dark else "#eaf5ec"
+    accent_fg = "#b0f3a9" if is_dark else "#1b5e20"
 
-    # Header Bar
-    hdr_frame = tk.Frame(win, bg=bg_color, padx=sc(16), pady=sc(10))
+    win.configure(background=bg_outer)
+
+    # ── Top Header Bar ───────────────────────────────────────────────────────
+    hdr_frame = tk.Frame(win, bg=bg_outer, padx=sc(18), pady=sc(12))
     hdr_frame.pack(fill="x")
 
-    title_frame = tk.Frame(hdr_frame, bg=bg_color)
-    title_frame.pack(side="left")
+    title_col = tk.Frame(hdr_frame, bg=bg_outer)
+    title_col.pack(side="left")
 
     tk.Label(
-        title_frame,
-        text="ARBOR USER GUIDE",
-        font=("Segoe UI", sc(12), "bold"),
-        fg=accent_col,
-        bg=bg_color
+        title_col,
+        text="Arbor Guide",
+        font=("Lora", sc(15), "bold"),
+        fg=fg_text,
+        bg=bg_outer,
+        anchor="w",
     ).pack(anchor="w")
 
     tk.Label(
-        title_frame,
-        text="Trainee Work Manual & Excel Bridge Reference",
-        font=("Segoe UI", sc(8.5)),
-        fg="#7f8c8d",
-        bg=bg_color
+        title_col,
+        text="Plain-language manuals for desk curation & vault hallway auditing",
+        font=("Inter", sc(8.5)),
+        fg=fg_muted,
+        bg=bg_outer,
+        anchor="w",
     ).pack(anchor="w")
 
-    # Content Frame with Text & Scrollbar
-    content_frame = tk.Frame(win, bg=bg_color, padx=sc(16), pady=sc(4))
-    content_frame.pack(fill="both", expand=True)
+    # Right header quick actions
+    hdr_actions = tk.Frame(hdr_frame, bg=bg_outer)
+    hdr_actions.pack(side="right")
+
+    if has_main_ui:
+        def _launch_tour_from_reader():
+            win.destroy()
+            root_or_ui.start_tutorial_flow("review")
+
+        tk.Button(
+            hdr_actions,
+            text="🎓 3-Min Practice Tour",
+            font=("Inter", sc(8.5), "bold"),
+            bg=accent_soft,
+            fg=accent_fg,
+            activebackground=accent_col,
+            activeforeground="#ffffff",
+            relief="flat",
+            highlightbackground=accent_col,
+            highlightthickness=1,
+            padx=sc(10),
+            pady=sc(4),
+            cursor="hand2",
+            command=_launch_tour_from_reader,
+        ).pack(side="left", padx=(0, sc(8)))
+
+    tk.Button(
+        hdr_actions,
+        text="⌨️ Shortcuts (F1)",
+        font=("Inter", sc(8.5), "bold"),
+        bg=bg_surface,
+        fg=fg_text,
+        relief="flat",
+        highlightbackground=border_col,
+        highlightthickness=1,
+        padx=sc(10),
+        pady=sc(4),
+        cursor="hand2",
+        command=lambda: show_shortcuts(root_or_ui),
+    ).pack(side="left")
+
+    # ── Segmented Tab Bar (Desktop Manual | Mobile Vault Guide) ──────────────
+    tab_bar = tk.Frame(win, bg=bg_outer, padx=sc(18), pady=sc(4))
+    tab_bar.pack(fill="x")
+
+    tab_btns = {}
+    active_tab = [initial_tab if initial_tab in ("desktop", "mobile") else "desktop"]
+
+    # Find-in-Guide inline on right side of tab bar
+    find_box = tk.Frame(tab_bar, bg=bg_outer)
+    find_box.pack(side="right")
+
+    tk.Label(
+        find_box, text="Find:", font=("Inter", sc(8.5), "bold"),
+        fg=fg_muted, bg=bg_outer
+    ).pack(side="left", padx=(0, sc(4)))
+    find_var = tk.StringVar()
+    find_entry = ttk.Entry(find_box, textvariable=find_var, width=22)
+    find_entry.pack(side="left", padx=(0, sc(4)))
+    match_lbl = tk.Label(find_box, text="", font=("Inter", sc(8)), fg=fg_muted, bg=bg_outer)
+    match_lbl.pack(side="left", padx=(sc(4), 0))
+
+    tk.Frame(win, bg=border_col, height=1).pack(fill="x", pady=(sc(6), 0))
+
+    # ── Footer (packed side="bottom" first so split body fills remaining area) ──
+    footer = tk.Frame(win, bg=bg_outer, padx=sc(18), pady=sc(9))
+    footer.pack(fill="x", side="bottom")
+    tk.Frame(win, bg=border_col, height=1).pack(fill="x", side="bottom")
+
+    tk.Label(
+        footer,
+        text="Tip: Press Ctrl+F to search inside this guide, or click any chapter on the left. Press Escape to close.",
+        font=("Inter", sc(8.5), "italic"),
+        fg=fg_muted,
+        bg=bg_outer,
+    ).pack(side="left")
+
+    ttk.Button(footer, text="Close", command=win.destroy, cursor="hand2").pack(side="right")
+
+    # ── 2-Column Split Body (Left Chapter Sidebar + Right Reading Card) ──────
+    sidebar_outer = tk.Frame(win, bg=bg_sidebar, width=sc(235))
+    sidebar_outer.pack(side="left", fill="y")
+    sidebar_outer.pack_propagate(False)
+
+    tk.Label(
+        sidebar_outer,
+        text="CHAPTERS",
+        font=("JetBrains Mono", sc(8), "bold"),
+        fg=fg_muted,
+        bg=bg_sidebar,
+        padx=sc(14),
+        pady=sc(10),
+        anchor="w",
+    ).pack(fill="x")
+
+    sb_canvas = tk.Canvas(sidebar_outer, bg=bg_sidebar, highlightthickness=0, bd=0)
+    sb_list_frame = tk.Frame(sb_canvas, bg=bg_sidebar)
+    sb_canvas_win = sb_canvas.create_window((0, 0), window=sb_list_frame, anchor="nw")
+    sb_canvas.pack(fill="both", expand=True, padx=(sc(6), sc(6)), pady=(0, sc(8)))
+
+    sb_list_frame.bind("<Configure>", lambda e: sb_canvas.configure(scrollregion=sb_canvas.bbox("all")))
+    sb_canvas.bind("<Configure>", lambda e: sb_canvas.itemconfig(sb_canvas_win, width=e.width))
+
+    tk.Frame(win, bg=border_col, width=1).pack(side="left", fill="y")
+
+    content_frame = tk.Frame(win, bg=bg_surface, padx=sc(16), pady=sc(10))
+    content_frame.pack(side="left", fill="both", expand=True)
 
     sb = ttk.Scrollbar(content_frame, orient="vertical")
     txt = tk.Text(
         content_frame,
         wrap="word",
-        font=("Segoe UI", sc(9.5)),
+        font=("Inter", sc(9.5)),
         relief="flat",
-        bg=bg_color,
-        fg=fg_color,
+        bg=bg_surface,
+        fg=fg_text,
         padx=sc(14),
         pady=sc(10),
         yscrollcommand=sb.set,
         highlightthickness=0,
-        state="normal"
+        spacing2=sc(2),
+        state="normal",
     )
     sb.config(command=txt.yview)
-
     sb.pack(side="right", fill="y")
     txt.pack(side="left", fill="both", expand=True)
 
-    bookmarks = _render_markdown_to_text(txt, content, is_dark=is_dark)
-    txt.config(state="disabled")
+    _search_matches = []
+    _search_idx = [0]
+    _chapter_buttons = []
 
-    # Bookmark Jump Dropdown in Header
-    if bookmarks:
-        jump_frame = tk.Frame(hdr_frame, bg=bg_color)
-        jump_frame.pack(side="right", fill="y", padx=(sc(10), 0))
+    def _run_find(*_):
+        txt.tag_remove("search_hit", "1.0", "end")
+        _search_matches.clear()
+        _search_idx[0] = 0
+        q = find_var.get().strip()
+        if not q:
+            match_lbl.config(text="")
+            return
+        pos = "1.0"
+        while True:
+            idx = txt.search(q, pos, stopindex="end", nocase=True)
+            if not idx:
+                break
+            end_idx = f"{idx}+{len(q)}c"
+            txt.tag_add("search_hit", idx, end_idx)
+            _search_matches.append(idx)
+            pos = end_idx
+        if _search_matches:
+            txt.see(_search_matches[0])
+            match_lbl.config(text=f"1/{len(_search_matches)}")
+        else:
+            match_lbl.config(text="0")
 
-        tk.Label(
-            jump_frame,
-            text="Jump to Chapter:",
-            font=("Segoe UI", sc(9), "bold"),
-            fg=fg_color,
-            bg=bg_color
-        ).pack(side="left", padx=(0, sc(6)))
+    def _find_next(*_):
+        if not _search_matches:
+            _run_find()
+            return
+        _search_idx[0] = (_search_idx[0] + 1) % len(_search_matches)
+        txt.see(_search_matches[_search_idx[0]])
+        match_lbl.config(text=f"{_search_idx[0] + 1}/{len(_search_matches)}")
 
-        # Prioritize main chapters and overview
-        curated_bms = [
-            b for b in bookmarks
-            if b[0].lower().startswith("chapter") or "table of contents" in b[0].lower() or "welcome" in b[0].lower()
-        ]
-        if not curated_bms:
-            curated_bms = bookmarks[:15]
+    find_var.trace_add("write", _run_find)
+    find_entry.bind("<Return>", _find_next)
+    ttk.Button(find_box, text="Next", command=_find_next, width=5).pack(side="left", padx=(sc(4), 0))
+    win.bind("<Control-f>", lambda e: (find_entry.focus_set(), find_entry.select_range(0, "end"), "break")[2])
 
-        bm_dict = {b[0]: b[1] for b in curated_bms}
-        cb_jump = ttk.Combobox(
-            jump_frame,
-            values=list(bm_dict.keys()),
-            state="readonly",
-            width=36,
-            cursor="hand2"
+    def _select_chapter_btn(active_btn):
+        for b in _chapter_buttons:
+            if b is active_btn:
+                b.config(bg=accent_soft, fg=accent_fg, font=("Inter", sc(8.5), "bold"))
+            else:
+                b.config(bg=bg_sidebar, fg=fg_text, font=("Inter", sc(8.5)))
+
+    def _load_tab(tab_key, jump_slug=None):
+        active_tab[0] = tab_key
+        for k, btn in tab_btns.items():
+            if k == tab_key:
+                btn.config(bg=accent_col, fg="#ffffff")
+            else:
+                btn.config(bg=bg_surface, fg=fg_text)
+
+        if tab_key == "mobile":
+            content = _load_guide_markdown("MOBILE_COMPANION_USER_GUIDE.md", "Arbor Mobile Vault Guide")
+        else:
+            content = _load_guide_markdown("USER_GUIDE.md", "Arbor Desktop Work Manual")
+
+        txt.config(state="normal")
+        txt.delete("1.0", "end")
+        bookmarks = _render_markdown_to_text(txt, content, is_dark=is_dark)
+        txt.tag_configure("search_hit", background="#f9e2af" if is_dark else "#fde68a", foreground="#181c19")
+        txt.config(state="disabled")
+
+        # Rebuild clickable chapter sidebar
+        for child in sb_list_frame.winfo_children():
+            child.destroy()
+        _chapter_buttons.clear()
+
+        target_btn = None
+        target_mark = None
+        for idx_bm, (bm_title, bm_mark) in enumerate(bookmarks):
+            short_title = bm_title.replace("Chapter ", "").strip()
+            if len(short_title) > 30:
+                short_title = short_title[:28].rstrip() + "…"
+
+            btn = tk.Button(
+                sb_list_frame,
+                text=short_title,
+                font=("Inter", sc(8.5)),
+                bg=bg_sidebar,
+                fg=fg_text,
+                activebackground=accent_soft,
+                activeforeground=accent_fg,
+                relief="flat",
+                bd=0,
+                anchor="w",
+                justify="left",
+                padx=sc(8),
+                pady=sc(5),
+                cursor="hand2",
+            )
+            btn.configure(command=lambda m=bm_mark, b=btn: (txt.see(m), _select_chapter_btn(b)))
+            btn.pack(fill="x", pady=sc(1))
+            _chapter_buttons.append(btn)
+
+            if jump_slug:
+                norm_bm = re.sub(r"[^a-z0-9]+", "-", bm_title.lower()).strip("-")
+                if jump_slug.lower() in norm_bm:
+                    target_btn = btn
+                    target_mark = bm_mark
+
+        if target_mark and target_btn:
+            txt.see(target_mark)
+            _select_chapter_btn(target_btn)
+        elif _chapter_buttons:
+            txt.see("1.0")
+            _select_chapter_btn(_chapter_buttons[0])
+
+        if find_var.get().strip():
+            _run_find()
+
+    for tab_key, tab_label in [("desktop", "📖 Desktop Work Manual"), ("mobile", "📱 Mobile Vault Guide")]:
+        tb = tk.Button(
+            tab_bar,
+            text=tab_label,
+            font=("Inter", sc(9), "bold"),
+            bg=bg_surface,
+            fg=fg_text,
+            relief="flat",
+            highlightbackground=border_col,
+            highlightthickness=1,
+            padx=sc(12),
+            pady=sc(5),
+            cursor="hand2",
+            command=lambda k=tab_key: _load_tab(k),
         )
-        cb_jump.pack(side="left")
-        if curated_bms:
-            cb_jump.set(curated_bms[0][0])
+        tb.pack(side="left", padx=(0, sc(6)))
+        tab_btns[tab_key] = tb
 
-        def _on_chapter_selected(e):
-            sel = cb_jump.get()
-            if sel in bm_dict:
-                txt.see(bm_dict[sel])
-
-        cb_jump.bind("<<ComboboxSelected>>", _on_chapter_selected)
-
-    # Footer
-    footer = tk.Frame(win, bg=bg_color, padx=sc(16), pady=sc(10))
-    footer.pack(fill="x", side="bottom")
-
-    tk.Label(
-        footer,
-        text="Press Escape to close. Click links or select chapters above to navigate.",
-        font=("Segoe UI", sc(8.5), "italic"),
-        fg="#888888",
-        bg=bg_color
-    ).pack(side="left")
-
-    close_btn = ttk.Button(footer, text="Close", command=win.destroy, cursor="hand2")
-    close_btn.pack(side="right")
+    _load_tab(active_tab[0], jump_slug=initial_chapter)
 
 
 def show_quick_help(ui=None):
@@ -374,13 +619,18 @@ def show_about(ui=None):
 
 def open_help_window(ui):
     """
-    Display the Central Arbor In-App User Assistance Hub featuring 4 launch tiles:
-    1. Trainee Work Manual (USER_GUIDE.md reader & Excel bridge)
-    2. Keyboard Shortcuts & Desk Guide (HUD with keycaps & Excel column effects)
-    3. Interactive Onboarding Tutorials (Sandboxed action walkthroughs)
-    4. About Arbor (Version, environment, and diagnostics)
+    Display the calm, scrollable Arbor Help & Quick Guides Hub.
+    Available in normal desktop sessions, demo mode, and sandbox mode.
     """
     import utils
+    from ui.tutorials import (
+        start_review_tutorial,
+        start_discrepancy_tutorial,
+        start_database_tutorial,
+        start_hallway_followup_guide,
+        start_armed_shelf_guide,
+        start_image_controls_guide,
+    )
 
     if hasattr(ui, "help_win") and ui.help_win and ui.help_win.winfo_exists():
         ui.help_win.focus_force()
@@ -388,183 +638,256 @@ def open_help_window(ui):
         ui.help_win.lift()
         return
 
-    win = tk.Toplevel(ui.root)
-    ui.help_win = win
-    win.title("Arbor User Assistance Hub")
-    win.resizable(False, False)
-    win.transient(ui.root)
+    root = getattr(ui, "root", ui)
+    win = tk.Toplevel(root)
+    if hasattr(ui, "__dict__"):
+        ui.help_win = win
+    win.title("Arbor Help & Quick Guides")
+    win.transient(root)
 
-    w_width = sc(540)
-    w_height = sc(560)
+    w_width = sc(640)
+    w_height = sc(650)
     utils.center_and_fit_toplevel(win, w_width, w_height)
 
     is_dark = getattr(ui, "dark_mode_active", False)
-    bg_color = "#181c19" if is_dark else "#f4f7f4"
-    card_bg = "#212623" if is_dark else "#ffffff"
+    bg_color = "#181c19" if is_dark else "#fbfaf8"
+    card_bg = "#212622" if is_dark else "#ffffff"
+    pill_bg = "#1c211d" if is_dark else "#f2f5f1"
     fg_title = "#e8ebe9" if is_dark else "#2c302e"
-    fg_sub = "#a2aba5" if is_dark else "#5c6660"
-    border_col = "#2c302e" if is_dark else "#dbe0dc"
-    accent_col = "#389e63" if is_dark else "#2d7a4c"
+    fg_sub = "#a2aba5" if is_dark else "#757d77"
+    border_col = "#2c302e" if is_dark else "#c4c7c7"
+    accent_col = "#389e63" if is_dark else "#3a7d44"
 
     win.configure(background=bg_color)
     win.bind("<Escape>", lambda e: win.destroy())
 
-    frame = tk.Frame(win, bg=bg_color, padx=sc(20), pady=sc(16))
-    frame.pack(fill="both", expand=True)
+    # Scrollable body so nothing clips on 13-inch / 125% DPI laptops
+    outer = tk.Frame(win, bg=bg_color)
+    outer.pack(fill="both", expand=True)
 
-    lbl_header = tk.Label(
-        frame,
-        text="ARBOR USER ASSISTANCE HUB",
-        font=("Segoe UI", sc(13), "bold"),
-        fg=accent_col,
-        bg=bg_color
-    )
-    lbl_header.pack(anchor="w")
+    canvas = tk.Canvas(outer, bg=bg_color, highlightthickness=0, bd=0)
+    vsb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+    frame = tk.Frame(canvas, bg=bg_color, padx=sc(22), pady=sc(16))
+    win_id = canvas.create_window((0, 0), window=frame, anchor="nw")
+    canvas.configure(yscrollcommand=vsb.set)
+    vsb.pack(side="right", fill="y")
+    canvas.pack(side="left", fill="both", expand=True)
 
-    lbl_sub = tk.Label(
+    frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+    canvas.bind("<Configure>", lambda e: canvas.itemconfig(win_id, width=e.width))
+    try:
+        from ui.scroll_helper import bind_mousewheel
+        bind_mousewheel(canvas, frame)
+    except Exception:
+        pass
+
+    # Header
+    tk.Label(
         frame,
-        text="Everything you need to audit, verify, and document museum collections.",
-        font=("Segoe UI", sc(9)),
+        text="Arbor Help & Quick Guides",
+        font=("Lora", sc(16), "bold"),
+        fg=fg_title,
+        bg=bg_color,
+        anchor="w",
+    ).pack(fill="x")
+
+    tk.Label(
+        frame,
+        text="Stuck or unsure? Pick a quick guide or practice safely — you can't break anything.",
+        font=("Inter", sc(9.5)),
         fg=fg_sub,
-        bg=bg_color
-    )
-    lbl_sub.pack(anchor="w", pady=(0, sc(12)))
-
-    tk.Frame(frame, bg=border_col, height=1).pack(fill="x", pady=(0, sc(14)))
+        bg=bg_color,
+        anchor="w",
+    ).pack(fill="x", pady=(sc(2), sc(12)))
 
     def run_help_cmd(cmd):
         win.destroy()
         cmd()
 
-    def start_review_tut():
-        from ui.tutorials import start_review_tutorial
-        start_review_tutorial(ui)
+    # ── 1. Zero-Fear 3-Minute Quick Tour Hero Card ───────────────────────────
+    tour_bg = "#1e3a24" if is_dark else "#eaf5ec"
+    tour_fg = "#b0f3a9" if is_dark else "#1b5e20"
+    tour_sub_fg = "#d1e7d5" if is_dark else "#2e5c34"
 
-    def start_discrepancy_tut():
-        from ui.tutorials import start_discrepancy_tutorial
-        start_discrepancy_tutorial(ui)
+    tour_card = tk.Frame(
+        frame, bg=tour_bg, padx=sc(14), pady=sc(12),
+        highlightbackground=accent_col, highlightthickness=1
+    )
+    tour_card.pack(fill="x", pady=(0, sc(14)))
 
-    def start_database_tut():
-        from ui.tutorials import start_database_tutorial
-        start_database_tutorial(ui)
+    tour_text_col = tk.Frame(tour_card, bg=tour_bg)
+    tour_text_col.pack(side="left", fill="x", expand=True)
 
-    # ── 4 Primary Launch Tiles ───────────────────────────────────────────────
-    tiles = [
+    tk.Label(
+        tour_text_col,
+        text="🎓 Take the 3-Minute Practice Tour (Zero Risk)",
+        font=("Inter", sc(10.5), "bold"),
+        fg=tour_fg, bg=tour_bg, anchor="w"
+    ).pack(anchor="w")
+    tk.Label(
+        tour_text_col,
+        text="Practice on sample Cabinet 21 specimens — nothing you do affects real museum files.",
+        font=("Inter", sc(8.5)),
+        fg=tour_sub_fg, bg=tour_bg, anchor="w", wraplength=sc(400), justify="left"
+    ).pack(anchor="w", pady=(sc(2), 0))
+
+    tk.Button(
+        tour_card,
+        text="Start Tour →",
+        font=("Inter", sc(9), "bold"),
+        bg=accent_col, fg="#ffffff",
+        activebackground="#2c6034", activeforeground="#ffffff",
+        relief="flat", cursor="hand2",
+        padx=sc(12), pady=sc(6),
+        command=lambda: run_help_cmd(lambda: start_review_tutorial(ui))
+    ).pack(side="right", padx=(sc(10), 0))
+
+    # ── 2. Quick Answers 2x2 Grid ────────────────────────────────────────────
+    tk.Label(
+        frame,
+        text="MANUALS & QUICK ANSWERS",
+        font=("JetBrains Mono", sc(8), "bold"),
+        fg=fg_sub, bg=bg_color, anchor="w"
+    ).pack(fill="x", pady=(0, sc(6)))
+
+    grid_box = tk.Frame(frame, bg=bg_color)
+    grid_box.pack(fill="x", pady=(0, sc(14)))
+    grid_box.columnconfigure(0, weight=1, uniform="help_cards")
+    grid_box.columnconfigure(1, weight=1, uniform="help_cards")
+
+    quick_cards = [
         (
-            "📖 Trainee Work Manual",
-            "Trainee Work Manual & Excel Bridge",
-            "Complete 10-chapter guide covering the 5-step daily routine, status badges, and Excel sheet layouts.",
-            lambda: run_help_cmd(lambda: show_main_help(ui.root)),
-            None
+            "📖 Desktop Work Manual",
+            "5-step daily routine, status badges, and Excel sheet layouts.",
+            "Read Guide",
+            lambda: run_help_cmd(lambda: show_main_help(ui, initial_tab="desktop")),
         ),
         (
-            "⌨️ Keyboard Shortcuts",
-            "Keyboard Shortcuts HUD (F1)",
-            "Visual keycap cheat sheet for ergonomic, mouse-free curation, label codes (?m, ?i), and Excel effects.",
+            "📱 Mobile Vault Guide",
+            "Pairing your phone, 1-tap Armed Shelf, and offline concrete vaults.",
+            "Read Guide",
+            lambda: run_help_cmd(lambda: show_main_help(ui, initial_tab="mobile")),
+        ),
+        (
+            "⌨️ Keyboard Shortcuts (F1)",
+            "Visual keycap cheat sheet & missing label codes (?m, ?i).",
+            "Open HUD",
             lambda: run_help_cmd(lambda: show_shortcuts(ui)),
-            None
         ),
         (
-            "🎓 Interactive Tutorials",
-            "Interactive Onboarding Tutorials",
-            "Safe, sandboxed practice sessions: Reviewing Objects, Conflict Resolver, and Database Setup.",
-            None,
-            [
-                ("Reviewing", "1. Review", lambda: run_help_cmd(start_review_tut)),
-                ("Conflicts", "2. Conflicts", lambda: run_help_cmd(start_discrepancy_tut)),
-                ("Databases", "3. Databases", lambda: run_help_cmd(start_database_tut)),
-            ]
-        ),
-        (
-            "ℹ️ About Arbor",
-            f"About Arbor (v{getattr(config, 'APP_VERSION', '2.1.0')})",
-            "Application version, environment details, active workbook telemetry, and offline-first status.",
-            lambda: run_help_cmd(lambda: show_about(ui)),
-            None
+            "🛟 \"Don't Panic!\" Help",
+            "Locked Excel files, accidental clicks, yellow dots & undo tips.",
+            "Fix It Fast",
+            lambda: run_help_cmd(lambda: show_main_help(ui, initial_tab="desktop", initial_chapter="dont-panic")),
         ),
     ]
 
-    for btn_label, tile_title, tile_desc, primary_cmd, sub_actions in tiles:
-        card = tk.Frame(frame, bg=card_bg, highlightbackground=border_col, highlightthickness=1, padx=sc(12), pady=sc(10))
-        card.pack(fill="x", pady=sc(5))
-
-        top_row = tk.Frame(card, bg=card_bg)
-        top_row.pack(fill="x")
-
-        tk.Label(
-            top_row,
-            text=tile_title,
-            font=("Segoe UI", sc(10), "bold"),
-            fg=fg_title,
-            bg=card_bg
-        ).pack(side="left")
-
-        if primary_cmd:
-            btn = tk.Button(
-                top_row,
-                text=btn_label.split(" ")[0] + " Open",
-                command=primary_cmd,
-                font=("Segoe UI", sc(8.5), "bold"),
-                bg=accent_col,
-                fg="#ffffff",
-                relief="flat",
-                bd=0,
-                padx=sc(10),
-                pady=sc(3),
-                cursor="hand2"
-            )
-            btn.pack(side="right")
+    for idx_c, (c_title, c_desc, c_btn, c_cmd) in enumerate(quick_cards):
+        r, col = divmod(idx_c, 2)
+        card = tk.Frame(
+            grid_box, bg=card_bg, highlightbackground=border_col,
+            highlightthickness=1, padx=sc(12), pady=sc(10)
+        )
+        card.grid(row=r, column=col, sticky="nsew", padx=(0 if col == 0 else sc(6), 0), pady=sc(4))
 
         tk.Label(
-            card,
-            text=tile_desc,
-            font=("Segoe UI", sc(8.5)),
-            fg=fg_sub,
-            bg=card_bg,
-            wraplength=sc(490),
-            justify="left"
-        ).pack(anchor="w", pady=(sc(2), 0))
+            card, text=c_title, font=("Inter", sc(10), "bold"),
+            fg=fg_title, bg=card_bg, anchor="w"
+        ).pack(fill="x")
 
-        if sub_actions:
-            sub_row = tk.Frame(card, bg=card_bg)
-            sub_row.pack(fill="x", pady=(sc(6), 0))
-            for _, label, cmd in sub_actions:
-                sub_btn = tk.Button(
-                    sub_row,
-                    text=label,
-                    command=cmd,
-                    font=("Segoe UI", sc(8), "bold"),
-                    bg=bg_color,
-                    fg=fg_title,
-                    relief="flat",
-                    bd=1,
-                    highlightthickness=1,
-                    highlightbackground=border_col,
-                    padx=sc(8),
-                    pady=sc(2),
-                    cursor="hand2"
-                )
-                sub_btn.pack(side="left", padx=(0, sc(6)))
+        tk.Label(
+            card, text=c_desc, font=("Inter", sc(8.5)),
+            fg=fg_sub, bg=card_bg, wraplength=sc(250), justify="left", anchor="w"
+        ).pack(fill="x", pady=(sc(3), sc(8)))
 
-    close_btn = ttk.Button(
+        tk.Button(
+            card, text=c_btn, font=("Inter", sc(8.5), "bold"),
+            bg=pill_bg, fg=fg_title,
+            activebackground=accent_col, activeforeground="#ffffff",
+            relief="flat", highlightbackground=border_col, highlightthickness=1,
+            padx=sc(10), pady=sc(3), cursor="hand2", command=c_cmd
+        ).pack(anchor="w")
+
+    # ── 3. 30-Second Contextual Quick Guides (Works Outside Sandbox) ─────────
+    tk.Label(
         frame,
+        text="⚡ 30-SECOND QUICK GUIDES (RUN IN-PLACE ON YOUR WORKSPACE)",
+        font=("JetBrains Mono", sc(8), "bold"),
+        fg=fg_sub, bg=bg_color, anchor="w"
+    ).pack(fill="x", pady=(0, sc(6)))
+
+    mg_row = tk.Frame(frame, bg=bg_color)
+    mg_row.pack(fill="x", pady=(0, sc(12)))
+    for mg_lbl, mg_cmd in [
+        ("🎯 Hallway Follow-Up (30s)", lambda: run_help_cmd(lambda: start_hallway_followup_guide(ui))),
+        ("📱 1-Tap Armed Shelf (45s)", lambda: run_help_cmd(lambda: start_armed_shelf_guide(ui))),
+        ("🖼️ Zoom & Rotate Scans (20s)", lambda: run_help_cmd(lambda: start_image_controls_guide(ui))),
+    ]:
+        tk.Button(
+            mg_row, text=mg_lbl, font=("Inter", sc(8.5), "bold"),
+            bg=card_bg, fg=fg_title,
+            activebackground=accent_col, activeforeground="#ffffff",
+            relief="flat", highlightbackground=border_col, highlightthickness=1,
+            padx=sc(10), pady=sc(5), cursor="hand2", command=mg_cmd
+        ).pack(side="left", padx=(0, sc(6)))
+
+    # ── 4. Full Practice Sandboxes ───────────────────────────────────────────
+    tk.Label(
+        frame,
+        text="🎓 PRACTICE SANDBOXES (ZERO RISK — REAL FILES UNTOUCHED)",
+        font=("JetBrains Mono", sc(8), "bold"),
+        fg=fg_sub, bg=bg_color, anchor="w"
+    ).pack(fill="x", pady=(0, sc(6)))
+
+    sb_row = tk.Frame(frame, bg=bg_color)
+    sb_row.pack(fill="x", pady=(0, sc(8)))
+    for sb_lbl, sb_cmd in [
+        ("1. Review & Badges", lambda: run_help_cmd(lambda: start_review_tutorial(ui))),
+        ("2. Ledger Conflicts", lambda: run_help_cmd(lambda: start_discrepancy_tutorial(ui))),
+        ("3. New Collection", lambda: run_help_cmd(lambda: start_database_tutorial(ui))),
+    ]:
+        tk.Button(
+            sb_row, text=sb_lbl, font=("Inter", sc(8.5)),
+            bg=pill_bg, fg=fg_title,
+            activebackground=accent_col, activeforeground="#ffffff",
+            relief="flat", highlightbackground=border_col, highlightthickness=1,
+            padx=sc(10), pady=sc(4), cursor="hand2", command=sb_cmd
+        ).pack(side="left", padx=(0, sc(6)))
+
+    # ── Footer ───────────────────────────────────────────────────────────────
+    tk.Frame(win, bg=border_col, height=1).pack(fill="x", side="bottom")
+    footer = tk.Frame(win, bg=bg_color, padx=sc(22), pady=sc(10))
+    footer.pack(fill="x", side="bottom")
+
+    about_lbl = tk.Label(
+        footer,
+        text=f"ℹ️ About Arbor (v{getattr(config, 'APP_VERSION', '2.1.0')})",
+        font=("Inter", sc(8.5), "underline"),
+        fg=fg_sub, bg=bg_color, cursor="hand2"
+    )
+    about_lbl.pack(side="left")
+    about_lbl.bind("<Button-1>", lambda e: run_help_cmd(lambda: show_about(ui)))
+
+    ttk.Button(
+        footer,
         text="Close",
         command=win.destroy,
         style="Tool.TButton",
         width=10,
         cursor="hand2"
-    )
-    close_btn.pack(side="bottom", pady=(sc(10), 0))
+    ).pack(side="right")
 
 
 def show_shortcuts(ui):
     """
     Create a searchable HUD dialog displaying all keyboard shortcuts with visual keycaps,
     dual-depth trainee descriptions, and Excel translation impacts.
+    Works from Main Window, StartupDialog, and MobileHostApp.
     """
     import utils
 
-    win = tk.Toplevel(ui.root)
+    root = getattr(ui, "root", ui)
+    win = tk.Toplevel(root)
     win.title("Keyboard Shortcuts & Desk Guide HUD")
     utils.center_and_fit_toplevel(win, sc(880), sc(700))
 
@@ -585,7 +908,7 @@ def show_shortcuts(ui):
     btn_primary_hover = "#4b9e57" if is_dark else "#3d4240"
 
     win.configure(background=bg_color)
-    win.transient(ui.root)
+    win.transient(root)
     win.bind("<Escape>", lambda e: win.destroy())
 
     title_frame = tk.Frame(win, bg=bg_color)
@@ -653,6 +976,11 @@ def show_shortcuts(ui):
 
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
+    try:
+        from ui.scroll_helper import bind_mousewheel
+        bind_mousewheel(canvas, scroll_content)
+    except Exception:
+        pass
 
     # Dynamically pull from canonical registry in ui/keybindings.py
     try:
@@ -786,7 +1114,7 @@ def show_shortcuts(ui):
     manual_btn = tk.Button(
         btn_box,
         text="📖 READ USER MANUAL",
-        command=lambda: (win.destroy(), show_main_help(ui.root)),
+        command=lambda: (win.destroy(), show_main_help(ui)),
         font=("Segoe UI", sc(9), "bold"),
         bg="#e0e4e1" if not is_dark else "#2c302e",
         fg=fg_title,

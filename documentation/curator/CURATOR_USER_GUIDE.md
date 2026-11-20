@@ -98,20 +98,19 @@ Click any card in the left list, or simply press the `Down Arrow` key on your ke
 ### Step 2: Inspect the Physical Sheet or Photo
 Look at the photograph on the right and compare it with the typed fields in the center:
 * Is the botanical name spelled correctly?
-* Does the collector's name and collection year match the label?
-* Does the physical storage box on your desk match the Cabinet and Shelf listed on screen?
+* Is the collector's name accurate?
+* Does the accession number on the paper label match the ID at the top of the screen?
 
-### Step 3: Flag if Anything Is Wrong
-If something is misspelled, torn, illegible, or in the wrong box, do not worry! Simply click into the **Problems** section and check the relevant checkbox (or press `Space` while focused on the checkbox). The text box will gently highlight in yellow so anyone reviewing the file knows there is an open question.
-> **In the Excel Spreadsheet**: Checking a problem box writes `TRUE` into that specific column on the `Observation` sheet (for example, `Species_Problem = TRUE` or `Box_Label_Problem = TRUE`).
+### Step 3: Flag Any Problems (Or Fix Obvious Typos)
+* If there is an obvious typing error, click inside the box and fix it.
+* If something is wrong, illegible, or missing, press `Space` to check the corresponding problem box (e.g. *Collector_Problem*).
+* If handwriting cannot be read at all, press `Ctrl+Shift+I` to insert the international missing marker `?i` (*Indecipherable*).
 
-### Step 4: Mark Done if Correct
-If all details match reality, click the big green **✓ MARK AS REVIEWED** button at the top of the form, or press `Ctrl + Enter`.
-* The card in the left list immediately receives a clean green `[ REV ]` badge.
-* Arbor automatically advances your screen to the very next specimen so you can keep your hands on the keyboard.
-> **In the Excel Spreadsheet**: This writes `TRUE` into the `Reviewed` column on the `Observation` sheet for that specimen's `ObjectID`, timestamps your review time into `ReviewedAt`, and records your username in the `Log` sheet.
+### Step 4: Mark as Reviewed
+* If the specimen details are confirmed and its storage location verified, press **`Ctrl + Enter`** (or click the green **✓ Mark as Reviewed** button).
+* The card turns crisp herb-green (`[ REV ]`), Arbor records your verification timestamp, and the cursor automatically steps down to the next plant!
 
-### Step 5: Save Your Work
+### Step 5: Save Your Work to Excel
 Before heading to lunch, taking a break, or ending your shift, press `Ctrl + S` to save all your work.
 > **In the Excel Spreadsheet**: Arbor writes all pending updates directly to the `.xlsx` file on your hard drive.
 
@@ -163,80 +162,62 @@ In every sheet inside the Excel file, the very first column is **`ObjectID`** (e
 ### The 4 Core Sheets Explained:
 
 #### 1. `Registration` (The Master Specimen Catalog)
-This sheet contains the permanent historical record of the specimen:
-* **`ObjectID`**: The accession number.
-* **`Genus` & `Species`**: The scientific botanical name.
-* **`Family` & `Author`**: The higher classification and person who named the plant.
-* **`Collector` & `Collection Date`**: Who found the plant in the wild and when.
-* **`Collection Place`**: The geographic locality where the plant was collected.
-* **`UID`**: An 8-character safety fingerprint (e.g. `7921ac45`) created automatically by Arbor to prevent accidental row mix-ups.
+Contains standard botanical catalog data:
+* `ObjectID`: Accession number printed on the label.
+* `Genus`, `Species`, `Author`: The scientific botanical name.
+* `Family`: The broader plant family (e.g. *Pinaceae*, *Asteraceae*).
+* `Collector`, `Collection Date`, `Collection Place`: When, where, and by whom the specimen was collected.
 
-#### 2. `Observation` (Your Curation Work & Storage Location)
-This is where your daily work in Arbor is saved!
-* **`Reviewed`**: Displays `TRUE` if you marked the specimen as reviewed, or `FALSE` if it is still pending.
-* **`ReviewedAt`**: An automatic timestamp recording the exact date and time the specimen was verified.
-* **The 11 Problem Columns**: Columns like `Genus_Problem`, `Species_Problem`, `Collector_Problem`, and `Box_Label_Problem` store `TRUE` if flagged, or `FALSE` if clear.
-* **Storage Coordinates**: `Building`, `Floor`, `Cabinet`, `Shelf`, and `Stored as` record where the plant physically lives in the museum stacks.
+#### 2. `Observation` (Your Curation Record)
+Where Arbor records your physical audit work:
+* `Reviewed`: Shows `TRUE` when marked reviewed, or `FALSE` when pending.
+* `ReviewedBy`: The user name stamped when reviewed.
+* `ReviewedAt`: Exact timestamp of review.
+* Problem Columns: 11 boolean flags (`Genus_Problem`, `Box_Label_Problem`, etc.) showing `TRUE` if flagged.
+* Storage Columns: `Building`, `Floor`, `Cabinet`, `Shelf`, and `Stored as`.
 
-#### 3. `Photo` (Attached Photos & Scans)
-Contains the file paths and web links for photos:
-* Links high-resolution image files on your local drive or online museum repositories to the matching `ObjectID`.
+#### 3. `Photo` (Archival Image Links)
+Tracks local file paths and remote URLs for specimen scans.
 
-#### 4. `Unvalidated_source` (Notes for Illegible Handwriting)
-A scratchpad sheet for messy labels:
-* If a 19th-century label is torn or unreadable, this sheet stores draft comments (e.g. *"Label partially eaten by insects; looks like 'Quercus' but uncertain"*) without corrupting the clean scientific name fields.
-
-#### 5. `Log` (The Audit Trail)
-Whenever an edit is made, Arbor quietly appends a row here recording the date, time, user, and what value changed (e.g. *"Changed Cabinet from 4 to 5"*). This protects you by providing a full history of all updates.
+#### 4. `Unvalidated_source` (Historical Notes)
+Stores transcription notes or questions about faded handwriting for senior curator review.
 
 ---
 
 ## Chapter 6: Helpful Keyboard Shortcuts (Rest Your Mouse Hand)
 
-Clicking a mouse thousands of times a day can strain your wrist and fingers. Arbor is built to let you complete your entire curation shift using only your keyboard:
+Arbor is designed so you rarely have to reach for your mouse:
 
-### Primary Daily Work Keys (The "Top 5")
-
-| Shortcut Key | What It Does | Why You Will Love It |
-| :--- | :--- | :--- |
-| **`[Ctrl] + [Enter]`** | **Mark Reviewed & Advance** | Signs off on the active specimen and jumps immediately to the next card. |
-| **`[Space]`** | **Toggle Problem Checkbox** | Checks or un-checks whichever problem box you are currently focused on. |
-| **`[Down]` / `[Up]`** | **Next / Previous Specimen** | Moves down or up your specimen list card by card. |
-| **`[Ctrl] + [Down]` / `[Up]`** | **Jump to Next Problem Card** | Skips clean records and jumps straight to cards with open problem flags. |
-| **`[Ctrl] + [S]`** | **Save Active Session** | Writes all changes safely to the Excel workbook on your hard drive. |
-
-### Searching & Finding Records
-* **`[Ctrl] + [K]`**: Opens the **Universal Command Palette**. Type any specimen number (`#1042`), plant name, or command (e.g. `save`, `dark mode`, `export`) to jump immediately.
-* **`[Ctrl] + [F]`**: Jumps your cursor directly into the search bar at the top of the Specimen Directory.
-* **`[Ctrl] + [G]`**: Opens the **Filter Menu** to view only unreviewed specimens, only plants with photos, or only problem records.
-
-### Typing & Editing Data
-* **`[Ctrl] + [E]`** or **`[Ctrl] + [I]`**: Jumps your cursor into the first Registration form field so you can start typing immediately.
-* **`[Ctrl] + [L]`** or **`[F4]`**: Jumps your cursor into the first Storage Location field (Cabinet / Shelf).
-* **`[Ctrl] + [Z]`** / **`[Ctrl] + [Y]`**: Undo or redo any text edit.
-* **`[Ctrl] + [H]`**: Opens the **Conflict Resolver** when historical books disagree with your sheet.
-
-### Standard Museum Codes for Missing Information (ICEDIG)
-When an old label has missing or damaged text, do not leave the field blank. Use these standard museum shortcuts while typing in any text box:
-
-| Shortcut | Quick Code | What It Types | When to Use It |
-| :--- | :--- | :--- | :--- |
-| **`[Ctrl] + [Shift] + [M]`** | `?m` | `unknown:missing` | Information was omitted on the physical label (e.g. no date written). |
-| **`[Ctrl] + [Shift] + [I]`** | `?i` | `unknown:indecipherable`| Text is faded, torn, water-damaged, or completely illegible. |
-| **`[Ctrl] + [Shift] + [U]`** | `?u` | `unknown:undigitized` | Information was skipped during the initial digitization pass. |
-| **`[Ctrl] + [Shift] + [W]`** | `?w` | `withheld` | Data is legally sensitive (e.g. exact GPS of an endangered orchid). |
-| **`[Ctrl] + [Shift] + [Backspace]`**| *(None)* | *(Clears field)* | Erases the entire contents of the field cleanly. |
+```
+┌───────────────────────────┬─────────────────────────────────────────────────┐
+│ Primary Action            │ Shortcut                                        │
+├───────────────────────────┼─────────────────────────────────────────────────┤
+│ Mark Reviewed & Advance   │ [Ctrl] + [Enter] or [Ctrl] + [R]                │
+│ Toggle Problem Checkbox   │ [Spacebar] on highlighted checkbox              │
+│ Save Active Workbook      │ [Ctrl] + [S]                                    │
+│ Move Down / Up Cards      │ [Down Arrow] / [Up Arrow]                       │
+│ Jump to Next Problem      │ [Ctrl] + [Down Arrow]                           │
+│ Fast Search Bar           │ [Ctrl] + [F]                                    │
+│ Command Palette (Omni)    │ [Ctrl] + [K]                                    │
+│ Filter Objects Menu       │ [Ctrl] + [Shift] + [F] or [Ctrl] + [G]          │
+│ Jump to Form Fields       │ [Ctrl] + [E] or [Ctrl] + [I]                    │
+│ Jump to Storage Location  │ [Ctrl] + [L] or [F4]                            │
+│ Undo / Redo Typing        │ [Ctrl] + [Z] / [Ctrl] + [Y]                     │
+│ Rotate Photo Scan         │ [Alt] + [R]                                     │
+│ Zoom Photo In / Out       │ [Ctrl] + [+] / [-] (or Mouse Wheel)             │
+│ Reset Photo View          │ [Ctrl] + [0]                                    │
+│ Open Shortcuts HUD        │ [F1]                                            │
+└───────────────────────────┴─────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Chapter 7: Changing the View (If Text Is Too Small or Crowded)
 
-Everyone's eyes and monitors are different. If the text feels cramped on a small laptop or you want to see more cards at once on a desktop display, Arbor gives you **4 one-click layout profiles**:
+Trainees work on different computer screens (13-inch laptops vs wide 27-inch desktop monitors). Arbor provides 4 one-click layout profiles:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         4 DIRECTORY VIEW PROFILES                           │
-├─────────────────┬─────────────────┬─────────────────┬───────────────────────┤
+┌─────────────────┬─────────────────┬─────────────────┬───────────────────────┐
 │ 1. Standard     │ 2. Compact      │ 3. Full Details │ 4. Minimalist         │
 │ (78px height)   │ (64px height)   │ (92px height)   │ (Compact & Lean)      │
 │                 │                 │                 │                       │
@@ -294,15 +275,15 @@ For very difficult handwriting or tiny pressed leaves, **double-click** the imag
 
 ## Chapter 9: Using the Mobile Companion in Collection Aisles
 
-When auditing physical specimens deep in the museum vault aisles, you do not need to carry a heavy laptop or balance a keyboard on your knees. Arbor includes a built-in **Mobile Companion** that works on any smartphone or tablet browser:
+When auditing physical specimens walking down vault corridors or glass cabinet aisles, you do not need to carry a heavy laptop or balance a keyboard on your knees. Arbor includes a built-in **Mobile Companion** that works on any smartphone or tablet browser:
 
 ```
 ┌────────────────────────┐      Local Wi-Fi      ┌────────────────────────┐
 │  DESKTOP WORKSTATION   │ ───────────────────>  │  PHONE / TABLET BROWSER│
 │                        │    Secure PIN Code    │                        │
 │ • Runs Arbor           │                       │ • Step through records │
-│ • Shows QR Code & PIN  │                       │ • Update Cabinet/Shelf │
-│ • Holds Excel workbook │                       │ • Attach camera photos │
+│ • Shows QR Code & PIN  │                       │ • Search-first audit   │
+│ • Holds Excel workbook │                       │ • Armed shelf stamping │
 └────────────────────────┘                       └────────────────────────┘
 ```
 
@@ -312,17 +293,67 @@ When auditing physical specimens deep in the museum vault aisles, you do not nee
 3. **Open on Your Phone**: Scan the QR code with your phone camera, or type the address into your phone's browser (Safari, Chrome, or Firefox).
 4. **Enter Your PIN**: Enter the 4-digit PIN shown on your desktop screen to start your session.
 
-### What You Can Do on Your Phone:
-* **Browse Specimens**: Swipe left and right or tap Previous/Next to step through cards in your active batch.
-* **Update Cabinet & Shelf Numbers**: Use large, finger-friendly **`+`** and **`-`** buttons to adjust Cabinet and Shelf numbers while standing right in front of the physical furniture.
-* **Attach Photos**: Take a photo of a label or folder directly with your phone camera to attach it to the specimen record.
-* **Works Completely Offline**: If your museum vault has thick concrete walls with no Wi-Fi, the Mobile Companion continues working in offline mode. It securely holds your updates in phone memory and uploads them automatically the moment you walk back into Wi-Fi range.
+---
 
-### Ending Your Mobile Session:
-When you return to your desk, click **🔴 End Mobile Session** on your computer. Arbor will check for any updates made on your phone and ask:
-> *"Mobile session ended with unsaved changes in memory. Save the workbook to disk now?"*
+### The Real-World Hallway Audit Workflow
 
-Click **Yes**, and Arbor writes all your mobile edits straight into your Excel workbook!
+In a real museum vault, historical records rarely know which cabinet or shelf an object lives in ahead of time. You will typically work cabinet by cabinet, pulling physical boxes or folders:
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│ 1. PULL OBJECT  │ ──> │ 2. FAST LOOKUP  │ ──> │ 3. STAMP SHELF  │ ──> │ 4. MARK REVIEWED│
+│ Read Accession  │     │ Numeric keypad  │     │ 1-tap on Armed  │     │ Done or Flags   │
+│ Number on label │     │ auto-normalizes │     │ Shelf Banner    │     │ Preserved       │
+└─────────────────┘     └─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+#### 1. Fast Number Lookup (Search-First)
+* Tap the search bar at the top of your phone screen. Arbor automatically brings up the **numeric keypad** for fast typing (with a `[Aa / 123]` button to switch to letters if your museum uses prefixes).
+* **Automatic Zero Normalization**: If your physical specimen label says `#001` or `#1`, simply type `1` or `001`. Arbor recognizes both formats instantly.
+* When you finish reviewing an object and tap `< Back`, Arbor automatically clears and focuses the search box so you can immediately type the next specimen number!
+
+#### 2. The Armed Target Shelf (Auditing 30–50 Specimens at Once)
+When you open a cabinet, you will usually inspect dozens of consecutive specimens on the same shelf before moving to the next. Typing the same Building, Floor, Cabinet, and Shelf numbers fifty times would be slow and cause typos.
+
+* **Set the Shelf Once**: On your first specimen, set the correct Cabinet (e.g. `21`) and Shelf (e.g. `01`). Arbor immediately **arms this location as your active target shelf**.
+* **1-Tap Stamping**: When you look up the next specimen, a prominent thumb banner appears directly under the plant title:
+  `📍 Armed Target: Cab 21 › Sh 01 [Stamp to This Shelf]`
+* Simply tap the banner to instantly assign the coordinates!
+
+#### 3. The Non-Coercive Review Safeguard
+To keep you moving fast, if you tap **`[ ✓ Mark Reviewed ]`** on a specimen that has no location recorded yet while a shelf is armed, Arbor will politely ask:
+> *"Stamp to Armed Shelf 21 & Mark Reviewed?"*
+
+You are given two completely safe choices:
+1. **`✓ Yes, Stamp to Target & Review`**: Assigns Cabinet 21, Shelf 01 and marks the specimen as reviewed.
+2. **`✕ No, Keep Location & Review`**: **100% safe!** If you found the specimen in a temporary sorting box or don't want to change its location, choosing "No" saves all your edits, problem checkboxes, and notes, and marks the specimen as reviewed **without altering its location**.
+3. **`Cancel`**: Returns to the form without saving.
+
+#### 4. Flagging Problems While Marking Reviewed (`REV + [N] ISSUES`)
+What if you pull a specimen and discover physical damage (e.g., a crushed box), an illegible handwritten label, or a conflicting year?
+* **Path A (Fix on the spot)**: If the physical label in your hand resolves a historical contradiction (e.g., the label says `1998` but a book noted `2008`), tap the suggestion from the Historical Data picker to fix it immediately.
+* **Path B (Flag for desktop triage)**: If the issue requires desktop research or physical box repair, check the appropriate problem box (e.g. `Box / Label Problem` or `Species Problem`), **BUT STILL MARK THE OBJECT AS REVIEWED**.
+* **Why this is a success**: Marking it reviewed stamps the physical coordinates and verifies that a human held the object. The status badge will display **`REV + [N] ISSUES` (Amber)**. This tells the entire team: *"This plant was physically found and its location is confirmed, but there is a note queued for office curation."*
+
+#### 5. Viewport-Reclaimed Photo Folio
+If an archival photo scan has not yet been uploaded for the specimen, Arbor automatically collapses the empty 192px photo box into a compact 28px single-line bar (`📷 Scan: None verified online`). This reclaims phone screen space so the plant information and problem checkboxes are right under your thumb without endless scrolling!
+
+---
+
+### Returning to Your Desk: Desktop Hallway Follow-Up
+
+When you finish your aisle audit and return to your computer:
+1. Click **🔴 End Mobile Session** on your desktop screen and confirm **Yes** to write your changes to the Excel file.
+2. Press **`Ctrl + Shift + F`** (or click the Filter button) to open the Filter Objects dialog.
+3. Click the dedicated preset button:
+   `🎯 Hallway Follow-Up (REV+ERR)`
+4. Arbor immediately filters your Specimen Directory to show every plant you handled in the vault that has a pending question or damage flag (`Reviewed = Has` and `Any_Problem = Has`), ready for office research!
+
+---
+
+### Ending Your Mobile Session & Offline Vault Mode
+* **Works Completely Offline**: If your museum vault has thick concrete walls with no Wi-Fi, the Mobile Companion continues working in offline mode. It securely holds your updates in phone storage and uploads them automatically the moment you walk back into Wi-Fi range.
+* When you return to your desk, click **🔴 End Mobile Session** on your computer. Arbor will check for any updates made on your phone and ask to save your changes to the Excel workbook.
 
 ---
 

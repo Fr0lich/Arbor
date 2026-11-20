@@ -350,10 +350,7 @@ class FilterManager:
                     if obs_row is None:
                         obs_row = {}
 
-            if not_reviewed_only:
-                if obs_row.get(REVIEWED_COLUMN):
-                    continue
-                filtered_ids.append(oid)
+            if not_reviewed_only and obs_row.get(REVIEWED_COLUMN):
                 continue
 
             # Short-circuit location checks early before executing heavy group evaluations

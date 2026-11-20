@@ -286,7 +286,7 @@ class LocationPanel(tk.Frame):
         )
         save_btn.pack(side="left", padx=sc(2))
         
-        apply_text = "Apply" if is_horiz else "Apply Preset(Ctrl+K)"
+        apply_text = "Apply" if is_horiz else "Apply Preset (Ctrl+Alt+K)"
         apply_btn = tk.Button(
             p_frame,
             text=apply_text,
@@ -312,7 +312,7 @@ class LocationPanel(tk.Frame):
 
         def _on_enter_apply(e):
             if not self.toast_var.get().startswith("[PRESET"):
-                self.toast_var.set("[Apply selected preset (Ctrl+K)]")
+                self.toast_var.set("[Apply selected preset (Ctrl+Alt+K)]")
         def _on_leave_apply(e):
             if not self.toast_var.get().startswith("[PRESET"):
                 self.toast_var.set("")
@@ -494,7 +494,8 @@ class LocationPanel(tk.Frame):
         content.pack(fill="both", expand=True, padx=sc(8))
         
         builder = SchemaFormBuilder(content, self.colors)
-        builder.build_stack(active_field_defs, self.location_vars, pady=3)
+        built = builder.build_stack(active_field_defs, self.location_vars, pady=3)
+        self._register_built_widgets(built)
             
         tk.Frame(content, bg=c["border"], height=1).pack(fill="x", pady=sc(6))
         
@@ -547,7 +548,8 @@ class LocationPanel(tk.Frame):
         active_field_defs = [field_defs[name] for name in order if name in field_defs]
         
         builder = SchemaFormBuilder(content, self.colors)
-        builder.build_grid(active_field_defs, self.location_vars, columns=len(active_field_defs) or 6)
+        built = builder.build_grid(active_field_defs, self.location_vars, columns=len(active_field_defs) or 6)
+        self._register_built_widgets(built)
 
     # -------------------------------------------------------------------------
     # Mode C: Horizontal 2-Row UI (Middle Column Alternate)
@@ -590,12 +592,29 @@ class LocationPanel(tk.Frame):
         custom_widgets = {
             "Loan status": self._build_loan_status_card_cell
         }
-        builder.build_grid(
+        built = builder.build_grid(
             field_defs,
             self.location_vars,
             layout_rows=layout_rows,
             custom_widgets=custom_widgets
         )
+        self._register_built_widgets(built)
+
+    def _register_built_widgets(self, widgets_dict):
+        """Track focusable input widgets and wire commit-on-blur/selection."""
+        if not widgets_dict:
+            return
+        for fname, widget in widgets_dict.items():
+            inner = getattr(widget, "entry", None) or getattr(widget, "cb", None) or getattr(widget, "combobox", None)
+            if inner is None:
+                continue
+            self.field_entries.append(inner)
+            try:
+                inner.bind("<FocusOut>", lambda e: self._trigger_commit(), add="+")
+                if isinstance(inner, ttk.Combobox):
+                    inner.bind("<<ComboboxSelected>>", lambda e: self._trigger_commit(), add="+")
+            except Exception:
+                pass
 
     # -------------------------------------------------------------------------
     # Data Accessors

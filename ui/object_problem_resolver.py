@@ -68,6 +68,7 @@ class ObjectProblemResolver:
         self.win = tk.Toplevel(parent_root)
         self.win.title("Problem Resolution" if not self._is_queue_mode else f"Problem Resolution (Queue: {len(self._oid_queue)} Objects)")
         self.win.configure(bg=COLORS["bg"])
+        self.win.bind("<Escape>", lambda e: self.win.destroy())
         if isinstance(parent_root, (tk.Tk, tk.Toplevel)):
             try:
                 self.win.transient(parent_root)
@@ -423,7 +424,13 @@ class ObjectProblemResolver:
         self.canvas.tutorial_id = "hr_cards"
         btn_apply_all.tutorial_id = "hr_apply_all"
 
-        self.win.bind("<Control-a>", lambda e: self.apply_all())
+        def _safe_ctrl_a(event):
+            if isinstance(getattr(event, "widget", None), (tk.Entry, ttk.Entry, tk.Text)):
+                return None  # Let native text select-all work inside text inputs
+            self.apply_all()
+            return "break"
+
+        self.win.bind("<Control-a>", _safe_ctrl_a)
         self.update_stats()
 
     def _build_queue_nav_bar(self):
@@ -731,7 +738,18 @@ class ObjectProblemResolver:
             if forced_val is not None:
                 rv.set(forced_val)
             new_val = rv.get().strip()
-            if new_val and new_val != cv:
+            # Allow clearing an active problem flag even if the current value is confirmed correct
+            has_active_flag = False
+            prob_to_field = getattr(self.main_app, "problem_to_field", {})
+            app_obj_chk = getattr(self.main_app, "app", None)
+            if app_obj_chk and getattr(app_obj_chk, "df_obs", None) is not None:
+                obs_idx = self.oid if self.oid in app_obj_chk.df_obs.index else (int(self.oid) if str(self.oid).isdigit() and int(self.oid) in app_obj_chk.df_obs.index else None)
+                if obs_idx is not None:
+                    for pc, mf in prob_to_field.items():
+                        if mf == f and pc in app_obj_chk.df_obs.columns and bool(app_obj_chk.df_obs.loc[obs_idx, pc]):
+                            has_active_flag = True
+                            break
+            if (new_val and new_val != cv) or (new_val and has_active_flag):
                 if hasattr(self.main_app, "push_undo_state"):
                     try:
                         self.main_app.push_undo_state(self.oid)
@@ -908,7 +926,7 @@ class ObjectProblemResolver:
                     self.main_app._cached_reg_dict[self.oid][field] = new_val
                 
                 reg_changed_fields.append(field)
-                reg_changed_values.append(f'{field}: "{current_val}"  "{new_val}"')
+                reg_changed_values.append(f'{field}: "{current_val}" -> "{new_val}"')
                     
                 prob_to_field = getattr(self.main_app, "problem_to_field", {})
                 for pc, mf in prob_to_field.items():
@@ -924,7 +942,7 @@ class ObjectProblemResolver:
 
                         if old_prob:
                             prob_changed_fields.append(pc)
-                            prob_changed_values.append(f'{pc}: "True"  "False"')
+                            prob_changed_values.append(f'{pc}: "True" -> "False"')
                         self.main_app.problem_vars[pc].set(False)
 
                         if getattr(self.main_app, "_cached_obs_dict", None) is not None and self.oid in self.main_app._cached_obs_dict:
@@ -1120,6 +1138,13 @@ class ProblemQueueDialog(tk.Toplevel):
 
             if obs_row:
                 has_prob = any(bool(obs_row.get(col, False)) for col in target_prob_cols)
+                if not has_prob and hasattr(self.main_app, "object_has_problem"):
+                    try:
+                        # Fallback to full problem check (including auto-detected missing fields)
+                        if len(target_prob_cols) == len(getattr(self.main_app, "problem_columns", target_prob_cols)):
+                            has_prob = bool(self.main_app.object_has_problem(oid))
+                    except Exception:
+                        pass
                 if has_prob:
                     matching.append(oid)
 

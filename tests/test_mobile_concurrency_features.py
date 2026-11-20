@@ -212,10 +212,11 @@ def test_pin_requirement_toggle(mock_app_state):
         assert "token" in res_auth.json
         assert res_auth.json.get("success") is True
 
-        # GET /login redirects directly to / with a session cookie and token
+        # GET /login redirects directly to /v2 (or /) with a session cookie and token
         res_login = client.get('/login')
         assert res_login.status_code == 302
-        assert "/?token=" in res_login.headers.get("Location", "")
+        loc = res_login.headers.get("Location", "")
+        assert "token=" in loc and ("/v2" in loc or "/?token=" in loc)
         cookie_header = res_login.headers.get("Set-Cookie", "")
         assert "session=" in cookie_header
 

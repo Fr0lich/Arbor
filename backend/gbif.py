@@ -3,9 +3,28 @@ import requests
 import concurrent.futures
 import functools
 import re
+import threading
 from typing import List, Dict, Optional, Any
+from cachetools import LRUCache
 
-_session = requests.Session()
+_thread_local = threading.local()
+_session = requests.Session()  # Kept for backward-compat / test mocking
+
+
+def _get_session() -> requests.Session:
+    """Return a thread-local requests.Session, or module _session if patched in tests."""
+    if not isinstance(_session, requests.Session) or getattr(_session.get, "__self__", None) is not _session:
+        return _session
+    sess = getattr(_thread_local, "session", None)
+    if sess is None:
+        sess = requests.Session()
+        _thread_local.session = sess
+    return sess
+
+
+_gbif_cache_lock = threading.Lock()
+_check_gbif_cache: LRUCache = LRUCache(maxsize=1024)
+_accepted_name_cache: LRUCache = LRUCache(maxsize=1024)
 
 CLASSICAL_FAMILY_NAMES = {
     "compositae", "cruciferae", "gramineae", "guttiferae",
@@ -52,19 +71,23 @@ def is_undetermined_species(species: Any) -> bool:
     return False
 
 
-@functools.lru_cache(maxsize=1024)
 def check_gbif(genus: str, species: str):
     genus = (genus or "").strip()
     species = (species or "").strip()
     name = f"{genus} {species}".strip()
     if not name or not genus:
         return None
+    cache_key = (genus, species)
+    with _gbif_cache_lock:
+        cached = _check_gbif_cache.get(cache_key)
+        if cached is not None:
+            return cached.copy()
     url = "https://api.gbif.org/v1/species/match"
     params = {"name": name}
     if genus:
         params["genus"] = genus
     try:
-        response = _session.get(url, params=params, timeout=5)
+        response = _get_session().get(url, params=params, timeout=5)
         response.raise_for_status()
         data = response.json()
 
@@ -106,7 +129,7 @@ def check_gbif(genus: str, species: str):
             (data.get("order") or "").strip()
         ]))
 
-        return {
+        result = {
             "matchType": match_type,
             "status": data.get("status"),
             "canonicalName": data.get("canonicalName"),
@@ -123,15 +146,32 @@ def check_gbif(genus: str, species: str):
             "synonym": data.get("status") == "SYNONYM",
             "acceptedUsageKey": data.get("acceptedUsageKey"),
         }
+        with _gbif_cache_lock:
+            _check_gbif_cache[cache_key] = result
+        return result.copy()
     except Exception as e:
         print(f"Error checking GBIF: {e}")
+        # Never cache transient/offline errors so reconnecting works immediately
         return {"error": str(e)}
 
-@functools.lru_cache(maxsize=1024)
+
+def _clear_gbif_caches():
+    with _gbif_cache_lock:
+        _check_gbif_cache.clear()
+        _accepted_name_cache.clear()
+
+
+check_gbif.cache_clear = _clear_gbif_caches
+
+
 def get_accepted_name(usage_key: int):
+    with _gbif_cache_lock:
+        cached = _accepted_name_cache.get(usage_key)
+        if cached is not None:
+            return cached.copy()
     url = f"https://api.gbif.org/v1/species/{usage_key}"
     try:
-        response = _session.get(url, timeout=5)
+        response = _get_session().get(url, timeout=5)
         response.raise_for_status()
         data = response.json()
 
@@ -164,7 +204,7 @@ def get_accepted_name(usage_key: int):
             (data.get("order") or "").strip()
         ]))
 
-        return {
+        result = {
             "canonicalName": data.get("canonicalName"),
             "scientificName": data.get("scientificName"),
             "genus": new_genus,
@@ -177,9 +217,15 @@ def get_accepted_name(usage_key: int):
             "usageKey": usage_key,
             "taxonKey": usage_key,
         }
+        with _gbif_cache_lock:
+            _accepted_name_cache[usage_key] = result
+        return result.copy()
     except Exception as e:
         print(f"Error checking GBIF accepted name: {e}")
         return {"error": str(e)}
+
+
+get_accepted_name.cache_clear = _clear_gbif_caches
 
 
 def is_author_equivalent(a1: Any, a2: Any) -> bool:
@@ -558,7 +604,8 @@ def batch_gbif_match(
     progress_callback=None,
     cancel_event=None,
     max_workers: Optional[int] = None,
-    exclude_undetermined: bool = False
+    exclude_undetermined: bool = False,
+    stats_out: Optional[Dict[str, int]] = None
 ) -> List[Dict[str, Any]]:
     """
     Query GBIF concurrently for unique taxa and return proposed taxonomic changes across all items.
@@ -604,6 +651,7 @@ def batch_gbif_match(
     total_taxa = len(unique_taxa)
     taxon_cache = {}
     completed_taxa = 0
+    error_count = 0
 
     # 2. Query GBIF concurrently only for distinct taxa
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -629,9 +677,16 @@ def batch_gbif_match(
             try:
                 gbif_res = future.result()
                 taxon_cache[key] = gbif_res
+                if isinstance(gbif_res, dict) and gbif_res.get("error"):
+                    error_count += 1
             except Exception as e:
                 print(f"Error querying taxon {key}: {e}")
                 taxon_cache[key] = None
+                error_count += 1
+
+    if stats_out is not None:
+        stats_out["total_taxa"] = total_taxa
+        stats_out["error_count"] = error_count
 
     if cancel_event and cancel_event.is_set():
         return []

@@ -262,4 +262,28 @@ def test_setting_info_texts_dual_depth_and_lexicon():
     assert ".xlsx" in SETTING_INFO_TEXTS["mobile_autosave_on_stop"].lower()
 
 
+def test_unified_help_reader_and_shortcuts_work_outside_main_ui(tk_root):
+    """Verify Help Guide Reader (Desktop/Mobile tabs) and Shortcuts HUD work from StartupDialog/bare Tk root."""
+    from ui.help_dialogs import show_main_help, show_shortcuts
+
+    show_main_help(tk_root, initial_tab="desktop", initial_chapter="dont-panic")
+    show_main_help(tk_root, initial_tab="mobile")
+    show_shortcuts(tk_root)
+
+
+def test_mobile_guide_zero_barcodes_and_bundled_in_spec():
+    """Verify MOBILE_COMPANION_USER_GUIDE.md has zero barcode terms and is bundled in main.spec."""
+    import os
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(repo_root, "MOBILE_COMPANION_USER_GUIDE.md"), "r", encoding="utf-8") as f:
+        mobile_guide = f.read()
+    assert "barcode" not in mobile_guide.lower(), "Zero-barcode rule violated in MOBILE_COMPANION_USER_GUIDE.md"
+    assert "Armed Target Shelf" in mobile_guide
+
+    with open(os.path.join(repo_root, "main.spec"), "r", encoding="utf-8") as f:
+        spec_text = f.read()
+    assert "MOBILE_COMPANION_USER_GUIDE.md" in spec_text
+    assert "USER_GUIDE.md" in spec_text
+
+
 

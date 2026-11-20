@@ -1,3 +1,4 @@
+import gc
 import os
 import tkinter as tk
 import pytest
@@ -22,6 +23,13 @@ def _safe_tk_init(self, *args, **kwargs):
         _original_tk_init(self, *args, **kwargs)
 
 tk.Tk.__init__ = _safe_tk_init
+
+
+@pytest.fixture(autouse=True)
+def _tk_gc_hygiene():
+    """Collect lingering Tk Variable/PhotoImage refs on the main thread after each test."""
+    yield
+    gc.collect()
 
 
 @pytest.fixture

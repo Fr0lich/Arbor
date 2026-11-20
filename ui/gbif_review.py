@@ -138,7 +138,13 @@ class GBIFReviewDialog(tk.Toplevel):
         self._update_tab_buttons()
         self._render_current_page()
 
-        self.bind("<Control-a>", lambda e: self._apply_selected())
+        def _safe_ctrl_a(event):
+            if isinstance(getattr(event, "widget", None), (tk.Entry, ttk.Entry, tk.Text)):
+                return None  # Let native text select-all work inside text inputs
+            self._apply_selected()
+            return "break"
+
+        self.bind("<Control-a>", _safe_ctrl_a)
         self.bind("<Control-Return>", lambda e: self._apply_selected())
         self.bind("<Escape>", lambda e: self.destroy())
         self.bind("<F11>", lambda e: self._toggle_fullscreen())
@@ -1529,6 +1535,16 @@ class GBIFReviewDialog(tk.Toplevel):
 
         self._show_toast(f"⎌ Undid {len(changed_fields)} updates for Specimen #{oid}", level="undo")
         self._update_specimen_ui_in_place(oid)
+        if callable(getattr(self, "on_applied_callback", None)):
+            try:
+                self.on_applied_callback()
+            except Exception:
+                pass
+        try:
+            from ui.state import app_bus, DATABASE_UPDATED
+            app_bus.publish(DATABASE_UPDATED, refresh_list=True, invalidate_search=True)
+        except Exception:
+            pass
 
     def _render_current_page(self):
         C = self.colors

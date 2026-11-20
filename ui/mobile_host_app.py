@@ -183,7 +183,7 @@ class MobileHostApp:
                                     backup_path, df_reg_copy, df_obs_copy, df_photo_copy, df_log_copy, df_unval_copy
                                 )
                             else:
-                                backup_path = excel_path + ".autosave"
+                                backup_path = excel_path + ".autosave.xlsx"
                                 SQLiteRepository.export_to_excel(
                                     sqlite_path=None,
                                     excel_path=backup_path,

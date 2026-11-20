@@ -14,7 +14,7 @@ Arbor is an offline-first desktop museum collection suite engineered for physica
 The user profile for Arbor's daily operations is **distinct from general enterprise software**:
 * **Minimal computer comfort**: Many trainees have never edited a database, used a command line, or configured an application beyond clicking buttons.
 * **Zero botanical background**: Interns may not know botanical Latin, taxonomic rank hierarchies, or nomenclatural codes; they are transcribing physical text written on 19th- and 20th-century paper sheets.
-* **High volume, physical task**: Curators sit at a physical desk with physical specimens, a barcode wand, and a keyboard. Glanceability and muscle memory trump lengthy explanations.
+* **High volume, physical task**: Curators sit at a physical desk with physical specimens, a hand lens, and a keyboard. Glanceability and muscle memory trump lengthy explanations.
 
 ### The 4-Tier Progressive Disclosure Curriculum
 
@@ -157,13 +157,14 @@ Every feature in Arbor must be supported across all four user-assistance touchpo
 | **5. Flagging Quality Problems** | `check_flags`: Step 3 of Review Tutorial | Tooltip: "Problem flags record quality issues in Observation sheet"| **`Space`**: Toggle problem box<br>**`Shift+Up/Down`**: Pick problem | **Chapter 4 & 10**: The 11 standard problem checkboxes | Mobile quick-toggle pills for illegible / damaged |
 | **6. Fixing Mismatched Ledgers** | Step 1-4 of Discrepancy Tutorial (`open_resolver`) | Tooltip: "Auto-advance history navigates to next conflict" | **`Ctrl+H`**: Open Conflict Resolver | **Chapter 4**: Comparing active catalog vs ledger books vs GBIF | Mobile conflict alert banner highlighting differences |
 | **7. Checking Global Names (GBIF)** | Covered in Discrepancy Tutorial (`select_resolution`) | Non-blocking toast alert: "Exact GBIF match" / "Fuzzy match" | Menu: **🌿 Tools $\rightarrow$ GBIF Lookup** | **Chapter 4**: Online taxonomic verification without errors | Mobile GBIF status indicator badge |
-| **8. Finding Specimens Quickly** | Step 1 of Review Tutorial: typing in search box | Tooltip: "Instant typo-tolerant search across ID and taxon" | **`Ctrl+F`**: Search Bar<br>**`Ctrl+K`**: Omni-Bar | **Chapter 3 & 6**: Fast searching, ID prefix (`#1042`) | Mobile instant search and barcode input |
-| **9. Recording Storage Locations** | Step 4 of Database Tutorial | Tooltip: "Compact 2-row location layout in center view" | **`Ctrl+L` / `F4`**: Jump to Storage<br>**`Ctrl+Alt+K`**: Apply Preset | **Chapter 1 & 10**: Building, Floor, Cabinet, Shelf | Mobile physical coordinate steppers (+ / - buttons) |
+| **8. Finding Specimens Quickly** | Step 1 of Review Tutorial: typing in search box | Tooltip: "Instant typo-tolerant search across ID and taxon" | **`Ctrl+F`**: Search Bar<br>**`Ctrl+K`**: Omni-Bar | **Chapter 3 & 6**: Fast searching, ID prefix (`#1042`) | Mobile instant search with numeric keypad & leading-zero normalization |
+| **9. Recording Storage Locations** | Step 4 of Database Tutorial | Tooltip: "Compact 2-row location layout in center view" | **`Ctrl+L` / `F4`**: Jump to Storage<br>**`Ctrl+Alt+K`**: Apply Preset | **Chapter 1 & 10**: Building, Floor, Cabinet, Shelf | Mobile 1-tap Armed Target Shelf banner (`[📍 Cab 21 › Sh 01]`) |
 | **10. Creating New Collections** | Step 1 of Database Tutorial (`open_db_wizard`) | Step-by-step expanders `[?]` in Create Collection dialog | Menu: **File $\rightarrow$ + New Collection** | **Chapter 10**: The 4-Sheet botanical collection architecture | `CreateCollectionDialog` with 1-click template button |
-| **11. Phone Barcode Companion** | Mentioned in Help Center options list | Tooltip: "Require PIN authentication for phone companion" | Menu: **📱 Mobile $\rightarrow$ QR Code** | **Chapter 5**: Phone pairing, Eduroam bypass, vault mode | Onscreen QR code modal with Cloudflare tunnel switch |
+| **11. Mobile Companion (Vault Audit)** | Mentioned in Help Center options list | Tooltip: "Require PIN authentication for phone companion" | Menu: **📱 Mobile $\rightarrow$ QR Code** | **Chapter 5 & 9**: Phone pairing, search-first audit, Armed Shelf | Search-first audit, non-coercive review, reclaimed photo folio |
 | **12. Changing Card Looks** | Visual layout controls in Settings Appearance | Tooltip: "Density profiles: Compact 64px, Standard 78px" | **`Ctrl+Shift+1..4`**: Card Profiles | **Chapter 1**: Dual view modes and Directory Card Personas | Mobile theme auto-sync (light/dark mode) |
 | **13. Missing Data Codes (ICEDIG)** | Mentioned in Trainee Manual Chapter 8 | Tooltip: "Insert standardized missing data tokens" | **`Ctrl+Shift+M`**: `?m`<br>**`Ctrl+Shift+I`**: `?i` | **Chapter 8**: When and how to record illegible labels | Mobile settings modal ICEDIG quick-reference table |
 | **14. Safety Backups & Recovery** | Handled transparently by `SandboxManager` | Tooltip: "Timestamped backups in backups/ before Excel import" | **`Ctrl+S`**: Save Workbook | **Chapter 10 & 11**: Automatic backups and session recovery | Mobile automatic save-on-disconnect safeguard |
+| **15. Desktop Hallway Triage** | Filter Dialog preset | Tooltip: "Isolate specimens reviewed in vault with pending problems" | Button: **`🎯 Hallway Follow-Up (REV+ERR)`** | **Chapter 9**: Post-vault office triage | Synchronized to `Reviewed=TRUE` and `Any_Problem=TRUE` |
 
 ---
 
@@ -199,7 +200,7 @@ Every feature in Arbor must be supported across all four user-assistance touchpo
 * **Goal**: Provide contextual guidance for specialized or physical tasks.
 * **Contexts**:
   * **Starting a New Project**: `CreateCollectionDialog` features clean expandable cards for Sheet 1 (Catalog), Sheet 2 (Problems & Storage), and Sheet 3 (Audit Log), with green "🌱 For New Curators" summaries.
-  * **Auditing in Vault Aisles**: The phone companion displays large finger-friendly steppers (`+` / `-`) for cabinet numbers and a barcode scanner button that beeps softly on a successful scan.
+  * **Auditing in Vault Aisles**: The phone companion features a search-first workflow with numeric keypad defaults, an active Armed Target Shelf banner for 1-tap coordinate stamping, non-coercive review confirmation, and viewport-reclaimed photo containers.
 
 ---
 

@@ -13,6 +13,123 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 17: Help Hub, Startup Setup Guide, Unified Desktop/Mobile Reader & Documentation Sync
+- **Date**: 2026-11-20
+- **Feature Area**: Startup Help (`ui/dialogs.py`), Unified Guide Reader & Help Hub (`ui/help_dialogs.py`), Help Dropdown (`ui/main_window.py`), Mobile Panel (`ui/mobile_panel.py`), User Guides (`USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`, `documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`), & Packaging (`main.spec`, `build_exe.bat`)
+- **What Changed**:
+  1. **Startup Window Setup Guide**: Replaced the raw Windows `messagebox.showinfo()` in `StartupDialog` with a calm, Arbor-themed Setup Guide window (Warm Alabaster, Lora/Inter/JetBrains Mono, Vibrant Fern step cards) and expanded the Startup `Help` menu to include **Getting Started & Setup Guide**, **Desktop Work Manual**, **Mobile Vault Guide**, and **Keyboard Shortcuts** (available before opening any workbook or demo).
+  2. **Unified Tabbed Guide Reader (`show_main_help`)**: Added a 2-tab pill switcher (**📖 Desktop Work Manual** | **📱 Mobile Vault Guide**), a clickable left-hand **Chapter Sidebar** with Vibrant Fern active highlight, direct chapter jumping (`initial_chapter="dont-panic"`), inline `Find (Ctrl+F)`, and quick links to **Shortcuts (F1)** and **3-Min Practice Tour**.
+  3. **Calm Scrollable Help Hub & Consistent `❓ HELP ▾` Menu**: Redesigned `open_help_window()` into a scrollable `640×650` hub with a 2×2 Quick Answer grid (Desktop Manual, Mobile Guide, Shortcuts `F1`, `"Don't Panic!"` Help) plus pill rows for all 3 in-place **30-Second Quick Guides** and 3 **Practice Sandboxes**. Fixed `(F1)` labeling in `show_help_dropdown()`, made `show_shortcuts()` work on bare Tk roots, and added a `📖 Mobile Guide` button directly to `MobilePanel`.
+  4. **Guide Content Sync & Zero-Barcodes Compliance**: Removed all remaining barcode references and technical jargon from `MOBILE_COMPANION_USER_GUIDE.md` and rewrote Section 3 around the real V2 Armed Target Shelf & 3-Step Guide workflow; updated `USER_GUIDE.md` and `KEYBOARD_SHORTCUTS_CHEAT_SHEET.md` with Practice Mode, `Ctrl+Alt+K`, `F3`, `Ctrl+Z`, and `Undo Last Bulk Edit`; bundled `MOBILE_COMPANION_USER_GUIDE.md` in `main.spec` and `build_exe.bat`.
+- **User Impact**: Whether launching Arbor for the first time, working on a real collection at a desk, or running Mobile Companion in a vault, trainees have calm, consistent, jargon-free help and manuals 1 click away without needing to enter sandbox or demo mode.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Trainee Manuals: `USER_GUIDE.md` & `MOBILE_COMPANION_USER_GUIDE.md`
+  - [x] Desk Cheat Sheet: `documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`
+  - [x] Packaging: `main.spec` & `build_exe.bat`
+  - [x] Master Lexicon & Zero-Barcodes compliance
+
+---
+
+### Entry 16: Pre-Phase 3 Stabilization Polish & Tutorial Phase 3 (Contextual 30-Second Micro-Guides)
+- **Date**: 2026-11-20
+- **Feature Area**: Specimen Directory (`ui/widgets.py`), Bottom Progress Bar (`ui/status_bar.py`), Settings (`ui/unified_settings.py`), Offline GBIF (`backend/gbif.py`, `ui/gbif_batch_config.py`), Bulk Edit (`ui/bulk_edit.py`, `ui/command_palette.py`), & Contextual Micro-Guides (`ui/tutorials/micro_guides.py`, `ui/tutorials/tutorial_runner.py`, `ui/filter_dialog.py`, `ui/mobile_panel.py`, `ui/image_panel.py`)
+- **What Changed**:
+  1. **High-Contrast `[REV+ERR]` Card Badge**: Restored `#F57C00` ochre-amber background with `#ffffff` text on Specimen Directory `[REV+ERR]` cards in light mode (`#c46200` in dark mode).
+  2. **Plain-Language Bottom Progress Bar**: Replaced developer labels (`OBJECT_COUNT:`, `REVIEWED:`, `PROBLEMS:`, `LAST_SAVE:`, `DB_STATUS`, `LOG_VIEWER`) with Canonical Trainee Lexicon labels (`Specimens:`, `Reviewed:`, `Problems:`, `Last Saved:`, `Collection Stats`, `Activity Log`).
+  3. **Removed Unused `Strict Input Validation` Toggle**: Cleaned up the dead checkbox from Unified Settings (`disable_tutorials` remains active from Phase 1).
+  4. **Offline GBIF Batch Warning**: Added optional `stats_out` error tracking to `batch_gbif_match()` so offline runs display a clear connectivity warning instead of falsely reporting *"All checked taxonomy records are up to date"*.
+  5. **Bulk Edit Audit Log & Single-Action Rollback**: Added `BULK_EDIT` audit log entries and `undo_last_bulk_edit()` exposed via Command Palette (`Ctrl+K` → `"Undo Last Bulk Edit"`).
+  6. **Contextual 30-Second Micro-Guides (Phase 3)**: Added `use_sandbox=False` support to `TutorialRunner` and created `ui/tutorials/micro_guides.py` with 3 in-place micro-guides (**Hallway Follow-Up 30s**, **1-Tap Armed Shelf 45s**, **Image Zoom & Rotate 20s**), accessible via subtle `[?]` triggers in Filter Dialog, Mobile Companion, Image Viewport HUD, and `Ctrl+K` Command Palette.
+  7. **Test Suite GC Hygiene**: Added `autouse=True` `gc.collect()` teardown fixture in `conftest.py` to prevent cross-thread Tk/PIL finalizer aborts on Windows.
+- **User Impact**: Trainees see crisp high-contrast amber `[REV+ERR]` badges, plain-language bottom progress indicators, honest offline GBIF feedback, safer bulk edits with 1-click undo, and instant 30-second micro-guides right beside key tools without leaving their open workbook.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_problem_persistence_fix.py`, `tests/test_status_bar.py`, `tests/test_sandbox_tutorials.py`
+  - [x] Master Lexicon compliance
+
+---
+
+### Entry 15: Tutorial Phase 2 — Floating Visual Keycap HUD & Mobile Companion 3-Step Hallway Walkthrough
+- **Date**: 2026-11-20
+- **Feature Area**: Desktop Tutorial HUD (`ui/tutorials/tutorial_runner.py`, `ui/tutorials/review_tutorial.py`) & Mobile Companion V2 (`backend/mobile_server.py`)
+- **What Changed**:
+  1. **Floating Visual Keycap Pills**: Added `keycaps` support to `ActionStep` and `TutorialRunner` to render high-contrast physical keycap chips (`[ Ctrl ] + [ F ]`, `[ Space ]`, `[ Ctrl ] + [ Enter ]`) inside the tutorial HUD, and optimized `TutorialHighlight.update_position()` to skip redundant geometry calls when coordinates haven't changed.
+  2. **Mobile Companion V2 3-Step Hallway Walkthrough**: Added a zero-build, offline-safe 3-slide modal (`walkthroughModal`) to `INDEX_TEMPLATE_V2` covering fast accession search (`001`/`1`), 1-tap Armed Target Shelf stamping, and flagging issues while still tapping **Mark Reviewed**. Tracked via `localStorage` (`arbor_v2_walkthrough_seen`) with a **Skip** button and a **"🎓 3-Step Guide"** replay button inside Mobile Settings.
+- **User Impact**: Desktop trainees build keyboard muscle memory via visual keycaps during the Quick Tour, and first-time phone auditors learn the 3 core hallway mechanics in under 20 seconds without needing supervision.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py` & `tests/test_mobile_companion.py`
+  - [x] Master Lexicon compliance
+
+---
+
+### Entry 14: Tutorial Phase 1 — Zero-Fear Practice Sandbox, Physical Cabinet 21 Quick Tour & First-Run Prompt
+- **Date**: 2026-11-20
+- **Feature Area**: Interactive Tutorials (`ui/tutorials/sandbox_manager.py`, `ui/tutorials/review_tutorial.py`), Save/Autosave Guards (`ui/database_ops.py`, `ui/autosave_handler.py`), & Help Hub (`ui/help_dialogs.py`)
+- **What Changed**:
+  1. **Zero-Disk-Write Sandbox Guards**: Blocked `save_session()`, `_write_excel()`, and background `_autosave_tick()` whenever `SandboxManager().is_sandboxed` is `True`, showing a reassuring *"Practice Mode — saving is disabled so real files stay safe"* toast instead of attempting disk writes.
+  2. **Persistent Practice Mode Banner**: Mounted a slim top-of-window green banner (`🛡️ PRACTICE MODE — Nothing you do here affects real museum files`) with a 1-click **Exit Practice Mode** button while any sandbox tutorial is active.
+  3. **Physical Cabinet 21 Scenario & Real Schema Columns**: Upgraded `SandboxManager._create_mock_datasets()` to use real production columns (`Collection Date`, `Collection Place`, `Building`, `Floor`, `Cabinet`, `Shelf`, `Box_Label_Problem`, `df_obs["Reviewed"]`) with a Cabinet 21 specimen (`#1002`, `2008` vs historical ledger `1998`). Rewrote `start_review_tutorial()` into the 5-step **3-Minute Quick Tour** walking trainees through pulling `#1002`, fixing the year, flagging `Box_Label_Problem`, and marking Reviewed to see the amber `REV + 1 ISSUE` badge.
+  4. **First-Run Prompt & Help Hub Hero Card**: Added a prominent **"🎓 Take the 3-Minute Quick Tour (Zero Risk — Practice Sandbox)"** card at the top of the Help Hub and a gentle first-run banner in `_on_startup_ready()` respecting `disable_tutorials` and `quick_tour_seen`.
+- **User Impact**: New unsupervised trainees can practice real vault curation workflows with zero fear of damaging museum files and immediately understand why flagged specimens are still marked Reviewed.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py` (added banner, schema, and disk-save guard tests)
+  - [x] Master Lexicon compliance: Used canonical terms (*"Specimen Directory"*, *"Mark Reviewed"*, *"Practice Mode"*)
+
+---
+
+### Entry 13: Full-Stack Stabilization Sprint (Data Safety, Mobile Live Sync, Desktop Shortcuts & Triage Cohesion)
+- **Date**: 2026-11-20
+- **Feature Area**: Core Persistence (`models.py`, `ui/autosave_handler.py`, `ui/database_ops.py`, `utils.py`, `config.py`, `main.py`, `backend/updater.py`, `backend/task_queue.py`, `repository.py`), Mobile Companion (`backend/mobile_server.py`, `ui/mobile_panel.py`, `ui/mobile_dialog.py`, `ui/mobile_host_app.py`), Desktop Workspace (`ui/main_window.py`, `ui/widgets.py`, `ui/location_panel.py`, `ui/registry_panel.py`, `ui/image_panel.py`, `ui/keybindings.py`, `ui/status_bar.py`, `ui/object_context_bar.py`), Triage & Search (`backend/search.py`, `backend/filter.py`, `backend/gbif.py`, `ui/command_palette.py`, `ui/object_problem_resolver.py`, `ui/gbif_review.py`, `ui/bulk_edit.py`), Onboarding & Settings (`ui/dialogs.py`, `ui/tutorials/review_tutorial.py`, `ui/unified_settings.py`)
+- **What Changed**:
+  1. **Data Integrity & Crash Safety**: Fixed JSON autosave recovery dropping `"ObjectID"` index names and UTF-8 encoding (preserving Norwegian characters); prevented the Excel formula sanitizer from quoting valid negative Floor values (`-1`, `-2`) and standalone `-`; closed the async save `dirty = False` race and `UnboundLocalError` on `is_locked`; fixed `--restore-session` post-update startup `NameError` and clean updater exit; added `atexit` flushing and corrupt-file backup for `user_prefs.json`; aligned `MobileHostApp` autosave suffix to `.autosave.xlsx`; guarded `BackgroundWorker` shutdown and `save_sqlite()` schema drift.
+  2. **Mobile Companion & Desktop↔Mobile Live Sync**: Fixed `MobilePanel`/`MobileDialog` server wiring so "Push to Phone", live desktop→mobile updates, server reuse, and the "Enable simultaneous edit" checkbox work reliably; restored V2 SSE `batch` event unwrapping (`record_updated`, `push_navigation`, `session_ended`) with exponential-backoff reconnect; added offline vault `tailwind` guards + inline fallback CSS and resilient service worker caching; fixed Armed Target Shelf matching to check `Building` and `Floor` alongside normalized `Cabinet`/`Shelf`; preserved phone problem flags during desktop simultaneous-edit sync.
+  3. **Desktop Workspace & Shortcuts**: Restored `Ctrl+Z` undo inside single-line entry fields and Caps Lock-tolerant `Ctrl+R`/`Z`/`Y`; fixed `Ctrl+L`/`F4` Storage Location focus, commit-on-blur, and `Ctrl+Alt+K` preset label; fixed Focus Mode problem fallback, `F3` problem focus, and `Ctrl+Shift+P` Command Palette conflict; made `ImagePanel` thread-safe with stale-404 token guards; published `OBJECT_DATA_CHANGED` so top/bottom status bars stay synchronized.
+  4. **Search, Filtering & Hallway Triage**: Fixed `Ctrl+K` → "Filter: Hallway Follow-Up (REV+ERR)" crash (`win=None`); added leading-zero and museum-prefix normalization across desktop search and Command Palette (removing the 1,000-row cap); guarded `Ctrl+A` inside text inputs in Problem Resolver and GBIF Review; allowed clearing verified-correct problem flags and restored `" -> "` provenance log diffs; fixed `not_reviewed_only` filter short-circuit, thread-safe non-error-caching GBIF lookups, GBIF Undo cache invalidation, and `df_lock` protection in Bulk Edit.
+  5. **Onboarding, Settings & Canonical Trainee Lexicon**: Fixed `StartupDialog` demo image-mode toggle and graceful offline fallback when no local image folder is picked; fixed Review Tutorial Step 1 auto-skipping by targeting specimen `1002`; wired live PIN toggle updates in Unified Settings; replaced remaining technical jargon in Settings and `ObjectContextBar` with Canonical Trainee Lexicon terms.
+- **User Impact**: Trainees and curators get safer Excel saving/recovery, working real-time sync and offline vault rendering on phones, responsive desktop shortcuts (`Ctrl+Z`, `Ctrl+L`, `F3`, `Ctrl+K`), crash-free hallway triage, and smoother first-run onboarding.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Master Lexicon compliance: Updated `ObjectContextBar` badges/tooltips and Settings helper text to Canonical Trainee Lexicon terms.
+  - [ ] Optional follow-up: Update `ui/status_bar.py` labels (`OBJECT_COUNT:` → `Specimens:`) together with `tests/test_status_bar.py`, and remove or wire the two unused settings toggles (`disable_tutorials`, `strict_input_validation`).
+
+---
+
+### Entry 12: Mobile Review Safeguard Restoration, Hallway Triage Command Palette, Tutorial & Help Viewer Upgrades
+- **Date**: 2026-11-20
+- **Feature Area**: Mobile Companion (`backend/mobile_server.py`), Desktop Triage (`ui/command_palette.py`, `ui/object_problem_resolver.py`, `ui/mobile_dialog.py`), Interactive Tutorials (`ui/tutorials/`), & Help Center (`ui/help_dialogs.py`)
+- **What Changed**:
+  1. **Mobile V2 JS Syntax Fix & Non-Coercive Review Guard**: Removed an orphaned closing brace in `INDEX_TEMPLATE_V2` (`handleReviewButtonClick`) and restored the conditional non-coercive prompt (`armedConfirmModal`) when marking an unplaced or differently located specimen as reviewed while a target shelf is armed.
+  2. **Dynamic Mobile Building & Collection Labels**: Populated `#launchBldgSelect` dynamically from the active workbook's Storage Location choices instead of hardcoded building names, replaced the hardcoded `vascular_plants.csv` subtitle in Batch Location Registrator, and added a `"📍 Set Target Shelf"` re-open button when dismissing the station setup card.
+  3. **Desktop Hallway Triage Shortcuts**: Added **"Filter: Hallway Follow-Up (REV+ERR)"** and **"Triage Problem Queue (Filtered List)"** to the Command Palette (`Ctrl+K`), bound `Escape` to close the Problem Resolution window, and added a post-mobile-sync toast showing how many `REV+ERR` specimens are ready for desktop follow-up.
+  4. **Interactive Tutorial Fixes & Styling**: Fixed `review_tutorial.py` validators to read `app.current_object_id` and `df_obs["Reviewed"]` so steps auto-advance reliably, and aligned `TutorialRunner` and `TutorialHighlight` with Arbor's Charcoal & Vibrant Fern design tokens with a step progress bar.
+  5. **User Guide & Shortcuts HUD Upgrades**: Fixed Dark Mode propagation into `show_main_help(ui)`, upgraded the in-app manual reader (`_render_markdown_to_text`) with styled callout blocks (`>`), clickable Table of Contents jump links, cleaner tables, and an inline **Find in Guide** (`Ctrl+F`) search bar, plus mousewheel scrolling in the Shortcuts HUD.
+- **User Impact**: Trainees using the Mobile Companion get reliable 1-tap Armed Target Shelf protection without accidental blank-location reviews; collection managers can jump straight into `REV+ERR` triage from `Ctrl+K`; and new interns reading the manual or running sandbox tutorials get working auto-advance steps, Dark Mode support, clickable chapters, and instant keyword search.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Trainee Manual: `USER_GUIDE.md` (`Ctrl+G` filter shortcut alignment)
+  - [x] Desk Cheat Sheet: `documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md` (`Ctrl+G` vs `Ctrl+Shift+F`)
+  - [x] Master Lexicon compliance: Used canonical terms (*"Specimen Directory"*, *"Storage Location"*, *"Mark Reviewed"*)
+
+---
+
+### Entry 8: PyInstaller Windowed Standalone Executable Launch Fix & Build Pipeline Hardening
+- **Date**: 2026-11-20
+- **Feature Area**: Standalone Executable Build Pipeline & Logging Infrastructure (`build_exe.bat`, `main.spec`, `main.py`, `utils.py`, `ui/dialogs.py`)
+- **What Changed**:
+  1. **Loguru Windowed `sys.stdout` Guard**: Fixed startup crash (`TypeError: Cannot log to objects of type 'NoneType'`) occurring when running `Arbor.exe` built with PyInstaller `console=False`. In windowed GUI mode without a console, Windows sets `sys.stdout` to `None`. In [utils.py](file:///c:/Users/ijbrekke/Documents/arbor/utils.py), `logger.add(sys.stdout)` is now safely guarded so it only attaches when stdout exists, while preserving full disk logging to `.arbor_logs/`.
+  2. **Top-Level Stream Sanitization**: Moved stdout/stderr fallback initialization to the very top of [main.py](file:///c:/Users/ijbrekke/Documents/arbor/main.py) before any package imports execute.
+  3. **Build Pipeline Hardening**: Updated [build_exe.bat](file:///c:/Users/ijbrekke/Documents/arbor/build_exe.bat) to detect and warn if an existing `dist\Arbor.exe` is currently locked by a running instance, and automatically copies `data\demo_collection.xlsx` to `dist\data\` so trainees launching the standalone executable can test the demo collection immediately.
+  4. **Spec Asset Bundling**: Added `data/demo_collection.xlsx` and `requests` to [main.spec](file:///c:/Users/ijbrekke/Documents/arbor/main.spec) and updated [ui/dialogs.py](file:///c:/Users/ijbrekke/Documents/arbor/ui/dialogs.py) to resolve demo paths via `utils.get_resource_path()`.
+- **User Impact**: Double-clicking `Arbor.exe` launches cleanly on Windows without crashing on startup, and trainees can immediately click "Load Demo Project" from the startup dialog.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Master Lexicon compliance
+
+---
+
 ### Entry 7: Armed Target Shelf Pattern, Non-Coercive Review, Pixel Verification, and Hallway Follow-Up Filter Preset
 - **Date**: 2026-11-20
 - **Feature Area**: Mobile Companion Curation & Desktop Filter Integration (`backend/mobile_server.py`, `ui/image_panel.py`, `ui/filter_dialog.py`)
@@ -210,3 +327,24 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
   - [x] Trainee Work Manual (`USER_GUIDE.md`) Chapter 2 & 4: Interface Navigation & Form Editing
   - [x] Desk Cheat Sheet (`documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`)
   - [x] Single-Badge Discipline and Design Token compliance verified against `documentation/agent/AI_UI_GUIDE.md`
+
+---
+
+### Entry 11: Ground-Truth Mobile Vault Audit Workflow, Armed Target Shelf & Relocation Guard
+- **Date**: 2026-11-20
+- **Feature Area**: Mobile Companion Ground-Truth Hallway Auditing, Armed Target Shelf, Ergonomics & Offline Service Worker (`backend/mobile_server.py`, `documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`)
+- **What Changed**:
+  1. **In-Vault Audit Station Launchpad (`#auditStationLaunchpad`)**: Added a collapsible audit station setup card and compact active station pill above the search bar in `#listView`. Trainees walking to a physical glass case can set Building, Cabinet, and Shelf once.
+  2. **Armed Target Shelf & One-Tap Stamping**: Opening any specimen card displays the armed target shelf in the detail header. Unrecorded specimens feature a one-tap `[ ⚡ Stamp Target (Cab XX) ]` button that populates Building, Floor, Cabinet, and Shelf in one tap.
+  3. **Defensive Relocation Guard & 5-Second Undo Toast**: Protected against accidental location overwrites when trainees mistype accession numbers. If a specimen already has coordinates registered in a different cabinet, the stamp CTA clearly warns `[ ⚠️ Relocate to Cab XX ]`, updates the record immediately, and displays a prominent 5-second animated `[ ↩ Undo ]` toast to restore original coordinates if accidental.
+  4. **Non-Blocking Review Flow & Reassurance Micro-Copy**: Removed interrupting confirmation modals from the "Mark Reviewed" button (`handleReviewButtonClick`). Added dynamic reassurance helper copy under the review button (`"✓ Location recorded. Issues flagged for desktop curation."`) confirming that marking reviewed records the physical verification while preserving flagged issues for curator research.
+  5. **Dynamic Location Tab Status Badge**: Added `#tabLocationBadge` on the Location tab header indicating current status (`Cab 21` in green when validated, or `Unset ⚠️` in amber when missing coordinates).
+  6. **Vault Service Worker Caching & Login V2 Redirect**: Added `/v2` to `/service-worker.js` asset precache with Stale-While-Revalidate caching for seamless offline usage in shielded concrete herbarium vaults. Fixed `/login` to route trainees directly to `/v2`.
+  7. **Tactile Haptic Feedback**: Added `save_success` haptic profile triggered on server sync, and wired `discrepancy` haptics into problem flag toggles.
+- **Trainee Impact**: Trainees standing in dim physical collection vaults with a specimen in hand can search accession numbers, stamp entire cabinets of specimens in 1 tap without retyping, safely undo accidental relocations, flag damaged boxes without losing their place, and mark physical verification without modal interruptions.
+- **Documentation Sync Checklist**:
+  - [x] Master Documentation Map (`MASTER_DOCUMENTATION_MAP.md`)
+  - [x] Ground-Truth Workflow Spec (`documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`)
+  - [x] Mobile Companion Guide (`documentation/agent/MOBILE_COMPANION_GUIDE.md`)
+  - [x] Verification simulation passed with 100% success in `scratch/simulate_vault_audit.py`
+  - [x] Full test suite verified in `tests/test_mobile_companion.py`

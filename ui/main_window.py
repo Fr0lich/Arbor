@@ -1722,11 +1722,27 @@ class ObjectProgramUI(
 
 
     def _focus_first_problem(self, event=None):
-        for frame in self.reg_row_frames.values():
-            for child in frame.winfo_children():
+        if getattr(self, "problem_checkbuttons", None):
+            for cb in self.problem_checkbuttons:
+                try:
+                    if cb.winfo_exists() and cb.winfo_viewable():
+                        cb.focus_set()
+                        return "break"
+                except Exception:
+                    pass
+        def _find_cb(container):
+            for child in container.winfo_children():
                 if isinstance(child, ttk.Checkbutton):
-                    child.focus_set()
-                    return "break"
+                    return child
+                nested = _find_cb(child)
+                if nested is not None:
+                    return nested
+            return None
+        for frame in self.reg_row_frames.values():
+            cb = _find_cb(frame)
+            if cb is not None:
+                cb.focus_set()
+                return "break"
         return "break"
 
 
@@ -2396,31 +2412,62 @@ class ObjectProgramUI(
         popup.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
 
     def show_help_dropdown(self):
+        from ui.help_dialogs import show_main_help
+        from ui.tutorials import (
+            start_hallway_followup_guide,
+            start_armed_shelf_guide,
+            start_image_controls_guide,
+        )
+
         popup = tk.Menu(self.root, tearoff=0)
-        popup.add_command(label="🏛️ Help Center (F1)", command=self.open_help_window)
-        popup.add_command(label="📖 User Manual", command=self.show_main_help)
-        popup.add_command(label="⌨️ Keyboard Shortcuts", command=self.show_shortcuts)
-        
-        # Interactive Tutorials cascade
+        popup.add_command(
+            label="🎓 3-Minute Practice Tour (Zero Risk)",
+            command=lambda: self.start_tutorial_flow("review"),
+        )
+        popup.add_separator()
+        popup.add_command(label="🏛️ Help & Quick Guides Hub", command=self.open_help_window)
+        popup.add_command(label="📖 Desktop Work Manual", command=lambda: show_main_help(self, initial_tab="desktop"))
+        popup.add_command(label="📱 Mobile Vault Guide", command=lambda: show_main_help(self, initial_tab="mobile"))
+        popup.add_command(label="⌨️ Keyboard Shortcuts (F1)", command=self.show_shortcuts)
+        popup.add_command(
+            label="🛟 \"Don't Panic!\" Troubleshooting",
+            command=lambda: show_main_help(self, initial_tab="desktop", initial_chapter="dont-panic"),
+        )
+
+        popup.add_separator()
+
+        # 30-Second Contextual Quick Guides (run in-place, outside sandbox)
+        quick_menu = tk.Menu(popup, tearoff=0)
+        quick_menu.add_command(
+            label="Hallway Follow-Up (REV+ERR) — 30 sec",
+            command=lambda: start_hallway_followup_guide(self),
+        )
+        quick_menu.add_command(
+            label="1-Tap Armed Shelf on Phone — 45 sec",
+            command=lambda: start_armed_shelf_guide(self),
+        )
+        quick_menu.add_command(
+            label="Image Zoom & Rotate — 20 sec",
+            command=lambda: start_image_controls_guide(self),
+        )
+        popup.add_cascade(label="⚡ 30-Second Quick Guides", menu=quick_menu)
+
+        # Practice Sandboxes cascade
         tut_menu = tk.Menu(popup, tearoff=0)
         tut_menu.add_command(
-            label="1. Specimen Review & Verification",
+            label="1. 3-Minute Quick Tour (Cabinet 21)",
             command=lambda: self.start_tutorial_flow("review")
         )
         tut_menu.add_command(
-            label="2. Historical & GBIF Conflict Resolution",
+            label="2. Fixing Historical & GBIF Conflicts",
             command=lambda: self.start_tutorial_flow("discrepancy")
         )
         tut_menu.add_command(
-            label="3. Database Creation & New Accessions",
+            label="3. Creating a New Collection",
             command=lambda: self.start_tutorial_flow("database")
         )
-        tut_menu.add_separator()
-        tut_menu.add_command(
-            label="All Tutorials & Assistance Hub...",
-            command=self.open_help_window
-        )
-        popup.add_cascade(label="🎓 Interactive Tutorials", menu=tut_menu)
+        popup.add_cascade(label="🎓 Practice Sandboxes", menu=tut_menu)
+
         popup.add_separator()
         popup.add_command(label="🔄 Check for Updates...", command=self.check_for_updates_action)
         popup.add_command(label="ℹ️ About Arbor", command=self.show_about)
@@ -2730,7 +2777,7 @@ class ObjectProgramUI(
 
     def undo_field(self, event):
         if not self.field_undo_stack:
-            return
+            return self.undo(event)
 
         last = self.field_undo_stack.pop()
 
@@ -4549,6 +4596,10 @@ class ObjectProgramUI(
             self.app.dirty = True
             self.update_dirty_ui()
             self._list_dirty = True
+            if prob_changed_fields or auto_prob_changed_fields:
+                self._row_cache_dirty = True
+                if hasattr(self, "_cached_problems_count"):
+                    delattr(self, "_cached_problems_count")
             
             if has_changes and not skip_logging:
                 # Log the edit immediately so it's captured in the continuous session
@@ -4564,6 +4615,7 @@ class ObjectProgramUI(
             self._problem_cache.pop(s_oid, None)
             if s_oid.isdigit():
                 self._problem_cache.pop(int(s_oid), None)
+            app_bus.publish(OBJECT_DATA_CHANGED, oid=oid)
             if hasattr(self, "invalidate_history_cache"):
                 self.invalidate_history_cache(oid)
             
@@ -5842,13 +5894,32 @@ class ObjectProgramUI(
                                 self.reviewed_var.set(db_rev)
                                 self._loaded_reviewed_state = db_rev
 
+                        if hasattr(self, "problem_vars"):
+                            if not hasattr(self, "_loaded_problem_states"):
+                                self._loaded_problem_states = {}
+                            for p_col, p_var in self.problem_vars.items():
+                                curr_p = bool(p_var.get())
+                                loaded_p = self._loaded_problem_states.get(p_col, curr_p)
+                                if curr_p == loaded_p:
+                                    db_p = utils.parse_bool(obs_row.get(p_col, False))
+                                    if curr_p != db_p:
+                                        p_var.set(db_p)
+                                        self._loaded_problem_states[p_col] = db_p
+
                         self.update_location_summary(oid)
                         if hasattr(self, "update_location_summary_view"):
                             self.update_location_summary_view()
                         if hasattr(self, "update_problems_default_view"):
                             self.update_problems_default_view()
+                        if hasattr(self, "update_problem_highlights"):
+                            self.update_problem_highlights()
                         if hasattr(self, "update_reviewed_button_state"):
                             self.update_reviewed_button_state()
+                        if hasattr(self, "context_bar") and self.context_bar:
+                            try:
+                                self.context_bar.update_specimen(oid)
+                            except Exception:
+                                pass
                     else:
                         self.load_object(self.app.current_object_id, skip_commit=True)
             else:
@@ -6990,7 +7061,12 @@ class ObjectProgramUI(
 
 
 
-        win.destroy()
+        if win is not None:
+            try:
+                if win.winfo_exists():
+                    win.destroy()
+            except Exception:
+                pass
 
         # PERFORMANCE OPTIMIZATION (Bolt): Converting DataFrames to dictionary structures once
         # allows O(1) dictionary lookup, bypassing Pandas Series creation and .loc index overhead entirely,
@@ -8560,13 +8636,14 @@ class ObjectProgramUI(
     def _toggle_reviewed_for_id(self, oid):
         if not oid:
             return
-        self.push_undo_state()
         
         # Toggle in df_obs
         try:
             lookup_key = int(oid) if str(oid).isdigit() and int(oid) in self.app.df_obs.index else oid
         except Exception:
             lookup_key = oid
+
+        self.push_undo_state(target_oid=lookup_key)
 
         current = False
         if self.app.df_obs is not None and lookup_key in self.app.df_obs.index:
@@ -8576,7 +8653,7 @@ class ObjectProgramUI(
                 pass
         new_val = not current
         
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S") if new_val else ""
+        now = datetime.now().strftime("%d.%m.%Y %H:%M") if new_val else ""
         with (getattr(self.app, 'df_lock', None) or nullcontext()):
             self.app.df_obs.at[lookup_key, REVIEWED_COLUMN] = new_val
             self.app.df_obs.at[lookup_key, REVIEWED_AT_COLUMN] = now
@@ -8603,7 +8680,13 @@ class ObjectProgramUI(
         # If this is the currently active object, also update the checkbox variable
         if oid == self.app.current_object_id:
             self.reviewed_var.set(new_val)
-            self.reviewed_time_label.config(text=now if new_val else "")
+            self._loaded_reviewed_state = new_val
+            self.reviewed_time_label.config(text=f"( {now} )" if new_val else "")
+            if hasattr(self, "context_bar") and self.context_bar:
+                try:
+                    self.context_bar.update_specimen(oid)
+                except Exception:
+                    pass
 
         self.log_action("REVIEWED" if new_val else "NOT_REVIEWED", ["Reviewed"], [f'Reviewed: "{new_val}"'], oid=lookup_key)
             
@@ -8613,6 +8696,7 @@ class ObjectProgramUI(
         self.update_review_progress()
         self._list_dirty = True
         self.update_reviewed_button_state()
+        app_bus.publish(OBJECT_DATA_CHANGED, oid=oid)
 
 
 

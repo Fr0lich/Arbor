@@ -69,9 +69,11 @@ class ObjectContextBar(ttk.Frame):
 
     def _subscribe_events(self):
         if app_bus:
+            from ui.state import OBJECT_DATA_CHANGED
             app_bus.subscribe_managed(self, OBJECT_LOADED, self._on_object_loaded)
             app_bus.subscribe_managed(self, PROBLEM_STATE_CHANGED, self._on_problem_changed)
             app_bus.subscribe_managed(self, DATABASE_UPDATED, self._on_database_updated)
+            app_bus.subscribe_managed(self, OBJECT_DATA_CHANGED, self._on_database_updated)
 
     def build_ui(self):
         bg_card = "#212622" if self.is_dark else "#ffffff"
@@ -184,7 +186,7 @@ class ObjectContextBar(ttk.Frame):
         )
         self.gbif_btn.pack(side="left", padx=sc(3))
         if self.main_ui and hasattr(self.main_ui, "add_tooltip"):
-            self.main_ui.add_tooltip(self.gbif_btn, "Validate botanical nomenclature with GBIF Backbone Taxonomy")
+            self.main_ui.add_tooltip(self.gbif_btn, "Check plant name spelling against the GBIF online catalog")
 
         # 2. Historical Conflicts Button
         self.hist_btn = tk.Button(
@@ -314,7 +316,7 @@ class ObjectContextBar(ttk.Frame):
             badge_bg = "#162d1a" if self.is_dark else "#f2f9f3"
             badge_fg = "#85e89d" if self.is_dark else "#3a7d44"
         elif is_reviewed and has_problem:
-            badge_text = "REV + PROBLEM"
+            badge_text = "REVIEWED NOTE"
             badge_bg = "#3b2e15" if self.is_dark else "#fef9e7"
             badge_fg = "#fcd34d" if self.is_dark else "#b45309"
         elif "taxonomy" in active_cats:
@@ -322,15 +324,15 @@ class ObjectContextBar(ttk.Frame):
             badge_bg = "#3b1c1e" if self.is_dark else "#fdf2f2"
             badge_fg = "#f28b82" if self.is_dark else "#c93a40"
         elif "collection" in active_cats:
-            badge_text = "PROVENANCE ERROR"
+            badge_text = "ORIGIN ISSUE"
             badge_bg = "#3b2e15" if self.is_dark else "#fef9e7"
             badge_fg = "#fcd34d" if self.is_dark else "#b45309"
         elif "physical" in active_cats:
-            badge_text = "STORAGE AUDIT"
+            badge_text = "STORAGE ISSUE"
             badge_bg = "#2d2422" if self.is_dark else "#f7f5f4"
             badge_fg = "#d7ccc8" if self.is_dark else "#795548"
         elif "media" in active_cats:
-            badge_text = "MEDIA DIGITIZATION"
+            badge_text = "PHOTO FLAG"
             badge_bg = "#1a2c3d" if self.is_dark else "#f0f8ff"
             badge_fg = "#7dd3fc" if self.is_dark else "#0284c7"
         elif has_problem and problems_have_history:

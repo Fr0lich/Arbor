@@ -51,6 +51,8 @@ class MobilePanel:
         on_end_session=None,
         on_edit=None,
         reuse_server=None,
+        parent_ui=None,
+        on_server_started=None,
     ):
         self.parent = parent
         self.app_state = app_state
@@ -58,6 +60,8 @@ class MobilePanel:
         self.port = port
         self.on_end_session = on_end_session
         self.on_edit = on_edit
+        self.parent_ui = parent_ui
+        self.on_server_started = on_server_started
 
         self.server = reuse_server
         self.tunnel = None
@@ -84,13 +88,54 @@ class MobilePanel:
         hdr = tk.Frame(main, bg="#ffffff")
         hdr.pack(fill="x", pady=(0, 10))
 
+        hdr_top = tk.Frame(hdr, bg="#ffffff")
+        hdr_top.pack(fill="x")
+
         tk.Label(
-            hdr,
+            hdr_top,
             text="📱 Arbor Mobile Companion",
             font=("Segoe UI", 15, "bold"),
             bg="#ffffff",
             fg="#1b4332",
-        ).pack(anchor="w")
+        ).pack(side="left", anchor="w")
+
+        def _open_armed_guide():
+            from ui.tutorials import start_armed_shelf_guide
+            start_armed_shelf_guide(self.parent_ui or self.root)
+
+        def _open_mobile_manual():
+            from ui.help_dialogs import show_main_help
+            show_main_help(self.parent_ui or self.root, initial_tab="mobile")
+
+        tk.Button(
+            hdr_top,
+            text="📖 Mobile Guide",
+            font=("Segoe UI", 8, "bold"),
+            bg="#f2f5f1",
+            fg="#2c302e",
+            activebackground="#e2e8e3",
+            activeforeground="#2c302e",
+            relief="flat",
+            cursor="hand2",
+            padx=6,
+            pady=2,
+            command=_open_mobile_manual,
+        ).pack(side="right", anchor="e", padx=(4, 0))
+
+        tk.Button(
+            hdr_top,
+            text="[?] Armed Shelf (45s)",
+            font=("Segoe UI", 8, "bold"),
+            bg="#eaf5ec",
+            fg="#1b5e20",
+            activebackground="#d4ecd9",
+            activeforeground="#1b5e20",
+            relief="flat",
+            cursor="hand2",
+            padx=6,
+            pady=2,
+            command=_open_armed_guide,
+        ).pack(side="right", anchor="e")
 
         tk.Label(
             hdr,
@@ -529,12 +574,13 @@ class MobilePanel:
         self.btn_active_ver_v1.pack(side="left", padx=1)
 
         # Link to main window's simultaneous edit toggle if it exists
-        if hasattr(self.parent.master, "parent_ui") and hasattr(self.parent.master.parent_ui, "simultaneous_edit_var"):
+        _p_ui = self.parent_ui or getattr(getattr(self.parent, "master", None), "parent_ui", None)
+        if _p_ui is not None and hasattr(_p_ui, "simultaneous_edit_var"):
             simul_cb = ttk.Checkbutton(
                 info,
                 text="Enable simultaneous edit",
-                variable=self.parent.master.parent_ui.simultaneous_edit_var,
-                command=self.parent.master.parent_ui.toggle_simultaneous_edit,
+                variable=_p_ui.simultaneous_edit_var,
+                command=_p_ui.toggle_simultaneous_edit,
                 cursor="hand2"
             )
             simul_cb.pack(anchor="w", pady=(8, 0))
@@ -684,6 +730,14 @@ class MobilePanel:
 
         self.server.on_client_connect_callback = self._on_client_connect
         self.server.on_presence_callback = self._on_client_presence
+        self.app_state._mobile_server_instance = self.server
+        if self.parent_ui is not None:
+            self.parent_ui._mobile_server_instance = self.server
+        if callable(self.on_server_started):
+            try:
+                self.on_server_started(self.server)
+            except Exception:
+                pass
         self._on_client_connect(len(self.server.clients))
 
         # Populate PIN and local URL (kept as LAN fallback)

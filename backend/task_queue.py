@@ -6,6 +6,7 @@ class BackgroundWorker:
         self.task_queue = queue.Queue()
         self.root = None
         self._polling = False
+        self._stopped = False
         self._lock = threading.Lock()
 
     def start(self, root):
@@ -15,12 +16,14 @@ class BackgroundWorker:
                 return
             self.root = root
             self._polling = True
+            self._stopped = False
         self._poll()
 
     def stop(self):
         """Stops the main-thread polling loop and drains any pending tasks."""
         with self._lock:
             self._polling = False
+            self._stopped = True
             self.root = None
         # Drain the task queue
         try:
@@ -82,14 +85,15 @@ class BackgroundWorker:
 
             with self._lock:
                 is_active = self.root is not None and self._polling
+                was_stopped = self._stopped
 
             if is_active:
                 if err is not None and error_callback:
                     self.task_queue.put(lambda: error_callback(err))
                 elif callback:
                     self.task_queue.put(lambda: callback(result))
-            else:
-                # Direct invocation fallback (e.g. in tests)
+            elif not was_stopped:
+                # Direct invocation fallback (only when never started, e.g. headless unit tests)
                 if err is not None and error_callback:
                     try:
                         error_callback(err)

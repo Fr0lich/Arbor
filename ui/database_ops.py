@@ -11,13 +11,33 @@ from contextlib import nullcontext
 from repository import ExcelRepository, REVIEWED_COLUMN, _normalise_unvalidated_dataframe
 
 class DatabaseOpsMixin:
+    def _is_tutorial_sandbox_active(self) -> bool:
+        try:
+            from ui.tutorials.sandbox_manager import SandboxManager
+            return bool(SandboxManager().is_sandboxed)
+        except Exception:
+            return False
+
     def _write_excel(self, path):
         """Save the current in-memory state to Excel directly."""
+        if self._is_tutorial_sandbox_active():
+            if hasattr(self, "show_toast"):
+                self.show_toast("Practice Mode — saving is disabled so real files stay safe.", "info")
+            return
         with (getattr(self.app, 'df_lock', None) or nullcontext()):
             if self.app.df_obs is not None:
                 missing_problem_cols = [col for col in self.problem_columns if col not in self.app.df_obs.columns]
                 if missing_problem_cols:
                     self.app.df_obs[missing_problem_cols] = pd.DataFrame({col: False for col in missing_problem_cols}, index=self.app.df_obs.index)
+            df_reg_snap = self.app.df_reg.copy() if self.app.df_reg is not None else None
+            df_obs_snap = self.app.df_obs.copy() if self.app.df_obs is not None else None
+            df_log_snap = self.app.df_log.copy() if self.app.df_log is not None else None
+            df_photo_snap = self.app.df_photo.copy() if self.app.df_photo is not None else None
+            df_unval_snap = (
+                self.app.df_unvalidated.copy()
+                if getattr(self.app, 'df_unvalidated', None) is not None
+                else None
+            )
 
         from repository import SQLiteRepository
         try:
@@ -25,11 +45,11 @@ class DatabaseOpsMixin:
                 sqlite_path=None,
                 excel_path=path,
                 config=self.app.config,
-                df_reg=self.app.df_reg,
-                df_obs=self.app.df_obs,
-                df_log=self.app.df_log,
-                df_photo=self.app.df_photo,
-                df_unvalidated=getattr(self.app, 'df_unvalidated', None)
+                df_reg=df_reg_snap,
+                df_obs=df_obs_snap,
+                df_log=df_log_snap,
+                df_photo=df_photo_snap,
+                df_unvalidated=df_unval_snap
             )
         except (PermissionError, IOError) as e:
             from utils import debug_error
@@ -385,6 +405,39 @@ class DatabaseOpsMixin:
             if hasattr(self, "load_books_file_from_path"):
                 self.load_books_file_from_path(path)
 
+        # Gentle first-run Quick Tour prompt (respects disable_tutorials & quick_tour_seen)
+        try:
+            import config
+            prefs = config.load_prefs() or {}
+            if (
+                not prefs.get("disable_tutorials", False)
+                and not prefs.get("quick_tour_seen", False)
+                and not self._is_tutorial_sandbox_active()
+                and not getattr(self, "_first_run_tour_offered", False)
+            ):
+                self._first_run_tour_offered = True
+
+                def _offer_quick_tour():
+                    if self._is_tutorial_sandbox_active():
+                        return
+                    prefs["quick_tour_seen"] = True
+                    config.save_prefs(prefs)
+                    if hasattr(self, "show_banner"):
+                        def _launch_tour():
+                            from ui.tutorials import start_review_tutorial
+                            start_review_tutorial(self)
+                        self.show_banner(
+                            "🎓 New to Arbor? Click here for the 3-Minute Quick Tour (Zero Risk — Practice Sandbox)",
+                            banner_type="info",
+                            duration_ms=15000,
+                            action_callback=_launch_tour,
+                        )
+
+                if hasattr(self, "root") and self.root:
+                    self.root.after(1500, _offer_quick_tour)
+        except Exception:
+            pass
+
     def _startup_load_first_and_reveal(self, first_oid):
         """
         During startup: directly call load_object() for the first record so the
@@ -608,6 +661,15 @@ class DatabaseOpsMixin:
         U2-F: Badge and banner feedback is wired into the completion callback
         so the user always sees an immediate response and a clear outcome.
         """
+        if self._is_tutorial_sandbox_active():
+            if hasattr(self, "show_toast"):
+                self.show_toast("Practice Mode — saving is disabled so real files stay safe.", "info")
+            elif hasattr(self, "show_banner"):
+                self.show_banner("Practice Mode — saving is disabled so real files stay safe.", "info")
+            if on_complete:
+                on_complete(False, "Practice Mode")
+            return
+
         self.commit_current_object()
         self._sync_auto_problems_vectorized()
 
@@ -620,22 +682,30 @@ class DatabaseOpsMixin:
 
         output_path = self.app.output_path
         basename = os.path.basename(output_path)
+        snapshot_seq = getattr(self.app, "_mutation_seq", 0)
 
         def _on_save_complete(success, err=None):
+            is_locked = False
             if success:
-                self.app.dirty = False
+                no_concurrent_edits = getattr(self.app, "_mutation_seq", 0) == snapshot_seq
+                if no_concurrent_edits:
+                    self.app.dirty = False
                 self.system_status.after(0, lambda: app_bus.publish(DATABASE_UPDATED))  # sets badge to "✓ Saved HH:MM"
-                self.system_status.config(text=f"Saved: {basename}")
-                self.show_banner(f"Database saved: {basename}", "success")
-                # Clean up autosave file now that a real save succeeded
-                autosave_path = self._autosave_path()
-                if os.path.exists(autosave_path):
-                    try:
-                        os.remove(autosave_path)
-                    except Exception:
-                        pass
+                if no_concurrent_edits:
+                    self.system_status.config(text=f"Saved: {basename}")
+                    self.show_banner(f"Database saved: {basename}", "success")
+                    # Clean up autosave file now that a real save succeeded with no newer edits
+                    autosave_path = self._autosave_path()
+                    if os.path.exists(autosave_path):
+                        try:
+                            os.remove(autosave_path)
+                        except Exception:
+                            pass
+                else:
+                    self.system_status.config(text=f"Saved: {basename} (newer edits pending)")
+                    self.show_banner(f"Saved {basename} — newer edits are still unsaved", "warning")
+                self.invalidate_search_index()
                 self.build_search_index()
-                self.invalidate_search_index()  # Genus/Species may have changed
             else:
                 from utils import debug_error, ExcelFileLockedError
                 debug_error("save_session async", str(err))

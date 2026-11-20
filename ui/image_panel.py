@@ -548,6 +548,7 @@ class ImagePanel(ttk.Frame):
                 _overlay_btn("-", self.zoom_image_out)
                 _overlay_btn("↻", self.rotate_image)
                 _overlay_btn("RESET", self.reset_image_view)
+                _overlay_btn("?", lambda: __import__("ui.tutorials", fromlist=["start_image_controls_guide"]).start_image_controls_guide(self.main_ui or self.root))
 
             self.image_hud.place(relx=1.0, rely=1.0, anchor="se", x=sc(-24), y=sc(-24))
         else:
@@ -927,12 +928,13 @@ class ImagePanel(ttk.Frame):
             self.image_index[oid].sort(key=lambda x: x[0])
             self.image_index[oid] = [p for _, p in self.image_index[oid]]
 
-        if self.app and getattr(self.app, "df_obs", None) is not None:
-            has_img = self.app.df_obs.index.astype(str).isin(found_object_ids)
-            self.app.df_obs["Images_Missing"] = ~has_img
-            self.app.dirty = True
-
         def _notify_ui():
+            if self.app and getattr(self.app, "df_obs", None) is not None:
+                from contextlib import nullcontext
+                with (getattr(self.app, "df_lock", None) or nullcontext()):
+                    has_img = self.app.df_obs.index.astype(str).isin(found_object_ids)
+                    self.app.df_obs["Images_Missing"] = ~has_img
+                    self.app.dirty = True
             if self.main_ui:
                 if hasattr(self.main_ui, "_invalidate_row_cache"):
                     self.main_ui._invalidate_row_cache()
@@ -991,8 +993,18 @@ class ImagePanel(ttk.Frame):
                     self._display_online_image(self.original_pil_cache[url], url, token)
                 return
 
+            try:
+                avail_w = self.image_canvas.winfo_width()
+                if avail_w < 300:
+                    avail_w = 800
+                root_h = self.root.winfo_height()
+                if root_h < 300:
+                    root_h = 800
+            except Exception:
+                avail_w, root_h = 800, 800
+
             app_worker.run_in_background(
-                lambda: self._load_online_images_worker(urls, token)
+                lambda: self._load_online_images_worker(urls, token, avail_w, root_h)
             )
             return
 
@@ -1194,7 +1206,7 @@ class ImagePanel(ttk.Frame):
 
         app_worker.run_in_background(worker)
 
-    def _load_online_images_worker(self, urls, token):
+    def _load_online_images_worker(self, urls, token, available_width=None, root_height=None):
         def try_load(url, attempts=2):
             for attempt in range(attempts):
                 if token != self._image_load_token:
@@ -1223,19 +1235,21 @@ class ImagePanel(ttk.Frame):
             img = try_load(url, attempts=2)
             if img is None:
                 continue
-            self._display_online_image(img, url, token)
+            self._display_online_image(img, url, token, available_width=available_width, root_height=root_height)
             loaded_any = True
 
         if not loaded_any:
-            self.root.after(0, self._show_no_images_online)
+            self.root.after(0, lambda t=token: self._show_no_images_online(t))
 
-    def _show_no_images_online(self):
+    def _show_no_images_online(self, token=None):
+        if token is not None and token != self._image_load_token:
+            return
         self.images_missing_label.config(text="No online images found", foreground="#c93a40")
         curr_oid = getattr(self.app, "current_object_id", None) if self.app else None
         if curr_oid:
             self.render_specimen_summary_hub(curr_oid)
 
-    def _display_online_image(self, img, url, token):
+    def _display_online_image(self, img, url, token, available_width=None, root_height=None):
         if token != self._image_load_token:
             return
 
@@ -1248,13 +1262,20 @@ class ImagePanel(ttk.Frame):
         if self.image_rotation_angle != 0:
             pil_img = pil_img.rotate(self.image_rotation_angle, expand=True)
 
-        self.root.update_idletasks()
-        available_width = self.image_canvas.winfo_width()
+        if available_width is None or root_height is None:
+            try:
+                self.root.update_idletasks()
+                available_width = self.image_canvas.winfo_width()
+                root_height = self.root.winfo_height()
+            except Exception:
+                available_width, root_height = 800, 800
         if available_width < 300:
             available_width = 800
+        if root_height < 300:
+            root_height = 800
 
         max_width = int(available_width * 0.98 * self.image_zoom_factor)
-        max_height = int(self.root.winfo_height() * 0.9 * self.image_zoom_factor)
+        max_height = int(root_height * 0.9 * self.image_zoom_factor)
         pil_img.thumbnail((max_width, max_height), Image.LANCZOS)
 
         self.root.after(
@@ -1442,6 +1463,7 @@ class ImagePanel(ttk.Frame):
         _overlay_btn("-", self.zoom_image_out)
         _overlay_btn("↻", self.rotate_image)
         _overlay_btn("RESET", self.reset_image_view)
+        _overlay_btn("?", lambda: __import__("ui.tutorials", fromlist=["start_image_controls_guide"]).start_image_controls_guide(self.main_ui or self.root))
 
         thumbnail_strip = tk.Frame(
             gallery_container,

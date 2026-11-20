@@ -1,6 +1,26 @@
-﻿import tkinter as tk
-import sys
+﻿import sys
 import os
+
+# ── Ensure stdout/stderr safety for windowed / frozen execution ──────────────
+# When frozen as a PyInstaller windowed executable (console=False), Windows sets
+# sys.stdout and sys.stderr to None. Provide safe fallback writers immediately
+# before any package imports trigger logging or console output.
+if sys.stdout is None:
+    class _NullWriter:
+        encoding = "utf-8"
+        def write(self, s): pass
+        def flush(self): pass
+        def isatty(self): return False
+    sys.stdout = _NullWriter()
+if sys.stderr is None:
+    class _NullWriterErr:
+        encoding = "utf-8"
+        def write(self, s): pass
+        def flush(self): pass
+        def isatty(self): return False
+    sys.stderr = _NullWriterErr()
+
+import tkinter as tk
 import ctypes
 import backend.search
 import backend.filter
@@ -87,6 +107,13 @@ def _install_exception_hooks(root: tk.Tk, ui_ref: list) -> None:
 
     # 1. Tkinter callback exceptions
     def _tk_report(exc_type, exc_value, exc_tb):
+        if issubclass(exc_type, SystemExit):
+            try:
+                root.quit()
+                root.destroy()
+            except Exception:
+                pass
+            return
         _show_error_immediately(exc_type, exc_value, exc_tb)
 
     root.report_callback_exception = _tk_report
@@ -135,6 +162,9 @@ def _check_previous_crash_logs(root: tk.Tk, ui_ref: list) -> None:
     """
     import threading
 
+    most_recent_log = [None]
+    scan_done = [False]
+
     def _background_scan():
         try:
             from utils import _get_log_dir, get_session_log_path
@@ -146,64 +176,51 @@ def _check_previous_crash_logs(root: tk.Tk, ui_ref: list) -> None:
             # Find all session logs that are not the current one
             pattern = os.path.join(log_dir, "arbor_*.log")
             all_logs = sorted(glob.glob(pattern), reverse=True)
-            
-            # Clean up/check stale logs safely in thread
-            stale_logs = []
+
+            # Only flag previous logs that actually recorded an error or crash
             for p in all_logs:
-                if p != current_log:
-                    try:
-                        if os.path.getsize(p) > 0:
-                            stale_logs.append(p)
-                    except OSError:
-                        pass
-
-            if not stale_logs:
-                return
-
-            most_recent_log[0] = stale_logs[0]
-
-            # Trigger the event on the main thread
-            root.event_generate("<<ShowCrashBanner>>", when="tail")
-        except Exception as e:
+                if p == current_log:
+                    continue
+                try:
+                    if os.path.getsize(p) <= 0:
+                        continue
+                    with open(p, "r", encoding="utf-8", errors="ignore") as fh:
+                        content = fh.read(65536)
+                    if any(tok in content for tok in (" | ERROR ", " | CRITICAL ", "[CRASH]", "Traceback (most recent call last)")):
+                        most_recent_log[0] = p
+                        break
+                except OSError:
+                    pass
+        except Exception:
             pass
+        finally:
+            scan_done[0] = True
 
-    most_recent_log = [None]
-
-    def _on_show_banner(event):
-        def _show_banner():
-            active_ui = ui_ref[0] if ui_ref else None
-            if active_ui is None:
+    def _poll_scan_result(attempts=0):
+        try:
+            if not root.winfo_exists():
                 return
-            if hasattr(active_ui, "show_banner") and most_recent_log[0]:
-                active_ui.show_banner(
-                    f"⚠ Crash log from last session found — click to view",
-                    banner_type="warning",
-                    duration_ms=12000,
-                    action_callback=lambda: active_ui.show_error_log_window(most_recent_log[0])
-                )
-        root.after(2000, _show_banner)
-
-    root.bind("<<ShowCrashBanner>>", _on_show_banner)
+        except Exception:
+            return
+        if not scan_done[0]:
+            if attempts < 20:
+                root.after(250, lambda: _poll_scan_result(attempts + 1))
+            return
+        active_ui = ui_ref[0] if ui_ref else None
+        if active_ui is not None and hasattr(active_ui, "show_banner") and most_recent_log[0]:
+            log_path = most_recent_log[0]
+            active_ui.show_banner(
+                "⚠ Crash log from last session found — click to view",
+                banner_type="warning",
+                duration_ms=12000,
+                action_callback=lambda: active_ui.show_error_log_window(log_path)
+            )
 
     thread = threading.Thread(target=_background_scan, daemon=True)
     thread.start()
+    root.after(2000, _poll_scan_result)
 
 
-# ── Ensure stdout/stderr safety for windowed / frozen execution ──────────────
-if sys.stdout is None:
-    class _NullWriter:
-        encoding = "utf-8"
-        def write(self, s): pass
-        def flush(self): pass
-        def isatty(self): return False
-    sys.stdout = _NullWriter()
-if sys.stderr is None:
-    class _NullWriterErr:
-        encoding = "utf-8"
-        def write(self, s): pass
-        def flush(self): pass
-        def isatty(self): return False
-    sys.stderr = _NullWriterErr()
 
 
 def select_ui_framework(argv: list | None = None, env: dict | None = None, is_interactive: bool | None = None) -> str:
@@ -373,6 +390,7 @@ if __name__ == "__main__":
             except Exception:
                 session_to_restore = None
 
+        dialog = None
         if session_to_restore and session_to_restore.get("excel_path") and os.path.exists(session_to_restore["excel_path"]):
             # Fast-path: directly rehydrate session without prompting StartupDialog
             ui = ObjectProgramUI(root, app)
@@ -475,30 +493,31 @@ if __name__ == "__main__":
                     pass
 
 
-        if hasattr(dialog, "selected_excel_path"):
-            from ui.dialogs import LoadingWindow
-            loading_win = LoadingWindow(root, dialog.selected_excel_path, ui)
-        elif hasattr(dialog, "db_path_var") and dialog.db_path_var.get().strip():
-            ui.open_excel_from_path(dialog.db_path_var.get().strip())
-            try:
-                root.attributes("-alpha", 1.0)
-            except Exception as e:
-                pass
-            root.deiconify()
-            root.state("zoomed")
-            if hasattr(ui, 'apply_proper_sash_positions'):
-                root.after(50, ui.apply_proper_sash_positions)
-                root.after(200, ui.apply_proper_sash_positions)
-        else:
-            try:
-                root.attributes("-alpha", 1.0)
-            except Exception as e:
-                pass
-            root.deiconify()
-            root.state("zoomed")
-            if hasattr(ui, 'apply_proper_sash_positions'):
-                root.after(50, ui.apply_proper_sash_positions)
-                root.after(200, ui.apply_proper_sash_positions)
+        if dialog is not None:
+            if hasattr(dialog, "selected_excel_path"):
+                from ui.dialogs import LoadingWindow
+                loading_win = LoadingWindow(root, dialog.selected_excel_path, ui)
+            elif hasattr(dialog, "db_path_var") and dialog.db_path_var.get().strip():
+                ui.open_excel_from_path(dialog.db_path_var.get().strip())
+                try:
+                    root.attributes("-alpha", 1.0)
+                except Exception as e:
+                    pass
+                root.deiconify()
+                root.state("zoomed")
+                if hasattr(ui, 'apply_proper_sash_positions'):
+                    root.after(50, ui.apply_proper_sash_positions)
+                    root.after(200, ui.apply_proper_sash_positions)
+            else:
+                try:
+                    root.attributes("-alpha", 1.0)
+                except Exception as e:
+                    pass
+                root.deiconify()
+                root.state("zoomed")
+                if hasattr(ui, 'apply_proper_sash_positions'):
+                    root.after(50, ui.apply_proper_sash_positions)
+                    root.after(200, ui.apply_proper_sash_positions)
 
         # Check for crash logs from previous sessions (shows a banner after 2 s)
         _check_previous_crash_logs(root, ui_ref)

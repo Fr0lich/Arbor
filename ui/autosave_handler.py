@@ -106,6 +106,12 @@ class AutosaveMixin:
 
     def _autosave_tick(self, skip_commit=False):
         try:
+            try:
+                from ui.tutorials.sandbox_manager import SandboxManager
+                if SandboxManager().is_sandboxed:
+                    return
+            except Exception:
+                pass
             if getattr(self, '_save_in_progress', False):
                 # Background save still running — skip this tick
                 return
@@ -216,7 +222,7 @@ class AutosaveMixin:
                 import json
                 import pandas as pd
                 import io
-                with open(autosave_path, "r") as f:
+                with open(autosave_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
                 def load_df(key):
@@ -250,17 +256,28 @@ class AutosaveMixin:
             self.app._log_records = df_log.to_dict(orient="records") if df_log is not None and not df_log.empty else []
             self.app.df_unvalidated = df_unvalidated if df_unvalidated is not None else pd.DataFrame(columns=["ObjectID", "Field_Name", "Unvalidated_Comment"])
 
-            if "ObjectID" in self.app.df_reg.columns:
-                self.app.df_reg.set_index("ObjectID", inplace=True)
-            if "ObjectID" in self.app.df_obs.columns:
-                self.app.df_obs.set_index("ObjectID", inplace=True)
-            if "ObjectID" in self.app.df_photo.columns:
-                self.app.df_photo.set_index("ObjectID", inplace=True)
+            if self.app.df_reg is not None:
+                if "ObjectID" in self.app.df_reg.columns:
+                    self.app.df_reg.set_index("ObjectID", inplace=True)
+                self.app.df_reg.index.name = "ObjectID"
+            if self.app.df_obs is not None:
+                if "ObjectID" in self.app.df_obs.columns:
+                    self.app.df_obs.set_index("ObjectID", inplace=True)
+                self.app.df_obs.index.name = "ObjectID"
+            if self.app.df_photo is not None:
+                if "ObjectID" in self.app.df_photo.columns:
+                    self.app.df_photo.set_index("ObjectID", inplace=True)
+                self.app.df_photo.index.name = "ObjectID"
 
             self.app.initial_df_obs = self.app.df_obs.copy()
             self.reg_by_id = self.app.df_reg
             self.obs_by_id = self.app.df_obs
+            self.photo_by_id = self.app.df_photo
             self.app.active_object_ids = list(self.app.df_reg.index)
+            if hasattr(self, "_invalidate_row_cache"):
+                self._invalidate_row_cache()
+            if hasattr(self, "invalidate_search_index"):
+                self.invalidate_search_index()
             self.app.dirty = True
             app_bus.publish(DATABASE_UPDATED, refresh_list=True)
             # Remove the autosave after successful restore

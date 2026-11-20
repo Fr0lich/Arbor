@@ -243,6 +243,7 @@ class KeybindingManager:
 
         # Mark as Reviewed
         r.bind("<Control-r>", lambda e: ui.mark_current_as_reviewed())
+        r.bind("<Control-R>", lambda e: ui.mark_current_as_reviewed())
         r.bind("<Control-Return>", lambda e: ui.mark_current_as_reviewed())
         r.bind("<Control-KP_Enter>", lambda e: ui.mark_current_as_reviewed())
 
@@ -251,7 +252,9 @@ class KeybindingManager:
 
         # Undo / Redo
         r.bind("<Control-z>", ui._smart_undo)
+        r.bind("<Control-Z>", ui._smart_undo)
         r.bind("<Control-y>", ui.redo)
+        r.bind("<Control-Y>", ui.redo)
 
         # Field Value Copy / Paste
         r.bind("<Control-Shift-c>", ui._copy_field_value)
@@ -323,9 +326,7 @@ class KeybindingManager:
         r.bind("<Control-Shift-L>", ui._focus_first_location)
         r.bind("<F4>", ui._focus_first_location)
 
-        # Focus Problem Checkboxes (Ctrl+Shift+P, F3)
-        r.bind("<Control-Shift-p>", ui._focus_first_problem)
-        r.bind("<Control-Shift-P>", ui._focus_first_problem)
+        # Focus Problem Checkboxes (F3; Ctrl+Shift+P remains bound to Command Palette)
         r.bind("<F3>", ui._focus_first_problem)
 
         # ── 6. Image Viewport Controls ────────────────────────────────────────

@@ -3,6 +3,31 @@ from __future__ import annotations
 from typing import Callable, Any
 import pandas as pd
 
+import re
+
+_MUSEUM_PREFIX_RE = re.compile(r"^(?:[a-z]{1,4}[-_\s]+)+", re.IGNORECASE)
+
+
+def normalize_id_query(query: str) -> list[str]:
+    """Return normalized ID query variants (raw, prefix-stripped, leading-zero-stripped)."""
+    raw = (query or "").strip().lower()
+    if not raw:
+        return []
+    variants = [raw]
+    cleaned = raw.lstrip("#").strip()
+    if cleaned and cleaned not in variants:
+        variants.append(cleaned)
+    no_prefix = _MUSEUM_PREFIX_RE.sub("", cleaned).strip()
+    if no_prefix and no_prefix not in variants:
+        variants.append(no_prefix)
+    for cand in list(variants):
+        if cand.isdigit():
+            no_zeros = cand.lstrip("0") or "0"
+            if no_zeros not in variants:
+                variants.append(no_zeros)
+    return variants
+
+
 class SearchEngine:
     def __init__(self):
         self._search_index_cache = None
@@ -125,6 +150,9 @@ class SearchEngine:
         if not query:
             return None # Indicate no match / return all
 
+        id_variants = normalize_id_query(query)
+        id_variant_set = set(id_variants)
+
         p1 = []
         p2 = []
         p3 = []
@@ -132,12 +160,21 @@ class SearchEngine:
         p5 = []
 
         for oid, tokens_dict in index.items():
-            if query not in tokens_dict["all"]:
+            tok_id = tokens_dict["id"]
+            tok_id_no_zero = tok_id.lstrip("0") or "0" if tok_id.isdigit() else tok_id
+
+            if tok_id in id_variant_set or tok_id_no_zero in id_variant_set:
+                p1.append(oid)
                 continue
 
-            if query == tokens_dict["id"]:
+            if query not in tokens_dict["all"]:
+                if any(v in tok_id for v in id_variants if v != query):
+                    p2.append(oid)
+                continue
+
+            if query == tok_id:
                 p1.append(oid)
-            elif query in tokens_dict["id"]:
+            elif query in tok_id:
                 p2.append(oid)
             elif query in tokens_dict["genus_species"]:
                 p3.append(oid)

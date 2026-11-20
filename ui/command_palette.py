@@ -200,6 +200,22 @@ class CommandPalette(tk.Toplevel):
             {
                 "type": "command",
                 "category": "TOOLS",
+                "label": "Filter: Hallway Follow-Up (REV+ERR)",
+                "shortcut": "Triage",
+                "icon": "🎯",
+                "action": lambda: self._apply_hallway_followup_filter(ui),
+            },
+            {
+                "type": "command",
+                "category": "TOOLS",
+                "label": "Triage Problem Queue (Filtered List)",
+                "shortcut": "Triage",
+                "icon": "⚑",
+                "action": lambda: self._launch_problem_triage_queue(ui),
+            },
+            {
+                "type": "command",
+                "category": "TOOLS",
                 "label": "Bulk Edit Selected Objects",
                 "shortcut": "Tools",
                 "icon": "📝",
@@ -509,8 +525,76 @@ class CommandPalette(tk.Toplevel):
                 "icon": "🔄",
                 "action": lambda: ui.check_for_updates_action() if hasattr(ui, "check_for_updates_action") else None,
             },
+            {
+                "label": "Undo Last Bulk Edit",
+                "category": "Edit",
+                "shortcut": "",
+                "icon": "⎌",
+                "action": lambda: __import__("ui.bulk_edit", fromlist=["undo_last_bulk_edit"]).undo_last_bulk_edit(ui),
+            },
+            {
+                "label": "Guide: Hallway Follow-Up (REV+ERR) — 30 sec",
+                "category": "Quick Guides",
+                "shortcut": "",
+                "icon": "🎓",
+                "action": lambda: __import__("ui.tutorials", fromlist=["start_hallway_followup_guide"]).start_hallway_followup_guide(ui),
+            },
+            {
+                "label": "Guide: 1-Tap Armed Shelf on Phone — 45 sec",
+                "category": "Quick Guides",
+                "shortcut": "",
+                "icon": "📱",
+                "action": lambda: __import__("ui.tutorials", fromlist=["start_armed_shelf_guide"]).start_armed_shelf_guide(ui),
+            },
+            {
+                "label": "Guide: Image Zoom & Rotate — 20 sec",
+                "category": "Quick Guides",
+                "shortcut": "",
+                "icon": "🖼️",
+                "action": lambda: __import__("ui.tutorials", fromlist=["start_image_controls_guide"]).start_image_controls_guide(ui),
+            },
         ]
         return cmds
+
+    def _apply_hallway_followup_filter(self, ui):
+        """Apply the Hallway Follow-Up (REV+ERR) filter preset directly."""
+        if not hasattr(ui, "filter_vars"):
+            if hasattr(ui, "open_filter_menu"):
+                ui.open_filter_menu()
+            return
+        from ui.filter_dialog import FilterDialogController
+        FilterDialogController.clear_filter(ui, None, destroy_win=False)
+        if "Reviewed" in ui.filter_vars:
+            ui.filter_vars["Reviewed"].set("Has")
+        if "Any_Problem" in ui.filter_vars:
+            ui.filter_vars["Any_Problem"].set("Has")
+        if hasattr(ui, "filter_mode"):
+            ui.filter_mode.set("AND")
+        if hasattr(ui, "update_filter_button_text"):
+            ui.update_filter_button_text()
+        FilterDialogController.apply_filter_with_history(ui, None)
+        if hasattr(ui, "show_toast"):
+            count = len(getattr(getattr(ui, "app", None), "active_object_ids", []) or [])
+            ui.show_toast(f"🎯 Hallway Follow-Up: {count} specimen(s) to triage", "info")
+
+    def _launch_problem_triage_queue(self, ui):
+        """Open ObjectProblemResolver in Queue Mode for active problem specimens."""
+        app = getattr(ui, "app", getattr(ui, "app_state", None))
+        active_ids = list(getattr(app, "active_object_ids", []) or [])
+        if not active_ids:
+            if hasattr(ui, "show_toast"):
+                ui.show_toast("No specimens in the current list.", "warning")
+            return
+        if hasattr(ui, "object_has_problem"):
+            problem_ids = [oid for oid in active_ids if ui.object_has_problem(oid)]
+        else:
+            problem_ids = active_ids
+        if not problem_ids:
+            if hasattr(ui, "show_toast"):
+                ui.show_toast("No active problem flags in the current list.", "info")
+            return
+        from ui.object_problem_resolver import ObjectProblemResolver
+        ObjectProblemResolver(ui, problem_ids)
 
     def _build_ui(self):
         pad_x = sc(16)
@@ -622,50 +706,100 @@ class CommandPalette(tk.Toplevel):
         matching_specimens = []
         app_state = getattr(self.ui, "app", getattr(self.ui, "app_state", None))
         if app_state and getattr(app_state, "df_reg", None) is not None and q:
+            from backend.search import normalize_id_query
             df_reg = app_state.df_reg
             df_obs = getattr(app_state, "df_obs", None)
+            id_variants = set(normalize_id_query(q))
 
-            # Check direct ID matches or genus/species matches
-            for oid in df_reg.index[:1000]:  # Cap scan for high performance
-                oid_str = str(oid)
-                genus = str(df_reg.loc[oid, "Genus"]) if "Genus" in df_reg.columns and not pd_isna(df_reg.loc[oid, "Genus"]) else ""
-                species = str(df_reg.loc[oid, "Species"]) if "Species" in df_reg.columns and not pd_isna(df_reg.loc[oid, "Species"]) else ""
-                taxon = f"{genus} {species}".strip()
+            # Prefer prebuilt SearchEngine index (scans entire dataset, no 1,000-row cap)
+            search_index = None
+            if hasattr(self.ui, "get_search_index"):
+                try:
+                    search_index = self.ui.get_search_index()
+                except Exception:
+                    search_index = None
 
-                is_match = False
-                spec_score = 0.0
+            if isinstance(search_index, dict) and len(search_index) > 0:
+                for oid, tok in search_index.items():
+                    oid_str = str(oid)
+                    tok_id = tok.get("id", oid_str.lower())
+                    tok_id_nz = tok_id.lstrip("0") or "0" if tok_id.isdigit() else tok_id
+                    taxon = tok.get("genus_species", "")
+                    is_match = False
+                    spec_score = 0.0
 
-                if q == oid_str.lower() or oid_str.lower().startswith(q):
-                    is_match = True
-                    spec_score = 100.0
-                elif q in taxon.lower():
-                    is_match = True
-                    spec_score = 90.0
-                elif len(q) >= 3 and taxon:
-                    spec_score = utils.fuzzy_score(q, taxon)
-                    if spec_score >= 65.0:
+                    if tok_id in id_variants or tok_id_nz in id_variants:
                         is_match = True
+                        spec_score = 105.0
+                    elif any(tok_id.startswith(v) for v in id_variants if v):
+                        is_match = True
+                        spec_score = 100.0
+                    elif q in taxon:
+                        is_match = True
+                        spec_score = 90.0
+                    elif len(q) >= 3 and taxon:
+                        spec_score = utils.fuzzy_score(q, taxon)
+                        if spec_score >= 65.0:
+                            is_match = True
 
-                if is_match:
-                    # Check reviewed / problem status
-                    is_reviewed = False
-                    has_problem = False
-                    if df_obs is not None and oid in df_obs.index:
-                        from repository import REVIEWED_COLUMN
-                        if REVIEWED_COLUMN in df_obs.columns:
-                            is_reviewed = bool(df_obs.loc[oid, REVIEWED_COLUMN])
+                    if is_match:
+                        is_reviewed = False
+                        if df_obs is not None and oid in df_obs.index:
+                            from repository import REVIEWED_COLUMN
+                            if REVIEWED_COLUMN in df_obs.columns:
+                                is_reviewed = bool(df_obs.loc[oid, REVIEWED_COLUMN])
+                        display_taxon = taxon.title() if taxon else "Unidentified specimen"
+                        matching_specimens.append({
+                            "type": "specimen",
+                            "oid": oid,
+                            "label": f"#{oid_str} — {display_taxon}",
+                            "shortcut": "Reviewed" if is_reviewed else "Jump",
+                            "icon": "🟢" if is_reviewed else "⚪",
+                            "score": spec_score,
+                        })
+                        if len(matching_specimens) >= 20:
+                            break
+            else:
+                for oid in df_reg.index:
+                    oid_str = str(oid)
+                    oid_low = oid_str.lower()
+                    oid_nz = oid_low.lstrip("0") or "0" if oid_low.isdigit() else oid_low
+                    genus = str(df_reg.loc[oid, "Genus"]) if "Genus" in df_reg.columns and not pd_isna(df_reg.loc[oid, "Genus"]) else ""
+                    species = str(df_reg.loc[oid, "Species"]) if "Species" in df_reg.columns and not pd_isna(df_reg.loc[oid, "Species"]) else ""
+                    taxon = f"{genus} {species}".strip()
 
-                    status_icon = "🟢" if is_reviewed else "⚪"
-                    matching_specimens.append({
-                        "type": "specimen",
-                        "oid": oid,
-                        "label": f"#{oid_str} — {taxon or 'Unidentified specimen'}",
-                        "shortcut": "Reviewed" if is_reviewed else "Jump",
-                        "icon": status_icon,
-                        "score": spec_score,
-                    })
-                    if len(matching_specimens) >= 15:
-                        break
+                    is_match = False
+                    spec_score = 0.0
+                    if oid_low in id_variants or oid_nz in id_variants:
+                        is_match = True
+                        spec_score = 105.0
+                    elif any(oid_low.startswith(v) for v in id_variants if v):
+                        is_match = True
+                        spec_score = 100.0
+                    elif q in taxon.lower():
+                        is_match = True
+                        spec_score = 90.0
+                    elif len(q) >= 3 and taxon:
+                        spec_score = utils.fuzzy_score(q, taxon)
+                        if spec_score >= 65.0:
+                            is_match = True
+
+                    if is_match:
+                        is_reviewed = False
+                        if df_obs is not None and oid in df_obs.index:
+                            from repository import REVIEWED_COLUMN
+                            if REVIEWED_COLUMN in df_obs.columns:
+                                is_reviewed = bool(df_obs.loc[oid, REVIEWED_COLUMN])
+                        matching_specimens.append({
+                            "type": "specimen",
+                            "oid": oid,
+                            "label": f"#{oid_str} — {taxon or 'Unidentified specimen'}",
+                            "shortcut": "Reviewed" if is_reviewed else "Jump",
+                            "icon": "🟢" if is_reviewed else "⚪",
+                            "score": spec_score,
+                        })
+                        if len(matching_specimens) >= 20:
+                            break
 
             matching_specimens.sort(key=lambda x: x["score"], reverse=True)
 

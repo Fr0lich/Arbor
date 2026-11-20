@@ -56,6 +56,7 @@ def get_theme():
     return "clam"
 
 
+import atexit
 # In-memory prefs cache — populated on first read, invalidated on write.
 _prefs_cache = None
 
@@ -70,47 +71,68 @@ def load_prefs():
                 if isinstance(data, dict):
                     _prefs_cache = data
                     return _prefs_cache
-        except Exception as e:
+        except json.JSONDecodeError:
+            try:
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup = f"{_PREFS_PATH}.corrupt.{ts}"
+                os.replace(_PREFS_PATH, backup)
+            except Exception:
+                pass
+        except Exception:
             pass
     _prefs_cache = {}
     return _prefs_cache
 
 _save_job_id = None
+_prefs_dirty = False
+
+def _write_prefs_now():
+    global _save_job_id, _prefs_dirty
+    _save_job_id = None
+    if _prefs_cache is None:
+        return
+    try:
+        tmp_path = _PREFS_PATH + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(_prefs_cache, f, indent=2)
+        os.replace(tmp_path, _PREFS_PATH)
+        _prefs_dirty = False
+    except Exception as e:
+        print(f"CRITICAL: Failed to save user preferences: {e}", file=sys.stderr)
+
+def flush_prefs():
+    """Synchronously flush any pending debounced preference write (safe at exit)."""
+    global _save_job_id
+    if _prefs_dirty or _save_job_id is not None:
+        root = getattr(tk, "_default_root", None)
+        if root and _save_job_id is not None:
+            try:
+                root.after_cancel(_save_job_id)
+            except Exception:
+                pass
+        _write_prefs_now()
+
+atexit.register(flush_prefs)
 
 def save_prefs(prefs):
-    global _prefs_cache, _save_job_id
+    global _prefs_cache, _save_job_id, _prefs_dirty
     _prefs_cache = prefs  # keep cache in sync before writing
-    
+    _prefs_dirty = True
 
     root = getattr(tk, "_default_root", None)
-
-    def _do_write():
-        global _save_job_id
-        _save_job_id = None
-        try:
-            tmp_path = _PREFS_PATH + ".tmp"
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump(_prefs_cache, f, indent=2)
-            os.replace(tmp_path, _PREFS_PATH)
-        except Exception as e:
-            import sys
-            print(f"CRITICAL: Failed to save user preferences: {e}", file=sys.stderr)
 
     if root:
         if _save_job_id is not None:
             try:
                 root.after_cancel(_save_job_id)
-            except Exception as e:
+            except Exception:
                 pass
         try:
-            _save_job_id = root.after(100, _do_write)
-        except Exception as e:
-            # Fallback if scheduler fails
-            _do_write()
-            # Fallback if scheduler fails
-            _do_write()
+            _save_job_id = root.after(100, _write_prefs_now)
+        except Exception:
+            _write_prefs_now()
     else:
-        _do_write()
+        _write_prefs_now()
 
 def get_last_dir(key):
     return load_prefs().get(key, "")

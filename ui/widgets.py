@@ -327,6 +327,7 @@ class ToggleSwitch(tk.Canvas):
             self.variable.trace_remove("write", self._trace_id)
         except Exception:
             pass
+        super().destroy()
 class SleekScrollbar(tk.Canvas):
     """A sleek, modern capsule-thumb scrollbar styled for Stitch-design principles."""
     def __init__(self, parent, command=None, is_dark=False, width=8, **kwargs):
@@ -992,7 +993,7 @@ class TreeviewListboxWrapper(ttk.Frame):
 
         if visible_cats.get("reviewed", True):
             if reviewed and has_problem:
-                candidates.append((100, "#d9a036", "REV+ERR", "#3b2e15" if is_dark else "#fef9e7", "#d9a036"))
+                candidates.append((100, "#F57C00", "REV+ERR", "#c46200" if is_dark else "#F57C00", "#ffffff"))
             elif reviewed:
                 rev_bg = "#162d1a" if is_dark else "#f2f9f3"
                 rev_fg = "#85e89d" if is_dark else "#3a7d44"
@@ -2392,6 +2393,7 @@ class SchemaFormBuilder:
                 w = self._create_field_widget(self.parent, fname, fdef, variables_dict[fname], bg_color=self.parent.cget("bg"))
                 w.grid(row=r_idx, column=c_idx, sticky="nsew", padx=sc(4), pady=sc(3))
                 widgets[fname] = w
+        return widgets
 
     def build_stack(self, field_defs, variables_dict, pady=3):
         """

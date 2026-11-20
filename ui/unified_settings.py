@@ -594,7 +594,7 @@ class UnifiedSettingsWindow:
         create_toggle_row(card1, "Auto-save when mobile server is stopped", self.var_mobile_autosave_on_stop,
                           ui_ref=self.app or self, info_text=SETTING_INFO_TEXTS["mobile_autosave_on_stop"])
         tk.Label(card1,
-                 text="Note: Saves use background atomic pickles for maximum performance.",
+                 text="Note: Safety backups are saved automatically in the background without interrupting your work.",
                  font=self.FONT_SUBTITLE, fg=self.COLORS["on_surface_variant"],
                  bg=self.COLORS["card_bg"]).pack(anchor="w", pady=(sc(4), 0))
 
@@ -1408,8 +1408,6 @@ class UnifiedSettingsWindow:
         card2 = self._create_card(c, "Unfinished & Experimental Features")
         create_toggle_row(card2, "Enable Bulk Editor Tool", self.var_enable_bulk, ui_ref=self.app or self)
         create_toggle_row(card2, "Auto-resolve Conflicts", self.var_auto_resolve, ui_ref=self.app or self)
-        create_toggle_row(card2, "Strict Input Validation", self.var_strict_validation,
-                          ui_ref=self.app or self, info_text=SETTING_INFO_TEXTS["strict_input_validation"])
         create_toggle_row(card2, "Require PIN for Mobile Companion", self.var_require_mobile_pin,
                           ui_ref=self.app or self, info_text=SETTING_INFO_TEXTS["require_mobile_pin"])
         tk.Label(card2,
@@ -2087,6 +2085,15 @@ class UnifiedSettingsWindow:
         p["auto_resolve_conflicts"] = self.var_auto_resolve.get()
         p["strict_input_validation"] = self.var_strict_validation.get()
         p["require_mobile_pin"] = self.var_require_mobile_pin.get()
+        # Propagate PIN toggle immediately to any active Mobile Companion server
+        _mobile_srv = getattr(self.app, "_mobile_server_instance", None) or getattr(
+            getattr(self.app, "app", None), "_mobile_server_instance", None
+        )
+        if _mobile_srv is not None and hasattr(_mobile_srv, "update_pin_requirement"):
+            try:
+                _mobile_srv.update_pin_requirement(p["require_mobile_pin"])
+            except Exception:
+                pass
         p["enable_gbif"] = self.var_enable_gbif.get()
         try:
             p["gbif_max_workers"] = int(self.var_gbif_max_workers.get())

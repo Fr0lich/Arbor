@@ -136,18 +136,18 @@ def test_status_bar_update_status_telemetry(tk_env):
     # Test exact requirement values: total=50, reviewed=25, problems=5
     panel.update_status(total=50, reviewed=25, problems=5)
 
-    assert panel.labels["object_count"].cget("text") == "OBJECT_COUNT: 50"
-    assert panel.labels["reviewed"].cget("text") == "REVIEWED: 25"
-    assert panel.labels["problems"].cget("text") == "PROBLEMS: 5"
+    assert panel.labels["object_count"].cget("text") == "Specimens: 50"
+    assert panel.labels["reviewed"].cget("text") == "Reviewed: 25"
+    assert panel.labels["problems"].cget("text") == "Problems: 5"
     # When problems > 0, problems label foreground must highlight in red (#ff6b6b)
     assert panel.problems_lbl.cget("foreground") == "#ff6b6b"
 
     # Test with 0 problems and large count formatting
     panel.update_status(total=5000, reviewed="100%", problems=0, last_save="12:00:00")
-    assert panel.labels["object_count"].cget("text") == "OBJECT_COUNT: 5,000"
-    assert panel.labels["reviewed"].cget("text") == "REVIEWED: 100%"
-    assert panel.labels["problems"].cget("text") == "PROBLEMS: 0"
-    assert panel.labels["last_save"].cget("text") == "LAST_SAVE: 12:00:00"
+    assert panel.labels["object_count"].cget("text") == "Specimens: 5,000"
+    assert panel.labels["reviewed"].cget("text") == "Reviewed: 100%"
+    assert panel.labels["problems"].cget("text") == "Problems: 0"
+    assert panel.labels["last_save"].cget("text") == "Last Saved: 12:00:00"
     assert panel.problems_lbl.cget("foreground") == "#e2e2e2"
 
 

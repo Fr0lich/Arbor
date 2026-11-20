@@ -70,13 +70,13 @@ class StatusBarPanel:
             tk.Label(parent, text="|", bg=statusbar_bg, fg="#555555",
                      font=("Courier New", sc(9))).pack(side="left")
 
-        _sb_label(sb_left, "object_count", "OBJECT_COUNT: —")
+        _sb_label(sb_left, "object_count", "Specimens: —")
         _sb_sep(sb_left)
-        _sb_label(sb_left, "reviewed", "REVIEWED: —")
+        _sb_label(sb_left, "reviewed", "Reviewed: —")
         _sb_sep(sb_left)
-        self.problems_lbl = _sb_label(sb_left, "problems", "PROBLEMS: —")
+        self.problems_lbl = _sb_label(sb_left, "problems", "Problems: —")
         _sb_sep(sb_left)
-        _sb_label(sb_left, "last_save", "LAST_SAVE: —")
+        _sb_label(sb_left, "last_save", "Last Saved: —")
 
         self.filter_active_badge = tk.Label(
             sb_left, text="", bg=statusbar_bg, fg="#e07b39",
@@ -97,8 +97,8 @@ class StatusBarPanel:
             lbl.bind("<Leave>", lambda e: lbl.config(fg="#c8c8c8"))
             return lbl
 
-        _sb_link(sb_right, "DB_STATUS", self.ui.show_statistics)
-        _sb_link(sb_right, "LOG_VIEWER", self.ui.open_log_viewer_window)
+        _sb_link(sb_right, "Collection Stats", self.ui.show_statistics)
+        _sb_link(sb_right, "Activity Log", self.ui.open_log_viewer_window)
 
         # Wire backward-compatibility references on ui
         self.ui._status_bar_labels = self.labels
@@ -107,8 +107,10 @@ class StatusBarPanel:
         self.ui.sb_bottom = self.sb_bottom
 
         # Subscribe to app_bus events
+        from ui.state import DATABASE_UPDATED
         app_bus.subscribe_managed(self.frame, OBJECT_DATA_CHANGED, self._on_bus_data_changed)
         app_bus.subscribe_managed(self.frame, OBJECT_LOADED, self._on_bus_object_loaded)
+        app_bus.subscribe_managed(self.frame, DATABASE_UPDATED, self._on_bus_data_changed)
 
     def update_status(self, total=None, reviewed=None, problems=None, last_save=None):
         """Update status bar telemetry labels directly or from active dataset."""
@@ -122,15 +124,15 @@ class StatusBarPanel:
 
         if total is not None and "object_count" in self.labels:
             if isinstance(total, int):
-                self.labels["object_count"].config(text=f"OBJECT_COUNT: {total:,}")
+                self.labels["object_count"].config(text=f"Specimens: {total:,}")
             else:
-                self.labels["object_count"].config(text=f"OBJECT_COUNT: {total}")
+                self.labels["object_count"].config(text=f"Specimens: {total}")
 
         if reviewed is not None and "reviewed" in self.labels:
-            self.labels["reviewed"].config(text=f"REVIEWED: {reviewed}")
+            self.labels["reviewed"].config(text=f"Reviewed: {reviewed}")
 
         if problems is not None and "problems" in self.labels:
-            self.labels["problems"].config(text=f"PROBLEMS: {problems}")
+            self.labels["problems"].config(text=f"Problems: {problems}")
             if hasattr(self, "problems_lbl") and self.problems_lbl.winfo_exists():
                 try:
                     prob_val = int(problems)
@@ -139,7 +141,7 @@ class StatusBarPanel:
                     pass
 
         if last_save is not None and "last_save" in self.labels:
-            self.labels["last_save"].config(text=f"LAST_SAVE: {last_save}")
+            self.labels["last_save"].config(text=f"Last Saved: {last_save}")
 
     def _on_bus_data_changed(self, *args, **kwargs):
         if self.frame.winfo_exists():
@@ -168,14 +170,14 @@ class StatusBarPanel:
                 pass
 
         if "object_count" in self.labels:
-            self.labels["object_count"].config(text=f"OBJECT_COUNT: {total:,}")
+            self.labels["object_count"].config(text=f"Specimens: {total:,}")
 
             if app.df_obs is not None and len(app.df_obs) > 0:
                 df_obs = app.df_obs
                 rev = int(df_obs[REVIEWED_COLUMN].sum()) if REVIEWED_COLUMN in df_obs.columns else 0
                 pct = int((rev / len(df_obs)) * 100)
                 if "reviewed" in self.labels:
-                    self.labels["reviewed"].config(text=f"REVIEWED: {pct}%")
+                    self.labels["reviewed"].config(text=f"Reviewed: {pct}%")
 
                 if getattr(self.ui, "_row_cache_dirty", True) or not hasattr(self.ui, "_cached_problems_count"):
                     try:
@@ -190,7 +192,7 @@ class StatusBarPanel:
 
                 problems_count = self.ui._cached_problems_count
                 if "problems" in self.labels:
-                    self.labels["problems"].config(text=f"PROBLEMS: {problems_count}")
+                    self.labels["problems"].config(text=f"Problems: {problems_count}")
                 if hasattr(self, "problems_lbl") and self.problems_lbl.winfo_exists():
                     self.problems_lbl.config(fg="#ff6b6b" if problems_count > 0 else "#e2e2e2")
 
