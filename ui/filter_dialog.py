@@ -97,6 +97,18 @@ class FilterDialogController:
             btn.pack(side="left", padx=sc(4), pady=sc(12))
             return btn
 
+        def apply_hallway_followup():
+            FilterDialogController.clear_filter(ui, win, destroy_win=False)
+            if "Reviewed" in ui.filter_vars:
+                ui.filter_vars["Reviewed"].set("Has")
+            if "Any_Problem" in ui.filter_vars:
+                ui.filter_vars["Any_Problem"].set("Has")
+            if hasattr(ui, "filter_mode"):
+                ui.filter_mode.set("AND")
+            ui.update_filter_button_text()
+            FilterDialogController.apply_filter_with_history(ui, win)
+
+        make_btn(right_header, "🎯 Hallway Follow-Up (REV+ERR)", apply_hallway_followup)
         make_btn(right_header, "Load Preset...", lambda: FilterDialogController.load_filter_preset(ui))
         make_btn(right_header, "Save Preset...", lambda: FilterDialogController.save_filter_preset(ui))
 

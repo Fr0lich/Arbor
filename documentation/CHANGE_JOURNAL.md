@@ -13,6 +13,36 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 7: Armed Target Shelf Pattern, Non-Coercive Review, Pixel Verification, and Hallway Follow-Up Filter Preset
+- **Date**: 2026-11-20
+- **Feature Area**: Mobile Companion Curation & Desktop Filter Integration (`backend/mobile_server.py`, `ui/image_panel.py`, `ui/filter_dialog.py`)
+- **What Changed**:
+  1. **Armed Target Shelf Pattern with Non-Coercive Confirmation**: Interns auditing consecutive specimens in a glass cabinet can arm an active target shelf (e.g. Cabinet 21, Shelf 01) and stamp it with 1 tap. Tapping "Mark Reviewed" on an unplaced specimen prompts: *"Stamp to Armed Shelf 21 & Mark Reviewed?"* with two safe choices: *"Yes, Stamp & Review"* or *"No, Keep Location & Review"*. If the trainee chooses "No", all edits and review status are saved without altering coordinates. Fixed the render-cycle cache bug that previously mutated `state.lastSavedLocation`.
+  2. **Leading-Zero & Museum Prefix Normalization**: Auditing searches now automatically normalize leading zeroes (e.g. searching `'001'` matches `'1'`), strip museum accession prefixes, and match against `"Object Number"` and accession columns.
+  3. **True Client-Side Pixel Verification & Graceful Folio Collapse**: Both the mobile companion and desktop image panel now verify decoded pixel dimensions (`>= 50x50`) to reject 1x1 tracking pixels, stub placeholders, or HTML error pages from museum webservers. If no valid image is verified, the mobile folio collapses from 192px to a compact 28px single-line bar, reclaiming screen viewport for data fields. Prioritized registered `Online photo 1..3` links from `df_reg` over synthetic pattern guessing.
+  4. **Tri-State Status Badges**: Added `REV + [N] ISSUES` (Amber) badge alongside `UNREVIEWED` and `REVIEWED` to reassure interns that flagged physical or botanical issues are safely queued for desktop office triage.
+  5. **Desktop 1-Click "Hallway Follow-Up (REV+ERR)" Preset**: Added a dedicated 1-click filter button in the Filter Objects dialog (`ui/filter_dialog.py`) allowing collection assistants back at their desk to isolate specimens reviewed in the vault that have unresolved problems (`Reviewed = Has` and `Any_Problem = Has`).
+- **User Impact**: Trainees walking physical herbarium vaults enjoy fast, safe, error-free auditing without risking accidental location corruption. Trainees never lose viewport space to empty image frames, and collection assistants returning to desktop workstations can filter and resolve hallway-flagged issues with a single click.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Agent Operational Blueprint: `documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`
+  - [x] Master Lexicon compliance: Used canonical terms (*"Storage Location"*, *"Mark Reviewed"*, *"Specimen Directory"*)
+
+---
+
+### Entry 4: Mobile Companion Ground-Truth Hallway Audit Specification & Armed Shelf Pattern
+- **Date**: 2026-11-20
+- **Feature Area**: Mobile Companion UX & Defensive Location Stamping Architecture (`documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`, `backend/mobile_server.py`)
+- **What Changed**: Conducted end-to-end ground-truth audit simulation using `data/demo_collection.xlsx`. Established the **"Armed Target Shelf" defensive design pattern** in `documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md` to prevent accidental location overwriting when interns mistype accession numbers. Defined specifications for numeric keypad default, above-the-fold location stamping, and tri-state review badges (`[ UNREV ]`, `[ REV ]`, `[ REV+ERR ]`).
+- **User Impact**: Trainees walking physical herbarium vaults will have single-tap target shelf stamping without fear of accidentally overwriting records if they mistype an accession number. When marking a damaged or botanically uncertain specimen as "Reviewed", reassuring micro-copy clarifies that location verification is complete and problems are safely preserved for desktop curation.
+- **Documentation Sync Checklist**:
+  - [x] Agent Operational Blueprint: `documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`
+  - [x] Mobile Companion Guide: `documentation/agent/MOBILE_COMPANION_GUIDE.md`
+  - [x] Master Agent Router: `AGENTS.md`
+  - [x] Master Documentation Map Canonical Lexicon adherence
+
+---
+
 ### Entry 1: Startup Column Sashes & Proportional Auto-Layout
 - **Date**: 2026-11-13
 - **Feature Area**: Workspace Layout & Panel Sizing (`ui/main_window.py`, `ui/layout_settings.py`)

@@ -1703,21 +1703,38 @@ self.addEventListener('fetch', (event) => {
                 is_search_active = bool(query)
                 if is_search_active:
                     idx_str = df_reg.index.astype(str).str.lower()
-                    oid_col = None
-                    for c in ("ObjectID", "id", "Accession"):
-                        if c in df_reg.columns:
-                            oid_col = df_reg[c].fillna("").astype(str).str.lower()
-                            break
+                    id_cols = [c for c in ("ObjectID", "id", "Accession", "Object Number", "Accession Number") if c in df_reg.columns]
 
-                    # p1: exact ID match
-                    p1_mask = idx_str == query
-                    if oid_col is not None:
-                        p1_mask |= (oid_col == query)
+                    # Strip leading zeros for numeric queries (e.g. '001' -> '1') and museum prefixes (e.g. 'o-1001' -> '1001')
+                    query_variants = [query]
+                    if query.isdigit():
+                        stripped_q = query.lstrip('0') or '0'
+                        if stripped_q != query:
+                            query_variants.append(stripped_q)
+                    else:
+                        core_id = re.sub(r'^[a-z]+-+', '', query).strip()
+                        if core_id and core_id != query:
+                            query_variants.append(core_id)
+                            if core_id.isdigit():
+                                stripped_core = core_id.lstrip('0') or '0'
+                                if stripped_core != core_id:
+                                    query_variants.append(stripped_core)
+
+                    # p1: exact ID match across index and all id_cols for any query variant
+                    p1_mask = pd.Series(False, index=df_reg.index)
+                    for q_var in query_variants:
+                        p1_mask |= (idx_str == q_var)
+                        for c in id_cols:
+                            col_s = df_reg[c].fillna("").astype(str).str.lower()
+                            p1_mask |= (col_s == q_var)
 
                     # p2: partial ID match
-                    p2_mask = idx_str.str.contains(query, regex=False) & ~p1_mask
-                    if oid_col is not None:
-                        p2_mask |= (oid_col.str.contains(query, regex=False) & ~p1_mask)
+                    p2_mask = pd.Series(False, index=df_reg.index)
+                    for q_var in query_variants:
+                        p2_mask |= (idx_str.str.contains(q_var, regex=False) & ~p1_mask)
+                        for c in id_cols:
+                            col_s = df_reg[c].fillna("").astype(str).str.lower()
+                            p2_mask |= (col_s.str.contains(q_var, regex=False) & ~p1_mask)
 
                     # p3: genus/species match
                     genus_col = df_reg["Genus"].fillna("").astype(str).str.lower() if "Genus" in df_reg.columns else pd.Series("", index=df_reg.index)
@@ -2261,7 +2278,16 @@ self.addEventListener('fetch', (event) => {
 
             online_urls = []
 
-            # Check user preferences override first
+            # 1. First add any verified/curated photo URLs registered in df_reg
+            for k in ("Online photo 1", "Online photo 2", "Online photo 3", "Online Photo 1", "Online Photo 2", "Online Photo 3"):
+                u = str(reg_dict.get(k, "")).strip().strip("'\"")
+                if u and u.lower() not in ("nan", "none", "<na>") and u.startswith(("http://", "https://", "www.")):
+                    if u.startswith("www."):
+                        u = "https://" + u
+                    if u not in online_urls:
+                        online_urls.append(u)
+
+            # 2. Check user preferences override or config pattern for fallback candidates
             pattern = self._image_url_pattern_override.strip()
 
             if not pattern and self.app_state.config:
@@ -2275,7 +2301,7 @@ self.addEventListener('fetch', (event) => {
             except ValueError:
                 num_val = 0
 
-            # Desktop-style format tokens support
+            # Generate candidate URLs (ranked after registered URLs)
             for suf in ["", "-01", "-02", "-1", "-2", "-3"]:
                 try:
                     f_url = pattern.format(id=oid, num=num_val, suffix=suf)
@@ -5340,6 +5366,23 @@ INDEX_TEMPLATE = """
       searchDebounceTimer = setTimeout(fetchList, 350);
     }
 
+    function toggleSearchInputMode() {
+      const searchBox = document.getElementById('searchBox');
+      const btn = document.getElementById('btnInputModeToggle');
+      if (!searchBox) return;
+      const currentMode = searchBox.getAttribute('inputmode') || 'numeric';
+      if (currentMode === 'numeric') {
+        searchBox.setAttribute('inputmode', 'text');
+        if (btn) btn.textContent = 'Aa';
+        showToast('Keyboard: Text mode (Aa)');
+      } else {
+        searchBox.setAttribute('inputmode', 'numeric');
+        if (btn) btn.textContent = '123';
+        showToast('Keyboard: Numeric mode (123)');
+      }
+      searchBox.focus();
+    }
+
     function clearSearch() {
       document.getElementById('searchBox').value = '';
       document.getElementById('searchClearBtn').classList.add('hidden');
@@ -7842,14 +7885,18 @@ INDEX_TEMPLATE_V2 = """
             </div>
             <input 
               type="text" 
+              inputmode="numeric"
               id="searchBox" 
-              placeholder="Search taxonomy, accession, cabinet..." 
+              placeholder="Search accession # or taxonomy..." 
               oninput="handleSearchInput()"
               autocomplete="off"
               spellcheck="false"
-              class="w-full pl-9 pr-16 py-2 bg-stone-100/90 hover:bg-stone-100 focus:bg-white text-xs font-mono text-ink placeholder:text-ink-faint placeholder:font-sans rounded-lg border border-stone-200 focus:border-fern focus:ring-1 focus:ring-fern focus:outline-none transition-all shadow-inner"
+              class="w-full pl-9 pr-22 py-2 bg-stone-100/90 hover:bg-stone-100 focus:bg-white text-xs font-mono text-ink placeholder:text-ink-faint placeholder:font-sans rounded-lg border border-stone-200 focus:border-fern focus:ring-1 focus:ring-fern focus:outline-none transition-all shadow-inner"
             />
             <div class="absolute right-2 flex items-center space-x-1">
+              <button id="btnInputModeToggle" type="button" onclick="toggleSearchInputMode()" class="px-1.5 py-0.5 rounded bg-stone-200/60 hover:bg-stone-300 text-[10px] font-mono font-bold text-stone-600 transition-colors" title="Toggle numeric / text keyboard">
+                123
+              </button>
               <button id="searchClearBtn" onclick="clearSearch()" class="hidden w-6 h-6 flex items-center justify-center rounded-full bg-stone-200/80 hover:bg-stone-300 text-ink-muted hover:text-ink active:scale-95 text-xs font-bold leading-none transition-all" title="Clear search">
                 ✕
               </button>
@@ -7863,8 +7910,8 @@ INDEX_TEMPLATE_V2 = """
           </div>
         </div>
 
-        <!-- 1b. Vault Storage Location Quick Filter Bar -->
-        <div id="storageLocationFilterBar" class="px-3.5 py-1.5 bg-stone-50 border-t border-stone-200 flex items-center gap-2">
+        <!-- 1b. Vault Storage Location Quick Filter Bar (Collapsed by default during inventory) -->
+        <div id="storageLocationFilterBar" class="hidden px-3.5 py-1.5 bg-stone-50 border-t border-stone-200 flex items-center gap-2">
           <span class="text-[11px] font-mono font-semibold text-ink-muted shrink-0">📍 Vault Loc:</span>
           <div class="flex-1 flex items-center gap-1.5 min-w-0">
             <select id="quickFilterCabinet" onchange="handleLocationFilterChange()" class="flex-1 min-w-0 bg-white border border-stone-300 rounded px-2 py-1 text-xs font-mono text-ink outline-none focus:border-fern">
@@ -8000,7 +8047,7 @@ INDEX_TEMPLATE_V2 = """
             </span>
           </div>
           <!-- Interactive Status Pill -->
-          <button type="button" class="flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-800 border-amber-300" id="badgeStatus" onclick="toggleReviewed()">
+          <button type="button" class="flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-800 border-amber-300" id="badgeStatus" onclick="handleReviewButtonClick()">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" id="badgeStatusDot"></span>
             <span id="badgeStatusText">UNREVIEWED</span>
           </button>
@@ -8021,6 +8068,19 @@ INDEX_TEMPLATE_V2 = """
             <span class="text-ink font-semibold" id="headerLocSummary">Cab 04 · Sh 02 · Fl -1</span>
           </div>
         </div>
+
+        <!-- Armed Target Shelf Action Banner -->
+        <div id="armedShelfBanner" class="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-xs">🎯</span>
+            <span class="font-mono text-[10px] text-muted truncate">Target Shelf:</span>
+            <span class="font-mono text-[11px] font-bold text-fern-dark truncate" id="armedShelfHeaderLabel">None Armed</span>
+          </div>
+          <button type="button" id="btnStampArmedShelf" onclick="stampArmedLocation()" class="hidden px-2.5 py-1 rounded bg-fern hover:bg-fern-dark text-white font-mono font-bold text-[10px] shadow-2xs tap-active flex items-center gap-1">
+            <span>📍</span>
+            <span>Stamp Target</span>
+          </button>
+        </div>
       </section>
 
       <!-- 3. Segmented Tab Controller (Sticky) -->
@@ -8030,6 +8090,7 @@ INDEX_TEMPLATE_V2 = """
           <button id="tabBtnDetails" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[36px] flex items-center justify-center gap-1.5 font-semibold text-ink tap-highlight-transparent" data-tab-index="0" onclick="switchDetailTab('details')">
             <svg class="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             <span>Details</span>
+            <span class="font-mono text-[10px] font-bold px-1.5 rounded-full bg-slate-600 text-white shadow-2xs hidden" id="tabFolioBadge">0</span>
           </button>
           <button id="tabBtnLocation" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[36px] flex items-center justify-center gap-1.5 text-muted tap-highlight-transparent" data-tab-index="1" onclick="switchDetailTab('location')">
             <svg class="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
@@ -8050,18 +8111,15 @@ INDEX_TEMPLATE_V2 = """
           <!-- ================= TAB 0: DETAILS & ARCHIVAL SCANS ================= -->
           <div class="w-1/3 h-full overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-24" id="tabContentDetails">
             <!-- Image Viewer Container -->
-            <div class="bg-surface border border-bordercol rounded p-3 shadow-2xs space-y-2">
+            <div class="bg-surface border border-bordercol rounded p-3 shadow-2xs space-y-2" id="photoFolioContainer">
               <div class="flex items-center justify-between">
                 <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Archival Photo Folio</h3>
                 <span class="text-[10px] font-mono text-muted" id="photoCountDisplay">0 Photos</span>
               </div>
-              <div class="relative w-full h-48 bg-stone-100 rounded border border-bordercol overflow-hidden flex items-center justify-center cursor-pointer" onclick="openPhotoViewerModal()">
-                <img id="specimenImg" src="" alt="Specimen Scan" class="w-full h-full object-contain hidden" onload="onPhotoLoaded()" onerror="onPhotoError()"/>
-                <div id="photoPlaceholder" class="flex flex-col items-center justify-center text-stone-400">
-                  <span class="text-3xl">📷</span>
-                  <span class="text-xs mt-1">Tap to Inspect Photo</span>
-                </div>
+              <div id="photoMainBox" class="relative w-full h-48 bg-stone-100 rounded border border-bordercol overflow-hidden flex items-center justify-center cursor-pointer" onclick="openPhotoViewerModal()">
+                <img id="specimenImg" src="" alt="Specimen Scan" class="w-full h-full object-contain hidden" onload="onPhotoLoaded(this)" onerror="onPhotoError(this)"/>
               </div>
+              <div id="photoPlaceholder" class="w-full"></div>
               <div id="photoThumbnailsRow" class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
                 <!-- Thumbnails injected dynamically -->
               </div>
@@ -8433,6 +8491,48 @@ INDEX_TEMPLATE_V2 = """
     <!-- ============================================================= -->
     <!-- MODALS                                                        -->
     <!-- ============================================================= -->
+
+    <!-- MODAL: Armed Shelf Confirmation (Non-Coercive) -->
+    <div id="armedConfirmModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-surface border border-bordercol rounded-lg w-full max-w-sm shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <header class="p-3.5 bg-stone-100 border-b border-bordercol flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-base">📍</span>
+            <h2 class="font-sans font-bold text-sm text-ink">Apply Armed Location?</h2>
+          </div>
+          <button type="button" onclick="cancelArmedModal()" class="text-ink-muted hover:text-ink font-bold text-sm">✕</button>
+        </header>
+        <div class="p-4 space-y-3.5">
+          <p class="text-xs text-muted leading-relaxed">
+            This specimen's registered location does not match your active audit target shelf.
+          </p>
+          <div class="space-y-2 bg-stone-50 p-3 rounded border border-bordercol/70 text-xs font-mono">
+            <div class="flex items-center justify-between">
+              <span class="text-muted">Current Record:</span>
+              <span class="font-bold text-ink" id="armedModalCurLoc">Unrecorded</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-fern-dark font-bold">Armed Target:</span>
+              <span class="font-bold text-fern-dark" id="armedModalTargetLoc">Cabinet 21, Shelf 02</span>
+            </div>
+          </div>
+          <p class="text-[11px] text-muted italic">
+            You can stamp the armed shelf or keep the existing/blank location. Both choices will safely mark the specimen reviewed.
+          </p>
+          <div class="space-y-2 pt-1">
+            <button type="button" id="btnConfirmStampAndReview" onclick="confirmStampAndReview()" class="w-full py-2.5 px-3 bg-fern hover:bg-fern-dark text-white rounded font-sans font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm tap-active transition-all">
+              <span>✓ Yes, Stamp to Target & Review</span>
+            </button>
+            <button type="button" id="btnConfirmKeepAndReview" onclick="confirmKeepAndReview()" class="w-full py-2.5 px-3 bg-stone-100 hover:bg-stone-200 text-ink border border-stone-300 rounded font-sans font-bold text-xs flex items-center justify-center gap-1.5 tap-active transition-all">
+              <span>✕ No, Keep Location & Review</span>
+            </button>
+            <button type="button" onclick="cancelArmedModal()" class="w-full py-1.5 text-center text-xs text-muted hover:text-ink font-sans">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- MODAL: Settings -->
     <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -9303,6 +9403,23 @@ INDEX_TEMPLATE_V2 = """
       }, 300);
     }
 
+    function toggleSearchInputMode() {
+      const searchBox = document.getElementById('searchBox');
+      const btn = document.getElementById('btnInputModeToggle');
+      if (!searchBox) return;
+      const currentMode = searchBox.getAttribute('inputmode') || 'numeric';
+      if (currentMode === 'numeric') {
+        searchBox.setAttribute('inputmode', 'text');
+        if (btn) btn.textContent = 'Aa';
+        showToast('Keyboard: Text mode (Aa)');
+      } else {
+        searchBox.setAttribute('inputmode', 'numeric');
+        if (btn) btn.textContent = '123';
+        showToast('Keyboard: Numeric mode (123)');
+      }
+      searchBox.focus();
+    }
+
     function clearSearch() {
       if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
       const searchBox = document.getElementById('searchBox');
@@ -9374,6 +9491,14 @@ INDEX_TEMPLATE_V2 = """
       document.getElementById('listView').classList.remove('hidden');
       document.getElementById('detailView').classList.add('hidden');
       document.getElementById('batchLocationView').classList.add('hidden');
+      const searchBox = document.getElementById('searchBox');
+      if (searchBox) {
+        searchBox.value = '';
+        state.searchQuery = '';
+        document.getElementById('searchClearBtn')?.classList.add('hidden');
+        setTimeout(() => searchBox.focus(), 50);
+      }
+      fetchObjects();
     }
 
     function showDetailView() {
@@ -9424,24 +9549,42 @@ INDEX_TEMPLATE_V2 = """
       document.getElementById('detailScientificName').textContent = rec.scientific_name || 'Unidentified Specimen';
       document.getElementById('detailFamily').textContent = reg.Family || '—';
 
-      // Status Pill
+      // Tri-State Status Pill & Micro-Copy Reassurance
       const statusBtn = document.getElementById('badgeStatus');
       const statusText = document.getElementById('badgeStatusText');
       const statusDot = document.getElementById('badgeStatusDot');
       const detailRevBtn = document.getElementById('btnDetailMarkReviewed');
       const detailRevLabel = document.getElementById('btnDetailReviewedLabel');
       const detailRevIcon = document.getElementById('btnDetailReviewedIcon');
+      
+      const activeProblemsCount = countActiveProblemsOnRecord(rec);
+      const hasFlags = (activeProblemsCount > 0) || Boolean(rec.has_flags);
+
       if (state.isReviewed) {
-        statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-emerald-50 text-fern-dark border-fern/30';
-        statusText.textContent = 'REVIEWED';
-        statusDot.className = 'w-1.5 h-1.5 rounded-full bg-fern';
-        if (detailRevBtn) {
-          detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-600 text-white border-emerald-700 shadow-sm';
-          if (detailRevLabel) detailRevLabel.textContent = 'Reviewed (Tap to Unmark)';
-          if (detailRevIcon) detailRevIcon.textContent = '✓';
+        if (hasFlags) {
+          // Tri-State: REVIEWED WITH ISSUES (Amber #F57C00 / bg-amber-50)
+          statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-900 border-amber-300';
+          statusText.textContent = `REV + ${activeProblemsCount || 1} ISSUE${activeProblemsCount === 1 ? '' : 'S'}`;
+          statusDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
+          if (detailRevBtn) {
+            detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-amber-600 text-white border-amber-700 shadow-sm';
+            if (detailRevLabel) detailRevLabel.textContent = `Reviewed (${activeProblemsCount || 1} Issues Queued)`;
+            if (detailRevIcon) detailRevIcon.textContent = '⚠';
+          }
+        } else {
+          // Tri-State: REVIEWED CLEAN (Emerald)
+          statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-emerald-50 text-fern-dark border-fern/30';
+          statusText.textContent = 'REVIEWED';
+          statusDot.className = 'w-1.5 h-1.5 rounded-full bg-fern';
+          if (detailRevBtn) {
+            detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-600 text-white border-emerald-700 shadow-sm';
+            if (detailRevLabel) detailRevLabel.textContent = 'Reviewed (Tap to Unmark)';
+            if (detailRevIcon) detailRevIcon.textContent = '✓';
+          }
         }
       } else {
-        statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-800 border-amber-300';
+        // Tri-State: UNREVIEWED (Stone / Amber pulse)
+        statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-stone-100 text-stone-700 border-stone-300';
         statusText.textContent = 'UNREVIEWED';
         statusDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse';
         if (detailRevBtn) {
@@ -9455,6 +9598,9 @@ INDEX_TEMPLATE_V2 = """
       const curIdx = state.objectList.findIndex(o => String(o.id) === String(rec.id));
       document.getElementById('detailCurrentIdx').textContent = curIdx >= 0 ? curIdx + 1 : 1;
       document.getElementById('detailTotalCount').textContent = state.objectList.length || state.totalMatching || 1;
+
+      // Update Armed Target Shelf action banner
+      updateArmedShelfBannerUI(obs);
 
       // Coordinate Steppers
       renderCoordinateSteppers(obs);
@@ -9543,6 +9689,7 @@ INDEX_TEMPLATE_V2 = """
 
       renderCoordinateSteppers(obs);
       updateDetailLocBreadcrumbs(obs);
+      armActiveTargetLocation(obs);
       triggerAutoSave();
       triggerHaptic('stepper');
     }
@@ -9594,6 +9741,7 @@ INDEX_TEMPLATE_V2 = """
 
       renderCoordinateSteppers(obs);
       updateDetailLocBreadcrumbs(obs);
+      armActiveTargetLocation(obs);
       triggerAutoSave();
       triggerHaptic('stepper');
     }
@@ -9637,6 +9785,7 @@ INDEX_TEMPLATE_V2 = """
       state.currentRecord.observation.Building = val;
       markDirty('Building');
       updateDetailLocBreadcrumbs(state.currentRecord.observation);
+      armActiveTargetLocation(state.currentRecord.observation);
       triggerAutoSave();
     }
 
@@ -9696,6 +9845,7 @@ INDEX_TEMPLATE_V2 = """
       markDirty('Stored as');
       renderDetailStoredAsPills(state.currentRecord.observation['Stored as']);
       updateDetailLocBreadcrumbs(state.currentRecord.observation);
+      armActiveTargetLocation(state.currentRecord.observation);
       triggerAutoSave();
     }
 
@@ -9750,31 +9900,101 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
-    // Copy from Previous Logic
-    function handleCopyPreviousSpecimen() {
+    function countActiveProblemsOnRecord(rec) {
+      if (!rec) return 0;
+      let cnt = 0;
+      if (Array.isArray(rec.flagged_issues)) {
+        cnt = rec.flagged_issues.filter(i => !i.resolved).length;
+      }
+      const obs = rec.observation || {};
+      for (const [k, v] of Object.entries(obs)) {
+        if (k.toLowerCase().includes('problem') && (v === true || String(v).toLowerCase() === 'true' || v === 1 || String(v) === '1')) {
+          cnt++;
+        }
+      }
+      return cnt;
+    }
+
+    // Active Armed Shelf & Intentional Location Stamping Engine
+    function armActiveTargetLocation(loc = {}) {
+      if (!loc) return;
+      const armed = state.armedLocation || {};
+      state.armedLocation = {
+        building: loc.Building || loc.building || armed.building || '',
+        floor: (loc.Floor !== undefined && loc.Floor !== '—') ? String(loc.Floor) : (armed.floor || ''),
+        cabinet: (loc.Cabinet && loc.Cabinet !== '—') ? String(loc.Cabinet) : (armed.cabinet || ''),
+        shelf: (loc.Shelf && loc.Shelf !== '—') ? String(loc.Shelf) : (armed.shelf || ''),
+        storedAs: loc['Stored as'] || loc.storedAs || armed.storedAs || ''
+      };
+      state.lastSavedLocation = { ...state.armedLocation };
+      try {
+        localStorage.setItem('arbor_armed_location', JSON.stringify(state.armedLocation));
+        localStorage.setItem('arbor_last_location', JSON.stringify(state.lastSavedLocation));
+      } catch(e) {}
+      updateArmedShelfBannerUI(state.currentRecord?.observation || {});
+    }
+
+    function stampArmedLocation() {
       if (!state.currentRecord) return;
-      const last = state.lastSavedLocation;
-      if (!last) {
-        showToast('No previous location coordinates cached');
+      const armed = state.armedLocation || state.lastSavedLocation;
+      if (!armed || (!armed.cabinet && !armed.shelf)) {
+        showToast('No active target shelf armed');
         return;
       }
-
       state.currentRecord.observation = state.currentRecord.observation || {};
       const obs = state.currentRecord.observation;
 
-      if (last.building) { obs.Building = last.building; markDirty('Building'); }
-      if (last.floor !== undefined) { obs.Floor = String(last.floor); markDirty('Floor'); }
-      if (last.cabinet) { obs.Cabinet = String(last.cabinet); markDirty('Cabinet'); }
-      if (last.shelf) { obs.Shelf = String(last.shelf); markDirty('Shelf'); }
-      if (last.storedAs) { obs['Stored as'] = last.storedAs; markDirty('Stored as'); }
+      if (armed.building) { obs.Building = armed.building; markDirty('Building'); }
+      if (armed.floor !== undefined && armed.floor !== '—') { obs.Floor = String(armed.floor); markDirty('Floor'); }
+      if (armed.cabinet && armed.cabinet !== '—') { obs.Cabinet = String(armed.cabinet); markDirty('Cabinet'); }
+      if (armed.shelf && armed.shelf !== '—') { obs.Shelf = String(armed.shelf); markDirty('Shelf'); }
+      if (armed.storedAs) { obs['Stored as'] = armed.storedAs; markDirty('Stored as'); }
 
       renderCoordinateSteppers(obs);
       populateDetailBuildingOptions(obs.Building);
       renderDetailStoredAsPills(obs['Stored as']);
       updateDetailLocBreadcrumbs(obs);
+      updateArmedShelfBannerUI(obs);
       triggerAutoSave();
       triggerHaptic('copy_prev');
-      showToast('📋 Copied coordinates from previous specimen');
+      showToast('📍 Stamped to armed target shelf');
+    }
+
+    function updateArmedShelfBannerUI(obs = {}) {
+      const banner = document.getElementById('armedShelfBanner');
+      const label = document.getElementById('armedShelfHeaderLabel');
+      const stampBtn = document.getElementById('btnStampArmedShelf');
+      if (!banner || !label) return;
+
+      const armed = state.armedLocation || state.lastSavedLocation;
+      const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
+
+      if (!hasArmed) {
+        label.textContent = 'None Armed (Set below)';
+        if (stampBtn) stampBtn.classList.add('hidden');
+        return;
+      }
+
+      const armedCab = String(armed.cabinet || '—').padStart(2, '0');
+      const armedShelf = String(armed.shelf || '—').padStart(2, '0');
+      label.textContent = `Cab ${armedCab} · Sh ${armedShelf}`;
+
+      const curCab = String(obs.Cabinet || '').trim();
+      const curShelf = String(obs.Shelf || '').trim();
+      const matches = (curCab === String(armed.cabinet || '').trim()) && (curShelf === String(armed.shelf || '').trim());
+
+      if (stampBtn) {
+        if (matches) {
+          stampBtn.classList.add('hidden');
+        } else {
+          stampBtn.classList.remove('hidden');
+        }
+      }
+    }
+
+    // Copy from Previous Logic
+    function handleCopyPreviousSpecimen() {
+      stampArmedLocation();
     }
 
     function updateDetailLocBreadcrumbs(obs = {}) {
@@ -9800,17 +10020,78 @@ INDEX_TEMPLATE_V2 = """
         }
       }
 
-      // Cache for Copy from Previous (only if coordinates actually exist)
-      if (locBreadcrumb.length > 0) {
-        state.lastSavedLocation = {
-          building: obs.Building || state.lastSavedLocation.building,
-          floor: (obs.Floor !== undefined && obs.Floor !== '—') ? obs.Floor : state.lastSavedLocation.floor,
-          cabinet: (obs.Cabinet && obs.Cabinet !== '—') ? obs.Cabinet : state.lastSavedLocation.cabinet,
-          shelf: (obs.Shelf && obs.Shelf !== '—') ? obs.Shelf : state.lastSavedLocation.shelf,
-          storedAs: obs['Stored as'] || state.lastSavedLocation.storedAs
-        };
-        try { localStorage.setItem('arbor_last_location', JSON.stringify(state.lastSavedLocation)); } catch(e) {}
+      // Safe update of armed shelf banner without passive cache corruption
+      updateArmedShelfBannerUI(obs);
+    }
+
+    // Non-Coercive Armed Shelf Confirmation & Review Handlers
+    function handleReviewButtonClick() {
+      if (!state.currentRecord) return;
+      if (state.isReviewed) {
+        // Unmarking an already reviewed record toggles off directly
+        toggleReviewed();
+        return;
       }
+
+      const armed = state.armedLocation || state.lastSavedLocation;
+      const obs = state.currentRecord.observation || {};
+      const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
+      const curCab = String(obs.Cabinet || '').trim();
+      const curShelf = String(obs.Shelf || '').trim();
+      const armedCab = String(armed?.cabinet || '').trim();
+      const armedShelf = String(armed?.shelf || '').trim();
+
+      const matchesArmed = hasArmed && (curCab === armedCab) && (curShelf === armedShelf);
+
+      // If location already matches armed target, or no armed target exists:
+      if (!hasArmed || matchesArmed) {
+        toggleReviewed();
+        return;
+      }
+
+      // Current location differs or is blank -> prompt non-coercive choice
+      openArmedConfirmModal(armed, curCab, curShelf);
+    }
+
+    function openArmedConfirmModal(armed, curCab, curShelf) {
+      const modal = document.getElementById('armedConfirmModal');
+      if (!modal) {
+        toggleReviewed();
+        return;
+      }
+      const curText = (curCab || curShelf) ? `Cabinet ${curCab || '—'}, Shelf ${curShelf || '—'}` : 'Unrecorded';
+      const armedText = `Cabinet ${armed.cabinet || '—'}, Shelf ${armed.shelf || '—'}`;
+
+      document.getElementById('armedModalCurLoc').textContent = curText;
+      document.getElementById('armedModalTargetLoc').textContent = armedText;
+      modal.classList.remove('hidden');
+    }
+
+    function confirmStampAndReview() {
+      const modal = document.getElementById('armedConfirmModal');
+      if (modal) modal.classList.add('hidden');
+
+      stampArmedLocation();
+      if (!state.isReviewed) {
+        toggleReviewed();
+      }
+      showToast('✓ Stamped to target shelf & marked reviewed');
+    }
+
+    function confirmKeepAndReview() {
+      const modal = document.getElementById('armedConfirmModal');
+      if (modal) modal.classList.add('hidden');
+
+      // PRESERVES USER INTENT: Keep location unchanged and safely mark reviewed!
+      if (!state.isReviewed) {
+        toggleReviewed();
+      }
+      showToast('✓ Kept current location & marked reviewed');
+    }
+
+    function cancelArmedModal() {
+      const modal = document.getElementById('armedConfirmModal');
+      if (modal) modal.classList.add('hidden');
     }
 
     function toggleReviewed() {
@@ -10001,40 +10282,121 @@ INDEX_TEMPLATE_V2 = """
       showToast(newVal ? '✓ Comment saved & synchronized' : '✓ Comment cleared');
     }
 
+    let currentPhotoCandidates = [];
+    let currentPhotoCandidateIdx = 0;
+
     function renderPhotos(images = {}) {
+      const urls = (images.local_endpoints && images.local_endpoints.length > 0)
+        ? images.local_endpoints
+        : (images.online_urls || []);
+
+      currentPhotoCandidates = urls;
+      currentPhotoCandidateIdx = 0;
+
+      const thumbsRow = document.getElementById('photoThumbnailsRow');
+      if (thumbsRow) thumbsRow.innerHTML = '';
+
+      if (!urls || urls.length === 0) {
+        collapseEmptyPhotoFolio('None registered');
+        return;
+      }
+
+      const countDisp = document.getElementById('photoCountDisplay');
+      if (countDisp) countDisp.textContent = 'Testing candidate...';
+      tryLoadPhotoCandidate(0);
+    }
+
+    function tryLoadPhotoCandidate(idx) {
+      if (!currentPhotoCandidates || idx >= currentPhotoCandidates.length) {
+        collapseEmptyPhotoFolio('None verified online');
+        return;
+      }
+      currentPhotoCandidateIdx = idx;
+      const url = currentPhotoCandidates[idx];
+      const img = document.getElementById('specimenImg');
+      if (img) {
+        img.src = url;
+      }
+    }
+
+    function onPhotoLoaded(imgEl) {
+      const target = imgEl || document.getElementById('specimenImg');
+      if (!target) return;
+      if (target.naturalWidth >= 50 && target.naturalHeight >= 50) {
+        expandVerifiedPhotoFolio(target.src);
+      } else {
+        tryLoadPhotoCandidate(currentPhotoCandidateIdx + 1);
+      }
+    }
+
+    function onPhotoError() {
+      tryLoadPhotoCandidate(currentPhotoCandidateIdx + 1);
+    }
+
+    function expandVerifiedPhotoFolio(verifiedUrl) {
+      const mainBox = document.getElementById('photoMainBox');
+      const img = document.getElementById('specimenImg');
+      const placeholder = document.getElementById('photoPlaceholder');
+      const countDisp = document.getElementById('photoCountDisplay');
+      const tabBadge = document.getElementById('tabFolioBadge');
+      const thumbsRow = document.getElementById('photoThumbnailsRow');
+      const viewerImg = document.getElementById('photoViewerImg');
+
+      if (mainBox) mainBox.classList.remove('hidden');
+      if (img) img.classList.remove('hidden');
+      if (placeholder) placeholder.classList.add('hidden');
+      if (viewerImg) viewerImg.src = verifiedUrl;
+      if (countDisp) countDisp.textContent = '1 Verified Scan';
+      if (tabBadge) {
+        tabBadge.textContent = '📷';
+        tabBadge.classList.remove('hidden');
+      }
+
+      if (thumbsRow && currentPhotoCandidates.length > 1) {
+        thumbsRow.innerHTML = currentPhotoCandidates.map((u, i) => `
+          <img src="${u}" onclick="selectPhoto(${i}, '${u}')" class="w-12 h-12 rounded border ${i === currentPhotoCandidateIdx ? 'border-fern ring-2 ring-fern/30' : 'border-bordercol'} object-cover cursor-pointer hover:border-fern">
+        `).join('');
+      } else if (thumbsRow) {
+        thumbsRow.innerHTML = '';
+      }
+    }
+
+    function collapseEmptyPhotoFolio(reason = 'None verified') {
+      const mainBox = document.getElementById('photoMainBox');
       const img = document.getElementById('specimenImg');
       const placeholder = document.getElementById('photoPlaceholder');
       const countDisp = document.getElementById('photoCountDisplay');
       const thumbsRow = document.getElementById('photoThumbnailsRow');
+      const tabBadge = document.getElementById('tabFolioBadge');
 
-      const urls = images.local_endpoints && images.local_endpoints.length > 0 ? images.local_endpoints : (images.online_urls || []);
-      if (countDisp) countDisp.textContent = `${urls.length} Photo${urls.length === 1 ? '' : 's'}`;
+      if (mainBox) mainBox.classList.add('hidden');
+      if (img) img.classList.add('hidden');
+      if (thumbsRow) thumbsRow.innerHTML = '';
+      if (tabBadge) tabBadge.classList.add('hidden');
+      if (countDisp) countDisp.textContent = 'No photo';
 
-      if (urls.length > 0) {
-        img.src = urls[0];
-        document.getElementById('photoViewerImg').src = urls[0];
-        img.classList.remove('hidden');
-        placeholder.classList.add('hidden');
-
-        if (thumbsRow) {
-          thumbsRow.innerHTML = urls.map((u, i) => `
-            <img src="${u}" onclick="selectPhoto(${i}, '${u}')" class="w-12 h-12 rounded border border-bordercol object-cover cursor-pointer hover:border-fern">
-          `).join('');
-        }
-      } else {
-        img.classList.add('hidden');
+      if (placeholder) {
+        placeholder.innerHTML = `
+          <div class="py-1 px-2.5 bg-stone-100 rounded border border-bordercol/70 flex items-center justify-between text-xs font-mono text-muted">
+            <span class="flex items-center gap-1.5 text-stone-500">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Scan: ${reason}
+            </span>
+            <span class="text-[10px] text-stone-400 italic">Viewport reclaimed</span>
+          </div>
+        `;
         placeholder.classList.remove('hidden');
-        if (thumbsRow) thumbsRow.innerHTML = '';
       }
     }
 
     function selectPhoto(idx, url) {
-      document.getElementById('specimenImg').src = url;
-      document.getElementById('photoViewerImg').src = url;
+      currentPhotoCandidateIdx = idx;
+      const img = document.getElementById('specimenImg');
+      const viewerImg = document.getElementById('photoViewerImg');
+      if (img) img.src = url;
+      if (viewerImg) viewerImg.src = url;
+      expandVerifiedPhotoFolio(url);
     }
-
-    function onPhotoLoaded() {}
-    function onPhotoError() {}
 
     function openPhotoViewerModal() {
       document.getElementById('photoViewerModal')?.classList.remove('hidden');

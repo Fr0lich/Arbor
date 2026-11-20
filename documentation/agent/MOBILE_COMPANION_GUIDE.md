@@ -57,3 +57,7 @@ When building or modifying backend endpoints and mobile frontends, adhere to the
 ### E. Declarative Request Validation (`backend/mobile_schemas.py`)
 - Inbound REST API payloads (`/api/update`, `/api/batch_update`, `/api/presence`) are validated through **Marshmallow** schemas.
 - Do not add manual procedural `data.get()` cascades or hand-coded formula injection startswith checks in route handlers. Use `ObjectUpdateSchema`, `BatchUpdateSchema`, or `PresenceSchema` to automatically validate types, strip dangerous Excel formula injection prefixes (`=`, `+`, `-`, `@`), and normalize identifier keys (`id` vs `oid`).
+
+## 6. Ground-Truth Hallway Auditing & Object View Ergonomics
+For end-to-end UX guidelines, the "Armed Target Shelf" defensive pattern (preventing accidental location overwrites), and Object Detail View ergonomics, consult:
+👉 **`documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`**

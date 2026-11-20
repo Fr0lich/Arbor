@@ -85,6 +85,7 @@ The agent **MUST ALWAYS**:
 
 * **Working on the Mobile Companion App or Backend Server (`mobile_server.py`)?**
   * 👉 Read **`documentation/agent/MOBILE_COMPANION_GUIDE.md`** (CRITICAL). This contains strict rules for frontend implementation, logic syncing, and performance.
+  * 👉 Read **`documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`** (CRITICAL). Contains ground-truth hallway audit workflows, hallway ergonomics, and the Armed Shelf defensive pattern.
 
 * **Reviewing the PySide6 Blueprint or Resuming Qt Wiring?**
   * 👉 Read **`documentation/agent/PYSIDE6_MIGRATION_GUIDE.md`** (Status: Phase 1 complete, Phase 2 blueprint).

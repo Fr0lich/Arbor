@@ -802,6 +802,35 @@ class ImagePanel(ttk.Frame):
             return None
 
     def build_online_image_urls(self, oid):
+        urls = []
+        # 1. Registered photo links from registration sheet
+        reg_row = None
+        if self.main_ui and hasattr(self.main_ui, "_get_reg_dict"):
+            reg_dict = self.main_ui._get_reg_dict()
+            reg_row = reg_dict.get(oid)
+            if reg_row is None and str(oid).isdigit():
+                reg_row = reg_dict.get(int(oid))
+
+        if reg_row is None and self.app and getattr(self.app, "df_reg", None) is not None:
+            if oid in self.app.df_reg.index:
+                try:
+                    reg_row = self.app.df_reg.loc[oid].to_dict()
+                except Exception:
+                    reg_row = {}
+
+        if reg_row:
+            for i in (1, 2, 3):
+                val = reg_row.get(f"Online photo {i}")
+                if val is None or str(val).strip() in ("", "nan", "None", "<NA>"):
+                    val = reg_row.get(f"Online Photo {i}")
+                if val is not None:
+                    s = str(val).strip().strip("'\"")
+                    if s and s not in ("nan", "None", "<NA>"):
+                        if s.startswith("www."):
+                            s = "https://" + s
+                        if s.startswith(("http://", "https://")) and s not in urls:
+                            urls.append(s)
+
         prefs = config.load_prefs() or {}
         pattern_override = prefs.get(
             "image_url_pattern_override",
@@ -817,10 +846,9 @@ class ImagePanel(ttk.Frame):
             ) if self.app else "https://www.unimus.no/photos/image/jpeg/O-V-OE-{num:04d}{suffix}.jpg"
 
         if not pattern:
-            return []
+            return urls
 
         suffixes = ["", "-01", "-02", "-03"]
-        urls = []
         is_numeric = str(oid).isdigit()
 
         for s in suffixes:
@@ -849,7 +877,8 @@ class ImagePanel(ttk.Frame):
                     url = f"{pattern.rstrip('/')}/{oid}{s}"
             else:
                 url = f"{pattern}{oid}{s}"
-            urls.append(url)
+            if url not in urls:
+                urls.append(url)
         return urls
 
     def build_image_index(self, folder):
@@ -1047,6 +1076,8 @@ class ImagePanel(ttk.Frame):
                             if r.status_code == 200:
                                 pil_img = Image.open(BytesIO(r.content))
                                 pil_img.load()
+                                if pil_img.width < 50 or pil_img.height < 50:
+                                    raise ValueError(f"Remote photo is a tracking pixel or stub ({pil_img.width}x{pil_img.height})")
                             else:
                                 raise FileNotFoundError(f"Remote photo returned HTTP {r.status_code}")
                         else:
@@ -1173,6 +1204,8 @@ class ImagePanel(ttk.Frame):
                     if r.status_code == 200:
                         img = Image.open(BytesIO(r.content))
                         img.load()
+                        if img.width < 50 or img.height < 50:
+                            return None
                         return img
                     elif r.status_code == 429 and attempt + 1 < attempts:
                         import time
