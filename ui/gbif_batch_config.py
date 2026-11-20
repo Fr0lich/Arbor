@@ -19,7 +19,7 @@ def init_fonts():
     if _fonts_initialized:
         return
     families = tkFont.families()
-    ui_family = "Hanken Grotesk" if "Hanken Grotesk" in families else "Helvetica" if "Helvetica" in families else "Segoe UI" if "Segoe UI" in families else "sans-serif"
+    ui_family = "Inter" if "Inter" in families else "Helvetica" if "Helvetica" in families else "Segoe UI" if "Segoe UI" in families else "sans-serif"
     mono_family = "JetBrains Mono" if "JetBrains Mono" in families else "Consolas" if "Consolas" in families else "Courier New"
 
     FONT_UI = (ui_family, sc(10))
@@ -34,18 +34,18 @@ COLORS = {
     "bg": "#fbfaf8",
     "surface": "#ffffff",
     "surface_dim": "#e9ece5",
-    "border": "#d1d1d1",
+    "border": "#c4c7c7",
     "text": "#2c302e",
-    "text_muted": "#444748",
+    "text_muted": "#757d77",
     "primary": "#2c302e",
     "on_primary": "#ffffff",
     "error": "#c93a40",
-    "error_bg": "#fef2f2",
+    "error_bg": "#ffdad6",
     "success": "#3a7d44",
-    "success_bg": "#f0fdf4",
+    "success_bg": "#adf0a6",
     "success_border": "#3a7d44",
-    "warning": "#f59e0b",
-    "conflict": "#0284c7",
+    "warning": "#d9a036",
+    "conflict": "#4a7b9d",
 }
 
 

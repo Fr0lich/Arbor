@@ -29,19 +29,19 @@ class FilterDialogController:
             "surface_container_low": "#f2f5f1",
             "surface_container_highest": "#e2e2e2",
             "on_surface": "#2c302e",
-            "on_surface_variant": "#444748",
-            "outline": "#747878",
+            "on_surface_variant": "#757d77",
+            "outline": "#757d77",
             "outline_variant": "#c4c7c7",
-            "primary": "#000000",
+            "primary": "#2c302e",
             "on_primary": "#ffffff",
             "secondary": "#3a7d44",
             "error": "#c93a40",
-            "botanical_green": "#3e7b3e",
-            "search_orange": "#d9480f",
+            "botanical_green": "#3a7d44",
+            "search_orange": "#d95c14",
             "surface_tint": "#5f5e5e"
         }
 
-        FONT_HEADLINE = ("Hanken Grotesk", sc(14), "bold")
+        FONT_HEADLINE = ("Inter", sc(14), "bold")
         FONT_LABEL = ("JetBrains Mono", sc(10), "bold")
         FONT_DATA = ("JetBrains Mono", sc(11))
 
@@ -271,7 +271,7 @@ class FilterDialogController:
         def _on_prob_scroll(event):
             probs_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         if hasattr(ui, "_bind_canvas_mousewheel"):
-            ui.root.after(100, lambda: ui._bind_canvas_mousewheel(probs_canvas, _on_prob_scroll))
+            ui.root.after(100, lambda: ui._bind_canvas_mousewheel(probs_canvas, _on_prob_scroll) if probs_canvas.winfo_exists() else None)
 
         prob_categories = getattr(ui, "problem_categories", {})
 
@@ -351,7 +351,7 @@ class FilterDialogController:
         def _on_hist_scroll(event):
             hist_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         if hasattr(ui, "_bind_canvas_mousewheel"):
-            ui.root.after(100, lambda: ui._bind_canvas_mousewheel(hist_canvas, _on_hist_scroll))
+            ui.root.after(100, lambda: ui._bind_canvas_mousewheel(hist_canvas, _on_hist_scroll) if hist_canvas.winfo_exists() else None)
 
         tk.Label(
             hist_inner,

@@ -2049,7 +2049,7 @@ class ObjectProgramUI(
             lbl = tk.Label(
                 win, 
                 text=label_text, 
-                font=("Hanken Grotesk" if not is_dark else "Segoe UI", sc(10)),
+                font=("Inter" if not is_dark else "Segoe UI", sc(10)),
                 bg=bg_col, 
                 fg=fg_col,
                 anchor="w",
@@ -3187,7 +3187,7 @@ class ObjectProgramUI(
         _step()
 
     def apply_proper_sash_positions(self):
-        """Ensure the 3-column workspace sashes are positioned with academic precision upon opening."""
+        """Ensure the 3-column workspace sashes are positioned with academic precision upon opening and resizing."""
         if not hasattr(self, "panes") or not self.panes.winfo_exists():
             return
 
@@ -3208,9 +3208,9 @@ class ObjectProgramUI(
         if not is_pinned:
             sash0 = sc(config.RAIL_THEME.get("rail_width", 40))
         else:
-            saved_sidebar = prefs.get("sidebar_width", 350)
+            saved_sidebar = prefs.get("sidebar_width", 320)
             sash0 = sc(saved_sidebar)
-            sash0 = max(sc(280), min(sash0, int(total_w * 0.35)))
+            sash0 = max(sc(240), min(sash0, int(total_w * 0.28)))
 
         if len(active_panes) >= 2:
             try:
@@ -3221,11 +3221,24 @@ class ObjectProgramUI(
         # 2. Right pane (registration / audit)
         show_reg = getattr(self, "show_reg_var", None) and self.show_reg_var.get()
         if show_reg and len(active_panes) >= 3 and str(self.reg_outer) in active_panes:
-            saved_right = prefs.get("right_panel_width", 420)
+            saved_right = prefs.get("right_panel_width", 400)
             right_w = sc(saved_right)
-            right_w = max(sc(360), min(right_w, int(total_w * 0.40)))
+            right_w = max(sc(340), min(right_w, int(total_w * 0.35)))
+
+            # Ensure middle canvas has at least sc(460) px
+            min_center = sc(460)
+            if (total_w - sash0 - right_w) < min_center:
+                available_for_sides = max(sc(500), total_w - min_center)
+                right_w = max(sc(320), int(available_for_sides * 0.55))
+                if is_pinned:
+                    sash0 = max(sc(220), min(sash0, available_for_sides - right_w))
+                    try:
+                        self.panes.sashpos(0, sash0)
+                    except Exception:
+                        pass
+
             sash1 = total_w - right_w
-            sash1 = max(sash0 + sc(320), sash1)
+            sash1 = max(sash0 + sc(300), sash1)
             try:
                 self.panes.sashpos(1, sash1)
             except Exception:
@@ -3556,6 +3569,18 @@ class ObjectProgramUI(
 
         panes.bind("<Map>", _on_panes_map, add="+")
 
+        self._sash_resize_job = None
+        def _on_panes_configure(event=None):
+            if event and event.widget == self.panes:
+                if getattr(self, "_sash_resize_job", None) is not None:
+                    try:
+                        self.root.after_cancel(self._sash_resize_job)
+                    except Exception:
+                        pass
+                self._sash_resize_job = self.root.after(60, self.apply_proper_sash_positions)
+
+        panes.bind("<Configure>", _on_panes_configure, add="+")
+
 
       
         left = ttk.Frame(panes)
@@ -3697,14 +3722,14 @@ class ObjectProgramUI(
         ttk.Label(
             reg_header,
             text="Registration Data",
-            font=("Hanken Grotesk", sc(16), "bold")
+            font=("Inter", sc(16), "bold")
         ).pack(side="left")
 
         # History suggestions button and indicator
         self.history_btn = tk.Button(
             reg_header,
             text="History",
-            font=("Hanken Grotesk", sc(9)),
+            font=("Inter", sc(9)),
             bg="#ffffff", fg="#2c302e",
             relief="solid", bd=1, cursor="hand2",
             padx=sc(8), pady=sc(2),
@@ -3717,7 +3742,7 @@ class ObjectProgramUI(
             text="",
             foreground="#444748",
             cursor="hand2",
-            font=("Hanken Grotesk", sc(9))
+            font=("Inter", sc(9))
         )
         self.history_indicator_label.tutorial_id = "history_indicator_label"
         self.history_indicator_label.pack(side="left", padx=(4, 0))
@@ -3741,7 +3766,7 @@ class ObjectProgramUI(
             ui_ref=self
         )
         self.focus_problems_cb.pack(side="right", padx=(4, 0))
-        ttk.Label(self.focus_quick_frame, text="Focus Mode", font=("Hanken Grotesk", sc(9))).pack(side="right")
+        ttk.Label(self.focus_quick_frame, text="Focus Mode", font=("Inter", sc(9))).pack(side="right")
         self.update_focus_toggle_visibility()
 
         # -------------------------------------------------------

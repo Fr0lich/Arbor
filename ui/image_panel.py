@@ -296,7 +296,7 @@ class ImagePanel(ttk.Frame):
         self.header_label = ttk.Label(
             header,
             text="SPECIMEN IMAGES",
-            font=("Hanken Grotesk", sc(11), "bold"),
+            font=("Inter", sc(11), "bold"),
             style="MiddlePane.TLabel"
         )
         self.header_label.pack(side="left")
@@ -2032,22 +2032,7 @@ class ImagePanel(ttk.Frame):
                 command=self.main_ui.open_historical_resolver_for_current
             ).pack(side="left", padx=(0, sc(6)))
 
-        if self.main_ui and hasattr(self.main_ui, "mark_current_as_reviewed"):
-            tk.Button(
-                btn_frame,
-                text="✓ Mark Reviewed (Ctrl+Enter)",
-                font=("Segoe UI", sc(9), "bold"),
-                bg="#3a7d44",
-                fg="#ffffff",
-                activebackground="#2e6436",
-                activeforeground="#ffffff",
-                relief="flat",
-                bd=0,
-                padx=sc(12),
-                pady=sc(4),
-                cursor="hand2",
-                command=self.main_ui.mark_current_as_reviewed
-            ).pack(side="right")
+        # Primary Mark Reviewed action is anchored cleanly in main right audit panel
 
 
 

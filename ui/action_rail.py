@@ -11,7 +11,7 @@ class ActionRail:
             left,
             bg=config.RAIL_THEME.get("rail_bg", "#fbfaf8"),
             highlightthickness=1,
-            highlightbackground=config.RAIL_THEME.get("rail_border", "#d1d1d1"),
+            highlightbackground=config.RAIL_THEME.get("rail_border", "#c4c7c7"),
             width=sc(config.RAIL_THEME.get("rail_width", 40))
         )
         rail.pack_propagate(False)
@@ -25,7 +25,7 @@ class ActionRail:
         btn_text = "◀" if is_pinned else "▶"
         app.pin_btn = tk.Button(
             rail, text=btn_text,
-            font=("Segoe UI", sc(10), "bold"),
+            font=("Inter", sc(10), "bold"),
             bg=bg_color,
             fg=config.RAIL_THEME.get("icon_active_fg", "#2c302e"),
             activebackground=config.RAIL_THEME.get("icon_hover_bg", "#e9ece5"),

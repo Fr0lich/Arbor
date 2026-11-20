@@ -161,3 +161,22 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
   - [x] Trainee Work Manual (`USER_GUIDE.md`) Chapter 9: Mobile Auditing & Companion Workflow
   - [x] Mobile Companion Guide (`documentation/agent/MOBILE_COMPANION_GUIDE.md`)
   - [x] Test suite updated in `tests/test_mobile_companion.py`
+
+---
+
+### Entry 10: Critical UI/UX Design Token Standardization, Responsive Sashes & Modal Shielding
+- **Date**: 2026-11-20
+- **Feature Area**: Design System, Workspace Responsiveness, Form Polish & Trainee Ergonomics (`ui/main_window.py`, `ui/widgets.py`, `ui/registry_panel.py`, `ui/location_panel.py`, `ui/historical_resolver.py`, `ui/filter_dialog.py`, `ui/bulk_edit.py`, `ui/navigation_bar.py`, `ui/new_database_wizard.py`)
+- **What Changed**:
+  1. **Typography & Font Stack Normalization**: Eradicated fragmented `"Hanken Grotesk"` across 20+ modules, aligning the entire desktop UI with canonical `"Inter"` for systematic sans body text, `"Lora"` for scholarly botanical titles, and `"JetBrains Mono"` for tabular numeric fields (`Collection Date`, `Innsammling Nr.`, geographic coordinates).
+  2. **Responsive Window Sash Positioning**: Added a debounced `<Configure>` listener to `panes` in `ui/main_window.py`. The center inspection canvas now dynamically maintains $\ge 480\text{ px}$ of breathing room on standard $1366\times768$ and compact workstation screens without squeezing out specimen details.
+  3. **High-Contrast Form Field Focus**: Updated entry field highlight rings in `ui/registry_panel.py` from invisible pale `#f2f5f1` to high-contrast Vibrant Fern `#3a7d44`, providing clear cursor feedback when tabbing between fields. Replaced Bootstrap pastels with canonical Material 3 container tokens (`#ffdad6`, `#fef9e7`, `#e9f0f5`).
+  4. **Call-to-Action Hierarchy Consolidation**: Eliminated the redundant secondary review button in the image panel footer, elevating the right audit rail's `✓ MARK AS REVIEWED` button as the single dominant CTA. Visually guarded destructive batch actions in `ui/bulk_edit.py` and `ui/autosave_handler.py` with `#ba1a1a` error tokens.
+  5. **Modal Dialog Keyboard & Error Shielding**: Added `<Escape>` key closure and a visible "Close" button to `HistoricalConflictResolverWindow`. Shielded deferred canvas mousewheel bindings in `ui/filter_dialog.py` to prevent `_tkinter.TclError: bad window path name` on rapid dismissal.
+  6. **Trainee Lexicon Cleanup**: Replaced all developer database jargon (`"schema"`, `"primary key"`, `"relational join"`) across new database wizards and dialogs with plain English trainee terms (*"Field Profile"*, *"Unique Specimen ID"*, *"Linked Records"*).
+- **Trainee Impact**: Trainees working on laptops and desktop workstations experience crisp, readable typography with aligned dates, a center image canvas that never gets crushed on resize, clear green outlines showing which box is currently typed into, and safe dialogs that close reliably with `Escape` without errors.
+- **Documentation Sync Checklist**:
+  - [x] Master Documentation Map (`MASTER_DOCUMENTATION_MAP.md`) Canonical Trainee Lexicon
+  - [x] Trainee Work Manual (`USER_GUIDE.md`) Chapter 2 & 4: Interface Navigation & Form Editing
+  - [x] Desk Cheat Sheet (`documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`)
+  - [x] Single-Badge Discipline and Design Token compliance verified against `documentation/agent/AI_UI_GUIDE.md`

@@ -34,7 +34,7 @@ SHEET_BLUEPRINT_INFO = {
         ),
         "curator_bullets": (
             "🏛️ For Experienced Curators:\n"
-            "  • Primary Key: ObjectID (preserves leading zeros, expands scientific notation, strips Excel .0 floats).\n"
+            "  • Unique Specimen ID: ObjectID (preserves leading zeros, expands scientific notation, strips Excel .0 floats).\n"
             "  • System GUID: UID (immutable 8-hex character identifier; used for mobile syncing and audit integrity).\n"
             "  • Core Taxonomy: Genus, Species, Author, Family, Higher Classification.\n"
             "  • Non-Destructive: You can add custom institutional columns; Arbor preserves them untouched."
@@ -43,7 +43,7 @@ SHEET_BLUEPRINT_INFO = {
     "obs": {
         "title": "🛡️ Sheet 2: Observation (Quality Workspace & Storage)",
         "badge": " AUTOMATIC ",
-        "badge_bg": "#2d6a4f",
+        "badge_bg": "#3a7d44",
         "summary": "Stores quality problem flags and physical storage locations without modifying your catalog.",
         "chips": [
             "Genus_Problem", "Species_Problem", "Stored as", "Building",
@@ -58,7 +58,7 @@ SHEET_BLUEPRINT_INFO = {
         ),
         "curator_bullets": (
             "🏛️ For Experienced Curators:\n"
-            "  • Relational Join: 1:1 join on ObjectID with Registration.\n"
+            "  • Linked Records: Matches observations directly to specimen records via ObjectID.\n"
             "  • 11 Standard Problem Booleans: Genus_Problem, Species_Problem, Family_Problem, Author_Problem,\n"
             "    PlantPart_Problem, Collector_Problem, Collection_Date_Problem, Collection_Place_Problem,\n"
             "    Box_Label_Problem, Images_Problem, Other_problem.\n"
@@ -69,7 +69,7 @@ SHEET_BLUEPRINT_INFO = {
     "log": {
         "title": "📜 Sheet 3: Log (Audit Trail) & Transcription Notes",
         "badge": " SYSTEM ",
-        "badge_bg": "#747878",
+        "badge_bg": "#757d77",
         "summary": "Silent change tracking for museum compliance, plus a scratchpad for uncertain notes.",
         "chips": [
             "Timestamp", "Action", "User", "ChangedFields",
@@ -237,11 +237,11 @@ class CreateCollectionDialog:
     C_HEADER_BG   = "#fbfaf8"
     C_FOOTER_BG   = "#f2f5f1"
     C_SURFACE_LOW = "#f2f5f1"
-    C_OUTLINE     = "#747878"
+    C_OUTLINE     = "#757d77"
     C_OUTLINE_VAR = "#c4c7c7"
     C_ON_SURFACE  = "#2c302e"
-    C_ON_VARIANT  = "#444748"
-    C_PRIMARY     = "#000000"
+    C_ON_VARIANT  = "#757d77"
+    C_PRIMARY     = "#2c302e"
     C_ON_PRIMARY  = "#ffffff"
     C_HOVER       = "#e9ece5"
 

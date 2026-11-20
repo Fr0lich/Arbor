@@ -10,17 +10,17 @@ COLORS_LIGHT = {
     "bg": "#fbfaf8",
     "surface": "#ffffff",
     "surface_dim": "#f2f5f1",
-    "header_bg": "#eaeaea",
-    "border": "#d1d1d1",
+    "header_bg": "#f3f3f3",
+    "border": "#c4c7c7",
     "text": "#2c302e",
-    "text_muted": "#444748",
-    "primary": "#000000",
+    "text_muted": "#757d77",
+    "primary": "#2c302e",
     "on_primary": "#ffffff",
     "success": "#3a7d44",
     "on_success": "#ffffff",
     "warning": "#c93a40",
     "on_warning": "#ffffff",
-    "accent_bar": "#3e7b3e",
+    "accent_bar": "#3a7d44",
     "focus_line": "#3a7d44",
     "badge_bg": "#e9ece5",
 }
@@ -461,8 +461,8 @@ class LocationPanel(tk.Frame):
         hdr.pack(fill="x", side="top")
         
         tk.Label(
-            hdr, text="LOCATION",
-            font=("Hanken Grotesk", sc(11), "bold"),
+            hdr, text="Storage Location",
+            font=("Inter", sc(11), "bold"),
             bg=c["surface_dim"], fg=c["text"]
         ).pack(side="left", padx=sc(8), pady=sc(6))
         
@@ -512,8 +512,8 @@ class LocationPanel(tk.Frame):
         hdr.pack(fill="x", side="top")
         
         tk.Label(
-            hdr, text="LOCATION",
-            font=("Hanken Grotesk", sc(10), "bold"),
+            hdr, text="Storage Location",
+            font=("Inter", sc(10), "bold"),
             bg=c["header_bg"], fg=c["text"]
         ).pack(side="left", padx=sc(8), pady=sc(4))
         
@@ -559,8 +559,8 @@ class LocationPanel(tk.Frame):
         hdr.pack(fill="x", side="top")
         
         tk.Label(
-            hdr, text="LOCATION",
-            font=("Hanken Grotesk", sc(10), "bold"),
+            hdr, text="Storage Location",
+            font=("Inter", sc(10), "bold"),
             bg=c["header_bg"], fg=c["text"]
         ).pack(side="left", padx=sc(8), pady=sc(4))
         

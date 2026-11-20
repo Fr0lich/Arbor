@@ -138,10 +138,10 @@ class AddObjectsWizard:
         title_row = tk.Frame(header_frame, bg=self.colors["surface_container_low"])
         title_row.pack(fill="x")
 
-        title_lbl = tk.Label(title_row, text="Create New Objects", font=("Hanken Grotesk", sc(16), "bold"), bg=self.colors["surface_container_low"], fg=self.colors["on_surface"])
+        title_lbl = tk.Label(title_row, text="Create New Objects", font=("Inter", sc(16), "bold"), bg=self.colors["surface_container_low"], fg=self.colors["on_surface"])
         title_lbl.pack(side="left")
 
-        self.subtitle_lbl = tk.Label(title_row, text="Step 1", font=("Hanken Grotesk", sc(11)), bg=self.colors["surface_container_low"], fg=self.colors["on_surface_variant"])
+        self.subtitle_lbl = tk.Label(title_row, text="Step 1", font=("Inter", sc(11)), bg=self.colors["surface_container_low"], fg=self.colors["on_surface_variant"])
         self.subtitle_lbl.pack(side="left", padx=(sc(10), 0), pady=(sc(4), 0))
 
         # Stepper
@@ -158,7 +158,7 @@ class AddObjectsWizard:
         footer_frame.pack(fill="x", side="bottom")
 
         self.cancel_btn = tk.Button(
-            footer_frame, text="Cancel", font=("Hanken Grotesk", sc(10)),
+            footer_frame, text="Cancel", font=("Inter", sc(10)),
             bg=self.colors["surface"], fg=self.colors["on_surface"],
             activebackground=self.colors["surface_container_high"], activeforeground=self.colors["on_surface"],
             relief="solid", bd=1, cursor="hand2", padx=sc(12), pady=sc(4),
@@ -167,7 +167,7 @@ class AddObjectsWizard:
         self.cancel_btn.pack(side="left")
 
         self.next_btn = tk.Button(
-            footer_frame, text="Next  →", font=("Hanken Grotesk", sc(10), "bold"),
+            footer_frame, text="Next  →", font=("Inter", sc(10), "bold"),
             bg=self.colors["primary"], fg=self.colors["on_primary"],
             activebackground=self.colors["on_surface_variant"], activeforeground=self.colors["on_primary"],
             relief="flat", bd=0, cursor="hand2", padx=sc(16), pady=sc(4),
@@ -176,7 +176,7 @@ class AddObjectsWizard:
         self.next_btn.pack(side="right")
 
         self.back_btn = tk.Button(
-            footer_frame, text="←  Back", font=("Hanken Grotesk", sc(10)),
+            footer_frame, text="←  Back", font=("Inter", sc(10)),
             bg=self.colors["surface"], fg=self.colors["on_surface"],
             activebackground=self.colors["surface_container_high"], activeforeground=self.colors["on_surface"],
             relief="solid", bd=1, cursor="hand2", padx=sc(12), pady=sc(4),
@@ -190,7 +190,7 @@ class AddObjectsWizard:
 
         self.step_labels = []
         for i, name in enumerate(self.STEP_NAMES):
-            lbl = tk.Label(self.stepper_frame, text=name, font=("Hanken Grotesk", sc(9), "bold"), bg=self.colors["surface_container_low"], fg=self.colors["step_inactive"])
+            lbl = tk.Label(self.stepper_frame, text=name, font=("Inter", sc(9), "bold"), bg=self.colors["surface_container_low"], fg=self.colors["step_inactive"])
             lbl.pack(side="left", padx=(0, sc(16)))
             self.step_labels.append(lbl)
 
@@ -236,7 +236,7 @@ class AddObjectsWizard:
         pane.add(left_frame, minsize=sc(300), sticky="nsew")
 
         # Auto Generation Card
-        auto_card = tk.LabelFrame(left_frame, text="Auto-Generate IDs", font=("Hanken Grotesk", sc(11), "bold"), bg=self.colors["card_bg"], fg=self.colors["on_surface"], padx=sc(10), pady=sc(10))
+        auto_card = tk.LabelFrame(left_frame, text="Auto-Generate IDs", font=("Inter", sc(11), "bold"), bg=self.colors["card_bg"], fg=self.colors["on_surface"], padx=sc(10), pady=sc(10))
         auto_card.pack(fill="x", pady=(0, sc(16)))
 
         tk.Label(auto_card, text="Finds the highest numeric ID and adds N new IDs.", font=("Inter", sc(9)), bg=self.colors["card_bg"], fg=self.colors["on_surface_variant"], wraplength=sc(250), justify="left").pack(anchor="w", pady=(0, sc(8)))
@@ -249,13 +249,13 @@ class AddObjectsWizard:
         spin.pack(side="left", padx=sc(8))
 
         tk.Button(
-            auto_row, text="Generate", font=("Hanken Grotesk", sc(9), "bold"),
+            auto_row, text="Generate", font=("Inter", sc(9), "bold"),
             bg=self.colors["primary"], fg=self.colors["on_primary"], relief="flat", bd=0, cursor="hand2", padx=sc(10), pady=sc(3),
             command=self._generate_auto_ids
         ).pack(side="left")
 
         # Manual Entry Card
-        manual_card = tk.LabelFrame(left_frame, text="Manual Entry", font=("Hanken Grotesk", sc(11), "bold"), bg=self.colors["card_bg"], fg=self.colors["on_surface"], padx=sc(10), pady=sc(10))
+        manual_card = tk.LabelFrame(left_frame, text="Manual Entry", font=("Inter", sc(11), "bold"), bg=self.colors["card_bg"], fg=self.colors["on_surface"], padx=sc(10), pady=sc(10))
         manual_card.pack(fill="x")
 
         tk.Label(manual_card, text="Comma separated IDs (e.g. A1, A2, B_100):", font=("Inter", sc(9)), bg=self.colors["card_bg"], fg=self.colors["on_surface_variant"]).pack(anchor="w", pady=(0, sc(4)))
@@ -267,7 +267,7 @@ class AddObjectsWizard:
         man_ent.pack(fill="x", pady=(0, sc(8)))
 
         tk.Button(
-            manual_card, text="+ Add IDs", font=("Hanken Grotesk", sc(9), "bold"),
+            manual_card, text="+ Add IDs", font=("Inter", sc(9), "bold"),
             bg=self.colors["primary"], fg=self.colors["on_primary"], relief="flat", bd=0, cursor="hand2", padx=sc(10), pady=sc(3),
             command=self._add_manual_ids
         ).pack(anchor="e")
@@ -276,7 +276,7 @@ class AddObjectsWizard:
         right_frame = tk.Frame(pane, bg=self.colors["surface"])
         pane.add(right_frame, minsize=sc(200), sticky="nsew")
 
-        tk.Label(right_frame, text="Staged IDs to Create", font=("Hanken Grotesk", sc(11), "bold"), bg=self.colors["surface"], fg=self.colors["on_surface"]).pack(anchor="w", pady=(0, sc(4)))
+        tk.Label(right_frame, text="Staged IDs to Create", font=("Inter", sc(11), "bold"), bg=self.colors["surface"], fg=self.colors["on_surface"]).pack(anchor="w", pady=(0, sc(4)))
 
         list_frame = tk.Frame(right_frame, bg=self.colors["surface"], highlightthickness=1, highlightbackground=self.colors["card_border"])
         list_frame.pack(fill="both", expand=True)
@@ -294,7 +294,7 @@ class AddObjectsWizard:
         self.target_listbox.config(yscrollcommand=sb.set)
         
         tk.Button(
-            right_frame, text="Remove Selected", font=("Hanken Grotesk", sc(9)),
+            right_frame, text="Remove Selected", font=("Inter", sc(9)),
             bg=self.colors["error_container"], fg=self.colors["error"], relief="flat", bd=0, cursor="hand2", padx=sc(8), pady=sc(4),
             command=self._remove_selected_id
         ).pack(anchor="e", pady=(sc(8), 0))
@@ -354,7 +354,7 @@ class AddObjectsWizard:
         left_frame = tk.Frame(pane, bg=self.colors["surface"])
         pane.add(left_frame, minsize=sc(150), sticky="nsew")
 
-        tk.Label(left_frame, text="Select Object", font=("Hanken Grotesk", sc(11), "bold"), bg=self.colors["surface"], fg=self.colors["on_surface"]).pack(anchor="w", pady=(0, sc(4)))
+        tk.Label(left_frame, text="Select Object", font=("Inter", sc(11), "bold"), bg=self.colors["surface"], fg=self.colors["on_surface"]).pack(anchor="w", pady=(0, sc(4)))
 
         list_frame = tk.Frame(left_frame, bg=self.colors["surface"], highlightthickness=1, highlightbackground=self.colors["card_border"])
         list_frame.pack(fill="both", expand=True)
@@ -378,7 +378,7 @@ class AddObjectsWizard:
         right_frame = tk.Frame(pane, bg=self.colors["surface"])
         pane.add(right_frame, minsize=sc(300), sticky="nsew")
 
-        tk.Label(right_frame, text="Set Initial Values", font=("Hanken Grotesk", sc(11), "bold"), bg=self.colors["surface"], fg=self.colors["on_surface"]).pack(anchor="w", pady=(0, sc(4)))
+        tk.Label(right_frame, text="Set Initial Values", font=("Inter", sc(11), "bold"), bg=self.colors["surface"], fg=self.colors["on_surface"]).pack(anchor="w", pady=(0, sc(4)))
 
         # Create Scrollable Canvas for form
         canvas_frame = tk.Frame(right_frame, bg=self.colors["surface"], highlightthickness=1, highlightbackground=self.colors["card_border"])
@@ -408,7 +408,7 @@ class AddObjectsWizard:
             nonlocal row
             if not fields: return
 
-            tk.Label(self.inner_form, text=title.upper(), font=("Hanken Grotesk", sc(11), "bold"), bg=self.colors["surface_container_low"], fg=self.colors["on_surface"], anchor="w", padx=sc(6), pady=sc(4)).grid(row=row, column=0, columnspan=2, sticky="ew", pady=(sc(10) if row > 0 else 0, sc(8)))
+            tk.Label(self.inner_form, text=title.upper(), font=("Inter", sc(11), "bold"), bg=self.colors["surface_container_low"], fg=self.colors["on_surface"], anchor="w", padx=sc(6), pady=sc(4)).grid(row=row, column=0, columnspan=2, sticky="ew", pady=(sc(10) if row > 0 else 0, sc(8)))
             row += 1
 
             for field in fields:
@@ -480,8 +480,8 @@ class AddObjectsWizard:
 
         n_objects = len(self.staged_data)
 
-        tk.Label(container, text="Ready to create", font=("Hanken Grotesk", sc(14)), bg=self.colors["surface"], fg=self.colors["on_surface_variant"]).pack(pady=(0, sc(4)))
-        tk.Label(container, text=f"{n_objects} Object{'s' if n_objects != 1 else ''}", font=("Hanken Grotesk", sc(24), "bold"), bg=self.colors["surface"], fg=self.colors["on_surface"]).pack(pady=(0, sc(16)))
+        tk.Label(container, text="Ready to create", font=("Inter", sc(14)), bg=self.colors["surface"], fg=self.colors["on_surface_variant"]).pack(pady=(0, sc(4)))
+        tk.Label(container, text=f"{n_objects} Object{'s' if n_objects != 1 else ''}", font=("Inter", sc(24), "bold"), bg=self.colors["surface"], fg=self.colors["on_surface"]).pack(pady=(0, sc(16)))
 
         tk.Label(container, text="Click 'Create Objects' below to commit these to your database.", font=("Inter", sc(10)), bg=self.colors["surface"], fg=self.colors["on_surface_variant"]).pack(pady=(0, sc(20)))
 

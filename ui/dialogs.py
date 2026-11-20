@@ -28,13 +28,13 @@ class ArborDropdownMenu(tk.Frame):
         self.colors = colors or {
             "bg": "#f2f5f1",
             "fg": "#2c302e",
-            "outline": "#747878",
+            "outline": "#757d77",
             "hover": "#e9ece5",
             "menu_bg": "#ffffff",
             "menu_fg": "#2c302e",
             "menu_active_bg": "#e9ece5",
-            "menu_active_fg": "#000000",
-            "arrow": "#444748"
+            "menu_active_fg": "#2c302e",
+            "arrow": "#757d77"
         }
         self.scale = scale
         self.var = textvariable
@@ -1208,7 +1208,7 @@ class StartupDialog:
             "1. Select or Create a Database\n"
             "   - Choose a .xlsx, .db, or .sqlite file\n"
             "   - Select or verify the matching Configuration Profile\n"
-            "   - Or click '+ Create New Database' to build a custom schema\n\n"
+            "   - Or click '+ Create New Database' to build a custom field profile\n\n"
             "RECOMMENDED\n"
             "2. Choose Image Source\n"
             "   - Online = images loaded from remote repository\n"

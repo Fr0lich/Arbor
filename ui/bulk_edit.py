@@ -61,7 +61,7 @@ class BulkEditWindow:
         outer = tk.Frame(parent, bg="#ffffff", highlightthickness=1, highlightbackground="#d1d1d1")
         hdr   = tk.Frame(outer, bg="#f2f5f1")
         hdr.pack(fill="x", side="top")
-        tk.Label(hdr, text=title.upper(), font=("Hanken Grotesk", sc(11), "bold"),
+        tk.Label(hdr, text=title.upper(), font=("Inter", sc(11), "bold"),
                  bg="#f2f5f1", fg="#000000", anchor="w", padx=sc(10), pady=sc(6)).pack(fill="x")
         tk.Frame(outer, bg="#d1d1d1", height=1).pack(fill="x", side="top")          # separator
         content = tk.Frame(outer, bg="#ffffff", padx=sc(10), pady=sc(10))
@@ -78,7 +78,7 @@ class BulkEditWindow:
         
         tk.Button(
             header, text="Toggle Layout (1-Col / 2-Col)", 
-            font=("Hanken Grotesk", sc(9)),
+            font=("Inter", sc(9)),
             bg="#ffffff", fg="#2c302e", relief="solid", bd=1, cursor="hand2",
             padx=sc(10), pady=sc(3),
             command=self._toggle_layout
@@ -92,7 +92,7 @@ class BulkEditWindow:
 
         search_frame = tk.Frame(selection_content, bg="#ffffff")
         search_frame.pack(fill="x", pady=(0, sc(5)))
-        tk.Label(search_frame, text="Add Object ID: ", font=("Hanken Grotesk", sc(10)), bg="#ffffff", fg="#2c302e").pack(side="left")
+        tk.Label(search_frame, text="Add Object ID: ", font=("Inter", sc(10)), bg="#ffffff", fg="#2c302e").pack(side="left")
         
         self.search_var = tk.StringVar()
         self.search_entry = tk.Entry(
@@ -106,7 +106,7 @@ class BulkEditWindow:
         self.search_entry.bind("<Return>", self._on_add_object)
 
         tk.Button(
-            search_frame, text="Add", font=("Hanken Grotesk", sc(9), "bold"),
+            search_frame, text="Add", font=("Inter", sc(9), "bold"),
             bg="#2c302e", fg="#ffffff", relief="flat", bd=0, cursor="hand2",
             padx=sc(10), pady=sc(3),
             command=self._on_add_object
@@ -148,7 +148,7 @@ class BulkEditWindow:
         row = 0
 
         # Add Registration Fields
-        tk.Label(self.inner_edit, text="Registration", font=("Hanken Grotesk", sc(10), "bold"), bg="#ffffff", fg="#000000").grid(row=row, column=0, columnspan=3, sticky="w", pady=(sc(10), sc(5)))
+        tk.Label(self.inner_edit, text="Registration", font=("Inter", sc(10), "bold"), bg="#ffffff", fg="#000000").grid(row=row, column=0, columnspan=3, sticky="w", pady=(sc(10), sc(5)))
         row += 1
         
         reg_fields = self.app.config["ui_sections"]["registration"]
@@ -182,7 +182,7 @@ class BulkEditWindow:
             tk.Checkbutton(
                 self.inner_edit, text=name, variable=enable_var,
                 bg="#ffffff", activebackground="#ffffff", selectcolor="#ffffff", fg="#2c302e",
-                font=("Hanken Grotesk", sc(9.5)), cursor="hand2"
+                font=("Inter", sc(9.5)), cursor="hand2"
             ).grid(row=row, column=0, sticky="w", padx=sc(5), pady=sc(2))
             
             if ftype == "choice":
@@ -191,7 +191,7 @@ class BulkEditWindow:
                 tk.Checkbutton(
                     self.inner_edit, text="Enable", variable=val_var, onvalue="True", offvalue="False",
                     bg="#ffffff", activebackground="#ffffff", selectcolor="#ffffff", fg="#2c302e",
-                    font=("Hanken Grotesk", sc(9.5)), cursor="hand2"
+                    font=("Inter", sc(9.5)), cursor="hand2"
                 ).grid(row=row, column=1, sticky="w", padx=sc(5))
             else:
                 entry_frame = tk.Frame(self.inner_edit, bg="#ffffff")
@@ -209,7 +209,7 @@ class BulkEditWindow:
             row += 1
 
         # Add Location Fields
-        tk.Label(self.inner_edit, text="Location", font=("Hanken Grotesk", sc(10), "bold"), bg="#ffffff", fg="#000000").grid(row=row, column=0, columnspan=3, sticky="w", pady=(sc(10), sc(5)))
+        tk.Label(self.inner_edit, text="Location", font=("Inter", sc(10), "bold"), bg="#ffffff", fg="#000000").grid(row=row, column=0, columnspan=3, sticky="w", pady=(sc(10), sc(5)))
         row += 1
         
         loc_fields = self.app.config["ui_sections"]["location"]
@@ -227,7 +227,7 @@ class BulkEditWindow:
             tk.Checkbutton(
                 self.inner_edit, text=name, variable=enable_var,
                 bg="#ffffff", activebackground="#ffffff", selectcolor="#ffffff", fg="#2c302e",
-                font=("Hanken Grotesk", sc(9.5)), cursor="hand2"
+                font=("Inter", sc(9.5)), cursor="hand2"
             ).grid(row=row, column=0, sticky="w", padx=sc(5), pady=sc(2))
             
             if ftype == "choice":
@@ -236,7 +236,7 @@ class BulkEditWindow:
                 tk.Checkbutton(
                     self.inner_edit, text="Enable", variable=val_var, onvalue="True", offvalue="False",
                     bg="#ffffff", activebackground="#ffffff", selectcolor="#ffffff", fg="#2c302e",
-                    font=("Hanken Grotesk", sc(9.5)), cursor="hand2"
+                    font=("Inter", sc(9.5)), cursor="hand2"
                 ).grid(row=row, column=1, sticky="w", padx=sc(5))
             else:
                 tk.Entry(
@@ -250,7 +250,7 @@ class BulkEditWindow:
             row += 1
 
         # Add Problems
-        tk.Label(self.inner_edit, text="Problems & Status", font=("Hanken Grotesk", sc(10), "bold"), bg="#ffffff", fg="#000000").grid(row=row, column=0, columnspan=3, sticky="w", pady=(sc(15), sc(5)))
+        tk.Label(self.inner_edit, text="Problems & Status", font=("Inter", sc(10), "bold"), bg="#ffffff", fg="#000000").grid(row=row, column=0, columnspan=3, sticky="w", pady=(sc(15), sc(5)))
         row += 1
 
         problem_columns = [f["name"] for f in self.app.config["ui_sections"].get("problems", [])]
@@ -266,7 +266,7 @@ class BulkEditWindow:
             tk.Checkbutton(
                 self.inner_edit, text=name, variable=enable_var,
                 bg="#ffffff", activebackground="#ffffff", selectcolor="#ffffff", fg="#2c302e",
-                font=("Hanken Grotesk", sc(9.5)), cursor="hand2"
+                font=("Inter", sc(9.5)), cursor="hand2"
             ).grid(row=row, column=0, sticky="w", padx=sc(5), pady=sc(2))
             cb = ttk.Combobox(self.inner_edit, textvariable=val_var, values=["True", "False"], state="readonly", width=8, cursor="hand2")
             cb.grid(row=row, column=1, sticky="w", padx=sc(5))
@@ -281,11 +281,19 @@ class BulkEditWindow:
         target_frame.pack(fill="x", pady=(0, sc(10)))
 
         tk.Button(
-            target_frame, text="Apply to Target List", font=("Hanken Grotesk", sc(10), "bold"),
+            target_frame, text="Apply to Target List", font=("Inter", sc(10), "bold"),
             bg="#2c302e", fg="#ffffff", relief="flat", bd=0, cursor="hand2",
             padx=sc(16), pady=sc(6),
             command=self.apply_to_targets
         ).pack(side="left", padx=sc(5))
+        
+        tk.Button(
+            target_frame, text="Close", font=("Inter", sc(10)),
+            bg="#ffffff", fg="#2c302e", relief="flat", bd=0,
+            highlightthickness=1, highlightbackground="#c4c7c7",
+            padx=sc(16), pady=sc(6), cursor="hand2",
+            command=self.win.destroy
+        ).pack(side="right", padx=sc(5))
         
         ttk.Separator(action_frame, orient="horizontal").pack(fill="x", pady=sc(10))
 
@@ -301,8 +309,9 @@ class BulkEditWindow:
 
         count = len(self.app.active_object_ids) if hasattr(self.app, 'active_object_ids') else 0
         self.destructive_btn = tk.Button(
-            destructive_frame, text=f"⚠ Apply to ALL {count} filtered objects", font=("Hanken Grotesk", sc(10), "bold"),
-            bg="#ffbf00", fg="#2c302e", relief="solid", bd=1, cursor="hand2",
+            destructive_frame, text=f"⚠ Apply to ALL {count} filtered objects", font=("Inter", sc(10), "bold"),
+            bg="#ba1a1a", fg="#ffffff", activebackground="#93000a", activeforeground="#ffffff",
+            relief="flat", bd=0, cursor="hand2",
             padx=sc(16), pady=sc(6),
             command=self.apply_to_all_filtered,
             state="disabled"

@@ -187,15 +187,15 @@ class NewDatabaseWizard:
 
         # Fonts
         self.FONT_TITLE = ("Lora", sc(13), "bold")
-        self.FONT_STEPPER = ("Hanken Grotesk", sc(9), "bold")
-        self.FONT_HEADER = ("Hanken Grotesk", sc(11), "bold")
-        self.FONT_LABEL = ("Hanken Grotesk", sc(10))
-        self.FONT_LABEL_BOLD = ("Hanken Grotesk", sc(10), "bold")
+        self.FONT_STEPPER = ("Inter", sc(9), "bold")
+        self.FONT_HEADER = ("Inter", sc(11), "bold")
+        self.FONT_LABEL = ("Inter", sc(10))
+        self.FONT_LABEL_BOLD = ("Inter", sc(10), "bold")
         self.FONT_SMALL = ("Inter", sc(9))
         self.FONT_SMALL_BOLD = ("Inter", sc(9), "bold")
         self.FONT_MONO = ("JetBrains Mono", sc(10))
         self.FONT_MONO_SM = ("JetBrains Mono", sc(8.5))
-        self.FONT_BUTTON = ("Hanken Grotesk", sc(9.5), "bold")
+        self.FONT_BUTTON = ("Inter", sc(9.5), "bold")
 
         # Build Window
         self._setup_window()
@@ -323,7 +323,7 @@ class NewDatabaseWizard:
             badge_text = "✓" if is_done else str(i)
 
             badge = tk.Label(
-                node_frame, text=badge_text, font=("Hanken Grotesk", sc(8.5), "bold"),
+                node_frame, text=badge_text, font=("Inter", sc(8.5), "bold"),
                 bg=badge_bg, fg=badge_fg, width=2, height=1, relief="flat"
             )
             badge.pack(side="left", padx=(0, sc(4)))
@@ -331,7 +331,7 @@ class NewDatabaseWizard:
 
             lbl = tk.Label(
                 node_frame, text=name.split(". ")[1],
-                font=("Hanken Grotesk", sc(8.5), "bold" if is_active else "normal"),
+                font=("Inter", sc(8.5), "bold" if is_active else "normal"),
                 bg=self.colors["surface_container_low"],
                 fg=self.colors["on_surface"] if (is_active or is_done) else self.colors["step_inactive"]
             )
@@ -600,7 +600,7 @@ class NewDatabaseWizard:
     # STEP 1: Template & Source Selection
     # --------------------------------------------------------------------------
     def _render_step1(self):
-        inner = self._create_scrollable_card("Step 1: Choose Starter Template or Import Schema")
+        inner = self._create_scrollable_card("Step 1: Choose Starter Template or Import Field Profile")
 
         tk.Label(
             inner, text="Select a domain starter template, import from an existing Excel/CSV file, or build from scratch.",
@@ -612,9 +612,9 @@ class NewDatabaseWizard:
         templates_grid.pack(fill="x", pady=sc(4))
 
         templates = [
-            ("Botany / Herbarium", "🌿", "Taxonomy & Specimen", "Standard herbarium collection schema with taxonomy, collection details, plant parts, and observation notes.", ["Taxonomy", "Geography", "Images"]),
+            ("Botany / Herbarium", "🌿", "Taxonomy & Specimen", "Standard herbarium collection template with taxonomy, collection details, plant parts, and observation notes.", ["Taxonomy", "Geography", "Images"]),
             ("Loan Tracking", "📋", "Curatorial & Loans", "Track outbound items, borrowers, institutions, loan dates, due dates, statuses, and return conditions.", ["Curatorial", "Due Dates", "Borrowers"]),
-            ("Blank Minimal", "📄", "Minimalist & Fast", "A light, clean starter schema with Title, Category, Date, Status, Description, and Notes.", ["Lean", "Fast Setup", "Generic"])
+            ("Blank Minimal", "📄", "Minimalist & Fast", "A light, clean starter profile with Title, Category, Date, Status, Description, and Notes.", ["Lean", "Fast Setup", "Generic"])
         ]
 
         self.template_cards = []
@@ -663,7 +663,7 @@ class NewDatabaseWizard:
             )
             prof_card.pack(fill="x", pady=(sc(10), sc(4)))
 
-            tk.Label(prof_card, text="📁 Load Schema from Existing Profile:", font=self.FONT_LABEL_BOLD, bg=self.colors["surface_container_low"], fg=self.colors["on_surface"]).pack(side="left", padx=(0, sc(8)))
+            tk.Label(prof_card, text="📁 Load Field Profile from Existing Template:", font=self.FONT_LABEL_BOLD, bg=self.colors["surface_container_low"], fg=self.colors["on_surface"]).pack(side="left", padx=(0, sc(8)))
             self.profile_cb_var = tk.StringVar(value=existing_profiles[0])
             cb = ttk.Combobox(prof_card, textvariable=self.profile_cb_var, values=existing_profiles, state="readonly", width=26, cursor="hand2")
             cb.pack(side="left", padx=(0, sc(8)))
@@ -731,13 +731,13 @@ class NewDatabaseWizard:
 
     def _select_existing_profile(self, name):
         self._load_template_data(name)
-        messagebox.showinfo("Profile Loaded", f"Loaded profile '{name}' schema successfully!", parent=self.win)
+        messagebox.showinfo("Profile Loaded", f"Loaded profile '{name}' successfully!", parent=self.win)
         self.goto_step(2)
 
     def _import_schema_file(self):
         file_path = filedialog.askopenfilename(
             parent=self.win,
-            title="Select Spreadsheet to Import Schema",
+            title="Select Spreadsheet to Import Field Profile",
             filetypes=[("Excel / CSV files", "*.xlsx *.xls *.csv")],
             initialdir=config.get_last_dir("last_db_dir")
         )
@@ -790,7 +790,7 @@ class NewDatabaseWizard:
             messagebox.showinfo("Import Successful", f"Successfully imported {len(self.fields)} fields from:\n{os.path.basename(file_path)}", parent=self.win)
             self.goto_step(2)
         except Exception as e:
-            messagebox.showerror("Import Error", f"Failed to parse schema from file:\n{e}", parent=self.win)
+            messagebox.showerror("Import Error", f"Failed to parse field profile from file:\n{e}", parent=self.win)
 
     def _create_scratch_schema(self):
         self.fields = [
@@ -808,7 +808,7 @@ class NewDatabaseWizard:
     # STEP 2: Interactive Schema Builder (Strict Column Alignment)
     # --------------------------------------------------------------------------
     def _render_step2(self):
-        inner = self._create_scrollable_card("Step 2: Customize Schema & Field Definitions")
+        inner = self._create_scrollable_card("Step 2: Customize Fields & Column Definitions")
 
         # Top Bar: Add Single Field
         add_bar = tk.Frame(inner, bg=self.colors["card_bg"])
@@ -989,7 +989,7 @@ class NewDatabaseWizard:
         if not name:
             return
         if name.lower() == "objectid":
-            messagebox.showwarning("Reserved Field", "ObjectID is the primary key and is created automatically.", parent=self.win)
+            messagebox.showwarning("Reserved Field", "ObjectID is the unique specimen identifier and is created automatically.", parent=self.win)
             return
         if any(f["name"].lower() == name.lower() for f in self.fields):
             messagebox.showwarning("Duplicate Field", f"Field '{name}' already exists.", parent=self.win)
@@ -1843,12 +1843,12 @@ class NewDatabaseWizard:
                 except Exception:
                     pass
                 self.win.destroy()
-                messagebox.showinfo("Success", "Database schema updated successfully! A backup was created at " + bak_path, parent=self.parent)
+                messagebox.showinfo("Success", "Database configuration updated successfully! A backup was created at " + bak_path, parent=self.parent)
 
                 if self.on_complete:
                     self.on_complete(self.app.excel_path, name)
             except Exception as e:
-                messagebox.showerror("Update Error", f"Failed to update schema:\n{e}", parent=self.win)
+                messagebox.showerror("Update Error", f"Failed to update configuration:\n{e}", parent=self.win)
             return
 
         # NEW DB CREATION

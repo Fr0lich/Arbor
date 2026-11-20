@@ -16,7 +16,7 @@ def init_fonts():
     global _fonts_initialized, FONT_UI, FONT_UI_BOLD, FONT_UI_LG, FONT_UI_XL, FONT_MONO, FONT_MONO_SM
     if _fonts_initialized: return
     families = tkFont.families()
-    ui_family = "Hanken Grotesk" if "Hanken Grotesk" in families else "Helvetica" if "Helvetica" in families else "Segoe UI" if "Segoe UI" in families else "sans-serif"
+    ui_family = "Inter" if "Inter" in families else "Helvetica" if "Helvetica" in families else "Segoe UI" if "Segoe UI" in families else "sans-serif"
     mono_family = "JetBrains Mono" if "JetBrains Mono" in families else "Consolas" if "Consolas" in families else "Courier New"
     
     FONT_UI = (ui_family, sc(10))
@@ -31,16 +31,16 @@ COLORS = {
     "bg": "#fbfaf8",
     "surface": "#ffffff",
     "surface_dim": "#e9ece5",
-    "border": "#d1d1d1",
+    "border": "#c4c7c7",
     "text": "#2c302e",
-    "text_muted": "#444748",
-    "primary": "#000000",
+    "text_muted": "#757d77",
+    "primary": "#2c302e",
     "on_primary": "#ffffff",
     "error": "#c93a40",
     "on_error": "#ffffff",
-    "warning": "#f59e0b",
+    "warning": "#d9a036",
     "on_warning": "#000000",
-    "conflict": "#0284c7",
+    "conflict": "#4a7b9d",
     "on_conflict": "#ffffff",
     "success": "#3a7d44",
     "on_success": "#ffffff",
@@ -68,6 +68,7 @@ class HistoricalConflictResolverWindow:
         self.res_vars = {}
         
         self.build_ui()
+        self.win.bind("<Escape>", lambda e: self.win.destroy())
         # Ensure initial sorting is correct
         self.reload_suggestions()
         
@@ -77,7 +78,7 @@ class HistoricalConflictResolverWindow:
         header.pack(fill="x", side="top")
         tk.Frame(header, bg=COLORS["border"], height=sc(1)).pack(fill="x", side="bottom")
         
-        tk.Label(header, text="HISTORICAL_DATABASE_CONFLICT_RESOLVER", font=FONT_UI_LG, fg=COLORS["primary"], bg=COLORS["surface"]).pack(side="left", padx=sc(16), pady=sc(12))
+        tk.Label(header, text="Historical Database Conflict Resolver", font=FONT_UI_LG, fg=COLORS["primary"], bg=COLORS["surface"]).pack(side="left", padx=sc(16), pady=sc(12))
         
         # Main content area
         main_area = tk.Frame(self.win, bg=COLORS["bg"])
@@ -91,7 +92,7 @@ class HistoricalConflictResolverWindow:
         
         dir_header = tk.Frame(sidebar, bg=COLORS["border"], height=sc(40))
         dir_header.pack(fill="x")
-        tk.Label(dir_header, text="FIELD_DIRECTORY", font=FONT_MONO_SM, fg=COLORS["text_muted"], bg=COLORS["border"]).pack(side="left", padx=sc(12), pady=sc(12))
+        tk.Label(dir_header, text="Field Directory", font=FONT_MONO_SM, fg=COLORS["text_muted"], bg=COLORS["border"]).pack(side="left", padx=sc(12), pady=sc(12))
         
         # Bottom toggle
         sidebar_bottom = tk.Frame(sidebar, bg=COLORS["border"], height=sc(80))
@@ -142,7 +143,7 @@ class HistoricalConflictResolverWindow:
         ctx_header.pack(fill="x")
         tk.Frame(ctx_header, bg=COLORS["border"], height=sc(1)).pack(side="bottom", fill="x")
         
-        self.issue_count_label = tk.Label(ctx_header, text=f"RECORD REVIEW: {len(self.fields)} ISSUES", font=FONT_UI_XL, fg=COLORS["primary"], bg=COLORS["surface"])
+        self.issue_count_label = tk.Label(ctx_header, text=f"Record Review: {len(self.fields)} Issues", font=FONT_UI_XL, fg=COLORS["primary"], bg=COLORS["surface"])
         self.issue_count_label.pack(anchor="w", padx=sc(24), pady=(sc(16), sc(4)))
         tk.Label(ctx_header, text="Review and resolve outstanding conflicts and data problems in the fields below. Scroll to view all issues.", font=FONT_UI, fg=COLORS["text_muted"], bg=COLORS["surface"]).pack(anchor="w", padx=sc(24), pady=(0, sc(16)))
         
@@ -177,7 +178,7 @@ class HistoricalConflictResolverWindow:
         self.stats_label = tk.Label(footer, text="", font=FONT_MONO, fg=COLORS["text_muted"], bg=COLORS["surface_dim"])
         self.stats_label.pack(side="left", padx=sc(24), pady=sc(12))
         
-        btn_apply_all = tk.Button(footer, text="APPLY ALL RESOLVED (CTRL+A)", font=FONT_UI_BOLD, fg=COLORS["on_success"], bg=COLORS["success"], relief="flat", bd=0, padx=sc(16), pady=sc(8), command=self.apply_all, cursor="hand2")
+        btn_apply_all = tk.Button(footer, text="Apply All Resolved (Ctrl+A)", font=FONT_UI_BOLD, fg=COLORS["on_success"], bg=COLORS["success"], relief="flat", bd=0, padx=sc(16), pady=sc(8), command=self.apply_all, cursor="hand2")
         btn_apply_all.pack(side="right", padx=sc(16), pady=sc(6))
         
         # Cleanup routine
@@ -186,7 +187,7 @@ class HistoricalConflictResolverWindow:
 
         self.win.bind("<Destroy>", _cleanup)
  
-        btn_close = tk.Button(footer, text="CLOSE", font=FONT_UI_BOLD, fg=COLORS["text"], bg=COLORS["surface"], relief="solid", bd=1, padx=sc(16), pady=sc(8), command=self.win.destroy, cursor="hand2")
+        btn_close = tk.Button(footer, text="Close", font=FONT_UI, fg=COLORS["text"], bg=COLORS["surface"], relief="flat", bd=0, highlightthickness=1, highlightbackground=COLORS["border"], padx=sc(16), pady=sc(8), command=self.win.destroy, cursor="hand2")
         btn_close.pack(side="right", padx=sc(8), pady=sc(6))
 
         # Tutorial IDs

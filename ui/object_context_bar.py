@@ -35,7 +35,7 @@ class ObjectContextBar(ttk.Frame):
             return
 
         bg_card = "#212622" if self.is_dark else "#ffffff"
-        border_col = "#313244" if self.is_dark else "#d1d1d1"
+        border_col = "#313244" if self.is_dark else "#c4c7c7"
         fg_text = "#e8ebe9" if self.is_dark else "#2c302e"
         badge_bg = "#181c19" if self.is_dark else "#f2f5f1"
         badge_border = "#313244" if self.is_dark else "#c4c7c7"
@@ -75,7 +75,7 @@ class ObjectContextBar(ttk.Frame):
 
     def build_ui(self):
         bg_card = "#212622" if self.is_dark else "#ffffff"
-        border_col = "#313244" if self.is_dark else "#d1d1d1"
+        border_col = "#313244" if self.is_dark else "#c4c7c7"
         fg_text = "#e8ebe9" if self.is_dark else "#2c302e"
         badge_bg = "#181c19" if self.is_dark else "#f2f5f1"
         badge_border = "#313244" if self.is_dark else "#c4c7c7"
@@ -107,10 +107,10 @@ class ObjectContextBar(ttk.Frame):
             fg=fg_text,
             padx=sc(7),
             pady=sc(2),
-            relief="solid",
-            bd=1,
+            relief="flat",
+            bd=0,
             highlightbackground=badge_border,
-            highlightthickness=0
+            highlightthickness=1
         )
         self.id_badge.pack(side="left", padx=(0, sc(6)))
 
@@ -140,12 +140,13 @@ class ObjectContextBar(ttk.Frame):
             text="UNREVIEWED",
             font=("JetBrains Mono", sc(8), "bold"),
             bg="#242725" if self.is_dark else "#f2f5f1",
-            fg="#9ca3af" if self.is_dark else "#757d77",
+            fg="#8b948d" if self.is_dark else "#757d77",
             padx=sc(6),
             pady=sc(2),
-            relief="solid",
-            bd=1,
-            highlightthickness=0,
+            relief="flat",
+            bd=0,
+            highlightbackground="#c4c7c7" if not self.is_dark else "#313244",
+            highlightthickness=1,
             cursor="hand2"
         )
         self.status_badge.pack(side="left", padx=(0, sc(6)))
@@ -175,9 +176,7 @@ class ObjectContextBar(ttk.Frame):
             fg=btn_fg,
             activebackground=btn_active,
             activeforeground=fg_text,
-            relief="solid",
-            bd=1,
-            highlightthickness=0,
+            relief="flat", bd=0, highlightthickness=1, highlightbackground=border_col,
             padx=sc(8),
             pady=sc(2),
             cursor="hand2",
@@ -196,9 +195,7 @@ class ObjectContextBar(ttk.Frame):
             fg=btn_fg,
             activebackground=btn_active,
             activeforeground=fg_text,
-            relief="solid",
-            bd=1,
-            highlightthickness=0,
+            relief="flat", bd=0, highlightthickness=1, highlightbackground=border_col,
             padx=sc(8),
             pady=sc(2),
             cursor="hand2",
@@ -217,9 +214,7 @@ class ObjectContextBar(ttk.Frame):
             fg=btn_fg,
             activebackground=btn_active,
             activeforeground=fg_text,
-            relief="solid",
-            bd=1,
-            highlightthickness=0,
+            relief="flat", bd=0, highlightthickness=1, highlightbackground=border_col,
             padx=sc(8),
             pady=sc(2),
             cursor="hand2",

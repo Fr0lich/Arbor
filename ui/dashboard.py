@@ -22,7 +22,7 @@ class DashboardMixin:
         # Initialize Fonts
         import tkinter.font as tkFont
         families = tkFont.families()
-        ui_family = "Hanken Grotesk" if "Hanken Grotesk" in families else "Helvetica" if "Helvetica" in families else "Segoe UI" if "Segoe UI" in families else "sans-serif"
+        ui_family = "Inter" if "Inter" in families else "Helvetica" if "Helvetica" in families else "Segoe UI" if "Segoe UI" in families else "sans-serif"
         mono_family = "JetBrains Mono" if "JetBrains Mono" in families else "Consolas" if "Consolas" in families else "Courier New"
 
         FONT_UI = (ui_family, sc(10))
@@ -34,13 +34,13 @@ class DashboardMixin:
             "bg": "#fbfaf8",
             "surface": "#ffffff",
             "surface_dim": "#e9ece5",
-            "border": "#d1d1d1",
+            "border": "#c4c7c7",
             "text": "#2c302e",
-            "text_muted": "#444748",
-            "primary": "#000000",
+            "text_muted": "#757d77",
+            "primary": "#2c302e",
             "on_primary": "#ffffff",
             "success": "#3a7d44",
-            "warning": "#f59e0b",
+            "warning": "#d9a036",
             "error": "#c93a40",
         }
 

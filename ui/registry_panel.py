@@ -350,7 +350,7 @@ class RegistryPanel:
                     spacer_lbl.pack(side="left")
 
                 # Col 1: Label with bold clean typography
-                lbl = tk.Label(frame, text=name, width=15, anchor="w", font=("Hanken Grotesk", sc(10), "bold"), bg=card_bg, fg=fg_color)
+                lbl = tk.Label(frame, text=name, width=15, anchor="w", font=("Inter", sc(10), "bold"), bg=card_bg, fg=fg_color)
                 lbl.grid(row=0, column=1, sticky="w", padx=(0, 6))
                 if prob_col:
                     ui.prob_label_widgets[name] = lbl
@@ -376,11 +376,11 @@ class RegistryPanel:
                         frame, height=3,
                         relief="flat", bd=0,
                         highlightthickness=1, highlightbackground=border_color,
-                        highlightcolor="#000000" if not is_dark else "#e8ebe9",
-                        insertbackground="#000000" if not is_dark else "#e8ebe9",
+                        highlightcolor="#3a7d44" if not is_dark else "#a6e3a1",
+                        insertbackground="#2c302e" if not is_dark else "#e8ebe9",
                         bg="#ffffff" if not is_dark else "#212622",
                         fg="#2c302e" if not is_dark else "#e8ebe9",
-                        font=("Hanken Grotesk", sc(10)),
+                        font=("Inter", sc(10)),
                         undo=True, maxundo=-1, autoseparators=True
                     )
 
@@ -391,15 +391,16 @@ class RegistryPanel:
                     bind_text_events(widget)
                 else:
                     entry_container = tk.Frame(frame, bg=card_bg)
+                    field_font = ("JetBrains Mono", sc(10)) if name in ("Collection Date", "Innsammling Nr.", "Year", "Month", "Day", "ObjectID") else ("Inter", sc(10))
                     widget = tk.Entry(
                         entry_container, textvariable=var,
                         relief="flat", bd=0,
                         highlightthickness=1, highlightbackground=border_color,
-                        highlightcolor="#ffffff" if is_dark else "#f2f5f1",
-                        insertbackground="#000000" if not is_dark else "#e8ebe9",
+                        highlightcolor="#3a7d44" if not is_dark else "#a6e3a1",
+                        insertbackground="#2c302e" if not is_dark else "#e8ebe9",
                         bg="#ffffff" if not is_dark else "#212622",
                         fg="#2c302e" if not is_dark else "#e8ebe9",
-                        font=("Hanken Grotesk", sc(10))
+                        font=field_font
                     )
                     widget.pack(fill="x", expand=True, ipady=sc(3))
 
@@ -696,10 +697,10 @@ class RegistryPanel:
 
         is_dark = getattr(ui, "dark_mode_active", ui.app.config.get("theme", "dark") == "dark")
         norm_bg = "#212622" if is_dark else "#ffffff"
-        warn_bg = "#5c4d00" if is_dark else "#fff3cd"
-        err_bg = "#5c1e1e" if is_dark else "#f8d7da"
-        unknown_bg = "#5c461a" if is_dark else "#ffe4b3"
-        suggest_bg = "#5c571a" if is_dark else "#fff3a3"
+        warn_bg = "#3b2e15" if is_dark else "#fef9e7"
+        err_bg = "#3b1c1e" if is_dark else "#ffdad6"
+        unknown_bg = "#3b2e15" if is_dark else "#fef9e7"
+        suggest_bg = "#1e293b" if is_dark else "#e9f0f5"
 
         is_active_problem = False
         prob_col = None
@@ -732,22 +733,22 @@ class RegistryPanel:
 
             if has_custom_pref:
                 if "Yellow" in hl_color_name:
-                    tint = "#5f5b2e" if is_dark else "#fff9c4"
+                    tint = "#3b2e15" if is_dark else "#fef9e7"
                 elif "Orange" in hl_color_name:
-                    tint = "#5f4520" if is_dark else "#ffe0b2"
+                    tint = "#3b2615" if is_dark else "#fef0e6"
                 elif "Blue" in hl_color_name:
-                    tint = "#203a5f" if is_dark else "#e3f2fd"
+                    tint = "#1e293b" if is_dark else "#e9f0f5"
                 else:
-                    tint = "#5c1e1e" if is_dark else "#ffdad6"
+                    tint = "#3b1c1e" if is_dark else "#ffdad6"
             else:
                 prob_cat = ui.problem_categories.get(prob_col, "notes") if hasattr(ui, "problem_categories") else "notes"
                 prob_imp = ui.problem_importances.get(prob_col, "medium") if hasattr(ui, "problem_importances") else "medium"
                 if prob_imp == "low":
-                    tint = "#2d3149" if is_dark else "#f0f4f8"
+                    tint = "#1e293b" if is_dark else "#f2f5f1"
                 elif prob_cat == "taxonomy":
-                    tint = "#5c1e1e" if is_dark else "#ffdad6"
+                    tint = "#3b1c1e" if is_dark else "#ffdad6"
                 elif prob_cat == "collection":
-                    tint = "#5c461a" if is_dark else "#fff3cd"
+                    tint = "#3b2e15" if is_dark else "#fef9e7"
                 elif prob_cat == "physical":
                     tint = "#4e342e" if is_dark else "#efebe9"
                 elif prob_cat == "media":

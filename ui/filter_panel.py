@@ -8,8 +8,8 @@ class FilterPanel:
         app.filter_status_label = ttk.Label(
             left_content_frame,
             text="",
-            foreground="#c0392b",
-            font=("Segoe UI", sc(8), "bold")
+            foreground="#c93a40",
+            font=("Inter", sc(8), "bold")
         )
         app.filter_status_label.pack(fill="x", padx=6, pady=(0, 2))
 
@@ -98,7 +98,7 @@ class FilterPanel:
         app._inline_search_entry = tk.Entry(
             search_container,
             textvariable=app._inline_search_var,
-            font=("Hanken Grotesk", sc(10)),
+            font=("Inter", sc(10)),
             bg="#ffffff", fg="#2c302e",
             relief="flat", bd=0,
             insertbackground="#000000"
@@ -127,7 +127,7 @@ class FilterPanel:
         app.toolbar_buttons['X'] = tk.Button(
             search_container,
             text="✕",
-            font=("Hanken Grotesk", sc(9.5), "bold"),
+            font=("Inter", sc(9.5), "bold"),
             bg="#ffffff", fg="gray",
             activebackground="#ffffff", activeforeground="#c93a40",
             relief="flat", bd=0, cursor="hand2",

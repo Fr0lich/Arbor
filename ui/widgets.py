@@ -452,7 +452,7 @@ class TreeviewListboxWrapper(ttk.Frame):
         # Pre-configure common color and alternating row tags to eliminate Tcl roundtrips during bulk insert
         self._configured_tags = set()
         self._tag_configs = {}
-        for c in ("4CAF50", "2E7D32", "BB86FC", "7B1FA2", "f28b82", "C62828", "5ab0e8", "0284C7", "f0ad4e", "0bd45b", "bb6bd9", "d9534f", "D9A036", "795548", "FBC02D", "f59e0b", "a1887f"):
+        for c in ("3a7d44", "c93a40", "d9a036", "4a7b9d", "757d77", "2c302e", "85e89d", "ba1a1a"):
             tname = f"color_{c}"
             self.tree.tag_configure(tname, foreground=f"#{c}")
             self._configured_tags.add(tname)
@@ -992,7 +992,7 @@ class TreeviewListboxWrapper(ttk.Frame):
 
         if visible_cats.get("reviewed", True):
             if reviewed and has_problem:
-                candidates.append((100, "#d9a036", "REV+ERR", "#F57C00", "#ffffff"))
+                candidates.append((100, "#d9a036", "REV+ERR", "#3b2e15" if is_dark else "#fef9e7", "#d9a036"))
             elif reviewed:
                 rev_bg = "#162d1a" if is_dark else "#f2f9f3"
                 rev_fg = "#85e89d" if is_dark else "#3a7d44"
@@ -1006,27 +1006,27 @@ class TreeviewListboxWrapper(ttk.Frame):
 
         if visible_cats.get("provenance", True) and "collection" in active_cats:
             prov_bg = "#3b2e15" if is_dark else "#fef9e7"
-            prov_fg = "#fcd34d" if is_dark else "#b45309"
+            prov_fg = "#d9a036" if is_dark else "#b45309"
             candidates.append((70, "#d9a036", "PROV", prov_bg, prov_fg))
 
         if visible_cats.get("physical", True) and "physical" in active_cats:
             is_plant_only = (active_cats == {"physical"} and obs_row and obs_row.get("PlantPart_Problem") and not obs_row.get("Box_Label_Problem"))
             if not is_plant_only:
                 box_bg = "#2d2422" if is_dark else "#f7f5f4"
-                box_fg = "#d7ccc8" if is_dark else "#795548"
+                box_fg = "#e8ebe9" if is_dark else "#757d77"
                 weight = 96 if preset == "collections_manager" else 60
-                candidates.append((weight, "#795548", "BOX", box_bg, box_fg))
+                candidates.append((weight, "#757d77", "BOX", box_bg, box_fg))
 
         if visible_cats.get("media", True) and "media" in active_cats:
             img_bg = "#1a2c3d" if is_dark else "#f0f8ff"
-            img_fg = "#7dd3fc" if is_dark else "#0284c7"
-            candidates.append((50, "#0284c7", "IMG", img_bg, img_fg))
+            img_fg = "#93c5fd" if is_dark else "#4a7b9d"
+            candidates.append((50, "#4a7b9d", "IMG", img_bg, img_fg))
 
         if visible_cats.get("conflicts", True):
             if has_problem and problems_have_history:
-                his_bg = "#2a1b3d" if is_dark else "#f3e8ff"
-                his_fg = "#d8b4fe" if is_dark else "#7b1fa2"
-                candidates.append((45, "#7b1fa2", "ERR+HIS", his_bg, his_fg))
+                his_bg = "#1e293b" if is_dark else "#e9f0f5"
+                his_fg = "#93c5fd" if is_dark else "#4a7b9d"
+                candidates.append((45, "#4a7b9d", "ERR+HIS", his_bg, his_fg))
             elif problems_have_history:
                 cfct_bg = "#1e293b" if is_dark else "#e9f0f5"
                 cfct_fg = "#93c5fd" if is_dark else "#4a7b9d"
@@ -1044,7 +1044,7 @@ class TreeviewListboxWrapper(ttk.Frame):
 
         if visible_cats.get("unreviewed", True):
             unrev_bg = "#242725" if is_dark else "#f2f5f1"
-            unrev_fg = "#9ca3af" if is_dark else "#757d77"
+            unrev_fg = "#8b948d" if is_dark else "#757d77"
             return canvas_bg, "UNREV", unrev_bg, unrev_fg
 
         return canvas_bg, "", canvas_bg, canvas_bg
@@ -1121,9 +1121,10 @@ class TreeviewListboxWrapper(ttk.Frame):
             font=("JetBrains Mono", sc(8), "bold"),
             padx=sc(6),
             pady=sc(1),
-            highlightthickness=0,
-            relief="solid",
-            bd=1
+            highlightthickness=1,
+            highlightbackground="#c4c7c7" if not getattr(self.main_window, "dark_mode_active", False) else "#313244",
+            relief="flat",
+            bd=0
         )
         badge.is_badge = True
         return badge

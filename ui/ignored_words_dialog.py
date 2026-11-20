@@ -111,7 +111,7 @@ def open_ignored_words_editor(ui):
 
     tk.Label(
         header, text="Suggestions Filter: Ignored Words",
-        font=("Hanken Grotesk", sc(12), "bold"), bg=header_bg, fg=fg_color
+        font=("Inter", sc(12), "bold"), bg=header_bg, fg=fg_color
     ).pack(anchor="w", padx=sc(16), pady=(sc(8), 0))
 
     tk.Label(
@@ -147,13 +147,13 @@ def open_ignored_words_editor(ui):
 
     tk.Button(
         btn_frame, text="Cancel", command=win.destroy,
-        font=("Hanken Grotesk", sc(9.5)), bg=field_bg, fg=fg_color,
+        font=("Inter", sc(9.5)), bg=field_bg, fg=fg_color,
         relief="solid", bd=1, cursor="hand2", padx=sc(14), pady=sc(4)
     ).pack(side="left", padx=sc(16), pady=sc(8))
 
     tk.Button(
         btn_frame, text="Save Settings", command=on_save,
-        font=("Hanken Grotesk", sc(9.5), "bold"), bg=primary_btn_bg, fg=primary_btn_fg,
+        font=("Inter", sc(9.5), "bold"), bg=primary_btn_bg, fg=primary_btn_fg,
         relief="flat", bd=0, cursor="hand2", padx=sc(16), pady=sc(5)
     ).pack(side="right", padx=sc(16), pady=sc(8))
 

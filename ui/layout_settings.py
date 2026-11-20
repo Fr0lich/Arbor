@@ -259,7 +259,7 @@ class LayoutSettingsMixin:
             arrow_lbl = tk.Label(header_frame, textvariable=arrow_var, font=("Segoe UI", sc(10)), bg=bg_color, fg="#444748" if not getattr(self, "dark_mode_active", False) else "#e8ebe9")
             arrow_lbl.pack(side="left", padx=(0, sc(4)))
 
-            title_lbl = tk.Label(header_frame, text=title, font=("Hanken Grotesk", sc(10), "bold"), bg=bg_color, fg="#444748" if not getattr(self, "dark_mode_active", False) else "#e8ebe9")
+            title_lbl = tk.Label(header_frame, text=title, font=("Inter", sc(10), "bold"), bg=bg_color, fg="#444748" if not getattr(self, "dark_mode_active", False) else "#e8ebe9")
             title_lbl.pack(side="left")
 
             def toggle_section(event=None):

@@ -43,7 +43,7 @@ class NavigationBar:
             text="arbor",
             bg=nav_bar_bg,
             fg="#000000",
-            font=("Segoe UI", sc(12), "bold"),
+            font=("Lora", sc(13), "bold"),
             padx=sc(16)
         )
         app.nav_title_lbl.pack(side="left", anchor="center")

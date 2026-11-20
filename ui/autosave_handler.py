@@ -380,6 +380,6 @@ class AutosaveMixin:
                 win.destroy()
 
         ttk.Button(btn_frame, text="Restore selected", command=restore_selected, cursor="hand2").pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Delete selected", command=delete_selected, cursor="hand2").pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Delete all", command=delete_all, cursor="hand2").pack(side="left", padx=4)
+        tk.Button(btn_frame, text="Delete selected", command=delete_selected, font=("Inter", sc(9)), bg="#fbfaf8", fg="#ba1a1a", relief="flat", bd=0, highlightthickness=1, highlightbackground="#ba1a1a", cursor="hand2").pack(side="left", padx=4)
+        tk.Button(btn_frame, text="Delete all", command=delete_all, font=("Inter", sc(9), "bold"), bg="#ffdad6", fg="#ba1a1a", relief="flat", bd=0, highlightthickness=1, highlightbackground="#ba1a1a", cursor="hand2").pack(side="left", padx=4)
         ttk.Button(btn_frame, text="Close", command=win.destroy, cursor="hand2").pack(side="right", padx=4)

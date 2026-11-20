@@ -105,16 +105,16 @@ class UnifiedSettingsWindow:
         "surface_container_highest": "#e9ece5",
         "card_bg": "#ffffff",
         "on_surface": "#2c302e",
-        "on_surface_variant": "#4c4546",
-        "outline": "#747878",
+        "on_surface_variant": "#757d77",
+        "outline": "#757d77",
         "outline_variant": "#c4c7c7",
-        "primary": "#000000",
+        "primary": "#2c302e",
         "on_primary": "#ffffff",
         "secondary": "#3a7d44",
         "error": "#c93a40",
         "search_orange": "#d95c14",
         "surface_tint": "#5e5e5e",
-        "sidebar_bg": "#ebebeb",
+        "sidebar_bg": "#f3f3f3",
         "sidebar_active": "#ffffff"
     }
 

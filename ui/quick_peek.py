@@ -35,7 +35,7 @@ class QuickPeekController:
             "surface_tint": "#5f5e5e"
         }
 
-        FONT_HEADLINE = ("Hanken Grotesk", sc(14), "bold")
+        FONT_HEADLINE = ("Inter", sc(14), "bold")
         FONT_LABEL = ("JetBrains Mono", sc(10), "bold")
         FONT_DATA = ("JetBrains Mono", sc(11))
 
