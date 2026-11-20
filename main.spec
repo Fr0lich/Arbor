@@ -28,6 +28,11 @@ hiddenimports += [
     'tifffile',
     'marshmallow',
     'requests',
+    'urllib3',
+    'certifi',
+    'itsdangerous',
+    'click',
+    'blinker',
 ]
 
 # ── Bundled Data Files ────────────────────────────────────────────────────────

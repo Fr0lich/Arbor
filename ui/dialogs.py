@@ -1062,16 +1062,43 @@ class StartupDialog:
         from ui.new_database_wizard import NewDatabaseWizard
         CreateCollectionDialog(self.win, self.app, self.on_new_db_created)
 
-    def load_demo_project(self):
+    def _resolve_writable_demo_path(self) -> str:
+        """Return a writable path to demo_collection.xlsx.
+
+        In frozen PyInstaller builds, prefer `<exe_dir>/data/demo_collection.xlsx`
+        over the ephemeral `sys._MEIPASS` extraction directory so saves,
+        backups, and autosaves persist safely next to Arbor.exe.
+        """
+        import shutil
+        import sys
         import utils
-        demo_path = utils.get_resource_path(os.path.join("data", "demo_collection.xlsx"))
-        if not os.path.exists(demo_path):
-            demo_path = os.path.abspath(os.path.join("data", "demo_collection.xlsx"))
+
+        rel_demo = os.path.join("data", "demo_collection.xlsx")
+        if getattr(sys, "frozen", False):
+            exe_demo = os.path.join(os.path.dirname(sys.executable), rel_demo)
+            if os.path.exists(exe_demo):
+                return exe_demo
+            bundled = utils.get_resource_path(rel_demo)
+            if os.path.exists(bundled):
+                try:
+                    os.makedirs(os.path.dirname(exe_demo), exist_ok=True)
+                    shutil.copy2(bundled, exe_demo)
+                    return exe_demo
+                except Exception:
+                    return bundled
+            return exe_demo
+
+        demo_path = utils.get_resource_path(rel_demo)
+        if os.path.exists(demo_path):
+            return demo_path
+        return os.path.abspath(rel_demo)
+
+    def load_demo_project(self):
+        demo_path = self._resolve_writable_demo_path()
         if not os.path.exists(demo_path):
             try:
                 from scripts.create_demo_dataset import create_demo_subset
-                create_demo_subset()
-                demo_path = os.path.abspath(os.path.join("data", "demo_collection.xlsx"))
+                create_demo_subset(dest_path=demo_path)
             except Exception as e:
                 messagebox.showerror("Demo Not Found", f"Could not create demo dataset:\n{e}", parent=self.win)
                 return

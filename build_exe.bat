@@ -3,6 +3,9 @@ setlocal enabledelayedexpansion
 
 cd /d "%~dp0"
 
+set "NO_PAUSE=0"
+if /i "%~1"=="--no-pause" set "NO_PAUSE=1"
+
 echo ===================================================
 echo     ARBOR - MUSEUM OBJECT VISUALIZER
 echo         Executable Build Pipeline
@@ -53,6 +56,16 @@ if exist "build" (
 )
 if exist "dist" (
     rmdir /s /q "dist" 2>nul
+)
+
+:: 2b. Ensure offline demo dataset exists so it is bundled into Arbor.exe
+if not exist "data\demo_collection.xlsx" (
+    echo.
+    echo [INFO] data\demo_collection.xlsx not found. Generating offline demo dataset...
+    "%PYTHON_EXE%" scripts\create_demo_dataset.py
+    if !ERRORLEVEL! NEQ 0 (
+        echo [WARNING] Could not auto-generate data\demo_collection.xlsx.
+    )
 )
 
 :: 3. Run PyInstaller build
@@ -109,6 +122,8 @@ if exist "data\demo_collection.xlsx" (
     ) else (
         echo   - data\demo_collection.xlsx copied
     )
+) else (
+    echo [WARNING] data\demo_collection.xlsx not found; Demo Project will not be bundled.
 )
 
 echo.
@@ -119,7 +134,7 @@ echo.
 echo Executable is ready at:
 echo   %cd%\dist\Arbor.exe
 echo.
-pause
+if "%NO_PAUSE%"=="0" pause
 exit /b 0
 
 :build_failed
@@ -129,5 +144,5 @@ echo                 BUILD FAILED
 echo ===================================================
 echo Please inspect the error messages above.
 echo.
-pause
+if "%NO_PAUSE%"=="0" pause
 exit /b 1
