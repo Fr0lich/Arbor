@@ -13,6 +13,119 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 24: Tutorial Engine Polish (Auto-Dodge HUD, Collapsible Details, Accurate Highlights) & Office Triage (`REV+ERR`) Sandbox Tour
+- **Date**: 2026-11-21
+- **Feature Area**: Interactive Tutorials (`ui/tutorials/tutorial_runner.py`, `ui/tutorials/sandbox_manager.py`, `ui/tutorials/review_tutorial.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/discrepancy_tutorial.py`, `ui/tutorials/database_tutorial.py`, `ui/tutorials/micro_guides.py`), Help Hub (`ui/help_dialogs.py`), Command Palette (`ui/command_palette.py`), & Tests (`tests/test_sandbox_tutorials.py`)
+- **What Changed**:
+  1. **Tutorial Engine Upgrades (`ui/tutorials/tutorial_runner.py`)**: Added a single-runner guard (preventing overlapping HUDs), smart left/right auto-dodge positioning so the HUD never covers the highlighted target control, precise `reg_field:<FieldName>` target resolution, a collapsible **`▸ 💡 More Details & Excel Impact`** drawer (`ActionStep.details`), standardized badges (`🛡️ PRACTICE SANDBOX` / `⚡ QUICK GUIDE`), and calm `show_toast` completion feedback.
+  2. **Fixed Broken & Broad Target Highlights Across All Tutorials**: Fixed `discrepancy_tutorial.py` (`history_btn` → `history_indicator_label`), narrowed `review_tutorial.py` Steps 2–3 to `reg_field:Collection Date` and `problem_flags_frame`, removed misleading `search_entry` highlight in `database_tutorial.py`, added `image_container` highlight in `micro_guides.py`, and wired `sm._active_runner` everywhere.
+  3. **New Office Triage (`REV+ERR`) Practice Sandbox Tour (`ui/tutorials/triage_tutorial.py`)**: Added a 4-step sandbox tour with a dedicated `"triage"` mock dataset (`#2001`/`#2002` `[REV+ERR]`, `#2003` clean `[REV]`), wired into the Help Hub and `Ctrl+K` Command Palette.
+  4. **Explicit `REV+ERR` Reassurance**: Updated the Quick Tour, Hallway Follow-Up & Armed Shelf guides, and Office Triage Tour to reassure trainees that **you won't always be able to solve every flagged problem right away — and that is completely okay**, since leaving the flag active while marking Reviewed keeps it safely queued for someone else in the future.
+- **User Impact**: Tutorials highlight the exact control on screen without blocking it, stay clean and scannable with optional deeper Excel explanations, reassure trainees when problems can't be solved immediately, and now include a dedicated Practice Sandbox for Office Triage (`REV+ERR`).
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Tutorial Developer Guide: `documentation/agent/TUTORIAL_GUIDE.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py`
+  - [x] Master Lexicon & Zero-Barcodes compliance
+
+---
+
+### Entry 23: Modular Mobile Template Split (`mobile_template_v1.py` & `mobile_template_v2.py`)
+- **Date**: 2026-11-21
+- **Feature Area**: Mobile Companion Architecture (`backend/mobile_server.py`, `backend/mobile_template_v1.py`, `backend/mobile_template_v2.py`), Agent/Maintainer Docs (`AGENTS.md`, `MAINTAINER_HANDOFF.md`, `documentation/agent/MOBILE_COMPANION_GUIDE.md`, `documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`), & Tests (`tests/test_mobile_companion.py`)
+- **What Changed**:
+  1. **Extracted Pure-Python Template Modules**: Moved `INDEX_TEMPLATE` (~4,696 lines) verbatim into `backend/mobile_template_v1.py` and `INDEX_TEMPLATE_V2` (~4,580 lines) verbatim into `backend/mobile_template_v2.py` (SHA-256 byte-for-byte identical), shrinking `backend/mobile_server.py` from 12,380 lines down to 3,101 lines of focused Flask backend logic.
+  2. **100% Backward-Compatible Re-Exports**: Re-exported `INDEX_TEMPLATE` and `INDEX_TEMPLATE_V2` from `backend/mobile_server.py` so all existing imports, tests, and PyInstaller builds (`collect_submodules('backend')`) work identically with zero external `.html` files or build steps.
+  3. **Full Documentation Sync**: Updated `AGENTS.md`, `MAINTAINER_HANDOFF.md`, `documentation/agent/MOBILE_COMPANION_GUIDE.md`, and `documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md` to reference the new module locations.
+- **User Impact**: Zero runtime change for museum trainees; significantly faster, safer maintenance and cleaner diffs for any future developer or agent working on the Mobile Companion backend or UI.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Agent & Handoff Guides: `AGENTS.md`, `MAINTAINER_HANDOFF.md`, `MOBILE_COMPANION_GUIDE.md`, `MOBILE_AUDIT_WORKFLOW_SPEC.md`
+  - [x] Unit Tests: `tests/test_mobile_companion.py`
+  - [x] Zero-Build & PyInstaller compliance verified
+
+---
+
+### Entry 22: Handoff & Release Hygiene (GitHub Actions CI, Pinned Dependencies, Repo Cleanup & Maintainer Guide)
+- **Date**: 2026-11-20
+- **Feature Area**: CI/CD (`.github/workflows/ci.yml`), Dependencies (`requirements.txt`, `requirements-dev.txt`), Repo Hygiene (`.gitignore`, removed corrupt pref dumps), & Handoff Docs (`MAINTAINER_HANDOFF.md`, `README.md`)
+- **What Changed**:
+  1. **Pinned Runtime & Split Dev Dependencies**: Pinned all runtime packages in `requirements.txt` to tested compatible major ranges (preventing silent breakage on major upgrades like `pandas 3.x`) and moved `pytest`, `pytest-xvfb`, `pyinstaller`, and optional `PySide6` into `requirements-dev.txt`.
+  2. **GitHub Actions CI & Portable Build Pipeline (`.github/workflows/ci.yml`)**: Added an automated Windows CI workflow that runs the 9-suite core regression tests on every push/PR to `main`, and automatically builds + uploads the verified `Arbor-Windows-Portable` (`dist\`) artifact on `v*` tags or manual dispatch.
+  3. **Repository Hygiene**: Removed 3 stray `user_prefs.json.corrupt.20261120_*` files from the root and updated `.gitignore` to ignore `user_prefs.json.*`, `.arbor_backups/`, `.arbor_logs/`, and `*.autosave.json`.
+  4. **Maintainer Handoff Guide (`MAINTAINER_HANDOFF.md`) & `README.md` Sync**: Added a concise 1-page handoff guide covering quickstart, active vs. archived folders, non-negotiable offline/zero-build/zero-barcode invariants, and the release checklist; updated `README.md` to Python 3.10+ and linked the handoff and mobile guides.
+- **User Impact**: Future maintainers can onboard in minutes, automated CI catches regressions before release, and tagged releases produce verified portable Windows bundles automatically.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Handoff & Root Docs: `MAINTAINER_HANDOFF.md` & `README.md`
+  - [x] CI Workflow & Dependency Hygiene verified
+
+---
+
+### Entry 21: Hardened Data-Safety Regression Suite & 13-Inch Laptop DPI / Dark Mode Polish
+- **Date**: 2026-11-20
+- **Feature Area**: Regression Tests (`tests/test_hardened_data_safety.py`, `tests/test_navigation_and_dialogs.py`) & Secondary Dialog DPI/Dark Mode (`ui/mobile_dialog.py`, `ui/filter_dialog.py`, `ui/object_problem_resolver.py`, `ui/historical_resolver.py`)
+- **What Changed**:
+  1. **Headless Data-Safety Regression Suite (`tests/test_hardened_data_safety.py`)**: Added 5 dedicated headless tests locking in JSON autosave UTF-8 Norwegian character & `ObjectID` index roundtrip, `AppState._mutation_seq` concurrent-save protection, `undo_last_bulk_edit()` atomic rollback, offline `batch_gbif_match()` `stats_out` error reporting, and non-caching of transient GBIF network errors.
+  2. **13-Inch Laptop DPI Scrollability (`ui/mobile_dialog.py`, `ui/filter_dialog.py`, `ui/object_problem_resolver.py`)**: Replaced hardcoded `540x750` / `minsize(500, 700)` and primary-monitor clamping in `MobileDialog` with `utils.center_and_fit_toplevel()`, a scrollable `tk.Canvas` host (with `bind_mousewheel`), and compact `minsize(420, 460)`; relaxed `FilterDialog` `minsize` to `640×480`; and enabled resizing on `ProblemQueueDialog` (`minsize(440, 400)`) so bottom action buttons are never clipped at 125%–150% Windows scaling.
+  3. **Secondary Dialog Dark Mode Consistency**: Added Arbor Charcoal & Vibrant Fern Dark Mode palette propagation to `MobileDialog`, `FilterDialog`, `ObjectProblemResolver`, and `HistoricalConflictResolverWindow` while keeping Light Mode palettes 100% unchanged.
+- **User Impact**: Trainees on 13-inch laptops at 125%–150% Windows scaling can scroll and reach every button in the Phone Connector, Filter, and Problem Queue dialogs without clipping, and Dark Mode stays visually consistent across secondary curation dialogs.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_hardened_data_safety.py` & `tests/test_navigation_and_dialogs.py`
+  - [x] Master Lexicon & AI UI Guide compliance
+
+---
+
+### Entry 20: Office Triage & Conflict Resolution UX (1-Click Clear Flag, Alt+Arrow Queue Nav, Plain-Language Titles)
+- **Date**: 2026-11-20
+- **Feature Area**: Office Triage & Conflict Resolution (`ui/object_problem_resolver.py`, `ui/historical_resolver.py`, `ui/gbif_review.py`), Desk Cheat Sheet (`documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`), & Tests (`tests/test_problem_persistence_fix.py`)
+- **What Changed**:
+  1. **1-Click "✓ Value is Correct (Clear Flag)" Button (`ui/object_problem_resolver.py`)**: Added a dedicated soft-green confirmation button on every Problem Resolution field card with an active problem flag. Clicking it leaves the specimen's existing value untouched, clears the mapped problem flag(s) in `Observation`, pushes an Undo snapshot (`Ctrl+Z` safe), logs `PROBLEM_CLEARED`, updates the Specimen Directory card, and marks the card resolved.
+  2. **Queue Keyboard Navigation (`Alt + ←` / `Alt + →`)**: Bound `<Alt-Left>` and `<Alt-Right>` in `ObjectProblemResolverWindow` when triaging a queue of flagged specimens, with visible shortcut hints on the `← Prev (Alt+←)` and `Next (Alt+→) →` buttons.
+  3. **Canonical Trainee Lexicon Cleanup**: Replaced `"Object ... (OID: ...)"` with `"Specimen ... (#...)"` in Problem Resolution, simplified `HistoricalConflictResolverWindow` title/header to **"Historical Ledger Comparison"** (`SPECIMEN REVIEW: N ITEMS TO CHECK`), and simplified `GBIFReviewDialog` title to **"GBIF Name Check & Update Review"**.
+- **User Impact**: Curators triaging hallway-flagged `REV+ERR` specimens at their desk can confirm correct values and clear flags in a single Undo-safe click, step through queued specimens with `Alt+Left`/`Alt+Right`, and read calmer, jargon-free dialog headers.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Desk Cheat Sheet: `documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`
+  - [x] Unit Tests: `tests/test_problem_persistence_fix.py`
+  - [x] Master Lexicon compliance
+
+---
+
+### Entry 19: Mobile Companion Offline Concrete-Vault Styling & Batch Location Hallway Ergonomics
+- **Date**: 2026-11-20
+- **Feature Area**: Mobile Companion (`backend/mobile_server.py`) & Regression Tests (`tests/test_mobile_companion.py`)
+- **What Changed**:
+  1. **Non-Blocking Tailwind CDN & Instant Offline Render (`INDEX_TEMPLATE` & `INDEX_TEMPLATE_V2`)**: Loaded `cdn.tailwindcss.com` with `defer` and Google Fonts with non-blocking `media="print" onload="this.media='all'"`, eliminating 10–30 second white-screen hangs when a phone connects to a local museum Wi-Fi hotspot with no internet uplink. `<html>` starts with `arbor-offline-css` and automatically removes it in `onload` when Tailwind finishes loading—guaranteeing zero CSS specificity collision online.
+  2. **Comprehensive Scoped Offline Fallback CSS (`html.arbor-offline-css`)**: Expanded `#arbor-offline-fallback` in V2 (and core parity in V1) so specimen cards, headers, search bar, Armed Target Shelf banner, segmented tabs, sticky **Mark Reviewed** action bar, Batch Location Registrator, offline banner, toasts, and all modals stay clean, legible, and thumb-friendly with zero internet.
+  3. **Batch Location Registrator Hallway Ergonomics (`INDEX_TEMPLATE_V2`)**: Set `#batchIdInput` to `inputmode="numeric"` by default with a 1-tap `123 / ABC` keypad toggle (`toggleBatchInputMode()`), and added a 1-tap **⚡ Use Cab XX · Sh XX** (`#btnBatchCopyArmed` / `copyArmedShelfToBatch()`) button to copy the active Armed Target Shelf into the batch anchor without retyping coordinates.
+- **User Impact**: Trainees walking concrete herbarium vaults without internet see the Mobile Companion render instantly with crisp cards, buttons, and modals—and can switch into Batch Location Registrator with a numeric keypad and 1-tap armed shelf coordinates.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_mobile_companion.py`
+  - [x] Zero-Barcodes & Zero-Build compliance verified
+
+---
+
+### Entry 18: Standalone Build & Live Smoke-Test Polish (Setup Guide Crash, Chapter Top-Align, Persistent Welcome Card, Multi-Monitor Tutorial)
+- **Date**: 2026-11-20
+- **Feature Area**: Packaging & Demo Provisioning (`build_exe.bat`, `main.spec`, `scripts/create_demo_dataset.py`, `ui/dialogs.py`), Startup Setup Guide (`ui/dialogs.py`), Unified Guide Reader (`ui/help_dialogs.py`), Demo/First-Run Welcome Card (`ui/database_ops.py`), & Multi-Monitor Dialog/Tutorial Positioning (`utils.py`, `ui/tutorials/tutorial_runner.py`)
+- **What Changed**:
+  1. **Offline Demo Generator & Writable Frozen Demo Path**: Added a deterministic 220-specimen `Økonomisk Botanisk` fallback generator in `scripts/create_demo_dataset.py` (keeps GitHub lean with no committed `.xlsx`), auto-generated `data/demo_collection.xlsx` in `build_exe.bat` (with optional `--no-pause` flag), and updated `StartupDialog._resolve_writable_demo_path()` so frozen `Arbor.exe` copies the bundled demo to `<exe_dir>\data\demo_collection.xlsx` instead of writing into PyInstaller's temporary `_MEIPASS` directory.
+  2. **Fixed Startup "Getting Started & Setup Guide" Crash**: Replaced undefined `self.C_MUTED` references in `StartupDialog._show_setup_help_msg()` with `self.C_ON_VARIANT`.
+  3. **Guide Reader Chapter Top-Alignment**: Replaced `txt.see(mark)` with `txt.yview(mark)` (`_scroll_reader_to_top` / `_scroll_to_top`) in `ui/help_dialogs.py` so clicking any chapter in the Left Chapter Sidebar (both Desktop Work Manual and Mobile Vault Guide) or inline anchor link aligns the chapter heading directly to the top of the reading pane.
+  4. **Prominent, Persistent Centered Welcome Card**: Replaced the 15-second auto-vanishing first-run toast banner with a large, calm Arbor-styled centered **Welcome to Arbor / 3-Minute Quick Tour** card (`_show_welcome_tour_prompt`) when opening the Demo Project (or on first run). It never auto-vanishes until the user starts the tour or explicitly dismisses it, with an optional *"Don't show this welcome screen again"* checkbox.
+  5. **Multi-Monitor Window & Tutorial Positioning**: Updated `utils.center_and_fit_toplevel()`, `TutorialRunner._position_hud()`, and `TutorialHighlight.update_position()` to position relative to the main window using signed Tk geometry (`{x:+d}{y:+d}`) without clamping negative secondary-monitor coordinates to `+0`/`+10`, so tutorials, highlights, and dialogs always stay on the same monitor as the main Arbor window.
+- **User Impact**: Standalone `Arbor.exe` launches cleanly with a built-in writable Demo Project, the Startup Setup Guide opens without errors, clicking any manual chapter jumps straight to the top of that section, Demo trainees see a clear persistent Welcome Card in the center of the screen, and multi-monitor workstations keep the interactive tutorial on the active monitor.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_demo_dataset.py`, `tests/test_navigation_and_dialogs.py`, `tests/test_sandbox_tutorials.py`
+  - [x] Packaging: `build_exe.bat` & `main.spec`
+  - [x] Master Lexicon compliance
+
+---
+
 ### Entry 17: Help Hub, Startup Setup Guide, Unified Desktop/Mobile Reader & Documentation Sync
 - **Date**: 2026-11-20
 - **Feature Area**: Startup Help (`ui/dialogs.py`), Unified Guide Reader & Help Hub (`ui/help_dialogs.py`), Help Dropdown (`ui/main_window.py`), Mobile Panel (`ui/mobile_panel.py`), User Guides (`USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`, `documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`), & Packaging (`main.spec`, `build_exe.bat`)

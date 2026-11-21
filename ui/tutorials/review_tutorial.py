@@ -79,39 +79,59 @@ def start_review_tutorial(ui, on_complete=None):
             target_id="search_entry",
             action_hint="Click specimen #1002 in the Specimen Directory.",
             keycaps=["Ctrl", "F"],
+            details=(
+                "Arbor matches accession numbers even if you omit leading zeros or museum prefixes (e.g. '001' matches '1'). "
+                "Selecting a card updates the center photo viewer and the right-hand Registration Form together."
+            ),
             validator=lambda u: str(getattr(getattr(u, "app", None), "current_object_id", "") or "") == "1002"
         ),
         ActionStep(
             step_id="fix_year",
             title="2. Fix a Mismatched Label Year (2008 → 1998)",
             instruction="The screen says 2008, but the paper label in your hand says 1998. Type 1998 in Collection Date (or pick 1998 from Historical Suggestions).",
-            target_id="object_editor_frame",
+            target_id="reg_field:Collection Date",
             action_hint="Change Collection Date to 1998 (or click Skip Step →).",
+            details=(
+                "Excel impact: Updates 'Collection Date' on the Registration sheet in memory. "
+                "Nothing is written to disk until you press Ctrl+S, and Ctrl+Z undoes mistakes anytime."
+            ),
             validator=_is_collection_date_fixed
         ),
         ActionStep(
             step_id="flag_box",
             title="3. Flag a Crushed Storage Box",
             instruction="The box corner is crushed and needs repair later. Check Box_Label_Problem (or press Space on it) to queue it for the workshop.",
-            target_id="object_editor_frame",
+            target_id="problem_flags_frame",
             action_hint="Check Box_Label_Problem (or click Skip Step →).",
             keycaps=["Space"],
+            details=(
+                "Excel impact: Sets 'Box_Label_Problem = TRUE' on the Observation sheet. "
+                "You don't need to fix physical box damage right now — flagging it safely queues it for someone else to handle later."
+            ),
             validator=_is_box_problem_flagged
         ),
         ActionStep(
             step_id="mark_reviewed",
             title="4. Mark Reviewed (Even With a Flag!)",
-            instruction="Press Ctrl+Enter or click '✓ Mark as Reviewed'. Notice the card turns amber (REV + 1 ISSUE) — confirming you found the box while keeping the repair flag queued!",
+            instruction="Press Ctrl+Enter or click '✓ Mark as Reviewed'. The card turns amber [REV+ERR] — confirming you checked the box while keeping the repair flag open.",
             target_id="reviewed_button",
             action_hint="Click '✓ Mark as Reviewed' or press Ctrl+Enter.",
             keycaps=["Ctrl", "Enter"],
+            details=(
+                "You won't always be able to solve every flagged problem yourself — and that is completely okay! "
+                "Marking a specimen Reviewed sets 'Reviewed = TRUE' (confirming a human verified it physically), "
+                "while the active flag keeps it in the amber [REV+ERR] queue so a specialist or curator can revisit it in the future."
+            ),
             validator=lambda u: _is_current_specimen_reviewed(u)
         ),
         ActionStep(
             step_id="review_complete",
-            title="Practice Complete!",
-            instruction="Great job! Everything here ran in Practice Mode — your real museum files were never touched. Click Finish to return to your workspace.",
-            action_hint="Click 'Finish ✓' below to exit Practice Mode."
+            title="5. Practice Complete!",
+            instruction="Great job! Everything here ran in Practice Mode — your real museum files were never touched. Click Finish ✓ to return to your workspace.",
+            action_hint="Click 'Finish ✓' below to exit Practice Mode.",
+            details=(
+                "You can replay this tour, run the Office Triage Tour, or open the Desktop & Mobile guides anytime from ❓ HELP ▾ or by pressing F1."
+            ),
         )
     ]
 

@@ -283,6 +283,135 @@ class TestSandboxTutorials(unittest.TestCase):
         # Calling show_main_help should construct a top-level window without raising exceptions
         show_main_help(self.ui)
 
+    def test_tutorial_hud_stays_on_secondary_monitor_negative_coords(self):
+        """Regression: TutorialRunner HUD must stay on secondary monitors with negative X/Y coordinates."""
+        from unittest.mock import MagicMock
+
+        step = ActionStep(step_id="m1", title="Multi-monitor", instruction="Check HUD placement")
+        runner = TutorialRunner(self.ui, [step], tutorial_name="Monitor Test", use_sandbox=False)
+        fake_root = MagicMock()
+        fake_root.winfo_exists.return_value = True
+        fake_root.winfo_rootx.return_value = -1600
+        fake_root.winfo_rooty.return_value = -200
+        fake_root.winfo_width.return_value = 1280
+        fake_root.winfo_height.return_value = 800
+
+        captured = []
+        orig_geom = runner.hud_win.geometry
+        runner.hud_win.geometry = lambda g=None: captured.append(g) if g else orig_geom()
+        runner.ui = MagicMock(root=fake_root)
+        runner._position_hud()
+        runner.hud_win.geometry = orig_geom
+        runner.exit_tutorial()
+
+        self.assertTrue(captured, "Expected HUD geometry to be set")
+        geom = captured[-1]
+        self.assertTrue(geom.startswith("-"), f"Expected negative X for left monitor, got {geom}")
+        self.assertNotIn("+-", geom, f"Invalid Tcl geometry string: {geom}")
+
+    def test_welcome_tour_prompt_centered_and_persistent(self):
+        """Regression: Demo/first-run welcome prompt is a persistent centered Toplevel (no auto-dismiss)."""
+        from ui.database_ops import DatabaseOpsMixin
+
+        class _Host(DatabaseOpsMixin):
+            pass
+
+        host = _Host()
+        host.root = self.root
+        host.dark_mode = False
+        host._show_welcome_tour_prompt(is_demo=True)
+        self.root.update_idletasks()
+        win = getattr(host, "_welcome_tour_win", None)
+        self.assertIsNotNone(win)
+        self.assertTrue(win.winfo_exists())
+        self.assertEqual(win.title(), "Welcome to Arbor")
+        win.destroy()
+
+    def test_details_drawer_toggle_and_single_runner_guard(self):
+        """Verify ActionStep.details expands/collapses cleanly and a second runner closes the first."""
+        s1 = ActionStep(
+            step_id="d1",
+            title="With Details",
+            instruction="Short operational step.",
+            details="Excel impact: Sets Observation.Reviewed = TRUE.",
+        )
+        s2 = ActionStep(step_id="d2", title="No Details", instruction="Plain step.")
+        r1 = TutorialRunner(self.ui, [s1, s2], tutorial_name="Details Test", use_sandbox=False)
+        self.assertFalse(r1._details_expanded)
+        self.assertEqual(r1.details_lbl.cget("text"), "Excel impact: Sets Observation.Reviewed = TRUE.")
+
+        r1._toggle_details()
+        self.assertTrue(r1._details_expanded)
+        self.assertIn("Hide Details", r1.details_toggle_btn.cget("text"))
+
+        # Advancing resets drawer to collapsed
+        r1.next_step()
+        self.assertFalse(r1._details_expanded)
+
+        # Launching a second runner closes the first HUD cleanly
+        old_hud = r1.hud_win
+        r2 = TutorialRunner(self.ui, [s2], tutorial_name="Second Runner", use_sandbox=False)
+        self.assertIsNone(r1.hud_win)
+        self.assertFalse(old_hud.winfo_exists())
+        self.assertTrue(r2.hud_win.winfo_exists())
+        r2.exit_tutorial()
+
+    def test_hud_auto_dodges_right_side_target_widget(self):
+        """Verify HUD docks on the left when target_widget is on the right half of parent_root."""
+        from unittest.mock import MagicMock
+
+        step = ActionStep(step_id="ad1", title="Auto-Dodge", instruction="Dodge right target")
+        runner = TutorialRunner(self.ui, [step], tutorial_name="Dodge Test", use_sandbox=False)
+
+        fake_root = MagicMock()
+        fake_root.winfo_exists.return_value = True
+        fake_root.winfo_rootx.return_value = 100
+        fake_root.winfo_rooty.return_value = 50
+        fake_root.winfo_width.return_value = 1200
+        fake_root.winfo_height.return_value = 800
+
+        fake_target = MagicMock()
+        fake_target.winfo_exists.return_value = True
+        fake_target.winfo_viewable.return_value = True
+        fake_target.winfo_rootx.return_value = 950  # Right half of [100..1300]
+        fake_target.winfo_width.return_value = 200
+
+        captured = []
+        orig_geom = runner.hud_win.geometry
+        runner.hud_win.geometry = lambda g=None: captured.append(g) if g else orig_geom()
+        runner.ui = MagicMock(root=fake_root)
+        runner._position_hud(target_widget=fake_target)
+        runner.hud_win.geometry = orig_geom
+        runner.exit_tutorial()
+
+        self.assertTrue(captured)
+        # Docked left near rx + 24 (~124), not right side (~900)
+        x_val = int(captured[-1].split("+")[1])
+        self.assertLess(x_val, 300, f"Expected HUD to dock left away from right-side target, got {captured[-1]}")
+
+    def test_triage_tutorial_sandbox_and_target_ids_valid(self):
+        """Verify start_triage_tutorial mounts REV+ERR sandbox cleanly and all tutorial target_ids are valid."""
+        from ui.tutorials import start_triage_tutorial
+        import ui.tutorials.discrepancy_tutorial as dt_mod
+
+        orig_path = self.ui.app.excel_path
+        runner = start_triage_tutorial(self.ui)
+        self.assertTrue(self.sm.is_sandboxed)
+        self.assertIn("2001", self.ui.app.df_reg.index)
+        self.assertIn("2002", self.ui.app.df_reg.index)
+        self.assertTrue(bool(self.ui.app.df_obs.loc["2001", "Reviewed"]))
+        self.assertTrue(bool(self.ui.app.df_obs.loc["2001", "Box_Label_Problem"]))
+        self.assertEqual(runner.badge_lbl.cget("text"), "🛡️ PRACTICE SANDBOX")
+        runner.finish_tutorial()
+        self.assertFalse(self.sm.is_sandboxed)
+        self.assertEqual(self.ui.app.excel_path, orig_path)
+
+        # Ensure broken target_id="history_btn" is completely gone from discrepancy_tutorial.py
+        with open(dt_mod.__file__, "r", encoding="utf-8") as f:
+            dt_src = f.read()
+        self.assertNotIn('target_id="history_btn"', dt_src)
+        self.assertIn('target_id="history_indicator_label"', dt_src)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,17 +1,15 @@
-pandas
-openpyxl
-pillow
-requests
-python-calamine
-pytablericons
-flask
-qrcode
-pytest-xvfb
-xvfbwrapper
-PySide6
-rapidfuzz>=3.0.0
-loguru
-cachetools
-tifffile
-marshmallow
-
+# Arbor Runtime Dependencies (Offline-First Desktop + Embedded Mobile Companion)
+# Pinned to tested compatible major ranges to prevent breaking upgrades.
+pandas>=2.0,<3.0
+openpyxl>=3.1,<4.0
+python-calamine>=0.3,<1.0
+pillow>=10.0,<13.0
+tifffile>=2024.0
+requests>=2.31,<3.0
+flask>=3.0,<4.0
+qrcode>=7.4,<9.0
+pytablericons>=1.0,<2.0
+rapidfuzz>=3.0,<4.0
+loguru>=0.7,<1.0
+cachetools>=5.3,<8.0
+marshmallow>=4.0,<5.0

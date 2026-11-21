@@ -31,7 +31,7 @@ Arbor follows a **Zero-Friction, Offline-First** architecture. When improving, m
 3. **Use Pre-Tested Pip Packages Over Handcrafted Fragile Code**:
    - Do **NOT** reinvent complex utilities from scratch when mature, well-tested Python packages exist. Standard, pre-compiled wheels installed via `pip` (tracked in `requirements.txt`) and bundled into PyInstaller are welcomed and encouraged.
 4. **Mobile Companion Zero-Build Stack**:
-   - The mobile companion frontend must remain strictly Vanilla HTML, JavaScript, and Tailwind CSS (via CDN script) embedded in `backend/mobile_server.py`. Never introduce Node.js, npm, or external build steps.
+   - The mobile companion frontend must remain strictly Vanilla HTML, JavaScript, and deferred Tailwind CSS (with scoped `html.arbor-offline-css` fallback) stored as pure-Python string constants in `backend/mobile_template_v1.py` (`INDEX_TEMPLATE`) and `backend/mobile_template_v2.py` (`INDEX_TEMPLATE_V2`), re-exported by `backend/mobile_server.py`. Never introduce Node.js, npm, or external build steps.
 
 ### Approved vs. Prohibited Library Checklist
 

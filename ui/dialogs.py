@@ -1270,7 +1270,7 @@ class StartupDialog:
             text="Three simple steps to open your collection — nothing can be broken from this screen.",
             font=("Inter", sc(9.5)),
             bg=self.C_BG,
-            fg=self.C_MUTED,
+            fg=self.C_ON_VARIANT,
             anchor="w",
         ).pack(fill="x", pady=(sc(2), sc(14)))
 
@@ -1333,7 +1333,7 @@ class StartupDialog:
                 text=desc,
                 font=("Inter", sc(9)),
                 bg=self.C_CARD,
-                fg=self.C_MUTED,
+                fg=self.C_ON_VARIANT,
                 wraplength=sc(500),
                 justify="left",
                 anchor="w",

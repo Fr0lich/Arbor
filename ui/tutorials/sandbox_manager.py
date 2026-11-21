@@ -353,6 +353,126 @@ class SandboxManager:
             }
         ]
 
+        if mock_type == "triage":
+            reg_data = [
+                {
+                    "ObjectID": "2001",
+                    "Genus": "Betula",
+                    "Species": "pendula",
+                    "Taxon": "Betula pendula",
+                    "Family": "Betulaceae",
+                    "Author": "Roth",
+                    "Collector": "N. Moe",
+                    "CollectorNumber": "41",
+                    "Collection Date": "1954",
+                    "Year": "1954",
+                    "Collection Place": "Oslo, Tøyen",
+                    "Locality": "Oslo, Tøyen",
+                    "Country": "Norway",
+                    "Reviewed": True,
+                    "Reviewed_By": "Hallway Intern",
+                    "Reviewed_At": "2026-11-20 10:15:00",
+                    "Problem_Flags": "Box_Label_Problem",
+                },
+                {
+                    "ObjectID": "2002",
+                    "Genus": "Pinus",
+                    "Species": "sylvestris",
+                    "Taxon": "Pinus sylvestris",
+                    "Family": "Pinaceae",
+                    "Author": "L.",
+                    "Collector": "J. Lid",
+                    "CollectorNumber": "88",
+                    "Collection Date": "1972",
+                    "Year": "1972",
+                    "Collection Place": "Dovrefjell",
+                    "Locality": "Dovrefjell",
+                    "Country": "Norway",
+                    "Reviewed": True,
+                    "Reviewed_By": "Hallway Intern",
+                    "Reviewed_At": "2026-11-20 10:18:00",
+                    "Problem_Flags": "Collection_Date_Problem",
+                },
+                {
+                    "ObjectID": "2003",
+                    "Genus": "Salix",
+                    "Species": "caprea",
+                    "Taxon": "Salix caprea",
+                    "Family": "Salicaceae",
+                    "Author": "L.",
+                    "Collector": "O. Dahl",
+                    "CollectorNumber": "12",
+                    "Collection Date": "1921",
+                    "Year": "1921",
+                    "Collection Place": "Bergen",
+                    "Locality": "Bergen",
+                    "Country": "Norway",
+                    "Reviewed": True,
+                    "Reviewed_By": "Hallway Intern",
+                    "Reviewed_At": "2026-11-20 10:20:00",
+                    "Problem_Flags": "",
+                },
+            ]
+            obs_data = [
+                {
+                    "ObjectID": "2001",
+                    "Reviewed": True,
+                    "ReviewedAt": "20.11.2026 10:15",
+                    "Building": "Lid's hus",
+                    "Floor": "1",
+                    "Cabinet": "21",
+                    "Shelf": "01",
+                    "Stored as": "Box",
+                    "Genus_Problem": False,
+                    "Species_Problem": False,
+                    "Collection_Date_Problem": False,
+                    "Box_Label_Problem": True,
+                    "Taxon_Mismatch": False,
+                    "Coordinate_Problem": False,
+                    "Unidentified": False,
+                },
+                {
+                    "ObjectID": "2002",
+                    "Reviewed": True,
+                    "ReviewedAt": "20.11.2026 10:18",
+                    "Building": "Lid's hus",
+                    "Floor": "1",
+                    "Cabinet": "21",
+                    "Shelf": "01",
+                    "Stored as": "Box",
+                    "Genus_Problem": False,
+                    "Species_Problem": False,
+                    "Collection_Date_Problem": True,
+                    "Box_Label_Problem": False,
+                    "Taxon_Mismatch": False,
+                    "Coordinate_Problem": False,
+                    "Unidentified": False,
+                },
+                {
+                    "ObjectID": "2003",
+                    "Reviewed": True,
+                    "ReviewedAt": "20.11.2026 10:20",
+                    "Building": "Lid's hus",
+                    "Floor": "1",
+                    "Cabinet": "21",
+                    "Shelf": "01",
+                    "Stored as": "Box",
+                    "Genus_Problem": False,
+                    "Species_Problem": False,
+                    "Collection_Date_Problem": False,
+                    "Box_Label_Problem": False,
+                    "Taxon_Mismatch": False,
+                    "Coordinate_Problem": False,
+                    "Unidentified": False,
+                },
+            ]
+            df_reg = pd.DataFrame(reg_data).set_index("ObjectID", drop=False)
+            df_obs = pd.DataFrame(obs_data).set_index("ObjectID", drop=False)
+            df_photo = pd.DataFrame(columns=["ObjectID", "PhotoURL", "PhotoType"])
+            df_log = pd.DataFrame(columns=["Timestamp", "ObjectID", "Action", "User"])
+            df_unval = pd.DataFrame()
+            return df_reg, df_obs, df_photo, df_log, df_unval, []
+
         df_reg = pd.DataFrame(reg_data).set_index("ObjectID", drop=False)
         df_obs = pd.DataFrame(obs_data).set_index("ObjectID", drop=False)
         df_photo = pd.DataFrame(columns=["ObjectID", "PhotoURL", "PhotoType"])

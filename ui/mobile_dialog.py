@@ -21,11 +21,15 @@ class MobileDialog:
         self.app_state = app_state
         self.port = 5055
 
-        # Build modal window
+        # Build modal window (DPI-safe sizing + multi-monitor centering)
+        from tkinter import ttk
+        from config import sc
+        import utils
+
         self.win = tk.Toplevel(root)
         self.win.title("Arbor Mobile Companion - Vault Auditing & Offline Sync")
-        self.win.geometry("540x750")
-        self.win.minsize(500, 700)
+        self.win.minsize(sc(420), sc(460))
+        self.win.resizable(True, True)
         self.win.transient(root)
 
         # Only lock if simultaneous edit is not enabled
@@ -34,18 +38,43 @@ class MobileDialog:
         else:
             self.win.grab_set()
 
-        # Center on parent
-        self.win.update_idletasks()
-        x = root.winfo_x() + (root.winfo_width() // 2) - (540 // 2)
-        y = root.winfo_y() + (root.winfo_height() // 2) - (730 // 2)
-        self.win.geometry(f"+{max(0, x)}+{max(0, y)}")
-
         # Commit any active desktop typing before locking
         if hasattr(self.parent_ui, "commit_current_object"):
             try:
                 self.parent_ui.commit_current_object()
             except Exception:
                 pass
+
+        # Scrollable host container so 13-inch 125%–150% DPI laptops never clip bottom controls
+        is_dark = getattr(self.parent_ui, "dark_mode_active", getattr(self.parent_ui, "dark_mode", False))
+        host_bg = "#1e211f" if is_dark else "#f7f5f0"
+        self.win.configure(bg=host_bg)
+
+        scroll_outer = tk.Frame(self.win, bg=host_bg)
+        scroll_outer.pack(fill="both", expand=True)
+        self._scroll_canvas = tk.Canvas(scroll_outer, bg=host_bg, highlightthickness=0, bd=0)
+        vsb = ttk.Scrollbar(scroll_outer, orient="vertical", command=self._scroll_canvas.yview)
+        self._panel_host = tk.Frame(self._scroll_canvas, bg=host_bg)
+        win_id = self._scroll_canvas.create_window((0, 0), window=self._panel_host, anchor="nw")
+        self._scroll_canvas.configure(yscrollcommand=vsb.set)
+        vsb.pack(side="right", fill="y")
+        self._scroll_canvas.pack(side="left", fill="both", expand=True)
+
+        self._panel_host.bind(
+            "<Configure>",
+            lambda e: self._scroll_canvas.configure(scrollregion=self._scroll_canvas.bbox("all"))
+            if self._scroll_canvas.winfo_exists() else None,
+        )
+        self._scroll_canvas.bind(
+            "<Configure>",
+            lambda e: self._scroll_canvas.itemconfig(win_id, width=e.width)
+            if self._scroll_canvas.winfo_exists() else None,
+        )
+        try:
+            from ui.scroll_helper import bind_mousewheel
+            bind_mousewheel(self._scroll_canvas, self._panel_host)
+        except Exception:
+            pass
 
         # Build panel — reuse an existing server if one is already running
         self.server = getattr(self.parent_ui, '_mobile_server_instance', None)
@@ -56,7 +85,7 @@ class MobileDialog:
         self.public_url_with_token = ""
         self.current_qr_mode = "public"
         self.panel = MobilePanel(
-            parent=self.win,
+            parent=self._panel_host,
             app_state=self.app_state,
             root_tk=self.root,
             port=self.port,
@@ -71,6 +100,7 @@ class MobileDialog:
             self.parent_ui._mobile_server_instance = self.panel.server
             self.app_state._mobile_server_instance = self.panel.server
 
+        utils.center_and_fit_toplevel(self.win, sc(540), sc(700))
         self.win.protocol("WM_DELETE_WINDOW", self._end_session)
 
     # ------------------------------------------------------------------

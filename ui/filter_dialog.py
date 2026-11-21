@@ -23,23 +23,43 @@ class FilterDialogController:
         from config import sc
         import utils
 
-        COLORS = {
-            "surface": "#fbfaf8",
-            "surface_dim": "#dadada",
-            "surface_container_low": "#f2f5f1",
-            "surface_container_highest": "#e2e2e2",
-            "on_surface": "#2c302e",
-            "on_surface_variant": "#757d77",
-            "outline": "#757d77",
-            "outline_variant": "#c4c7c7",
-            "primary": "#2c302e",
-            "on_primary": "#ffffff",
-            "secondary": "#3a7d44",
-            "error": "#c93a40",
-            "botanical_green": "#3a7d44",
-            "search_orange": "#d95c14",
-            "surface_tint": "#5f5e5e"
-        }
+        is_dark = getattr(ui, "dark_mode_active", getattr(ui, "dark_mode", False))
+        if is_dark:
+            COLORS = {
+                "surface": "#1e211f",
+                "surface_dim": "#2a2f2c",
+                "surface_container_low": "#252926",
+                "surface_container_highest": "#333935",
+                "on_surface": "#eef1ef",
+                "on_surface_variant": "#a2aba5",
+                "outline": "#4e5651",
+                "outline_variant": "#3a403c",
+                "primary": "#3a7d44",
+                "on_primary": "#ffffff",
+                "secondary": "#52b765",
+                "error": "#ef5350",
+                "botanical_green": "#52b765",
+                "search_orange": "#f08a4b",
+                "surface_tint": "#a2aba5"
+            }
+        else:
+            COLORS = {
+                "surface": "#fbfaf8",
+                "surface_dim": "#dadada",
+                "surface_container_low": "#f2f5f1",
+                "surface_container_highest": "#e2e2e2",
+                "on_surface": "#2c302e",
+                "on_surface_variant": "#757d77",
+                "outline": "#757d77",
+                "outline_variant": "#c4c7c7",
+                "primary": "#2c302e",
+                "on_primary": "#ffffff",
+                "secondary": "#3a7d44",
+                "error": "#c93a40",
+                "botanical_green": "#3a7d44",
+                "search_orange": "#d95c14",
+                "surface_tint": "#5f5e5e"
+            }
 
         FONT_HEADLINE = ("Inter", sc(14), "bold")
         FONT_LABEL = ("JetBrains Mono", sc(10), "bold")
@@ -62,8 +82,8 @@ class FilterDialogController:
         win = tk.Toplevel(ui.root)
         ui.filter_window = win
         win.title("Filter objects")
-        win.geometry(f"{sc(860)}x{sc(680)}")
-        win.minsize(sc(800), sc(600))
+        win.geometry(f"{sc(860)}x{sc(660)}")
+        win.minsize(sc(640), sc(480))
         win.configure(bg=COLORS["surface"])
         win.bind("<Destroy>", lambda e: setattr(ui, "filter_window", None) if e.widget == win else None)
         win.bind("<Escape>", lambda e: win.destroy())

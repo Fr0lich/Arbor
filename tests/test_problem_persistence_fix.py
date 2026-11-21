@@ -386,3 +386,72 @@ def test_rev_err_card_badge_and_color():
     assert widgets["status_badge"].cget("bg") == "#F57C00"
 
     root.destroy()
+
+
+def test_problem_resolver_clear_flag_keep_value_and_queue_nav():
+    """Verify 1-click '✓ Value is Correct (Clear Flag)' clears flag with Undo & Alt+Left/Right navigates queue."""
+    from ui.object_problem_resolver import ObjectProblemResolver
+
+    try:
+        root = tk.Tk()
+        root.withdraw()
+    except Exception:
+        pytest.skip("Tkinter display not available")
+
+    df_reg = pd.DataFrame({
+        "ObjectID": ["OBJ1", "OBJ2"],
+        "Genus": ["Betula", "Pinus"],
+        "Species": ["pendula", "sylvestris"],
+    }).set_index("ObjectID")
+
+    df_obs = pd.DataFrame({
+        "ObjectID": ["OBJ1", "OBJ2"],
+        "Genus_Problem": [True, True],
+        "Species_Problem": [False, False],
+        "Reviewed": [True, True],
+    }).set_index("ObjectID")
+
+    app = MockApp(df_reg, df_obs)
+    mw = create_mock_ui(root, app)
+    mw.load_object("OBJ1")
+
+    logged_actions = []
+    undo_calls = []
+    mw.log_action = lambda action, **kw: logged_actions.append((action, kw))
+    mw.push_undo_state = lambda oid=None: undo_calls.append(oid)
+
+    resolver = ObjectProblemResolver(mw, ["OBJ1", "OBJ2"], suggestions={"Genus": []})
+    root.update_idletasks()
+
+    # Locate the 1-click Clear Flag button on the Genus card
+    clear_btns = []
+
+    def _walk(w):
+        for child in w.winfo_children():
+            if isinstance(child, tk.Button) and "Value is Correct" in str(child.cget("text")):
+                clear_btns.append(child)
+            _walk(child)
+
+    _walk(resolver.win)
+    assert clear_btns, "Expected '✓ Value is Correct (Clear Flag)' button on active-flag card"
+
+    # Invoke 1-click Clear Flag
+    clear_btns[0].invoke()
+    root.update_idletasks()
+
+    # Registration value preserved, problem flag cleared, Undo pushed, audit logged
+    assert app.df_reg.loc["OBJ1", "Genus"] == "Betula"
+    assert bool(app.df_obs.loc["OBJ1", "Genus_Problem"]) is False
+    assert "OBJ1" in undo_calls
+    assert any(a == "PROBLEM_CLEARED" for a, _ in logged_actions)
+    assert "Cleared" in str(clear_btns[0].cget("text"))
+
+    # Queue navigation via _queue_navigate (bound to Alt+Right / Alt+Left)
+    assert resolver.oid == "OBJ1"
+    resolver._queue_navigate(1)
+    assert resolver.oid == "OBJ2"
+    resolver._queue_navigate(-1)
+    assert resolver.oid == "OBJ1"
+
+    resolver.win.destroy()
+    root.destroy()

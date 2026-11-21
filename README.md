@@ -1,6 +1,6 @@
 # Museum Object Visualizer (Arbor)
 
-![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)
+![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
 
@@ -25,7 +25,7 @@ Arbor is a Python-based desktop application designed to visualize, edit, and rev
 
 ## Documentation & User Guide
 
-For full operational instructions, user interface walkthroughs, workflow explanations, and shortcut references, please consult the **[User Guide (USER_GUIDE.md)](USER_GUIDE.md)**:
+For full operational instructions, user interface walkthroughs, workflow explanations, and shortcut references, please consult the **[Desktop Work Manual (USER_GUIDE.md)](USER_GUIDE.md)**, the **[Mobile Vault Guide (MOBILE_COMPANION_USER_GUIDE.md)](MOBILE_COMPANION_USER_GUIDE.md)**, or the **[Maintainer Handoff Guide (MAINTAINER_HANDOFF.md)](MAINTAINER_HANDOFF.md)** for developers inheriting this repository:
 
 * **UI Layout & Workspace Panels:** Object directory, high-resolution image tools, and metadata editor.
 * **Problem Workflow:** Identifying validation flags, historical conflict resolution, and marking records as reviewed.
@@ -53,14 +53,16 @@ Inside the application, the User Guide can also be accessed at any time via **He
 ## Prerequisites & Installation
 
 ### Requirements
-- Python 3.8 or higher.
+- Python 3.10 or higher (3.12 recommended on Windows).
 - (Linux specific for UI testing) `sudo apt-get update && sudo apt-get install -y python3-tk xvfb`
 
 ### Installation
 1. Clone the repository to your local machine.
-2. Install the necessary Python dependencies:
+2. Install the runtime Python dependencies (or `requirements-dev.txt` for testing and PyInstaller builds):
    ```bash
    pip install -r requirements.txt
+   # For running tests and building Arbor.exe:
+   pip install -r requirements-dev.txt
    ```
 
 ---

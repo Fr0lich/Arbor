@@ -3,8 +3,11 @@
 This document serves as a strict instruction manual for any AI agent tasked with modifying or adding features to the Arbor project's Mobile Companion component. Read these rules carefully before making any code changes to the mobile architecture.
 
 ## 1. The Single Source of Truth
-The frontend HTML/JS/CSS for the mobile companion lives entirely inside the `INDEX_TEMPLATE` and `INDEX_TEMPLATE_V2` strings within `backend/mobile_server.py`. There are now two distinct versions of the mobile website being maintained.
-- **CRITICAL RULE:** Agents must **never** create or modify an external `mobile_frontend.html` file or similar. Adding external HTML files causes fallback conflicts and overwrites the internal templates.
+The frontend HTML/JS/CSS for the mobile companion lives strictly as pure-Python string constants in dedicated modules under `backend/`, re-exported by `backend/mobile_server.py`:
+- **`backend/mobile_template_v1.py`** → `INDEX_TEMPLATE` (legacy V1 mobile UI)
+- **`backend/mobile_template_v2.py`** → `INDEX_TEMPLATE_V2` (primary V2 mobile UI)
+- **`backend/mobile_server.py`** → Flask API routes, SSE broadcasting, authentication, `LOGIN_TEMPLATE`, and re-exports `INDEX_TEMPLATE` & `INDEX_TEMPLATE_V2` so existing imports continue working seamlessly.
+- **CRITICAL RULE:** Agents must **never** create or modify an external `mobile_frontend.html` file or similar. Adding external HTML files causes fallback conflicts and breaks self-contained PyInstaller bundling.
 - **Handling Dual Templates:**
   - **Backend / Non-UI Changes:** If the change involves logic, API calls, JS state management, or non-UI specific functionality, it must be applied to **both** `INDEX_TEMPLATE` and `INDEX_TEMPLATE_V2` to maintain feature parity.
   - **UI / Visual Changes:** Since the two versions are intended to have differences in their user interface, evaluate if a visual change makes sense for both templates.

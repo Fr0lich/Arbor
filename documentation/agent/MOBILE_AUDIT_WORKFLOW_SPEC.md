@@ -19,7 +19,7 @@ Arbor is an active, production desktop application written in **Tkinter** with a
    - **Path B (Unresolvable on the spot)**: The problem requires desktop flora literature, unreadable handwriting analysis, or physical conservation (e.g. a crushed storage box). The intern flags the issue (`Species_Problem = True`, `Box_Label_Problem = True`), **BUT STILL MARKS THE OBJECT AS REVIEWED (`Reviewed = True`)**. In Arbor, "Reviewed" means a human physically handled the specimen, verified its presence, and stamped its location. Flagged problems are queued for desktop curation.
 5. **Architectural Constraints (Non-Negotiable)**:
    - **Zero Barcodes**: Barcode scanning is completely removed from Arbor. Never add barcode dependencies.
-   - **Zero Build Mobile Stack**: The mobile frontend lives entirely as embedded strings (`INDEX_TEMPLATE` and `INDEX_TEMPLATE_V2`) in `backend/mobile_server.py` using Vanilla HTML/JS and Tailwind CSS CDN. Never introduce Node.js, npm, webpack, Vite, or external asset builds.
+   - **Zero Build Mobile Stack**: The mobile frontend lives strictly as embedded pure-Python string constants (`INDEX_TEMPLATE` in `backend/mobile_template_v1.py` and `INDEX_TEMPLATE_V2` in `backend/mobile_template_v2.py`, re-exported by `backend/mobile_server.py`) using Vanilla HTML/JS, deferred Tailwind CSS CDN, and scoped `html.arbor-offline-css` offline fallback. Never introduce Node.js, npm, webpack, Vite, or external asset builds.
    - **Dual-Perspective Store**: Edits must be validated through Marshmallow (`backend/mobile_schemas.py`) and written cleanly into in-memory DataFrames (`df_reg`, `df_obs`), persisting to Excel.
 
 ---
@@ -124,7 +124,7 @@ An automated simulation was executed against `data/demo_collection.xlsx` (config
 
 ## 4. Object Detail View Ergonomics Blueprint (`INDEX_TEMPLATE_V2`)
 
-All line references correspond to `backend/mobile_server.py` (`INDEX_TEMPLATE_V2`, lines 7663–11259).
+`INDEX_TEMPLATE_V2` lives in `backend/mobile_template_v2.py` (re-exported by `backend/mobile_server.py`).
 
 ### A. Above-the-Fold Visual Hierarchy (The 50% Rule)
 When an intern opens a specimen in dim museum lighting, the top 50% of the viewport must immediately answer three questions:

@@ -1982,3 +1982,51 @@ def test_mobile_v2_three_step_walkthrough_contract():
     assert "openWalkthroughModal" in INDEX_TEMPLATE_V2
     assert "maybeShowFirstRunWalkthrough" in INDEX_TEMPLATE_V2
 
+
+def test_mobile_offline_vault_css_and_nonblocking_tailwind():
+    """Verify non-blocking defer Tailwind loading and scoped html.arbor-offline-css fallback in V1 & V2."""
+    from backend.mobile_server import INDEX_TEMPLATE, INDEX_TEMPLATE_V2
+
+    for name, tmpl in [("V1", INDEX_TEMPLATE), ("V2", INDEX_TEMPLATE_V2)]:
+        assert '<html lang="en" class="arbor-offline-css">' in tmpl, f"{name} missing default arbor-offline-css class"
+        assert 'script defer src="https://cdn.tailwindcss.com' in tmpl, f"{name} Tailwind CDN must use defer to avoid offline LAN hangs"
+        assert "classList.remove('arbor-offline-css')" in tmpl, f"{name} must remove arbor-offline-css once Tailwind loads"
+        assert 'media="print" onload="this.media=\'all\'"' in tmpl, f"{name} Google Fonts link must be non-blocking"
+        assert "html.arbor-offline-css [id$=\"Modal\"]" in tmpl, f"{name} missing scoped offline modal styling"
+        assert "barcode" not in tmpl.lower(), f"{name} violates Zero-Barcodes rule"
+
+    # V2-specific offline surface rules
+    for selector in (
+        "html.arbor-offline-css #specimenListContainer > *",
+        "html.arbor-offline-css #armedShelfBanner",
+        "html.arbor-offline-css #btnDetailMarkReviewed",
+        "html.arbor-offline-css #offlineBanner",
+        "html.arbor-offline-css #toast",
+    ):
+        assert selector in INDEX_TEMPLATE_V2, f"Missing V2 offline fallback rule: {selector}"
+
+
+def test_mobile_v2_batch_location_hallway_ergonomics():
+    """Verify Batch Location Registrator has numeric keypad default, toggle, and 1-tap Armed Shelf copy."""
+    from backend.mobile_server import INDEX_TEMPLATE_V2
+
+    assert 'id="batchIdInput"' in INDEX_TEMPLATE_V2
+    assert 'inputmode="numeric"' in INDEX_TEMPLATE_V2
+    assert 'id="btnBatchKeyboardMode"' in INDEX_TEMPLATE_V2
+    assert "function toggleBatchInputMode()" in INDEX_TEMPLATE_V2
+    assert 'id="btnBatchCopyArmed"' in INDEX_TEMPLATE_V2
+    assert "function copyArmedShelfToBatch()" in INDEX_TEMPLATE_V2
+    assert "function updateBatchArmedButton()" in INDEX_TEMPLATE_V2
+
+
+def test_mobile_templates_modular_reexport_contract():
+    """Verify INDEX_TEMPLATE and INDEX_TEMPLATE_V2 live in dedicated modules and are re-exported identically."""
+    import backend.mobile_server as ms
+    import backend.mobile_template_v1 as v1
+    import backend.mobile_template_v2 as v2
+
+    assert ms.INDEX_TEMPLATE is v1.INDEX_TEMPLATE
+    assert ms.INDEX_TEMPLATE_V2 is v2.INDEX_TEMPLATE_V2
+
+
+

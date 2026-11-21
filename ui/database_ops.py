@@ -405,36 +405,207 @@ class DatabaseOpsMixin:
             if hasattr(self, "load_books_file_from_path"):
                 self.load_books_file_from_path(path)
 
-        # Gentle first-run Quick Tour prompt (respects disable_tutorials & quick_tour_seen)
+        # Prominent centered Welcome & Quick Tour prompt (never auto-vanishes;
+        # shown on Demo Project or genuine first run unless dismissed/disabled)
         try:
             import config
             prefs = config.load_prefs() or {}
-            if (
+            excel_path = getattr(self.app, "excel_path", "") or ""
+            is_demo = os.path.basename(excel_path).lower() == "demo_collection.xlsx"
+            should_offer = (
                 not prefs.get("disable_tutorials", False)
-                and not prefs.get("quick_tour_seen", False)
                 and not self._is_tutorial_sandbox_active()
                 and not getattr(self, "_first_run_tour_offered", False)
-            ):
+                and (
+                    (is_demo and not prefs.get("demo_welcome_dismissed", False))
+                    or (not is_demo and not prefs.get("quick_tour_seen", False))
+                )
+            )
+            if should_offer:
                 self._first_run_tour_offered = True
 
                 def _offer_quick_tour():
                     if self._is_tutorial_sandbox_active():
                         return
-                    prefs["quick_tour_seen"] = True
-                    config.save_prefs(prefs)
-                    if hasattr(self, "show_banner"):
-                        def _launch_tour():
-                            from ui.tutorials import start_review_tutorial
-                            start_review_tutorial(self)
-                        self.show_banner(
-                            "🎓 New to Arbor? Click here for the 3-Minute Quick Tour (Zero Risk — Practice Sandbox)",
-                            banner_type="info",
-                            duration_ms=15000,
-                            action_callback=_launch_tour,
-                        )
+                    self._show_welcome_tour_prompt(is_demo=is_demo)
 
                 if hasattr(self, "root") and self.root:
-                    self.root.after(1500, _offer_quick_tour)
+                    self.root.after(450, _offer_quick_tour)
+        except Exception:
+            pass
+
+    def _show_welcome_tour_prompt(self, is_demo: bool = False):
+        """Show a prominent, centered, persistent Welcome & Quick Tour modal card.
+
+        Does NOT auto-vanish — stays open until the user starts the tour or
+        explicitly dismisses it. Positioned on the same monitor as self.root.
+        """
+        import config
+        import utils
+        from config import sc
+
+        if not hasattr(self, "root") or not self.root or not self.root.winfo_exists():
+            return
+
+        win = tk.Toplevel(self.root)
+        win.title("Welcome to Arbor")
+        win.transient(self.root)
+        win.resizable(False, False)
+        self._welcome_tour_win = win
+
+        dark = getattr(self, "dark_mode", False)
+        bg = "#1e211f" if dark else "#f7f5f0"
+        card_bg = "#252926" if dark else "#ffffff"
+        fg = "#eef1ef" if dark else "#2c302e"
+        muted = "#a2aba5" if dark else "#5e6560"
+        border = "#3a403c" if dark else "#d8ddd6"
+        accent = "#3a7d44"
+
+        win.configure(bg=bg)
+
+        outer = tk.Frame(win, bg=bg, padx=sc(28), pady=sc(24))
+        outer.pack(fill="both", expand=True)
+
+        # Badge
+        badge_txt = "🌿 DEMO PROJECT LOADED" if is_demo else "🌿 WELCOME TO ARBOR"
+        tk.Label(
+            outer,
+            text=badge_txt,
+            font=("JetBrains Mono", sc(9), "bold"),
+            bg="#1e3a24" if dark else "#eaf5ec",
+            fg="#85e89d" if dark else "#1b5e20",
+            padx=sc(10),
+            pady=sc(4),
+        ).pack(anchor="w", pady=(0, sc(12)))
+
+        tk.Label(
+            outer,
+            text="New to Arbor? Take the 3-Minute Quick Tour",
+            font=("Lora", sc(16), "bold"),
+            bg=bg,
+            fg=fg,
+            anchor="w",
+            justify="left",
+            wraplength=sc(460),
+        ).pack(fill="x", pady=(0, sc(8)))
+
+        desc = (
+            "Practice inspecting a specimen, fixing a date, flagging a label issue, "
+            "and marking it Reviewed inside a safe Practice Sandbox.\n\n"
+            "Nothing you do in Practice Mode can ever overwrite your real museum Excel files."
+        )
+        tk.Label(
+            outer,
+            text=desc,
+            font=("Inter", sc(10)),
+            bg=bg,
+            fg=muted,
+            anchor="w",
+            justify="left",
+            wraplength=sc(460),
+        ).pack(fill="x", pady=(0, sc(16)))
+
+        # Quick highlights card
+        info_card = tk.Frame(
+            outer,
+            bg=card_bg,
+            highlightbackground=border,
+            highlightthickness=1,
+            padx=sc(14),
+            pady=sc(10),
+        )
+        info_card.pack(fill="x", pady=(0, sc(16)))
+        for line in (
+            "•  Zero Risk — Practice Mode blocks all disk saves automatically",
+            "•  Hands-On — Visual keycaps guide every step in ~3 minutes",
+            "•  Always Available — Replay anytime from ❓ HELP ▾ or F1",
+        ):
+            tk.Label(
+                info_card,
+                text=line,
+                font=("Inter", sc(9.5)),
+                bg=card_bg,
+                fg=fg,
+                anchor="w",
+                justify="left",
+            ).pack(fill="x", pady=sc(2))
+
+        dont_show_var = tk.BooleanVar(value=False)
+
+        def _persist_dismiss():
+            try:
+                p = config.load_prefs() or {}
+                p["quick_tour_seen"] = True
+                if dont_show_var.get():
+                    p["demo_welcome_dismissed"] = True
+                config.save_prefs(p)
+            except Exception:
+                pass
+
+        def _dismiss():
+            _persist_dismiss()
+            if win.winfo_exists():
+                win.destroy()
+
+        def _start_tour():
+            _persist_dismiss()
+            if win.winfo_exists():
+                win.destroy()
+            from ui.tutorials import start_review_tutorial
+            start_review_tutorial(self)
+
+        tk.Checkbutton(
+            outer,
+            text="Don't show this welcome screen again when opening the Demo Project",
+            variable=dont_show_var,
+            font=("Inter", sc(9)),
+            bg=bg,
+            fg=muted,
+            activebackground=bg,
+            activeforeground=fg,
+            selectcolor=card_bg,
+            cursor="hand2",
+        ).pack(anchor="w", pady=(0, sc(16)))
+
+        btn_row = tk.Frame(outer, bg=bg)
+        btn_row.pack(fill="x")
+
+        tk.Button(
+            btn_row,
+            text="🎓 Start 3-Minute Quick Tour",
+            font=("Inter", sc(10.5), "bold"),
+            bg=accent,
+            fg="#ffffff",
+            activebackground="#2f6638",
+            activeforeground="#ffffff",
+            relief="flat",
+            padx=sc(18),
+            pady=sc(9),
+            cursor="hand2",
+            command=_start_tour,
+        ).pack(side="left")
+
+        tk.Button(
+            btn_row,
+            text="Explore on My Own",
+            font=("Inter", sc(10)),
+            bg=card_bg,
+            fg=fg,
+            relief="flat",
+            highlightbackground=border,
+            highlightthickness=1,
+            padx=sc(14),
+            pady=sc(9),
+            cursor="hand2",
+            command=_dismiss,
+        ).pack(side="right")
+
+        win.protocol("WM_DELETE_WINDOW", _dismiss)
+        win.bind("<Escape>", lambda e: _dismiss())
+        utils.center_and_fit_toplevel(win, sc(540), sc(410))
+        try:
+            win.lift()
+            win.focus_force()
         except Exception:
             pass
 

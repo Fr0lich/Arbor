@@ -553,6 +553,13 @@ class CommandPalette(tk.Toplevel):
                 "icon": "🖼️",
                 "action": lambda: __import__("ui.tutorials", fromlist=["start_image_controls_guide"]).start_image_controls_guide(ui),
             },
+            {
+                "label": "Practice Tour: Office Triage (REV+ERR)",
+                "category": "Quick Guides",
+                "shortcut": "",
+                "icon": "🛡️",
+                "action": lambda: __import__("ui.tutorials", fromlist=["start_triage_tutorial"]).start_triage_tutorial(ui),
+            },
         ]
         return cmds
 

@@ -28,11 +28,13 @@ When modifying or adding tutorials in Arbor, you **MUST** follow these mandatory
 ```
 ui/tutorials/
 ├── __init__.py               # Package exports
-├── sandbox_manager.py        # Snapshot, mock dataset factory, and state restore
-├── tutorial_runner.py        # Floating HUD card, event gating, and target highlighting
-├── review_tutorial.py        # Interactive flow: Reviewing & verifying objects
-├── discrepancy_tutorial.py   # Interactive flow: Historical & GBIF conflict resolution
-└── database_tutorial.py      # Interactive flow: Creating databases & new objects
+├── sandbox_manager.py        # Snapshot, mock dataset factory ("review", "discrepancy", "triage"), and state restore
+├── tutorial_runner.py        # Floating HUD card, auto-dodge positioning, collapsible details, single-runner guard
+├── review_tutorial.py        # Interactive flow: 3-Minute Quick Tour (Reviewing & REV+ERR badges)
+├── triage_tutorial.py        # Interactive flow: Office Triage (REV+ERR queue & clear/defer workflow)
+├── discrepancy_tutorial.py   # Interactive flow: Historical Ledger Comparison
+├── database_tutorial.py      # Interactive flow: Creating collections & new specimens
+└── micro_guides.py           # In-place 20–45s contextual Quick Guides (use_sandbox=False)
 ```
 
 ---

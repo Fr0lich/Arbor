@@ -408,10 +408,29 @@ def center_and_fit_toplevel(win, base_w=None, base_h=None):
     w = min(req_w, max_w)
     h = min(req_h, max_h)
 
-    x = max(0, (screen_w // 2) - (w // 2))
-    y = max(0, (screen_h // 2) - (h // 2))
+    # Prefer centering over the parent/master window so multi-monitor setups keep
+    # dialogs on the same monitor as the main Arbor window (including negative X/Y).
+    master = getattr(win, "master", None)
+    centered_on_master = False
+    if master is not None:
+        try:
+            if master.winfo_exists() and master.winfo_viewable():
+                mw = master.winfo_width()
+                mh = master.winfo_height()
+                if mw > 100 and mh > 100:
+                    mx = master.winfo_rootx()
+                    my = master.winfo_rooty()
+                    x = mx + (mw - w) // 2
+                    y = my + (mh - h) // 2
+                    centered_on_master = True
+        except Exception:
+            pass
 
-    win.geometry(f"{w}x{h}+{x}+{y}")
+    if not centered_on_master:
+        x = max(0, (screen_w // 2) - (w // 2))
+        y = max(0, (screen_h // 2) - (h // 2))
+
+    win.geometry(f"{w}x{h}{x:+d}{y:+d}")
     fade_in_toplevel(win)
 
 

@@ -286,4 +286,76 @@ def test_mobile_guide_zero_barcodes_and_bundled_in_spec():
     assert "USER_GUIDE.md" in spec_text
 
 
+def test_startup_setup_help_dialog_opens_cleanly(tk_root):
+    """Regression: StartupDialog._show_setup_help_msg must open without AttributeError (C_MUTED)."""
+    from ui.dialogs import StartupDialog
+
+    dlg = StartupDialog.__new__(StartupDialog)
+    dlg.win = tk_root
+    dlg.load_demo_project = lambda: None
+    dlg._show_setup_help_msg()
+    tk_root.update_idletasks()
+    children = [w for w in tk_root.winfo_children() if isinstance(w, tk.Toplevel)]
+    assert any("Setup Guide" in w.title() for w in children)
+    for w in children:
+        w.destroy()
+
+
+def test_guide_reader_chapter_click_scrolls_to_top(tk_root):
+    """Regression: Clicking a sidebar chapter in Desktop/Mobile Guide must align it to top via yview."""
+    from ui.help_dialogs import show_main_help
+
+    for tab in ("desktop", "mobile"):
+        show_main_help(tk_root, initial_tab=tab)
+        tk_root.update_idletasks()
+        tops = [w for w in tk_root.winfo_children() if isinstance(w, tk.Toplevel)]
+        reader = tops[-1]
+
+        # Find the Text widget and sidebar buttons
+        txt_widgets = []
+        buttons = []
+
+        def _walk(widget):
+            for child in widget.winfo_children():
+                if isinstance(child, tk.Text):
+                    txt_widgets.append(child)
+                elif isinstance(child, tk.Button):
+                    buttons.append(child)
+                _walk(child)
+
+        _walk(reader)
+        assert txt_widgets, "Guide reader Text widget not found"
+        txt = txt_widgets[0]
+        # Pick a chapter button from the middle of the sidebar (skip header/tab/action buttons)
+        chapter_btns = [b for b in buttons if b.cget("anchor") == "w"]
+        assert len(chapter_btns) >= 3, f"Expected >= 3 chapter buttons in {tab} guide"
+        chapter_btns[2].invoke()
+        tk_root.update_idletasks()
+        # yview()[0] should have scrolled past the very top of the document
+        assert txt.yview()[0] > 0.0, f"Clicking sidebar chapter in {tab} guide did not scroll pane"
+        reader.destroy()
+
+
+def test_mobile_dialog_scrollable_and_dpi_safe(tk_root, monkeypatch):
+    """Verify MobileDialog wraps MobilePanel in a scrollable canvas with compact DPI-safe minsize."""
+    from ui.mobile_dialog import MobileDialog
+    from models import AppState
+
+    class _DummyParentUI:
+        dark_mode_active = True
+        simultaneous_edit_var = tk.BooleanVar(value=True)
+        root = tk_root
+
+    monkeypatch.setattr("ui.mobile_dialog.MobilePanel", lambda **kw: type("P", (), {"server": None, "stop": lambda s: None})())
+    dlg = MobileDialog(_DummyParentUI(), tk_root, AppState())
+    tk_root.update_idletasks()
+    assert hasattr(dlg, "_scroll_canvas")
+    assert dlg.win.cget("bg") == "#1e211f"
+    min_w, min_h = dlg.win.minsize()
+    assert min_h <= 550, f"Expected compact laptop-safe minsize height, got {min_h}"
+    dlg.win.destroy()
+
+
+
+
 

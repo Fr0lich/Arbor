@@ -94,7 +94,7 @@ class GBIFReviewDialog(tk.Toplevel):
             "error_text": "#e06c75" if is_dark else "#c93a40",
         }
 
-        self.title("GBIF Taxonomic Review & Reconciliation")
+        self.title("GBIF Name Check & Update Review")
         self.configure(bg=self.colors["bg"])
         self.minsize(sc(920), sc(600))
 

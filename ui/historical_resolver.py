@@ -27,7 +27,7 @@ def init_fonts():
     FONT_MONO_SM = (mono_family, sc(8))
     _fonts_initialized = True
 
-COLORS = {
+_LIGHT_COLORS = {
     "bg": "#fbfaf8",
     "surface": "#ffffff",
     "surface_dim": "#e9ece5",
@@ -46,15 +46,38 @@ COLORS = {
     "on_success": "#ffffff",
 }
 
+_DARK_COLORS = {
+    "bg": "#1a1e1b",
+    "surface": "#232824",
+    "surface_dim": "#2c322e",
+    "border": "#3d4540",
+    "text": "#eef1ef",
+    "text_muted": "#a2aba5",
+    "primary": "#3a7d44",
+    "on_primary": "#ffffff",
+    "error": "#ef5350",
+    "on_error": "#ffffff",
+    "warning": "#f59e0b",
+    "on_warning": "#1a1e1b",
+    "conflict": "#60a5fa",
+    "on_conflict": "#0f172a",
+    "success": "#52b765",
+    "on_success": "#ffffff",
+}
+
+COLORS = dict(_LIGHT_COLORS)
+
 class HistoricalConflictResolverWindow:
     def __init__(self, main_app, oid, suggestions):
         init_fonts()
+        is_dark = getattr(main_app, "dark_mode_active", getattr(main_app, "dark_mode", False))
+        COLORS.update(_DARK_COLORS if is_dark else _LIGHT_COLORS)
         self.main_app = main_app
         self.oid = oid
         self.suggestions = suggestions
         
         self.win = tk.Toplevel(main_app.root)
-        self.win.title("Historical Database Conflict Resolver")
+        self.win.title("Historical Ledger Comparison")
         self.win.configure(bg=COLORS["bg"])
         
         import utils
@@ -78,7 +101,7 @@ class HistoricalConflictResolverWindow:
         header.pack(fill="x", side="top")
         tk.Frame(header, bg=COLORS["border"], height=sc(1)).pack(fill="x", side="bottom")
         
-        tk.Label(header, text="Historical Database Conflict Resolver", font=FONT_UI_LG, fg=COLORS["primary"], bg=COLORS["surface"]).pack(side="left", padx=sc(16), pady=sc(12))
+        tk.Label(header, text="Historical Ledger Comparison", font=FONT_UI_LG, fg=COLORS["primary"], bg=COLORS["surface"]).pack(side="left", padx=sc(16), pady=sc(12))
         
         # Main content area
         main_area = tk.Frame(self.win, bg=COLORS["bg"])
@@ -231,7 +254,7 @@ class HistoricalConflictResolverWindow:
             self.suggestions = new_suggestions
         self.fields = self._get_sorted_fields(self.suggestions.keys())
         self.populate_fields()
-        self.issue_count_label.config(text=f"RECORD REVIEW: {len(self.fields)} ISSUES")
+        self.issue_count_label.config(text=f"SPECIMEN REVIEW: {len(self.fields)} ITEMS TO CHECK")
         self.update_stats()
 
     def populate_fields(self):

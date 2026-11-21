@@ -28,7 +28,7 @@ def init_fonts():
     FONT_MONO_SM = (mono_family, sc(8))
     _fonts_initialized = True
 
-COLORS = {
+_LIGHT_COLORS = {
     "bg": "#fbfaf8",
     "surface": "#ffffff",
     "surface_dim": "#e9ece5",
@@ -50,9 +50,35 @@ COLORS = {
     "gbif_text": "#2b8a3e",
 }
 
+_DARK_COLORS = {
+    "bg": "#1a1e1b",
+    "surface": "#232824",
+    "surface_dim": "#2c322e",
+    "border": "#3d4540",
+    "text": "#eef1ef",
+    "text_muted": "#a2aba5",
+    "primary": "#3a7d44",
+    "on_primary": "#ffffff",
+    "error": "#ef5350",
+    "on_error": "#ffffff",
+    "warning": "#f59e0b",
+    "on_warning": "#1a1e1b",
+    "conflict": "#38bdf8",
+    "on_conflict": "#0f172a",
+    "success": "#52b765",
+    "on_success": "#ffffff",
+    "gbif_bg": "#1c2d21",
+    "gbif_border": "#52b765",
+    "gbif_text": "#85e89d",
+}
+
+COLORS = dict(_LIGHT_COLORS)
+
 class ObjectProblemResolver:
     def __init__(self, main_app, oid_or_list, suggestions=None):
         init_fonts()
+        is_dark = getattr(main_app, "dark_mode_active", getattr(main_app, "dark_mode", False))
+        COLORS.update(_DARK_COLORS if is_dark else _LIGHT_COLORS)
         self.main_app = main_app
         
         if isinstance(oid_or_list, (list, tuple)):
@@ -66,9 +92,11 @@ class ObjectProblemResolver:
         
         parent_root = getattr(main_app, "root", main_app)
         self.win = tk.Toplevel(parent_root)
-        self.win.title("Problem Resolution" if not self._is_queue_mode else f"Problem Resolution (Queue: {len(self._oid_queue)} Objects)")
+        self.win.title("Problem Resolution" if not self._is_queue_mode else f"Problem Resolution (Queue: {len(self._oid_queue)} Specimens)")
         self.win.configure(bg=COLORS["bg"])
         self.win.bind("<Escape>", lambda e: self.win.destroy())
+        self.win.bind("<Alt-Left>", lambda e: (self._queue_navigate(-1), "break")[1] if self._is_queue_mode else None)
+        self.win.bind("<Alt-Right>", lambda e: (self._queue_navigate(1), "break")[1] if self._is_queue_mode else None)
         if isinstance(parent_root, (tk.Tk, tk.Toplevel)):
             try:
                 self.win.transient(parent_root)
@@ -439,7 +467,7 @@ class ObjectProblemResolver:
         tk.Frame(nav_bar, bg=COLORS["border"], height=sc(1)).pack(fill="x", side="bottom")
 
         self._prev_btn = tk.Button(
-            nav_bar, text="← Prev", font=FONT_UI_BOLD,
+            nav_bar, text="← Prev (Alt+←)", font=FONT_UI_BOLD,
             bg=COLORS["surface"], fg=COLORS["text"], relief="solid", bd=1,
             padx=sc(10), pady=sc(2), cursor="hand2",
             command=lambda: self._queue_navigate(-1),
@@ -449,7 +477,7 @@ class ObjectProblemResolver:
 
         self._queue_label = tk.Label(
             nav_bar,
-            text=f"Object {self._queue_idx + 1} of {len(self._oid_queue)} with active problems (OID: {self.oid})",
+            text=f"Specimen {self._queue_idx + 1} of {len(self._oid_queue)} with active issues (#{self.oid})",
             font=FONT_MONO,
             fg=COLORS["text"],
             bg=COLORS["surface_dim"]
@@ -458,7 +486,7 @@ class ObjectProblemResolver:
 
         self._next_btn = tk.Button(
             nav_bar,
-            text="Next →" if self._queue_idx < len(self._oid_queue) - 1 else "Done — Close",
+            text="Next (Alt+→) →" if self._queue_idx < len(self._oid_queue) - 1 else "Done — Close",
             font=FONT_UI_BOLD,
             bg=COLORS["surface"], fg=COLORS["text"], relief="solid", bd=1,
             padx=sc(10), pady=sc(2), cursor="hand2",
@@ -507,11 +535,11 @@ class ObjectProblemResolver:
         self.update_stats()
 
         if hasattr(self, "_queue_label") and self._queue_label.winfo_exists():
-            self._queue_label.config(text=f"Object {self._queue_idx + 1} of {len(self._oid_queue)} with active problems (OID: {self.oid})")
+            self._queue_label.config(text=f"Specimen {self._queue_idx + 1} of {len(self._oid_queue)} with active issues (#{self.oid})")
         if hasattr(self, "_prev_btn") and self._prev_btn.winfo_exists():
             self._prev_btn.config(state="normal" if self._queue_idx > 0 else "disabled")
         if hasattr(self, "_next_btn") and self._next_btn.winfo_exists():
-            self._next_btn.config(text="Next →" if self._queue_idx < len(self._oid_queue) - 1 else "Done — Close")
+            self._next_btn.config(text="Next (Alt+→) →" if self._queue_idx < len(self._oid_queue) - 1 else "Done — Close")
 
         try:
             if self.win.winfo_exists():
@@ -829,6 +857,97 @@ class ObjectProblemResolver:
         btn_apply = tk.Button(entry_frame, text="APPLY", font=FONT_UI_BOLD, fg=COLORS["on_primary"], bg=COLORS["primary"], relief="flat", bd=0, padx=sc(12), command=_apply, cursor="hand2")
         btn_apply.pack(side="right", padx=(sc(6), 0))
 
+        # Check if this field currently has an active problem flag (e.g. flagged during hallway audit)
+        _field_has_active_flag = False
+        _p2f = getattr(self.main_app, "problem_to_field", {})
+        _app_chk = getattr(self.main_app, "app", None)
+        if _app_chk and getattr(_app_chk, "df_obs", None) is not None:
+            _obs_i = self.oid if self.oid in _app_chk.df_obs.index else (int(self.oid) if str(self.oid).isdigit() and int(self.oid) in _app_chk.df_obs.index else None)
+            if _obs_i is not None:
+                for _pc, _mf in _p2f.items():
+                    if _mf == field and _pc in _app_chk.df_obs.columns and bool(_app_chk.df_obs.loc[_obs_i, _pc]):
+                        _field_has_active_flag = True
+                        break
+
+        if _field_has_active_flag:
+            btn_clear_ref = [None]
+
+            def _clear_flag_keep_value(f=field, c=card, h=header):
+                if hasattr(self.main_app, "push_undo_state"):
+                    try:
+                        self.main_app.push_undo_state(self.oid)
+                        if hasattr(self.main_app, "app") and hasattr(self.main_app.app, "redo_stacks") and isinstance(self.main_app.app.redo_stacks, dict):
+                            self.main_app.app.redo_stacks.setdefault(self.oid, []).clear()
+                    except Exception:
+                        pass
+
+                prob_changed_fields = []
+                prob_changed_values = []
+                app_obj = getattr(self.main_app, "app", None)
+                prob_to_field = getattr(self.main_app, "problem_to_field", {})
+                for pc, mf in prob_to_field.items():
+                    if mf == f:
+                        old_prob = False
+                        if app_obj and getattr(app_obj, "df_obs", None) is not None:
+                            if self.oid in app_obj.df_obs.index and pc in app_obj.df_obs.columns:
+                                old_prob = bool(app_obj.df_obs.loc[self.oid, pc])
+                                app_obj.df_obs.loc[self.oid, pc] = False
+                            elif str(self.oid).isdigit() and int(self.oid) in app_obj.df_obs.index and pc in app_obj.df_obs.columns:
+                                old_prob = bool(app_obj.df_obs.loc[int(self.oid), pc])
+                                app_obj.df_obs.loc[int(self.oid), pc] = False
+                        if old_prob:
+                            prob_changed_fields.append(pc)
+                            prob_changed_values.append(f'{pc}: "True" -> "False"')
+                        if hasattr(self.main_app, "problem_vars") and pc in self.main_app.problem_vars:
+                            self.main_app.problem_vars[pc].set(False)
+                        if getattr(self.main_app, "_cached_obs_dict", None) is not None and self.oid in self.main_app._cached_obs_dict:
+                            self.main_app._cached_obs_dict[self.oid][pc] = False
+                        if hasattr(self.main_app, "loaded_problem_states"):
+                            self.main_app.loaded_problem_states[pc] = False
+
+                if not prob_changed_fields:
+                    return
+
+                self.main_app._row_cache_dirty = True
+                if hasattr(self.main_app, "commit_current_object"):
+                    self.main_app.commit_current_object(skip_logging=True)
+                if hasattr(self.main_app, "log_action"):
+                    self.main_app.log_action(
+                        "PROBLEM_CLEARED",
+                        changed_fields=[],
+                        changed_values=[],
+                        prob_fields=prob_changed_fields,
+                        prob_values=prob_changed_values,
+                    )
+                if hasattr(self.main_app, "object_list") and hasattr(self.main_app.object_list, "refresh_object_card"):
+                    self.main_app.object_list.refresh_object_card(self.oid)
+                self.win.after(0, lambda: app_bus.publish(DATABASE_UPDATED))
+                self.update_stats()
+
+                c.configure(highlightbackground=COLORS["success"])
+                for w in h.winfo_children():
+                    w.configure(bg=COLORS["success"])
+                h.configure(bg=COLORS["success"])
+                if btn_clear_ref[0] and btn_clear_ref[0].winfo_exists():
+                    btn_clear_ref[0].configure(text="✓ Flag Cleared", state="disabled")
+
+            btn_clear = tk.Button(
+                entry_frame,
+                text="✓ Value is Correct (Clear Flag)",
+                font=FONT_MONO_SM,
+                fg="#1b5e20",
+                bg="#eaf5ec",
+                activebackground="#d4ecd9",
+                relief="solid",
+                bd=1,
+                highlightthickness=0,
+                padx=sc(8),
+                command=_clear_flag_keep_value,
+                cursor="hand2",
+            )
+            btn_clear_ref[0] = btn_clear
+            btn_clear.pack(side="right", padx=(sc(4), 0))
+
         btn_illegible = tk.Button(entry_frame, text="🔍 Illegible", font=FONT_MONO_SM, fg=COLORS["text"], bg=COLORS["surface_dim"], relief="solid", bd=1, highlightthickness=0, padx=sc(8), command=lambda: _apply("unknown:indecipherable"), cursor="hand2")
         btn_illegible.pack(side="right", padx=(sc(4), 0))
 
@@ -1000,7 +1119,8 @@ class ProblemQueueDialog(tk.Toplevel):
         self.main_app = main_app
         self.title("Process Objects with Problems")
         self.configure(bg=COLORS["bg"])
-        self.resizable(False, False)
+        self.resizable(True, True)
+        self.minsize(sc(440), sc(400))
         self.transient(parent)
         self.grab_set()
 

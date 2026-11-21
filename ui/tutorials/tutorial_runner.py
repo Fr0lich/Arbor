@@ -14,7 +14,7 @@ from .sandbox_manager import SandboxManager
 
 class ActionStep:
     def __init__(self, step_id, title, instruction, target_id=None,
-                 action_hint=None, on_enter=None, validator=None, keycaps=None):
+                 action_hint=None, on_enter=None, validator=None, keycaps=None, details=None):
         self.step_id = step_id
         self.title = title
         self.instruction = instruction
@@ -23,6 +23,7 @@ class ActionStep:
         self.on_enter = on_enter
         self.validator = validator
         self.keycaps = list(keycaps) if keycaps else []
+        self.details = details
 
 
 class TutorialHighlight:
@@ -75,7 +76,7 @@ class TutorialHighlight:
             pad = 4
             if self.win.winfo_exists():
                 self.win.deiconify()
-                self.win.geometry(f"{w + pad*2}x{h + pad*2}+{x - pad}+{y - pad}")
+                self.win.geometry(f"{w + pad*2}x{h + pad*2}{x - pad:+d}{y - pad:+d}")
                 self.canvas.coords(self.rect, pad, pad, w + pad, h + pad)
         except Exception:
             try:
@@ -109,20 +110,35 @@ class TutorialHighlight:
 
 class TutorialRunner:
     """Drives step progression and UI synchronization for an action-driven tutorial."""
+    _active_instance = None
+
     def __init__(self, ui, steps, tutorial_name="Interactive Tutorial", on_complete=None,
                  use_sandbox=True, badge_text=None):
+        # Single-runner guard: close any previous active tutorial HUD so two never overlap
+        prev = TutorialRunner._active_instance
+        if prev is not None and prev is not self:
+            try:
+                prev._cleanup()
+            except Exception:
+                pass
+
         self.ui = ui
         self.steps = steps
         self.tutorial_name = tutorial_name
         self.on_complete = on_complete
         self.use_sandbox = use_sandbox
-        self.badge_text = badge_text or ("TUTORIAL SANDBOX" if use_sandbox else "30-SEC QUICK GUIDE")
+        self.badge_text = badge_text or ("🛡️ PRACTICE SANDBOX" if use_sandbox else "⚡ QUICK GUIDE")
         self.current_idx = 0
 
         self.hud_win = None
         self.highlight = None
         self._poll_job = None
+        self._details_expanded = False
         self.root = ui.root if hasattr(ui, "root") else ui
+
+        TutorialRunner._active_instance = self
+        if self.use_sandbox:
+            SandboxManager()._active_runner = self
 
         self._build_hud()
         self.show_step()
@@ -194,7 +210,42 @@ class TutorialRunner:
             justify="left",
             wraplength=sc(380)
         )
-        self.instruction_lbl.pack(fill="x", pady=(0, sc(12)))
+        self.instruction_lbl.pack(fill="x", pady=(0, sc(8)))
+
+        # Collapsible "💡 More Details & Excel Impact" Drawer (keeps default step crisp)
+        self.details_toggle_btn = tk.Button(
+            frame,
+            text="▸ 💡 More Details & Excel Impact",
+            font=("Inter", sc(8.5), "bold"),
+            bg="#181c19",
+            fg="#85e89d",
+            activebackground="#212622",
+            activeforeground="#b0f3a9",
+            relief="flat",
+            bd=0,
+            anchor="w",
+            cursor="hand2",
+            command=self._toggle_details,
+        )
+        self.details_frame = tk.Frame(
+            frame,
+            bg="#1f2521",
+            highlightbackground="#3a7d44",
+            highlightthickness=1,
+            padx=sc(10),
+            pady=sc(8),
+        )
+        self.details_lbl = tk.Label(
+            self.details_frame,
+            text="",
+            font=("Inter", sc(9)),
+            bg="#1f2521",
+            fg="#d4dcd6",
+            anchor="w",
+            justify="left",
+            wraplength=sc(360),
+        )
+        self.details_lbl.pack(fill="x")
 
         # Floating visual keycaps row (shown on steps with keyboard shortcuts)
         self.keycaps_frame = tk.Frame(frame, bg="#181c19")
@@ -264,26 +315,52 @@ class TutorialRunner:
         # Position HUD in top-right corner of parent or screen
         self._position_hud()
 
-    def _position_hud(self):
+    def _toggle_details(self):
+        self._details_expanded = not self._details_expanded
+        if self._details_expanded:
+            self.details_toggle_btn.config(text="▾ 💡 Hide Details")
+            self.details_frame.pack(fill="x", pady=(sc(2), sc(10)), after=self.details_toggle_btn)
+        else:
+            self.details_toggle_btn.config(text="▸ 💡 More Details & Excel Impact")
+            self.details_frame.pack_forget()
+
+    def _position_hud(self, target_widget=None):
+        """Position HUD on the same monitor as self.root, auto-dodging target_widget."""
         try:
             self.hud_win.update_idletasks()
             w = self.hud_win.winfo_reqwidth()
             h = self.hud_win.winfo_reqheight()
-            
-            if hasattr(self.ui, "root") and self.ui.root.winfo_exists():
-                rx = self.ui.root.winfo_rootx()
-                ry = self.ui.root.winfo_rooty()
-                rw = self.ui.root.winfo_width()
-                x = rx + rw - w - sc(24)
-                y = ry + sc(50)
-            else:
-                sw = self.hud_win.winfo_screenwidth()
-                x = sw - w - sc(24)
-                y = sc(50)
 
-            x = max(10, x)
-            y = max(10, y)
-            self.hud_win.geometry(f"+{x}+{y}")
+            parent_root = self.ui.root if hasattr(self.ui, "root") else self.root
+            if parent_root and parent_root.winfo_exists():
+                parent_root.update_idletasks()
+                rx = parent_root.winfo_rootx()
+                ry = parent_root.winfo_rooty()
+                rw = parent_root.winfo_width()
+                rh = parent_root.winfo_height()
+                if rw > 100 and rh > 100:
+                    dock_left = False
+                    if target_widget is not None:
+                        try:
+                            if target_widget.winfo_exists() and target_widget.winfo_viewable():
+                                tx_center = target_widget.winfo_rootx() + (target_widget.winfo_width() // 2)
+                                if tx_center > (rx + rw // 2):
+                                    dock_left = True
+                        except Exception:
+                            pass
+
+                    if dock_left:
+                        x = rx + sc(24)
+                    else:
+                        x = max(rx + sc(12), rx + rw - w - sc(24))
+                    y = max(ry + sc(40), ry + sc(56))
+                    self.hud_win.geometry(f"{x:+d}{y:+d}")
+                    return
+
+            sw = self.hud_win.winfo_screenwidth()
+            x = max(10, sw - w - sc(24))
+            y = sc(56)
+            self.hud_win.geometry(f"{x:+d}{y:+d}")
         except Exception:
             pass
 
@@ -304,6 +381,16 @@ class TutorialRunner:
         self.step_counter_lbl.config(text=f"STEP {self.current_idx + 1} OF {len(self.steps)}")
         self.title_lbl.config(text=step.title)
         self.instruction_lbl.config(text=step.instruction)
+
+        # Collapsible details drawer (reset to collapsed on step change for calm scanning)
+        self._details_expanded = False
+        self.details_frame.pack_forget()
+        if getattr(step, "details", None):
+            self.details_lbl.config(text=step.details)
+            self.details_toggle_btn.config(text="▸ 💡 More Details & Excel Impact")
+            self.details_toggle_btn.pack(fill="x", pady=(0, sc(8)), after=self.instruction_lbl)
+        else:
+            self.details_toggle_btn.pack_forget()
 
         # Render visual keycaps if defined on this step
         if hasattr(self, "keycaps_frame") and self.keycaps_frame.winfo_exists():
@@ -371,8 +458,9 @@ class TutorialRunner:
             except Exception:
                 pass
 
-        # Highlight target widget
+        # Highlight target widget & auto-dodge HUD away from it
         target_widget = self._find_target(step.target_id)
+        self._position_hud(target_widget=target_widget)
         if target_widget:
             try:
                 self.highlight = TutorialHighlight(self.root, target_widget)
@@ -399,6 +487,15 @@ class TutorialRunner:
             return None
         if isinstance(target_id, tk.Widget):
             return target_id
+        # Support precise registration field targeting: "reg_field:<FieldName>"
+        if isinstance(target_id, str) and target_id.startswith("reg_field:"):
+            field_name = target_id.split(":", 1)[1]
+            reg_entries = getattr(self.ui, "reg_entries", None) or {}
+            w = reg_entries.get(field_name)
+            if isinstance(w, tk.Widget):
+                return w
+            # Fallback to the editor frame if field isn't mounted yet
+            return self._find_target("object_editor_frame")
         if hasattr(self.ui, target_id):
             attr = getattr(self.ui, target_id)
             if isinstance(attr, tk.Widget):
@@ -441,6 +538,11 @@ class TutorialRunner:
         self._cleanup()
         if self.use_sandbox:
             SandboxManager().exit_sandbox(self.ui)
+        if hasattr(self.ui, "show_toast"):
+            try:
+                self.ui.show_toast(f"✓ Completed: {self.tutorial_name}", "success")
+            except Exception:
+                pass
         if self.on_complete:
             try:
                 self.on_complete()
@@ -453,6 +555,10 @@ class TutorialRunner:
             SandboxManager().exit_sandbox(self.ui)
 
     def _cleanup(self):
+        if TutorialRunner._active_instance is self:
+            TutorialRunner._active_instance = None
+        if self.use_sandbox and SandboxManager()._active_runner is self:
+            SandboxManager()._active_runner = None
         self._cleanup_highlight()
         if self._poll_job:
             try:

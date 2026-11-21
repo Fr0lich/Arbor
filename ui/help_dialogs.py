@@ -48,6 +48,16 @@ def _render_markdown_to_text(txt_widget, md_text, is_dark=False):
         slug = re.sub(r'[^a-z0-9\s-]', '', title_str.lower()).strip()
         return re.sub(r'\s+', '-', slug)
 
+    def _scroll_to_top(mark_or_idx):
+        try:
+            txt_widget.update_idletasks()
+            txt_widget.yview(mark_or_idx)
+        except Exception:
+            try:
+                txt_widget.see(mark_or_idx)
+            except Exception:
+                pass
+
     def _jump_to_anchor(slug):
         mark = anchor_map.get(slug)
         if not mark:
@@ -56,7 +66,7 @@ def _render_markdown_to_text(txt_widget, md_text, is_dark=False):
                     mark = m
                     break
         if mark:
-            txt_widget.see(mark)
+            _scroll_to_top(mark)
 
     def insert_inline(line_text, base_tag=None):
         parts = re.split(r'(\[[^\]]+\]\(#[^)]+\)|`[^`]+`|\*\*[^*]+\*\*)', line_text)
@@ -417,6 +427,16 @@ def show_main_help(root_or_ui, initial_tab="desktop", initial_chapter=None):
     ttk.Button(find_box, text="Next", command=_find_next, width=5).pack(side="left", padx=(sc(4), 0))
     win.bind("<Control-f>", lambda e: (find_entry.focus_set(), find_entry.select_range(0, "end"), "break")[2])
 
+    def _scroll_reader_to_top(mark_or_idx):
+        try:
+            txt.update_idletasks()
+            txt.yview(mark_or_idx)
+        except Exception:
+            try:
+                txt.see(mark_or_idx)
+            except Exception:
+                pass
+
     def _select_chapter_btn(active_btn):
         for b in _chapter_buttons:
             if b is active_btn:
@@ -471,7 +491,7 @@ def show_main_help(root_or_ui, initial_tab="desktop", initial_chapter=None):
                 pady=sc(5),
                 cursor="hand2",
             )
-            btn.configure(command=lambda m=bm_mark, b=btn: (txt.see(m), _select_chapter_btn(b)))
+            btn.configure(command=lambda m=bm_mark, b=btn: (_scroll_reader_to_top(m), _select_chapter_btn(b)))
             btn.pack(fill="x", pady=sc(1))
             _chapter_buttons.append(btn)
 
@@ -482,10 +502,10 @@ def show_main_help(root_or_ui, initial_tab="desktop", initial_chapter=None):
                     target_mark = bm_mark
 
         if target_mark and target_btn:
-            txt.see(target_mark)
+            _scroll_reader_to_top(target_mark)
             _select_chapter_btn(target_btn)
         elif _chapter_buttons:
-            txt.see("1.0")
+            _scroll_reader_to_top("1.0")
             _select_chapter_btn(_chapter_buttons[0])
 
         if find_var.get().strip():
@@ -625,6 +645,7 @@ def open_help_window(ui):
     import utils
     from ui.tutorials import (
         start_review_tutorial,
+        start_triage_tutorial,
         start_discrepancy_tutorial,
         start_database_tutorial,
         start_hallway_followup_guide,
@@ -843,8 +864,9 @@ def open_help_window(ui):
     sb_row.pack(fill="x", pady=(0, sc(8)))
     for sb_lbl, sb_cmd in [
         ("1. Review & Badges", lambda: run_help_cmd(lambda: start_review_tutorial(ui))),
-        ("2. Ledger Conflicts", lambda: run_help_cmd(lambda: start_discrepancy_tutorial(ui))),
-        ("3. New Collection", lambda: run_help_cmd(lambda: start_database_tutorial(ui))),
+        ("2. Office Triage", lambda: run_help_cmd(lambda: start_triage_tutorial(ui))),
+        ("3. Ledger Conflicts", lambda: run_help_cmd(lambda: start_discrepancy_tutorial(ui))),
+        ("4. New Collection", lambda: run_help_cmd(lambda: start_database_tutorial(ui))),
     ]:
         tk.Button(
             sb_row, text=sb_lbl, font=("Inter", sc(8.5)),
