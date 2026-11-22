@@ -412,6 +412,27 @@ class TestSandboxTutorials(unittest.TestCase):
         self.assertNotIn('target_id="history_btn"', dt_src)
         self.assertIn('target_id="history_indicator_label"', dt_src)
 
+    def test_switching_between_sandbox_tutorials_reloads_mock_dataset_and_preserves_snapshot(self):
+        """Switching directly from Quick Tour (review) -> Office Triage (triage) reloads #2001 and still restores original workbook."""
+        from ui.tutorials import start_review_tutorial, start_triage_tutorial
+
+        orig_path = self.ui.app.excel_path
+        r1 = start_review_tutorial(self.ui)
+        self.assertIn("1002", self.ui.app.df_reg.index)
+
+        # Switch directly into Office Triage without exiting Practice Mode first
+        r2 = start_triage_tutorial(self.ui)
+        self.assertIsNone(r1.hud_win)
+        self.assertTrue(self.sm.is_sandboxed)
+        self.assertIn("2001", self.ui.app.df_reg.index)
+        self.assertNotIn("1002", self.ui.app.df_reg.index)
+
+        # Exiting restores the real original workbook (not the intermediate review sandbox)
+        r2.exit_tutorial()
+        self.assertFalse(self.sm.is_sandboxed)
+        self.assertEqual(self.ui.app.excel_path, orig_path)
+        self.assertIn("999", self.ui.app.df_reg.index)
+
 
 if __name__ == "__main__":
     unittest.main()

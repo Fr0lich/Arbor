@@ -453,7 +453,7 @@ class DatabaseOpsMixin:
         win.resizable(False, False)
         self._welcome_tour_win = win
 
-        dark = getattr(self, "dark_mode", False)
+        dark = getattr(self, "dark_mode_active", getattr(self, "dark_mode", False))
         bg = "#1e211f" if dark else "#f7f5f0"
         card_bg = "#252926" if dark else "#ffffff"
         fg = "#eef1ef" if dark else "#2c302e"

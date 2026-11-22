@@ -194,8 +194,9 @@ class ImagePanel(ttk.Frame):
             return
 
         reg_row = None
-        if self.main_ui and hasattr(self.main_ui, "_get_reg_dict"):
-            reg_dict = self.main_ui._get_reg_dict()
+        main_ui = getattr(self, "main_ui", None)
+        if main_ui and hasattr(main_ui, "_get_reg_dict"):
+            reg_dict = main_ui._get_reg_dict()
             reg_row = reg_dict.get(oid)
             if reg_row is None and str(oid).isdigit():
                 reg_row = reg_dict.get(int(oid))
@@ -806,8 +807,9 @@ class ImagePanel(ttk.Frame):
         urls = []
         # 1. Registered photo links from registration sheet
         reg_row = None
-        if self.main_ui and hasattr(self.main_ui, "_get_reg_dict"):
-            reg_dict = self.main_ui._get_reg_dict()
+        main_ui = getattr(self, "main_ui", None)
+        if main_ui and hasattr(main_ui, "_get_reg_dict"):
+            reg_dict = main_ui._get_reg_dict()
             reg_row = reg_dict.get(oid)
             if reg_row is None and str(oid).isdigit():
                 reg_row = reg_dict.get(int(oid))

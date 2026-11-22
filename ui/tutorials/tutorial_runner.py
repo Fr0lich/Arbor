@@ -114,11 +114,15 @@ class TutorialRunner:
 
     def __init__(self, ui, steps, tutorial_name="Interactive Tutorial", on_complete=None,
                  use_sandbox=True, badge_text=None):
-        # Single-runner guard: close any previous active tutorial HUD so two never overlap
+        # Single-runner guard: close any previous active tutorial HUD so two never overlap.
+        # If switching from a sandbox tour to a non-sandbox Quick Guide, exit sandbox cleanly.
         prev = TutorialRunner._active_instance
         if prev is not None and prev is not self:
             try:
-                prev._cleanup()
+                if prev.use_sandbox and not use_sandbox:
+                    prev.exit_tutorial()
+                else:
+                    prev._cleanup()
             except Exception:
                 pass
 

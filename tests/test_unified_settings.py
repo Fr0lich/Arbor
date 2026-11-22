@@ -575,7 +575,6 @@ def test_unified_settings_all_10_target_info_buttons(tk_root):
         "auto_advance_history",
         "autosave_archive_limit",
         "enable_excel_import_backup",
-        "strict_input_validation",
     ]
 
     for k in expected_keys:

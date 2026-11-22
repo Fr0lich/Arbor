@@ -1116,6 +1116,8 @@ class ProblemQueueDialog(tk.Toplevel):
     def __init__(self, parent, main_app):
         super().__init__(parent)
         init_fonts()
+        is_dark = getattr(main_app, "dark_mode_active", getattr(main_app, "dark_mode", False))
+        COLORS.update(_DARK_COLORS if is_dark else _LIGHT_COLORS)
         self.main_app = main_app
         self.title("Process Objects with Problems")
         self.configure(bg=COLORS["bg"])

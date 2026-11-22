@@ -24,32 +24,35 @@ class SandboxManager:
         if not hasattr(self, "initialized"):
             self.initialized = True
             self.is_sandboxed = False
+            self._current_mock_type = None
             self.snapshot = None
             self._practice_banner = None
             self._active_runner = None
 
     def enter_sandbox(self, ui, mock_type="review"):
-        """Snapshots the active state and loads isolated mock data."""
-        if self.is_sandboxed:
-            return
-
+        """Snapshots the active state (if not already sandboxed) and loads isolated mock data."""
         try:
-            # 1. Snapshot existing session state
             app = ui.app
-            self.snapshot = {
-                "config": copy.deepcopy(app.config) if app.config else None,
-                "config_name": app.config_name,
-                "excel_path": app.excel_path,
-                "output_path": app.output_path,
-                "df_reg": app.df_reg.copy() if app.df_reg is not None else None,
-                "df_obs": app.df_obs.copy() if app.df_obs is not None else None,
-                "df_photo": app.df_photo.copy() if app.df_photo is not None else None,
-                "df_log": app.df_log.copy() if app.df_log is not None else None,
-                "df_unvalidated": app.df_unvalidated.copy() if app.df_unvalidated is not None else None,
-                "historical_dbs": copy.deepcopy(app.historical_dbs),
-                "dirty": app.dirty,
-                "current_object_id": app.current_object_id,
-            }
+            if not self.is_sandboxed:
+                # 1. Snapshot existing real session state once
+                self.snapshot = {
+                    "config": copy.deepcopy(app.config) if app.config else None,
+                    "config_name": app.config_name,
+                    "excel_path": app.excel_path,
+                    "output_path": app.output_path,
+                    "df_reg": app.df_reg.copy() if app.df_reg is not None else None,
+                    "df_obs": app.df_obs.copy() if app.df_obs is not None else None,
+                    "df_photo": app.df_photo.copy() if app.df_photo is not None else None,
+                    "df_log": app.df_log.copy() if app.df_log is not None else None,
+                    "df_unvalidated": app.df_unvalidated.copy() if app.df_unvalidated is not None else None,
+                    "historical_dbs": copy.deepcopy(app.historical_dbs),
+                    "dirty": app.dirty,
+                    "current_object_id": app.current_object_id,
+                }
+            elif getattr(self, "_current_mock_type", None) == mock_type:
+                return
+
+            self._current_mock_type = mock_type
 
             # 2. Build mock DataFrames according to standard DB config
             cfg = app.config or config.DATABASE_CONFIGS.get("Standard", list(config.DATABASE_CONFIGS.values())[0])
@@ -176,6 +179,7 @@ class SandboxManager:
         try:
             self._hide_practice_banner()
             self.is_sandboxed = False
+            self._current_mock_type = None
             if not self.snapshot:
                 return
 
