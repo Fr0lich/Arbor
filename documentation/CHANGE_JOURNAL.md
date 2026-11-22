@@ -13,6 +13,22 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 28: Mobile Companion V2 Hallway Ergonomics & Visual Polish (Floor Selector, Glove-Friendly Touch Targets, 360px Header, Offline Active Tab)
+- **Date**: 2026-11-22
+- **Feature Area**: Mobile Companion V2 (`backend/mobile_template_v2.py`) & Tests (`tests/test_mobile_companion.py`)
+- **What Changed**:
+  1. **Added `Floor` Selector to Audit Station Launchpad**: Added `#launchFloorSelect` (`-2`, `-1`, `1`–`4`) to `#stationSetupCard`, wired it into `applyStationSetup()` and `initStationLaunchpad()` (replacing hardcoded `floor: '1'`), and included `Fl <floor>` in the active station pill.
+  2. **Glove-Friendly Touch Targets & 360px-Safe Header**: Enlarged `#btnStampArmedShelf` to `min-h-[38px]` (`text-xs`), enlarged `#detailView` Prev/Next steppers from `28px` to `36px` (`w-9 h-9`), hid `#btnListUndo` until edits exist, and tightened `#listView` header spacing + `#detailView` chrome so 360px phones have more room without collisions.
+  3. **Clean Plain-English Mobile Labels**: Updated `"Accession ID (0894...)"` → `"Object # (1, 2, 3...)"`, `"Archival Photo Folio"` → `"Specimen Photos"`, `"0 Active Discrepancies"` → `"0 Open Issues"`, `"Data Integrity Flags"` → `"Issue Checklist"`, and removed duplicate raw `${probName}` code subtitles under humanized problem buttons.
+  4. **Offline Active-Tab Highlight**: Added `html.arbor-offline-css .tab-btn.text-ink` active pill styling so the selected tab (`Details` / `Location` / `Problems`) stays clearly highlighted in offline concrete vaults.
+- **User Impact**: Trainees auditing basement floors (`-1`/`-2`) can arm the exact Floor from the Audit Station, tap Stamp Target and Prev/Next comfortably even with gloves, and read cleaner jargon-free labels on narrow phones both online and offline.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_mobile_companion.py`
+  - [x] Zero-Barcodes & Zero-Build compliance verified
+
+---
+
 ### Entry 27: Design-System Visual Polish (`MobilePanel` CTAs & Dark Mode, Startup Typography, Top-Bar `⌘ Commands (Ctrl+K)` Pill)
 - **Date**: 2026-11-22
 - **Feature Area**: Phone Connector (`ui/mobile_panel.py`), Startup Dialog (`ui/dialogs.py`), & Top Navigation Bar (`ui/navigation_bar.py`)

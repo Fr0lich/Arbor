@@ -145,6 +145,7 @@ INDEX_TEMPLATE_V2 = """
     html.arbor-offline-css #auditStationLaunchpad { background: #eaf4ec; border: 1px solid #a4cca9; border-radius: 8px; padding: 10px; margin: 8px 12px; }
     html.arbor-offline-css #armedShelfBanner { background: #eaf4ec; border: 1px solid #a4cca9; border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
     html.arbor-offline-css .tab-btn { border: none; background: transparent; padding: 8px 6px; font-weight: 600; color: #535d56; }
+    html.arbor-offline-css .tab-btn.text-ink { background: #ffffff; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); color: #191e1a; }
     html.arbor-offline-css #tabIndicator { display: none; }
     html.arbor-offline-css #btnDetailMarkReviewed { width: 100%; min-height: 46px; background: #3a7d44; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.95rem; }
     html.arbor-offline-css #offlineBanner { background: #78350f; color: #ffffff; padding: 8px 14px; font-size: 0.8rem; font-weight: 600; }
@@ -269,56 +270,56 @@ INDEX_TEMPLATE_V2 = """
     <div id="listView" class="flex-1 flex flex-col h-full bg-canvas overflow-hidden">
       <!-- 1. Top Header -->
       <header class="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-bordercol shrink-0">
-        <div class="px-3.5 pt-3 pb-2 flex items-center justify-between">
-          <div class="flex items-center space-x-2.5">
+        <div class="px-3.5 pt-2.5 pb-2 flex items-center justify-between gap-2">
+          <div class="flex items-center space-x-2 min-w-0">
             <!-- Arbor "A" Badge -->
-            <div class="w-7 h-7 rounded bg-fern-dark flex items-center justify-center text-white font-serif font-bold text-sm shadow-sm ring-1 ring-black/10">
+            <div class="w-7 h-7 shrink-0 rounded bg-fern-dark flex items-center justify-center text-white font-serif font-bold text-sm shadow-sm ring-1 ring-black/10">
               A
             </div>
-            <div>
+            <div class="min-w-0">
               <div class="flex items-center space-x-1.5 leading-none">
-                <span class="font-bold text-[13px] tracking-tight text-ink font-sans">Arbor Companion</span>
+                <span class="font-bold text-[13px] tracking-tight text-ink font-sans truncate">Arbor</span>
                 <span class="text-[10px] px-1 py-0.5 rounded bg-emerald-50 text-fern-dark font-mono font-medium border border-fern/30">v2</span>
               </div>
-              <div class="text-[10.5px] font-mono text-ink-muted tracking-tight truncate max-w-[170px] mt-0.5" id="headerDbName">
+              <div class="text-[10.5px] font-mono text-ink-muted tracking-tight truncate max-w-[140px] mt-0.5" id="headerDbName">
                 Loading database...
               </div>
             </div>
           </div>
 
-          <!-- Top Utility Controls -->
-          <div class="flex items-center space-x-1.5">
-            <!-- Undo Button -->
-            <button id="btnListUndo" onclick="undoLastEdit()" title="Undo recent edit" class="w-8 h-8 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <!-- Top Utility Controls (compact & 360px-safe) -->
+          <div class="flex items-center space-x-1 shrink-0">
+            <!-- Undo Button (shown when edits exist) -->
+            <button id="btnListUndo" onclick="undoLastEdit()" title="Undo recent edit" class="hidden w-9 h-9 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4M3 10l4-4m-4 4l4 4"/>
               </svg>
             </button>
 
             <!-- Walk Mode (Wake Lock) Toggle -->
-            <button id="btnListWakeLock" onclick="toggleWakeLock()" title="Keep screen awake during audit" class="w-8 h-8 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
+            <button id="btnListWakeLock" onclick="toggleWakeLock()" title="Keep screen awake during audit" class="w-9 h-9 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
               <span id="listWakeLockIcon" class="text-xs">🌙</span>
             </button>
 
             <!-- Batch Location Registrator Trigger -->
-            <button id="btnOpenBatchLocation" onclick="showBatchLocationView()" title="Open Batch Location Registrator" class="w-8 h-8 rounded-md bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center tap-active transition-colors">
+            <button id="btnOpenBatchLocation" onclick="showBatchLocationView()" title="Open Batch Location Registrator" class="w-9 h-9 rounded-md bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center tap-active transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
               </svg>
             </button>
 
             <!-- Field Guide ("What the Fields Mean") Trigger -->
-            <button id="btnOpenFieldGuide" onclick="openFieldGuideModal()" title="What the fields & badges mean" class="w-8 h-8 rounded-md bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center font-mono font-bold text-xs tap-active transition-colors">
+            <button id="btnOpenFieldGuide" onclick="openFieldGuideModal()" title="What the fields & badges mean" class="w-9 h-9 rounded-md bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center font-mono font-bold text-xs tap-active transition-colors">
               ?
             </button>
 
             <!-- Settings Trigger -->
-            <button onclick="openSettingsModal()" title="Application Settings" class="w-8 h-8 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
+            <button onclick="openSettingsModal()" title="Application Settings" class="w-9 h-9 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
               <span class="text-xs font-mono">⚙️</span>
             </button>
 
             <!-- Connection Status Pill -->
-            <div onclick="openModal('connectionModal')" class="flex items-center space-x-1 px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10.5px] font-mono font-medium text-emerald-800 cursor-pointer">
+            <div onclick="openModal('connectionModal')" class="flex items-center space-x-1 px-2 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-mono font-medium text-emerald-800 cursor-pointer">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span id="pingBadge">42ms</span>
             </div>
@@ -385,12 +386,23 @@ INDEX_TEMPLATE_V2 = """
                 Skip & Browse
               </button>
             </div>
-            <div class="grid grid-cols-4 gap-1.5 text-xs font-mono">
+            <div class="grid grid-cols-5 gap-1.5 text-xs font-mono">
               <div class="col-span-2 bg-white rounded border border-bordercol px-2 py-0.5">
                 <span class="text-[9px] uppercase font-bold text-muted block">Bldg</span>
                 <select id="launchBldgSelect" class="w-full bg-transparent font-bold text-ink outline-none text-xs">
                   <option value="Lid's hus">Lid's hus</option>
                   <option value="Økern">Økern</option>
+                </select>
+              </div>
+              <div class="bg-white rounded border border-bordercol px-1.5 py-0.5">
+                <span class="text-[9px] uppercase font-bold text-muted block">Floor</span>
+                <select id="launchFloorSelect" class="w-full bg-transparent font-bold text-ink outline-none text-xs">
+                  <option value="1" selected>1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="-1">-1</option>
+                  <option value="-2">-2</option>
                 </select>
               </div>
               <div class="bg-white rounded border border-bordercol px-2 py-0.5">
@@ -458,7 +470,7 @@ INDEX_TEMPLATE_V2 = """
           <div class="flex items-center space-x-1.5">
             <div class="relative inline-flex items-center">
               <select id="sortBySelect" onchange="handleSortChange()" class="appearance-none bg-white border border-bordercol rounded-md px-2 py-1 pr-6 text-[10.5px] font-mono text-ink focus:outline-none focus:border-fern shadow-2xs cursor-pointer">
-                <option value="id_asc" selected>Accession ID (0894...)</option>
+                <option value="id_asc" selected>Object # (1, 2, 3...)</option>
                 <option value="location">⇅ Sort: Physical Location</option>
                 <option value="name_asc">Scientific Name (A–Z)</option>
                 <option value="name_desc">Scientific Name (Z–A)</option>
@@ -531,21 +543,21 @@ INDEX_TEMPLATE_V2 = """
             <span class="text-ink font-semibold" id="detailCurrentIdx">1</span><span class="text-stone-400 mx-0.5">/</span><span id="detailTotalCount">1</span>
           </span>
 
-          <!-- Next / Prev Steppers -->
+          <!-- Next / Prev Steppers (glove-friendly 36px touch targets) -->
           <div class="inline-flex rounded border border-bordercol bg-alabaster p-0.5 shadow-2xs">
-            <button type="button" class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface text-ink active:bg-stone-200 transition-colors tap-highlight-transparent" onclick="navSpecimen(-1)" title="Previous Specimen">
+            <button type="button" class="w-9 h-9 flex items-center justify-center rounded hover:bg-surface text-ink active:bg-stone-200 transition-colors tap-highlight-transparent" onclick="navSpecimen(-1)" title="Previous Specimen">
               <svg class="w-4 h-4 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="w-[1px] bg-bordercol my-0.5"></div>
-            <button type="button" class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface text-ink active:bg-stone-200 transition-colors tap-highlight-transparent" onclick="navSpecimen(1)" title="Next Specimen">
+            <button type="button" class="w-9 h-9 flex items-center justify-center rounded hover:bg-surface text-ink active:bg-stone-200 transition-colors tap-highlight-transparent" onclick="navSpecimen(1)" title="Next Specimen">
               <svg class="w-4 h-4 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
         </div>
       </header>
 
-      <!-- 2. Sticky Specimen Identification Header -->
-      <section class="flex-none bg-surface border-b border-bordercol px-4 pt-3 pb-3 z-20 shadow-2xs">
+      <!-- 2. Sticky Specimen Identification Header (compact for more form room) -->
+      <section class="flex-none bg-surface border-b border-bordercol px-4 pt-2 pb-2 z-20 shadow-2xs">
         <div class="flex items-center justify-between mb-1.5">
           <div class="flex items-center gap-2">
             <span class="font-mono text-xs font-bold text-ink tracking-tight px-1.5 py-0.5 bg-stone-100 border border-bordercol rounded" id="detailAccession">
@@ -582,7 +594,7 @@ INDEX_TEMPLATE_V2 = """
             <span class="font-mono text-[10px] text-muted truncate">Target Shelf:</span>
             <span class="font-mono text-[11px] font-bold text-fern-dark truncate" id="armedShelfHeaderLabel">None Armed</span>
           </div>
-          <button type="button" id="btnStampArmedShelf" onclick="stampArmedLocation()" class="hidden px-2.5 py-1 rounded bg-fern hover:bg-fern-dark text-white font-mono font-bold text-[10px] shadow-2xs tap-active flex items-center gap-1">
+          <button type="button" id="btnStampArmedShelf" onclick="stampArmedLocation()" class="hidden min-h-[38px] px-3 py-1.5 rounded bg-fern hover:bg-fern-dark text-white font-mono font-bold text-xs shadow-2xs tap-active flex items-center gap-1.5 shrink-0">
             <span>📍</span>
             <span>Stamp Target</span>
           </button>
@@ -590,7 +602,7 @@ INDEX_TEMPLATE_V2 = """
       </section>
 
       <!-- 3. Segmented Tab Controller (Sticky) -->
-      <nav class="flex-none bg-alabaster border-b border-bordercol px-3 pt-2 pb-1.5 z-20">
+      <nav class="flex-none bg-alabaster border-b border-bordercol px-3 pt-1.5 pb-1 z-20">
         <div class="relative bg-stone-200/90 p-1 rounded-[4px] flex items-center justify-between text-xs font-medium text-muted shadow-inner">
           <div class="tab-slider absolute top-1 bottom-1 w-[calc((100%-8px)/3)] bg-surface rounded shadow-sm border border-stone-300 pointer-events-none translate-x-0" id="tabIndicator" style="transform: translateX(0%);"></div>
           <button id="tabBtnDetails" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[36px] flex items-center justify-center gap-1.5 font-semibold text-ink tap-highlight-transparent" data-tab-index="0" onclick="switchDetailTab('details')">
@@ -620,7 +632,7 @@ INDEX_TEMPLATE_V2 = """
             <!-- Image Viewer Container -->
             <div class="bg-surface border border-bordercol rounded p-3 shadow-2xs space-y-2" id="photoFolioContainer">
               <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Archival Photo Folio</h3>
+                <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Specimen Photos</h3>
                 <span class="text-[10px] font-mono text-muted" id="photoCountDisplay">0 Photos</span>
               </div>
               <div id="photoMainBox" class="relative w-full h-48 bg-stone-100 rounded border border-bordercol overflow-hidden flex items-center justify-center cursor-pointer" onclick="openPhotoViewerModal()">
@@ -776,7 +788,7 @@ INDEX_TEMPLATE_V2 = """
             <div id="problemSummaryBar" class="flex items-center justify-between p-3 bg-stone-100 border border-bordercol rounded-[3px] transition-colors duration-200">
               <div class="flex items-center gap-2">
                 <span id="problemSummaryDot" class="w-2.5 h-2.5 rounded-full bg-stone-400"></span>
-                <span id="problemSummaryCountText" class="text-xs font-bold text-ink uppercase font-mono">0 Active Discrepancies</span>
+                <span id="problemSummaryCountText" class="text-xs font-bold text-ink uppercase font-mono">0 Open Issues</span>
               </div>
               <span id="problemSummaryActionText" class="text-[10px] font-mono text-muted">Checking Data</span>
             </div>
@@ -790,8 +802,8 @@ INDEX_TEMPLATE_V2 = """
             <div class="bg-surface border border-bordercol rounded-[3px] p-3.5 shadow-2xs space-y-3">
               <div class="flex items-center justify-between border-b border-stone-100 pb-2">
                 <div>
-                  <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Data Integrity Flags</h3>
-                  <p class="text-[10px] font-mono text-subdued">Direct curatorial problem checklist</p>
+                  <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Issue Checklist</h3>
+                  <p class="text-[10px] font-mono text-subdued">Tap any problem found on this object</p>
                 </div>
                 <span class="text-[10px] font-mono text-muted" id="flaggedTotalBadge">0 Flagged</span>
               </div>
@@ -1756,6 +1768,7 @@ INDEX_TEMPLATE_V2 = """
       const pillText = document.getElementById('activeStationPillText');
       const setupCard = document.getElementById('stationSetupCard');
       const bldgSelect = document.getElementById('launchBldgSelect');
+      const floorSelect = document.getElementById('launchFloorSelect');
       const cabInput = document.getElementById('launchCabInput');
       const shelfInput = document.getElementById('launchShelfInput');
       const reopenBtn = document.getElementById('btnOpenStationSetup');
@@ -1763,6 +1776,9 @@ INDEX_TEMPLATE_V2 = """
       if (!launchpad || !activePill || !setupCard) return;
 
       populateLaunchBuildingOptions(armed ? armed.building : null);
+      if (floorSelect && armed && armed.floor !== undefined && armed.floor !== null && String(armed.floor).trim() !== '') {
+        floorSelect.value = String(armed.floor).trim();
+      }
 
       const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
 
@@ -1770,9 +1786,10 @@ INDEX_TEMPLATE_V2 = """
         launchpad.classList.remove('hidden');
         if (reopenBtn) reopenBtn.classList.add('hidden');
         const bldg = armed.building || (bldgSelect ? bldgSelect.value : "Lid's hus");
+        const fl = (armed.floor !== undefined && armed.floor !== null && String(armed.floor).trim() !== '') ? ` · Fl ${armed.floor}` : '';
         const cab = armed.cabinet ? String(armed.cabinet).padStart(2, '0') : '—';
         const shelf = armed.shelf ? String(armed.shelf).padStart(2, '0') : '—';
-        if (pillText) pillText.textContent = `${bldg} · Cab ${cab} · Sh ${shelf}`;
+        if (pillText) pillText.textContent = `${bldg}${fl} · Cab ${cab} · Sh ${shelf}`;
         activePill.classList.remove('hidden');
         setupCard.classList.add('hidden');
 
@@ -1823,10 +1840,12 @@ INDEX_TEMPLATE_V2 = """
 
     function applyStationSetup() {
       const bldgSelect = document.getElementById('launchBldgSelect');
+      const floorSelect = document.getElementById('launchFloorSelect');
       const cabInput = document.getElementById('launchCabInput');
       const shelfInput = document.getElementById('launchShelfInput');
 
       const bldg = bldgSelect ? bldgSelect.value : "Lid's hus";
+      const floor = floorSelect ? floorSelect.value : '1';
       let cab = cabInput ? cabInput.value.trim() : '';
       let shelf = shelfInput ? shelfInput.value.trim() : '';
 
@@ -1840,7 +1859,7 @@ INDEX_TEMPLATE_V2 = """
 
       state.armedLocation = {
         building: bldg,
-        floor: '1',
+        floor: floor,
         cabinet: cab,
         shelf: shelf,
         storedAs: ''
@@ -3596,8 +3615,7 @@ INDEX_TEMPLATE_V2 = """
           return `
             <button type="button" onclick="toggleProblemFlag('${probName}')" class="p-2.5 rounded border text-left flex items-start justify-between transition-all tap-highlight-transparent min-h-[44px] ${isAct ? 'border-brick bg-brick-light text-brick font-semibold' : 'border-stone-200 bg-white text-muted hover:border-stone-300'}">
               <div class="min-w-0 pr-1">
-                <span class="text-xs font-mono block truncate ${isAct ? 'text-brick' : 'text-ink'}">${escapeHtml(label)}</span>
-                <span class="text-[9px] font-mono block truncate opacity-70">${probName}</span>
+                <span class="text-xs font-sans font-medium block truncate ${isAct ? 'text-brick font-semibold' : 'text-ink'}">${escapeHtml(label)}</span>
               </div>
               <span class="w-3.5 h-3.5 rounded-full flex-none mt-0.5 flex items-center justify-center text-[9px] font-bold ${isAct ? 'bg-brick text-white' : 'border border-stone-300'}">
                 ${isAct ? '✓' : ''}

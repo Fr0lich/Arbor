@@ -1520,7 +1520,7 @@ def test_accession_id_natural_sort_and_defaults(mock_app_state):
     assert v2_res.status_code == 200
     html = v2_res.get_data(as_text=True)
 
-    assert '<option value="id_asc" selected>Accession ID (0894...)</option>' in html
+    assert '<option value="id_asc" selected>Object # (1, 2, 3...)</option>' in html
     assert "activeSortBy: 'id_asc'" in html
     assert '<option value="">--</option>' in html
     assert 'id="detailFloorVal">—</span>' in html
@@ -2057,6 +2057,9 @@ def test_mobile_v2_field_guide_and_updated_walkthrough():
     assert "Find an Object and Search Its Listed Number" in INDEX_TEMPLATE_V2
     assert 'placeholder="Search object # or plant name..."' in INDEX_TEMPLATE_V2
     assert "Mark as Blank or Unreadable..." in INDEX_TEMPLATE_V2
+    assert 'id="launchFloorSelect"' in INDEX_TEMPLATE_V2
+    assert "html.arbor-offline-css .tab-btn.text-ink" in INDEX_TEMPLATE_V2
+    assert "Issue Checklist" in INDEX_TEMPLATE_V2
     assert 'id="reviewHelperText" class="text-[10.5px] leading-snug font-sans text-subdued text-center mt-1.5"' in INDEX_TEMPLATE_V2
 
 
