@@ -29,7 +29,7 @@ For full operational instructions, user interface walkthroughs, workflow explana
 
 * **UI Layout & Workspace Panels:** Object directory, high-resolution image tools, and metadata editor.
 * **Problem Workflow:** Identifying validation flags, historical conflict resolution, and marking records as reviewed.
-* **Mobile Companion Setup:** QR code pairing, network tunneling, and offline IndexedDB sync.
+* **Mobile Companion Setup:** QR code pairing, network tunneling, and offline localStorage sync.
 * **Filtering & Searching:** Multi-criteria filters, search bar syntax, and preset queries.
 * **ICEDIG Annotations & Keyboard Shortcuts:** Standardized missing data tags and navigation hotkeys.
 
@@ -41,7 +41,7 @@ Inside the application, the User Guide can also be accessed at any time via **He
 
 - **Excel Integration:** Seamlessly import and export museum databases using standard Excel files.
 - **Robust State Management:** Comprehensive Undo/Redo capabilities preventing data loss during editing.
-- **Mobile Companion App:** An embedded Flask-based web app for mobile devices that supports offline data entry via IndexedDB, automatically syncing when connectivity is restored.
+- **Mobile Companion App:** An embedded Flask-based web app for mobile devices that supports offline data entry via a localStorage queue + Service Worker, automatically syncing when connectivity is restored.
 - **Custom Tkinter UI:** A highly ergonomic, dynamic, and responsive graphical user interface.
 - **Event-Driven Architecture:** Decoupled UI updates and background threading using a lightweight EventBus system.
 - **Data Integrity:** Strict sanitization against CSV/Excel Formula Injection (DDE) and timezone conflicts.
@@ -80,7 +80,7 @@ The Mobile Companion App runs as a local background Flask service, allowing a mo
 
 - **Starting the Server:** The desktop application dynamically assigns available ports and spawns the background daemon thread.
 - **Tunneling:** You can expose this local server using tunnels like Pinggy. The desktop app manages authentication via an `X-Session-Token`.
-- **Offline Mode:** The mobile companion uses a Service Worker and IndexedDB to cache the UI and store mutations locally when offline. Edits are flushed to the server once the connection is restored.
+- **Offline Mode:** The mobile companion uses a Service Worker and a `localStorage` offline queue (`arbor_offline_queue`) to cache the UI and store mutations locally when offline. Edits are flushed to the server once the connection is restored.
 
 ---
 

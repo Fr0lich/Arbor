@@ -311,9 +311,9 @@ When auditing physical specimens walking down vault corridors or glass cabinet a
 
 ### How to Connect in 4 Easy Steps:
 1. **Open the Phone Connector**: In Arbor on your desktop computer, click the **`📱 MOBILE`** menu at the top, or press `Ctrl+K` and type `Mobile Companion`.
-2. **Scan the Screen**: A window appears displaying a QR code, a web address, and a 4-digit security PIN.
-3. **Open on Your Phone**: Scan the QR code with your phone camera, or type the address into your phone's browser (Safari, Chrome, or Firefox).
-4. **Enter Your PIN**: Enter the 4-digit PIN shown on your desktop screen to start your session.
+2. **Check PIN & Save Options**: Choose whether to require the 4-digit PIN (`🔒 Require 4-Digit PIN: ON / OFF` — keep **ON** on public tunnels, optional on private offline Wi-Fi) and click **▶ Start Mobile Session**.
+3. **Scan the QR Code**: Point your phone camera at the QR code on screen (or copy the link). Scanning the QR code signs you in automatically.
+4. **Tap `?` Anytime on Your Phone**: If you aren't sure what a field or badge means while standing in an aisle, tap **`?`** in the phone's top bar to open **"What the Fields Mean"** (including a reminder that outdated plant names on old boxes can be typed as-is and updated later via desktop **GBIF Name Check**).
 
 ---
 
@@ -365,11 +365,13 @@ If an archival photo scan has not yet been uploaded for the specimen, Arbor auto
 ### Returning to Your Desk: Desktop Hallway Follow-Up
 
 When you finish your aisle audit and return to your computer:
-1. Click **🔴 End Mobile Session** on your desktop screen and confirm **Yes** to write your changes to the Excel file.
-2. Press **`Ctrl + G`** (or click the Filter button, or press **`Ctrl + K`** and type `Hallway`) to open the Filter Objects dialog.
-3. Click the dedicated preset button:
-   `🎯 Hallway Follow-Up (REV+ERR)`
-4. Arbor immediately filters your Specimen Directory to show every plant you handled in the vault that has a pending question or damage flag (`Reviewed = Has` and `Any_Problem = Has`), ready for office research!
+1. Click **`💾 Save Workbook Now`** (or **🔴 End Mobile Session** and confirm **Yes**) to write your changes to the Excel file.
+2. Press **`Ctrl + G`** (or press **`Ctrl + K`** and type `Hallway`) and click **`🎯 Hallway Follow-Up (REV+ERR)`** to isolate every verified specimen with an open flag.
+3. Press **`Ctrl + K`** → **`Triage Problem Queue (Filtered List)`** to work through flagged specimens in one streamlined window:
+   * Click **`✓ Value is Correct (Clear Flag)`** if a flagged value turns out to be fine (turns `[REV+ERR]` back to green `[REV]`, with full `Ctrl+Z` Undo support).
+   * Press **`Alt + ←` / `Alt + →`** to step between queued specimens.
+   * **Can't solve a problem today?** That is completely okay — simply skip it and leave the flag active so a specialist or curator can revisit it later.
+   * *(Tip: You can practice this entire workflow risk-free in **❓ HELP ▾ → 2. Office Triage** Practice Sandbox!)*
 
 ---
 

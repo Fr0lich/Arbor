@@ -276,3 +276,53 @@ def test_mobile_dialog_end_session_autosave_and_prompt(mock_app_state, monkeypat
     finally:
         root.destroy()
 
+
+def test_mobile_panel_live_pin_toggle_and_public_tunnel_warning(mock_app_state, monkeypatch):
+    """Verify MobilePanel PIN toggle updates prefs, live server, and warns when Public Tunnel is open without PIN."""
+    import tkinter as tk
+    import config
+    from ui.mobile_panel import MobilePanel
+
+    fake_prefs = {"require_mobile_pin": True, "mobile_autosave_on_stop": False}
+    monkeypatch.setattr(config, "load_prefs", lambda: fake_prefs)
+    monkeypatch.setattr(config, "save_prefs", lambda p: fake_prefs.update(p))
+
+    try:
+        root = tk.Tk()
+        root.withdraw()
+    except Exception:
+        pytest.skip("Tkinter display not available")
+
+    try:
+        pin_updates = []
+        fake_server = type("Srv", (), {
+            "pin": "9876",
+            "update_pin_requirement": lambda s, val: pin_updates.append(val),
+        })()
+        panel = MobilePanel(parent=root, app_state=mock_app_state, root_tk=root, reuse_server=fake_server)
+        assert "ON" in panel.btn_pin_toggle.cget("text")
+
+        # Toggle PIN OFF while Public Tunnel is default -> amber warning shown & live server updated
+        panel._toggle_pin_required()
+        assert fake_prefs["require_mobile_pin"] is False
+        assert pin_updates == [False]
+        assert "OFF" in panel.btn_pin_toggle.cget("text")
+        assert panel.pin_var.get() == "OFF (Open)"
+        assert "Public tunnel" in panel.lbl_pin_tip.cget("text")
+
+        # Toggle PIN back ON -> warning clears & 4-digit PIN restored
+        panel._toggle_pin_required()
+        assert fake_prefs["require_mobile_pin"] is True
+        assert pin_updates == [False, True]
+        assert panel.pin_var.get() == "9876"
+
+        # Collapsible Advanced Options starts collapsed and expands on click
+        assert panel._adv_expanded is False
+        assert panel.advanced_setup_frame.winfo_manager() == ""
+        panel._toggle_advanced_setup()
+        assert panel._adv_expanded is True
+        assert panel.advanced_setup_frame.winfo_manager() == "pack"
+    finally:
+        root.destroy()
+
+

@@ -72,6 +72,7 @@ class MobilePanel:
         self.ui_version_choice = tk.StringVar(value="v2")
         prefs = config.load_prefs() if hasattr(config, "load_prefs") else {}
         self.auto_save_var = tk.BooleanVar(value=bool(prefs.get("mobile_autosave_on_stop", False)))
+        self.require_pin_var = tk.BooleanVar(value=bool(prefs.get("require_mobile_pin", True)))
 
         self._build_ui()
 
@@ -80,23 +81,27 @@ class MobilePanel:
     # ------------------------------------------------------------------
 
     def _build_ui(self):
-        main = tk.Frame(self.parent, bg="#ffffff", padx=20, pady=16)
+        is_dark = getattr(self.parent_ui, "dark_mode_active", getattr(self.parent_ui, "dark_mode", False))
+        self._bg_main = "#1e211f" if is_dark else "#ffffff"
+        self._fg_title = "#85e89d" if is_dark else "#1b4332"
+
+        main = tk.Frame(self.parent, bg=self._bg_main, padx=20, pady=16)
         main.pack(fill="both", expand=True)
         self._main = main
 
         # ── Header ────────────────────────────────────────────────────
-        hdr = tk.Frame(main, bg="#ffffff")
+        hdr = tk.Frame(main, bg=self._bg_main)
         hdr.pack(fill="x", pady=(0, 10))
 
-        hdr_top = tk.Frame(hdr, bg="#ffffff")
+        hdr_top = tk.Frame(hdr, bg=self._bg_main)
         hdr_top.pack(fill="x")
 
         tk.Label(
             hdr_top,
             text="📱 Arbor Mobile Companion",
-            font=("Segoe UI", 15, "bold"),
-            bg="#ffffff",
-            fg="#1b4332",
+            font=("Lora", 15, "bold"),
+            bg=self._bg_main,
+            fg=self._fg_title,
         ).pack(side="left", anchor="w")
 
         def _open_armed_guide():
@@ -238,9 +243,29 @@ class MobilePanel:
         )
         self.btn_net_local.pack(side="right", expand=True, fill="x", padx=(1, 0))
 
-        # Tunnel Provider Section
-        self.provider_frame = tk.Frame(setup_card, bg="#fbfbf9")
-        self.provider_frame.pack(fill="x")
+        # Collapsible Advanced Options (Tunnel Provider & Classic V1) for a calm default setup card
+        self._adv_expanded = False
+        self.btn_adv_toggle = tk.Button(
+            setup_card,
+            text="▸ Advanced Connection & Version Options",
+            font=("Segoe UI", 8, "bold"),
+            bg="#fbfbf9",
+            fg="#5a655e",
+            activebackground="#ecefed",
+            activeforeground="#1b4332",
+            relief="flat",
+            bd=0,
+            anchor="w",
+            cursor="hand2",
+            command=self._toggle_advanced_setup,
+        )
+        self.btn_adv_toggle.pack(fill="x", pady=(10, 0))
+
+        self.advanced_setup_frame = tk.Frame(setup_card, bg="#fbfbf9")
+
+        # Tunnel Provider Section (inside advanced_setup_frame)
+        self.provider_frame = tk.Frame(self.advanced_setup_frame, bg="#fbfbf9")
+        self.provider_frame.pack(fill="x", pady=(6, 0))
 
         tk.Label(
             self.provider_frame,
@@ -291,9 +316,9 @@ class MobilePanel:
         )
         self.btn_prov_pinggy.pack(side="right", expand=True, fill="x", padx=(1, 0))
 
-        # Interface Version Section
-        self.version_frame = tk.Frame(setup_card, bg="#fbfbf9")
-        self.version_frame.pack(fill="x", pady=(15, 0))
+        # Interface Version Section (inside advanced_setup_frame)
+        self.version_frame = tk.Frame(self.advanced_setup_frame, bg="#fbfbf9")
+        self.version_frame.pack(fill="x", pady=(10, 0))
 
         tk.Label(
             self.version_frame,
@@ -377,13 +402,58 @@ class MobilePanel:
         )
         self.lbl_autosave_tip.pack(fill="x")
 
-        self.start_btn = ttk.Button(
+        # PIN security toggle row
+        self.pin_toggle_row = tk.Frame(setup_card, bg="#fbfbf9")
+        self.pin_toggle_row.pack(fill="x", pady=(10, 0))
+
+        tk.Label(
+            self.pin_toggle_row,
+            text="Phone Login PIN:",
+            font=("Segoe UI", 9, "bold"),
+            bg="#fbfbf9",
+            fg="#1b4332",
+        ).pack(anchor="w", pady=(0, 2))
+
+        pin_pill_frame = tk.Frame(self.pin_toggle_row, bg="#fbfbf9")
+        pin_pill_frame.pack(fill="x", pady=(0, 2))
+
+        self.btn_pin_toggle = tk.Button(
+            pin_pill_frame,
+            font=("Segoe UI", 8, "bold"),
+            relief="flat",
+            padx=8,
+            pady=3,
+            cursor="hand2",
+            command=self._toggle_pin_required,
+        )
+        self.btn_pin_toggle.pack(side="left")
+
+        self.lbl_pin_tip = tk.Label(
+            self.pin_toggle_row,
+            font=("Segoe UI", 7, "italic"),
+            bg="#fbfbf9",
+            fg="#5a655e",
+            anchor="w",
+            justify="left",
+            wraplength=420,
+        )
+        self.lbl_pin_tip.pack(fill="x")
+
+        self.start_btn = tk.Button(
             self.setup_frame,
             text="▶ Start Mobile Session",
+            font=("Inter", 10, "bold"),
+            bg="#3a7d44",
+            fg="#ffffff",
+            activebackground="#2d6336",
+            activeforeground="#ffffff",
+            relief="flat",
+            bd=0,
+            pady=8,
             command=self._on_start_btn_clicked,
             cursor="hand2",
         )
-        self.start_btn.pack(fill="x", ipady=4)
+        self.start_btn.pack(fill="x", pady=(10, 0))
 
         # ── Active Frame (Hidden initially) ───────────────────────────
         self.active_frame = tk.Frame(main, bg="#ffffff")
@@ -529,6 +599,28 @@ class MobilePanel:
         )
         self.pin_badge.pack(side="left")
 
+        self.btn_active_pin_toggle = tk.Button(
+            pin_row,
+            font=("Segoe UI", 7, "bold"),
+            relief="flat",
+            padx=6,
+            pady=1,
+            cursor="hand2",
+            command=self._toggle_pin_required,
+        )
+        self.btn_active_pin_toggle.pack(side="right")
+
+        self.lbl_active_pin_warning = tk.Label(
+            info,
+            text="",
+            font=("Segoe UI", 7, "bold"),
+            bg="#fbfbf9",
+            fg="#b45309",
+            anchor="w",
+            justify="left",
+            wraplength=260,
+        )
+
         self.tunnel_lbl = tk.Label(
             info,
             text="Tunnel: Establishing...",
@@ -642,19 +734,133 @@ class MobilePanel:
         self.feed_list.insert(
             tk.END, "Session initialized. Ready for mobile connections.")
 
-        # ── Bottom button ─────────────────────────────────────────────
-        bottom = tk.Frame(self.active_frame, bg="#ffffff")
+        # ── Bottom buttons ────────────────────────────────────────────
+        bottom = tk.Frame(self.active_frame, bg=self._bg_main)
         bottom.pack(fill="x")
 
-        self._end_btn = ttk.Button(
+        self._save_now_btn = tk.Button(
             bottom,
-            text="🔴 End Mobile Session",
+            text="💾 Save Workbook Now",
+            font=("Inter", 9, "bold"),
+            bg="#eaf5ec",
+            fg="#1b5e20",
+            activebackground="#d4ecd9",
+            relief="flat",
+            highlightbackground="#3a7d44",
+            highlightthickness=1,
+            pady=6,
+            command=self._save_workbook_now,
+            cursor="hand2",
+        )
+        self._save_now_btn.pack(fill="x", pady=(0, 6))
+
+        self._end_btn = tk.Button(
+            bottom,
+            text="End Mobile Session",
+            font=("Inter", 9, "bold"),
+            bg="#fdf2f2",
+            fg="#ba1a1a",
+            activebackground="#f9dcdc",
+            activeforeground="#93000a",
+            relief="flat",
+            highlightbackground="#ba1a1a",
+            highlightthickness=1,
+            pady=6,
             command=self._on_end_btn,
             cursor="hand2",
         )
-        self._end_btn.pack(fill="x", ipady=4)
+        self._end_btn.pack(fill="x")
 
         self._update_autosave_ui()
+        self._update_pin_ui()
+
+    def _save_workbook_now(self):
+        """Save the active Excel workbook immediately without stopping the mobile session."""
+        if self.parent_ui and hasattr(self.parent_ui, "save_session"):
+            try:
+                self.parent_ui.save_session("MOBILE_MANUAL_SAVE")
+                self.log("💾 Workbook save requested from Mobile Companion.")
+                return
+            except Exception:
+                pass
+        if self.parent_ui and hasattr(self.parent_ui, "save_database"):
+            try:
+                self.parent_ui.save_database()
+                self.log("💾 Workbook saved from Mobile Companion.")
+            except Exception:
+                pass
+
+    def _toggle_pin_required(self):
+        new_val = not self.require_pin_var.get()
+        self.require_pin_var.set(new_val)
+        try:
+            prefs = config.load_prefs() or {}
+            prefs["require_mobile_pin"] = new_val
+            config.save_prefs(prefs)
+        except Exception:
+            pass
+        if self.server and hasattr(self.server, "update_pin_requirement"):
+            try:
+                self.server.update_pin_requirement(new_val)
+            except Exception:
+                pass
+        self._update_pin_ui()
+
+    def _toggle_advanced_setup(self):
+        self._adv_expanded = not self._adv_expanded
+        if self._adv_expanded:
+            self.btn_adv_toggle.config(text="▾ Advanced Connection & Version Options")
+            self.advanced_setup_frame.pack(fill="x", after=self.btn_adv_toggle)
+        else:
+            self.btn_adv_toggle.config(text="▸ Advanced Connection & Version Options")
+            self.advanced_setup_frame.pack_forget()
+
+    def _update_pin_ui(self):
+        is_req = self.require_pin_var.get()
+        is_public = getattr(self, "current_qr_mode", "public") == "public"
+        if hasattr(self, "network_choice"):
+            try:
+                is_public = (self.network_choice.get() == "public")
+            except Exception:
+                pass
+
+        if is_req:
+            txt = "🔒 Require 4-Digit PIN: ON"
+            short_txt = "PIN: ON"
+            bg, fg = "#1b4332", "#ffffff"
+            tip = "Phones entering the URL manually must enter the 4-digit PIN (QR scan still pairs in 1 tap)."
+            tip_fg = "#5a655e"
+            if self.server and hasattr(self.server, "pin"):
+                self.pin_var.set(self.server.pin)
+            if hasattr(self, "pin_badge") and self.pin_badge.winfo_exists():
+                self.pin_badge.config(bg="#1b4332", fg="#ffffff")
+            if hasattr(self, "lbl_active_pin_warning") and self.lbl_active_pin_warning.winfo_exists():
+                self.lbl_active_pin_warning.pack_forget()
+        else:
+            txt = "🔓 Require 4-Digit PIN: OFF"
+            short_txt = "PIN: OFF"
+            bg, fg = "#e0e3df", "#333333"
+            self.pin_var.set("OFF (Open)")
+            if hasattr(self, "pin_badge") and self.pin_badge.winfo_exists():
+                self.pin_badge.config(bg="#e0e3df", fg="#555555")
+            if is_public:
+                tip = "⚠ Public tunnel is active without a PIN — anyone with the link can edit. Recommended only on private Local Wi-Fi."
+                tip_fg = "#b45309"
+                if hasattr(self, "lbl_active_pin_warning") and self.lbl_active_pin_warning.winfo_exists():
+                    self.lbl_active_pin_warning.config(text="⚠ Public tunnel open without PIN (use Local Wi-Fi)")
+                    self.lbl_active_pin_warning.pack(anchor="w", pady=(2, 0))
+            else:
+                tip = "Open local Wi-Fi access — phones on your private vault router connect without typing a PIN."
+                tip_fg = "#2d6a4f"
+                if hasattr(self, "lbl_active_pin_warning") and self.lbl_active_pin_warning.winfo_exists():
+                    self.lbl_active_pin_warning.pack_forget()
+
+        if hasattr(self, "btn_pin_toggle") and self.btn_pin_toggle.winfo_exists():
+            self.btn_pin_toggle.config(text=txt, bg=bg, fg=fg)
+        if hasattr(self, "lbl_pin_tip") and self.lbl_pin_tip.winfo_exists():
+            self.lbl_pin_tip.config(text=tip, fg=tip_fg)
+        if hasattr(self, "btn_active_pin_toggle") and self.btn_active_pin_toggle.winfo_exists():
+            self.btn_active_pin_toggle.config(text=short_txt, bg=bg, fg=fg)
 
     def _toggle_auto_save(self):
         new_val = not self.auto_save_var.get()
@@ -741,7 +947,10 @@ class MobilePanel:
         self._on_client_connect(len(self.server.clients))
 
         # Populate PIN and local URL (kept as LAN fallback)
+        if hasattr(self.server, "update_pin_requirement"):
+            self.server.update_pin_requirement(self.require_pin_var.get())
         self.pin_var.set(self.server.pin)
+        self._update_pin_ui()
         local_ip = get_local_ip()
         if hasattr(self, "local_ip_lbl") and self.local_ip_lbl:
             try:
@@ -901,6 +1110,7 @@ class MobilePanel:
                 self.btn_net_local.config(
                     bg="#e0e3df", fg="#333", font=("Segoe UI", 9))
                 self.provider_frame.pack(fill="x")
+            self._update_pin_ui()
         except Exception:
             pass
 

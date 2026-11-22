@@ -1178,7 +1178,7 @@ class MobileServer:
                     return rate_limit_resp
 
                 provided_pin = request.form.get('pin', '').strip()
-                if provided_pin == self.pin or provided_pin == "43110":
+                if provided_pin == self.pin:
                     self._record_success(ip)
                     token, sid = self._create_session(ip)
                     session['token'] = token
@@ -3071,24 +3071,93 @@ LOGIN_TEMPLATE = """<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Arbor Companion Login</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: #121915;
+      color: #1c241f;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card {
+      width: 100%;
+      max-width: 380px;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(27, 67, 50, 0.2);
+      text-align: center;
+    }
+    .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      background: #d8f3dc;
+      color: #2d6a4f;
+      font-size: 24px;
+      margin: 0 auto 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 { margin: 0 0 6px; font-size: 1.125rem; font-weight: 700; color: #1c241f; }
+    p { margin: 0 0 16px; font-size: 0.8rem; color: #5a655e; line-height: 1.4; }
+    .err {
+      background: #fef2f2;
+      color: #b91c1c;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #fecaca;
+      margin-bottom: 14px;
+    }
+    input {
+      width: 100%;
+      text-align: center;
+      letter-spacing: 0.25em;
+      font-size: 1.5rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      padding: 10px 12px;
+      background: #f8f9fa;
+      border: 1px solid #cbd2cd;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    input:focus { border-color: #2d6a4f; box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.2); }
+    button {
+      width: 100%;
+      background: #2d6a4f;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:active { background: #1b4332; }
+  </style>
 </head>
-<body class="bg-[#121915] text-[#1c241f] min-h-screen flex items-center justify-center p-4 antialiased">
-  <div class="w-full max-w-sm bg-white rounded-2xl p-6 shadow-2xl border border-emerald-900/20 text-center space-y-4">
-    <div class="w-12 h-12 rounded-full bg-emerald-100 text-[#2d6a4f] text-2xl mx-auto flex items-center justify-center">🌿</div>
-    <div>
-      <h1 class="text-lg font-bold text-[#1c241f]">Arbor Mobile Companion</h1>
-      <p class="text-xs text-[#5a655e]">Enter the 4-digit PIN displayed on your laptop screen</p>
-    </div>
+<body>
+  <div class="card">
+    <div class="icon">🌿</div>
+    <h1>Arbor Mobile Companion</h1>
+    <p>Enter the 4-digit PIN displayed on your laptop screen</p>
     {% if error %}
-    <div class="bg-red-50 text-red-700 text-xs font-semibold py-2 px-3 rounded-md border border-red-200">{{ error }}</div>
+    <div class="err">{{ error }}</div>
     {% endif %}
-    <form method="POST" action="/login" class="space-y-3">
-      <input type="password" name="pin" maxlength="6" inputmode="numeric" placeholder="• • • •" autofocus required
-             class="w-full text-center tracking-widest text-2xl font-mono py-2.5 bg-neutral-50 border border-neutral-300 rounded-lg focus:outline-none focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f]">
-      <button type="submit" class="w-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white py-2.5 rounded-lg font-bold text-sm transition">
-        Connect to Database
-      </button>
+    <form method="POST" action="/login">
+      <input type="password" name="pin" maxlength="6" inputmode="numeric" placeholder="• • • •" autofocus required>
+      <button type="submit">Connect to Collection</button>
     </form>
   </div>
 </body>

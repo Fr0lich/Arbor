@@ -1144,7 +1144,7 @@ class ProblemQueueDialog(tk.Toplevel):
         header.pack(fill="x", side="top")
         header.pack_propagate(False)
         tk.Frame(header, bg=COLORS["border"], height=sc(1)).pack(fill="x", side="bottom")
-        tk.Label(header, text="BATCH_PROBLEM_QUEUE", font=FONT_UI_LG, fg=COLORS["primary"], bg=COLORS["surface"]).pack(side="left", padx=sc(16), pady=sc(10))
+        tk.Label(header, text="Problem Triage Queue", font=FONT_UI_LG, fg=COLORS["primary"], bg=COLORS["surface"]).pack(side="left", padx=sc(16), pady=sc(10))
 
         # Footer (packed first to guarantee visibility)
         footer = tk.Frame(self, bg=COLORS["surface_dim"], height=sc(52))

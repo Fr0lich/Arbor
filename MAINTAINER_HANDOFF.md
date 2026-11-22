@@ -58,3 +58,14 @@ This 1-page reference is for anyone inheriting or maintaining **Arbor**, an offl
 3. Run the core verification test suite above and confirm 100% pass.
 4. Build locally via `build_exe.bat` (or `build_exe.bat --no-pause` in CLI) and verify `dist\Arbor.exe` launches cleanly from an isolated folder outside the repo.
 5. Push a version tag (`git tag vX.Y.Z && git push origin vX.Y.Z`) — `.github/workflows/ci.yml` automatically runs tests and uploads the portable `Arbor-Windows-Portable` artifact.
+
+---
+
+## 5. Customizing Collection Columns (`config.py`)
+
+To adapt Arbor to a different museum's Excel column layout without touching UI code:
+1. Open `config.py` and locate `DATABASE_CONFIGS`.
+2. Copy an existing entry (e.g. `"Økonomisk Botanisk"` or `"Blank Minimal"`) under a new profile name.
+3. Update `sheets` (`reg`, `obs`, `photo`, `log`), `ui_sections["registration"]`, `ui_sections["location"]`, and `ui_sections["problems"]` (mapping each problem flag column via `maps_to`).
+4. The new profile automatically appears in the Startup dialog's **Profile** dropdown and **Create New Database** wizard.
+

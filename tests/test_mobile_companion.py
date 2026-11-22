@@ -1556,7 +1556,7 @@ def test_v2_icedig_unknown_standards_resolution(mock_app_state):
 
     assert 'state.icedigCodes = data.icedig_code_labels' in html
     assert 'toggleIcedigTray' in html
-    assert 'Set as Unknown (ICEDIG)...' in html
+    assert 'Mark as Blank or Unreadable...' in html
     assert 'icedigTray_' in html
     assert 'icedigArrow_' in html
     assert "}).join('')}\n                      })()}" not in html
@@ -2027,6 +2027,38 @@ def test_mobile_templates_modular_reexport_contract():
 
     assert ms.INDEX_TEMPLATE is v1.INDEX_TEMPLATE
     assert ms.INDEX_TEMPLATE_V2 is v2.INDEX_TEMPLATE_V2
+
+
+def test_login_template_offline_and_no_hardcoded_pin(mock_app_state):
+    """Verify LOGIN_TEMPLATE has zero CDN scripts and hardcoded '43110' PIN is rejected."""
+    import backend.mobile_server as ms
+
+    assert "cdn.tailwindcss.com" not in ms.LOGIN_TEMPLATE
+    assert "<style>" in ms.LOGIN_TEMPLATE
+
+    server = MobileServer(mock_app_state, port=5163)
+    server.update_pin_requirement(True)
+    server.pin = "1234"
+    client = server.flask_app.test_client()
+    resp = client.post("/login", data={"pin": "43110"}, follow_redirects=False)
+    assert resp.status_code == 200
+    assert b"Invalid PIN" in resp.data
+
+
+def test_mobile_v2_field_guide_and_updated_walkthrough():
+    """Verify V2 includes the mirrored 'What the Fields Mean' guide, GBIF synonym tip, and unwrapped helper text."""
+    from backend.mobile_server import INDEX_TEMPLATE_V2
+
+    assert 'id="fieldGuideModal"' in INDEX_TEMPLATE_V2
+    assert 'id="btnOpenFieldGuide"' in INDEX_TEMPLATE_V2
+    assert 'id="btnDetailFieldGuide"' in INDEX_TEMPLATE_V2
+    assert "GBIF Name Check" in INDEX_TEMPLATE_V2
+    assert "NOT the person who collected it" in INDEX_TEMPLATE_V2
+    assert "Find an Object and Search Its Listed Number" in INDEX_TEMPLATE_V2
+    assert 'placeholder="Search object # or plant name..."' in INDEX_TEMPLATE_V2
+    assert "Mark as Blank or Unreadable..." in INDEX_TEMPLATE_V2
+    assert 'id="reviewHelperText" class="text-[10.5px] leading-snug font-sans text-subdued text-center mt-1.5"' in INDEX_TEMPLATE_V2
+
 
 
 

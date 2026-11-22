@@ -21,7 +21,9 @@ arbor/
 │   ├── cross_validation.py # Taxonomy and ledger reconciliation rules
 │   ├── gbif.py           # GBIF API client with LRU caching
 │   ├── task_queue.py     # Centralized BackgroundWorker thread queue
-│   ├── mobile_server.py  # Local Flask companion server with SSE and offline PWA
+│   ├── mobile_server.py       # Local Flask companion server with SSE, auth, and offline PWA API
+│   ├── mobile_template_v1.py  # Legacy V1 Mobile Companion HTML/CSS/JS string constant (re-exported by mobile_server.py)
+│   ├── mobile_template_v2.py  # Primary V2 Mobile Companion HTML/CSS/JS string constant (re-exported by mobile_server.py)
 │   ├── tunnel.py         # Secure local tunneling via Pinggy/Cloudflare
 │   └── updater.py        # GitHub update engine, atomic PE swap, session preservation
 ├── data/                  # Packaged reference data and sample datasets
@@ -174,7 +176,7 @@ Arbor adheres to a **Zero-Friction, Offline-First** architecture designed for mu
 
 ### 3. Mobile Companion Zero-Build Stack
 * The mobile companion backend is served by Flask directly from the desktop Python process.
-* The mobile frontend is embedded directly in `backend/mobile_server.py` using strictly Vanilla HTML, modern JavaScript, and Tailwind CSS (via CDN).
+* The mobile frontend is stored as pure-Python string constants in `backend/mobile_template_v1.py` (`INDEX_TEMPLATE`) and `backend/mobile_template_v2.py` (`INDEX_TEMPLATE_V2`), re-exported by `backend/mobile_server.py`, using strictly Vanilla HTML, modern JavaScript, deferred Tailwind CSS (with scoped `html.arbor-offline-css` fallback), and zero build tools.
 * No npm, yarn, webpack, Vite, React, or frontend compilation steps are permitted.
 
 ---

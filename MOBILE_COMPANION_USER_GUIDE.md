@@ -32,11 +32,12 @@ The **Arbor Mobile Companion** is a dedicated, zero-install mobile web applicati
   * **When to use**: When your laptop and phone are connected to a private home Wi-Fi network or a portable travel router inside an underground vault with no internet access.
   * **Why**: Direct local Wi-Fi connection without sending any traffic through the outside web.
 
-### Pairing Options
+### Pairing Options & PIN Toggle
 * **QR Code**: Open your phone's camera app and tap the link that appears on screen. The secure session link logs you in automatically — no passwords required.
 * **Copy Link Button**: Click **📋 Copy** in the desktop pairing window to copy the full URL to your clipboard for instant sharing.
-* **4-Digit PIN**: If opening a saved bookmark on your phone, enter the 4-digit PIN displayed on your desktop screen.
-* **First-Time 3-Step Guide**: The first time your phone connects, Arbor displays a quick 3-slide visual guide (with a **Skip** button) walking you through searching, 1-tap shelf stamping, and flagging issues. You can replay it anytime from **⚙ Settings → 🎓 3-Step Guide**.
+* **Live 4-Digit PIN Toggle**: By default, phones typing the address manually must enter the 4-digit PIN shown on your desktop screen. You can toggle **`🔒 Require 4-Digit PIN: ON / OFF`** directly inside the Mobile Companion window at any time (even while the server is running).
+  * *Safety Tip*: Turning PIN **OFF** is great on a private, offline vault Wi-Fi router so staff can reconnect effortlessly. Keep PIN **ON** whenever using a **Public (Internet)** tunnel.
+* **First-Time 3-Step Guide & `?` Field Guide**: The first time your phone connects, Arbor displays a quick 3-slide visual guide (with a **Skip** button). At any time while auditing, tap **`?`** in the top bar (on either the Vault List or an Object page) to open **"What the Fields Mean"** — a plain-English mirror of the object screen explaining every field and badge, plus a button to replay the 3-Step Guide.
 
 ---
 
@@ -68,7 +69,7 @@ Herbarium vaults are often located in basements or shielded behind heavy steel d
    * When offline, a reassuring badge shows: `💾 Saved offline (queued for sync)`.
 
 > **Never worry about losing data in the vault:**  
-> If you lose Wi-Fi behind a steel door, keep auditing normally! All storage coordinates, review checkmarks, and notes stay safely saved on your phone and sync automatically to your desktop the moment Wi-Fi returns.
+> Both the PIN login screen and the main Mobile Companion use built-in offline styling so they load instantaneously even on a local Wi-Fi router with zero internet. If you lose Wi-Fi behind a steel door, keep auditing normally — all storage coordinates, review checkmarks, and notes stay safely saved in your phone's `localStorage` queue and sync automatically to your desktop the moment Wi-Fi returns.
 
 ---
 
@@ -91,9 +92,11 @@ If you tap **`✓ Mark Reviewed`** on a specimen that has no Storage Location ye
 * **`✕ No, Keep Location & Review`**: Saves your edits, notes, and problem flags and marks Reviewed **without changing its location**.
 
 ### 3.4. Flagging Issues While Still Marking Reviewed (`REV + [N] ISSUES`)
-Found a crushed box or unreadable 19th-century handwriting?
+Found a crushed box, unreadable 19th-century handwriting, or a confusing plant name?
 * Check the problem box (e.g., `Box_Label_Problem`) and **still tap `✓ Mark Reviewed`**.
-* The badge turns amber (**`REV + 1 ISSUE`**). This confirms you physically held the box and verified its shelf while queueing the issue for office desktop follow-up (**`🎯 Hallway Follow-Up (REV+ERR)`**).
+* **It is completely okay if you cannot solve a problem in the hallway.** The amber **`REV + 1 ISSUE`** badge confirms you physically held the object and verified its shelf while safely queueing the question for someone else to look at later on the office computer (**`🎯 Hallway Follow-Up (REV+ERR)`**).
+* **Outdated Plant Names (`Genus` & `Species`)**: Sometimes the scientific name printed on an old box is outdated or a synonym. Just type what is written on the physical box label — it can be updated automatically later using the **GBIF Name Check** tool on the desktop program.
+* **Not sure what a field means?** Tap **`?`** in the top bar anytime to open **What the Fields Mean** (explaining every field, including `Author` vs. `Collector`, right on your phone).
 
 ### 3.5. Viewport-Reclaimed Photo Folio
 If a specimen has no verified online scan yet, Arbor automatically collapses the empty photo frame into a compact single-line bar (`📷 Scan: None verified online`), keeping metadata and problem checkboxes right under your thumb.
@@ -101,9 +104,9 @@ If a specimen has no verified online scan yet, Arbor automatically collapses the
 ### 3.6. Batch Location Registrator
 To move a stack of specimen folders to a new cabinet at once:
 1. Tap **📦 Batch Relocation** in the header toolbar.
-2. Set your **Target Location** (Building, Floor, Cabinet, Shelf).
-3. Enter the Specimen IDs into the rapid list.
-4. Tap **Commit Batch Location** to update all listed specimens together.
+2. Set your **Target Location** (Building, Floor, Cabinet, Shelf) — or tap **`⚡ Use Cab XX · Sh XX`** to copy your active Armed Target Shelf in 1 tap.
+3. Type the Specimen IDs using the numeric keypad (tap **`123 / ABC`** if you need letters).
+4. Tap **Commit Batch Location** to update all listed specimens together (works offline too!).
 
 ### 3.7. Gentle Vibration Feedback (Glove Calibration)
 Auditing specimens requires looking between physical shelf tags and your phone screen. Gentle vibration feedback confirms every action without needing constant eye contact:
@@ -114,14 +117,14 @@ Auditing specimens requires looking between physical shelf tags and your phone s
 > **Adjusting Vibration Strength:**  
 > Open **⚙ Settings** on your phone to toggle vibration or choose **Light** (bare hands), **Medium** (standard nitrile gloves), or **Strong** (heavy cotton archival gloves), and tap `⚡ Test` to feel it immediately. *(Supported on Android Chrome/Firefox; iOS Safari restricts browser vibration.)*
 
-### 3.6. Accidental Refresh & Tab Closure Guard
+### 3.8. Accidental Refresh & Tab Closure Guard
 If you accidentally swipe down to refresh or swipe backwards to close the browser tab in the vault:
 * The application intercepts the gesture and confirms whether you wish to leave if any field is actively being edited.
-* Background app switching or phone lock triggers an immediate `pagehide` flush, saving in-flight keystrokes to IndexedDB or the server before the browser pauses.
+* Background app switching or phone lock triggers an immediate `pagehide` flush, saving in-flight keystrokes to `localStorage` or the server before the browser pauses.
 
 ---
 
-## 4. ICEDIG Missing Data Standards
+## 4. Blank or Unreadable Labels (Standard Codes)
 
 When transcribing damaged, faded, or incomplete historical labels, use standard ICEDIG markers rather than leaving ambiguous blank fields:
 
@@ -139,14 +142,15 @@ When transcribing damaged, faded, or incomplete historical labels, use standard 
 
 ## 5. Ending the Session & Auto-Save Options
 
-### Desktop Auto-Save Preference
-By default, all edits synced from your mobile phone are held securely in workstation memory (RAM). When you stop the server, Arbor provides two safe persistence paths:
+### Saving During or After Your Shift
+All edits synced from your phone are protected in workstation memory (RAM) and by desktop background autosave (`.autosave.json`). You also have three direct ways to save to Excel:
 
-1. **Prompt to Save (Default — `Auto-save: OFF`)**:
+1. **Save Anytime (`💾 Save Workbook Now`)**: Click **`💾 Save Workbook Now`** directly inside the Mobile Companion window to write your Excel workbook to disk immediately without stopping the phone session.
+2. **Prompt to Save on Stop (Default — `Auto-save: OFF`)**:
    * When you click **🔴 End Mobile Session** or close the launch dialog with unsaved edits, Arbor prompts you:
      > *"Mobile session ended with unsaved changes in memory. Save the workbook to disk now?"*
-   * Clicking **Yes** automatically executes a background asynchronous save (`save_session`), preventing accidental loss if you step away or close Arbor.
-2. **Silent Auto-Save (`Auto-save: ON`)**:
+   * Clicking **Yes** automatically executes a background asynchronous save, preventing accidental loss if you step away or close Arbor.
+3. **Silent Auto-Save (`Auto-save: ON`)**:
    * Automatically persists in-memory edits to disk the moment the server is stopped, without prompting.
-   * **Quick Toggle**: You can click the `[ ⏸️ Auto-save on stop: OFF ]` / `[ 💾 Auto-save on stop: ON ]` pill directly in the Mobile Companion launch window at any time to switch modes, or configure it permanently in Desktop **Settings ▾ General ▾ Autosave & Storage**.
+   * **Quick Toggle**: Click the `[ ⏸️ Auto-save on stop: OFF ]` / `[ 💾 Auto-save on stop: ON ]` pill directly in the Mobile Companion window at any time to switch modes, or configure it permanently in Desktop **Settings ▾ General ▾ Autosave & Storage**.
 

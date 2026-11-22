@@ -307,6 +307,11 @@ INDEX_TEMPLATE_V2 = """
               </svg>
             </button>
 
+            <!-- Field Guide ("What the Fields Mean") Trigger -->
+            <button id="btnOpenFieldGuide" onclick="openFieldGuideModal()" title="What the fields & badges mean" class="w-8 h-8 rounded-md bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center font-mono font-bold text-xs tap-active transition-colors">
+              ?
+            </button>
+
             <!-- Settings Trigger -->
             <button onclick="openSettingsModal()" title="Application Settings" class="w-8 h-8 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
               <span class="text-xs font-mono">⚙️</span>
@@ -332,7 +337,7 @@ INDEX_TEMPLATE_V2 = """
               type="text" 
               inputmode="numeric"
               id="searchBox" 
-              placeholder="Search accession # or taxonomy..." 
+              placeholder="Search object # or plant name..." 
               oninput="handleSearchInput()"
               autocomplete="off"
               spellcheck="false"
@@ -508,6 +513,11 @@ INDEX_TEMPLATE_V2 = """
 
         <!-- Steppers & Controls -->
         <div class="flex items-center gap-1.5">
+          <!-- Field Guide ("What the Fields Mean") Trigger -->
+          <button id="btnDetailFieldGuide" type="button" onclick="openFieldGuideModal()" title="What the fields & badges mean" class="w-8 h-8 rounded bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center font-mono font-bold text-xs tap-active transition-colors">
+            ?
+          </button>
+
           <!-- Detail Undo Button -->
           <button id="btnDetailUndo" onclick="undoLastEdit()" title="Undo edit" class="items-center gap-1 px-2 py-1 h-[32px] text-[10.5px] font-mono font-medium text-ember bg-orange-50 border border-orange-200 rounded active:scale-95 transition-all flex">
             <svg class="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -816,7 +826,7 @@ INDEX_TEMPLATE_V2 = """
             <span>Flag Issue</span>
           </button>
         </div>
-        <p id="reviewHelperText" class="text-[10px] font-sans text-subdued text-center mt-1.5 truncate"></p>
+        <p id="reviewHelperText" class="text-[10.5px] leading-snug font-sans text-subdued text-center mt-1.5"></p>
       </footer>
     </div>
 
@@ -1121,6 +1131,26 @@ INDEX_TEMPLATE_V2 = """
               <button type="button" onclick="saveSettings()" class="px-3 py-1.5 bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold">Save</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: What the Fields Mean (Mirrors the Specimen Page) -->
+    <div id="fieldGuideModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3">
+      <div class="bg-surface border border-bordercol rounded-xl shadow-2xl w-full max-w-md max-h-[88vh] flex flex-col overflow-hidden">
+        <div class="flex-none px-4 py-3 bg-fern text-white flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-base">📖</span>
+            <span class="font-sans font-bold text-xs tracking-wide uppercase">What the Fields Mean</span>
+          </div>
+          <button type="button" onclick="closeFieldGuideModal()" class="text-white/90 hover:text-white text-xs font-bold px-2 py-0.5 rounded">✕ Close</button>
+        </div>
+        <div id="fieldGuideBody" class="flex-1 overflow-y-auto p-3.5 space-y-3 text-xs font-sans text-ink bg-canvas">
+          <!-- Populated dynamically by openFieldGuideModal() to mirror the specimen page -->
+        </div>
+        <div class="flex-none px-3.5 py-2.5 bg-surface border-t border-bordercol flex items-center justify-between gap-2">
+          <button type="button" onclick="closeFieldGuideModal(); openWalkthroughModal(0);" class="px-3 py-1.5 rounded bg-fern-light border border-fern/40 text-fern-dark font-bold text-xs tap-active">🎓 3-Step Hallway Guide</button>
+          <button type="button" onclick="closeFieldGuideModal()" class="px-3.5 py-1.5 rounded bg-fern text-white font-bold text-xs tap-active">Got it</button>
         </div>
       </div>
     </div>
@@ -3494,7 +3524,7 @@ INDEX_TEMPLATE_V2 = """
                   <button type="button" onclick="toggleIcedigTray('${probName}')" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded bg-stone-50 hover:bg-stone-100 border border-stone-200 text-ink text-xs font-mono font-medium transition-colors">
                     <span class="flex items-center gap-1.5">
                       <span class="text-fern font-bold">?</span>
-                      <span>Set as Unknown (ICEDIG)...</span>
+                      <span>Mark as Blank or Unreadable...</span>
                     </span>
                     <span id="icedigArrow_${probName}" class="text-[10px] text-muted">▼</span>
                   </button>
@@ -3558,7 +3588,11 @@ INDEX_TEMPLATE_V2 = """
         flagsGrid.innerHTML = problemDefs.map(pDef => {
           const probName = pDef.name;
           const isAct = isProblemActiveOnRecord(probName, rec);
-          const label = pDef.label || probName;
+          const formatProblemLabel = (raw) => {
+            const clean = String(raw || '').replace(/[_ ]?problem$/i, '').replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+            return (!clean || clean.toLowerCase() === 'other') ? 'Other Issue' : clean;
+          };
+          const label = pDef.label ? formatProblemLabel(pDef.label) : formatProblemLabel(probName);
           return `
             <button type="button" onclick="toggleProblemFlag('${probName}')" class="p-2.5 rounded border text-left flex items-start justify-between transition-all tap-highlight-transparent min-h-[44px] ${isAct ? 'border-brick bg-brick-light text-brick font-semibold' : 'border-stone-200 bg-white text-muted hover:border-stone-300'}">
               <div class="min-w-0 pr-1">
@@ -4487,24 +4521,172 @@ INDEX_TEMPLATE_V2 = """
     const WALKTHROUGH_SLIDES = [
       {
         badge: 'STEP 1 OF 3 · FAST LOOKUP',
-        title: 'Search by Accession Number',
-        body: 'Pull a physical specimen box and type its catalog number into the search bar. Leading zeros and prefixes are handled automatically.',
-        callout: 'Tip: Typing "001" or "O-V-1" both find Specimen #1. Use [123 / Aa] to switch between number pad and plant names.'
+        title: 'Find an Object and Search Its Listed Number',
+        body: 'Pick up a physical specimen box or sheet and type the number printed on its label into the search bar. Leading zeros and prefixes are handled automatically.',
+        callout: 'Tip: Typing "001" or "O-V-1" both find #1. Tap [123 / Aa] to switch between number pad and plant names.'
       },
       {
         badge: 'STEP 2 OF 3 · ARMED TARGET SHELF',
         title: 'Set Your Cabinet Once, Stamp in 1 Tap',
-        body: 'Set your current Cabinet & Shelf once. Opening a specimen never overwrites its coordinates — tap the green Stamp Target banner to stamp 30+ items on the same shelf in 1 tap.',
-        callout: '⚡ Armed Target: Cab 21 · Sh 01  →  [ Stamp Target ]'
+        body: 'Pick the Building, Cabinet, and Shelf you are standing in front of once. Opening an object never changes its saved location by accident — tap the green Stamp Target button to assign 30+ objects on the same shelf in 1 tap.',
+        callout: '⚡ Armed Target: Cab 21 · Sh 01  →  Tap [ 📍 Stamp Target ]'
       },
       {
         badge: 'STEP 3 OF 3 · MARK REVIEWED',
         title: 'Flag Issues & Still Mark Reviewed',
-        body: 'Found a crushed box or unreadable label? Check the problem flag and still tap ✓ Mark Reviewed. The badge turns amber (REV + ISSUES) so your office desktop queues it for follow-up.',
-        callout: '🟠 REV + 1 ISSUE = Physically verified + safely queued for office triage.'
+        body: 'Found a damaged box, faded handwriting, or a mismatch? Check the problem flag and still tap ✓ Mark Reviewed. You do not have to solve every problem in the hallway — it is completely okay to leave it flagged so someone else can check it later on the office computer.',
+        callout: '🟠 REV + 1 ISSUE = You checked the object + safely queued the issue for later. Tap ? anytime for What the Fields Mean!'
       }
     ];
     let _wtIndex = 0;
+
+    // Plain-English Field Guide (mirrors the exact specimen page layout)
+    const FIELD_GUIDE_EXPLANATIONS = {
+      'Genus': {
+        example: 'e.g. Betula',
+        desc: 'The first word of the plant’s scientific name. Sometimes the name on the box is outdated or an old synonym — that is completely okay! Just type what is written on the physical box label, and it can be updated automatically later using the GBIF Name Check feature on the desktop program.'
+      },
+      'Species': {
+        example: 'e.g. pendula',
+        desc: 'The second word of the scientific name. Just like Genus, if the box has an older or synonym name, enter what the box says and let the desktop GBIF Name Check update it later.'
+      },
+      'Author': {
+        example: 'e.g. L. or Roth',
+        desc: 'The scientist who originally named the plant — NOT the person who collected it! (The person who found it goes in Collector.)'
+      },
+      'Family': {
+        example: 'e.g. Betulaceae',
+        desc: 'The broader plant family name, usually ending in "-aceae". Leave as-is if not printed on the box.'
+      },
+      'Higher Classification': {
+        example: 'e.g. Fagales',
+        desc: 'Optional higher botanical group above Family. Usually filled automatically on the desktop.'
+      },
+      'Collector': {
+        example: 'e.g. N. Moe',
+        desc: 'The person who physically collected the specimen in the field. If the label is blank or unreadable, use the quick missing-data buttons.'
+      },
+      'Innsammling Nr.': {
+        example: 'e.g. 142 or OB-0042',
+        desc: 'The collector’s own field/notebook number written on the label, if one is listed.'
+      },
+      'Collection Date': {
+        example: 'e.g. 1954 or 1965-07-15',
+        desc: 'When the specimen was collected (year, month/year, or full date) as written on the label.'
+      },
+      'Collection Place': {
+        example: 'e.g. Oslo, Tøyen',
+        desc: 'Where the specimen was collected (city, region, country, or botanical garden).'
+      },
+      '(N) Plant Part': {
+        example: 'e.g. Bark, Kongle, Frø',
+        desc: 'What part of the plant is inside the box (Norwegian term).'
+      },
+      'Plant Part': {
+        example: 'e.g. Bark, Cone, Seed',
+        desc: 'What part of the plant is inside the box (English term).'
+      },
+      'Box Label': {
+        example: 'Text on outside of box',
+        desc: 'Exact wording or short note printed on the physical storage box label.'
+      },
+      'Conservation Status': {
+        example: 'e.g. Good, Fragile label',
+        desc: 'Physical condition of the specimen or box (e.g. damaged, fragile, insect damage).'
+      },
+      'Observation': {
+        example: 'Free notes',
+        desc: 'Any extra observations you notice while holding the physical object.'
+      },
+      'Comment': {
+        example: 'Curatorial notes',
+        desc: 'General notes or messages for the next curator reviewing this object.'
+      },
+      'ProblemDescription': {
+        example: 'e.g. Faded pencil year',
+        desc: 'Short note explaining what is wrong if you checked a problem flag.'
+      },
+      'UID': {
+        example: 'Read-only ID',
+        desc: 'Permanent museum archive ID. Locked so it cannot be accidentally changed.'
+      }
+    };
+
+    function openFieldGuideModal() {
+      const body = document.getElementById('fieldGuideBody');
+      if (!body) return;
+
+      const sectionsHtml = [];
+
+      // 1. Status Badges (matches top of Specimen Detail View)
+      sectionsHtml.push(`
+        <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-2">
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">1. Status Badges (Top of Page)</div>
+          <div class="space-y-1.5 text-[11px]">
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">UNREVIEWED</span> — Nobody has checked this physical object yet.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-fern-dark border border-fern/30">REVIEWED</span> — Checked physically and everything looks good.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">REV + ISSUES</span> — Checked physically, with a problem flagged for later. <strong>You don’t have to solve every problem today</strong> — leaving it flagged lets someone else look at it on the office computer later.</div>
+          </div>
+        </section>
+      `);
+
+      // 2. Storage Location (matches Armed Shelf & Location Tab)
+      sectionsHtml.push(`
+        <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1.5">
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">2. Storage Location (Where the Box Lives)</div>
+          <p class="text-[11px] text-ink-muted"><strong>Building, Floor, Cabinet, Shelf</strong> record the exact physical shelf. Set your shelf once at the top of the list, then tap <strong>📍 Stamp Target</strong> on each box you pull.</p>
+          <p class="text-[11px] text-ink-muted"><strong>Stored as:</strong> What kind of container holds it (paper box, plastic box, petridish, etc.).</p>
+        </section>
+      `);
+
+      // 3. Mirrored Specimen Form Fields (grouped just like the real object page)
+      const groups = [
+        { title: '3. Plant Name (Taxonomy)', fields: ['Genus', 'Species', 'Author', 'Family'] },
+        { title: '4. Collection Details', fields: ['Collector', 'Innsammling Nr.', 'Collection Date', 'Collection Place'] },
+        { title: '5. Physical Object & Notes', fields: ['Plant Part', '(N) Plant Part', 'Box Label', 'Conservation Status', 'Observation', 'ProblemDescription', 'UID'] },
+      ];
+
+      groups.forEach(g => {
+        const rows = g.fields.map(fname => {
+          const info = FIELD_GUIDE_EXPLANATIONS[fname] || { example: '', desc: 'Metadata field stored in the Excel workbook.' };
+          const highlight = (fname === 'Genus' || fname === 'Species' || fname === 'Author')
+            ? 'border-fern/40 bg-emerald-50/40'
+            : 'border-bordercol bg-stone-50/70';
+          return `
+            <div class="p-2 rounded border ${highlight} space-y-0.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-mono font-bold text-[11px] text-ink">${fname}</span>
+                <span class="font-mono text-[10px] text-muted">${info.example}</span>
+              </div>
+              <p class="text-[11px] text-ink-muted leading-snug">${info.desc}</p>
+            </div>
+          `;
+        }).join('');
+        sectionsHtml.push(`
+          <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-2">
+            <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">${g.title}</div>
+            <div class="space-y-1.5">${rows}</div>
+          </section>
+        `);
+      });
+
+      // 4. Blank or Unreadable Labels
+      sectionsHtml.push(`
+        <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1">
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">6. Blank or Unreadable Labels</div>
+          <p class="text-[11px] text-ink-muted">If handwriting is unreadable or a detail is missing from the paper label, tap the quick standard buttons (<strong>Illegible</strong> / <strong>Blank</strong>) instead of guessing — or check a problem flag and move on.</p>
+        </section>
+      `);
+
+      body.innerHTML = sectionsHtml.join('');
+      const modal = document.getElementById('fieldGuideModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeFieldGuideModal() {
+      const modal = document.getElementById('fieldGuideModal');
+      if (modal) modal.classList.add('hidden');
+    }
 
     function renderWalkthroughSlide() {
       const s = WALKTHROUGH_SLIDES[_wtIndex] || WALKTHROUGH_SLIDES[0];

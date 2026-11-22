@@ -332,7 +332,7 @@ class StartupDialog:
             parent, text=text,
             bg=kw.pop("bg", self.C_CARD),
             fg=kw.pop("fg", self.C_ON_VARIANT),
-            font=("Courier New", sc(9), "bold"),
+            font=("JetBrains Mono", sc(9), "bold"),
             anchor="w", **kw
         )
 
@@ -342,7 +342,7 @@ class StartupDialog:
             parent, text=text,
             bg=kw.pop("bg", self.C_CARD),
             fg=kw.pop("fg", self.C_ON_SURFACE),
-            font=("Courier New", sc(10)),
+            font=("JetBrains Mono", sc(10)),
             anchor="w", **kw
         )
 
@@ -357,14 +357,14 @@ class StartupDialog:
         tk.Label(
             header, text="arbor",
             bg=self.C_HEADER_BG, fg=self.C_PRIMARY,
-            font=("Courier New", sc(9), "bold"),
+            font=("JetBrains Mono", sc(9), "bold"),
             anchor="w"
         ).pack(anchor="w")
 
         tk.Label(
             header, text="Project Setup",
             bg=self.C_HEADER_BG, fg=self.C_ON_SURFACE,
-            font=("Segoe UI", sc(18), "bold"),
+            font=("Lora", sc(18), "bold"),
             anchor="w"
         ).pack(anchor="w", pady=(sc(2), 0))
 
@@ -427,7 +427,7 @@ class StartupDialog:
             header_frame, text=text,
             bg=self.C_CARD,
             fg=self.C_ON_VARIANT,
-            font=("Courier New", sc(9), "bold"),
+            font=("JetBrains Mono", sc(9), "bold"),
             anchor="w"
         )
         lbl.pack(side="left")
@@ -452,7 +452,7 @@ class StartupDialog:
             readonlybackground=self.C_SURFACE_LOW,
             bg=self.C_SURFACE_LOW,
             fg=self.C_ON_SURFACE,
-            font=("Courier New", sc(10)),
+            font=("JetBrains Mono", sc(10)),
             relief="flat",
             highlightthickness=1,
             highlightbackground=self.C_OUTLINE,
@@ -478,14 +478,14 @@ class StartupDialog:
         # Browse button
         browse_btn = tk.Button(
             row,
-            text="…",
+            text="Browse…",
             bg=self.C_HEADER_BG,
             fg=self.C_ON_VARIANT,
-            font=("Segoe UI", sc(11)),
+            font=("Segoe UI", sc(9.5)),
             relief="flat",
             bd=0,
             cursor="hand2",
-            width=3,
+            padx=sc(10),
             command=self.browse_database,
             highlightthickness=1,
             highlightbackground=self.C_OUTLINE,
@@ -600,7 +600,7 @@ class StartupDialog:
             btn = tk.Button(
                 toggle_outer,
                 text=label,
-                font=("Courier New", sc(9), "bold"),
+                font=("JetBrains Mono", sc(9), "bold"),
                 relief="flat", bd=0, cursor="hand2",
                 command=lambda m=mode: self._set_image_mode(m),
             )
@@ -629,7 +629,7 @@ class StartupDialog:
             readonlybackground=self.C_SURFACE_LOW,
             bg=self.C_SURFACE_LOW,
             fg=self.C_ON_SURFACE,
-            font=("Courier New", sc(10)),
+            font=("JetBrains Mono", sc(10)),
             relief="flat",
             highlightthickness=1,
             highlightbackground=self.C_OUTLINE,
@@ -713,7 +713,7 @@ class StartupDialog:
             readonlybackground=self.C_SURFACE_LOW,
             bg=self.C_SURFACE_LOW,
             fg=self.C_ON_SURFACE,
-            font=("Courier New", sc(10)),
+            font=("JetBrains Mono", sc(10)),
             relief="flat",
             highlightthickness=1,
             highlightbackground=self.C_OUTLINE,
@@ -907,10 +907,10 @@ class StartupDialog:
         )
         self.status_label.pack(side="left", padx=sc(10))
 
-        # LAUNCH SYSTEM button (Primary style: black bg, white text)
+        # Open Collection primary button
         self.continue_btn = tk.Button(
             footer,
-            text="LAUNCH SYSTEM",
+            text="Open Collection →",
             bg=self.C_PRIMARY,
             fg=self.C_ON_PRIMARY,
             font=("Segoe UI", sc(10), "bold"),
@@ -1111,7 +1111,7 @@ class StartupDialog:
         self._refresh_launch_state()
         if hasattr(self, "ready_status_label"):
             self.ready_status_label.config(
-                text="🌿 Demo loaded (220 specimens) — Click LAUNCH SYSTEM!",
+                text="🌿 Demo loaded (220 specimens) — Click Open Collection →",
                 fg="#2d6a4f"
             )
 

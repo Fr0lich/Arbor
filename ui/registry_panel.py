@@ -131,10 +131,31 @@ class RegistryPanel:
 
         ui.no_problems_msg_label = ttk.Label(
             ui.reg_data_frame,
-            text="No active problems for this object. All fields hidden.",
+            text="No active problems for this specimen. Focus Mode is hiding clean fields.",
             foreground="#2b8a3e",
             font=("Segoe UI", sc(10), "italic"),
             anchor="center"
+        )
+
+        def _exit_focus_mode_from_empty():
+            if hasattr(ui, "focus_mode_var"):
+                ui.focus_mode_var.set(False)
+            RegistryPanel.update_reg_fields_visibility(ui, skip_snap=True)
+
+        ui.focus_show_all_btn = tk.Button(
+            ui.reg_data_frame,
+            text="Show All Fields",
+            font=("Inter", sc(9), "bold"),
+            bg="#eaf5ec",
+            fg="#1b5e20",
+            activebackground="#d4ecd9",
+            relief="flat",
+            highlightbackground="#3a7d44",
+            highlightthickness=1,
+            padx=sc(12),
+            pady=sc(4),
+            cursor="hand2",
+            command=_exit_focus_mode_from_empty,
         )
 
         # Build reverse map for inline problem checkboxes
@@ -349,9 +370,16 @@ class RegistryPanel:
                     spacer_lbl = tk.Frame(col0_frame, width=16, bg=card_bg)
                     spacer_lbl.pack(side="left")
 
-                # Col 1: Label with bold clean typography
+                # Col 1: Label with bold clean typography + helpful inline field tooltips
                 lbl = tk.Label(frame, text=name, width=15, anchor="w", font=("Inter", sc(10), "bold"), bg=card_bg, fg=fg_color)
                 lbl.grid(row=0, column=1, sticky="w", padx=(0, 6))
+                _field_tips = {
+                    "Genus": "First word of the scientific name. Type what is printed on the box — outdated or synonym names can be updated later with 🔍 Check GBIF.",
+                    "Species": "Second word of the scientific name. Type what is printed on the box — outdated or synonym names can be updated later with 🔍 Check GBIF.",
+                    "Author": "Scientist who originally named the plant (e.g. L.) — NOT the person who collected it (use Collector for that).",
+                }
+                if name in _field_tips and hasattr(ui, "add_tooltip"):
+                    ui.add_tooltip(lbl, _field_tips[name])
                 if prob_col:
                     ui.prob_label_widgets[name] = lbl
 
@@ -514,6 +542,14 @@ class RegistryPanel:
         edit_frame = ttk.Frame(tab_frame, padding=12)
         edit_frame.pack(fill="x")
 
+        def _humanize_problem_label(col_name: str) -> str:
+            import re
+            clean = re.sub(r"[_ ]?[Pp]roblem$", "", str(col_name or "")).replace("_", " ").strip()
+            clean = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", clean)
+            if not clean or clean.lower() == "other":
+                return "Other Issue"
+            return f"{clean} Issue"
+
         ui.problem_checkbuttons = []
         for i, field in enumerate(ui.app.config["ui_sections"]["problems"]):
             name = field["name"]
@@ -524,7 +560,7 @@ class RegistryPanel:
 
             cb = ttk.Checkbutton(
                 edit_frame, cursor="hand2",
-                text=name.replace("_", " "),
+                text=_humanize_problem_label(name),
                 variable=var,
                 command=lambda: (
                     RegistryPanel.update_reg_fields_visibility(ui, skip_snap=True),
@@ -651,12 +687,16 @@ class RegistryPanel:
 
         if hasattr(ui, "no_problems_msg_label"):
             if focus_active and visible_count <= 0:
-                ui.no_problems_msg_label.config(text="No fields visible in Focus mode.")
+                ui.no_problems_msg_label.config(text="No active problems for this specimen. Focus Mode is hiding clean fields.")
                 if ui.no_problems_msg_label.winfo_manager() != "grid":
-                    ui.no_problems_msg_label.grid(row=0, column=0, pady=15, sticky="ew")
+                    ui.no_problems_msg_label.grid(row=0, column=0, pady=(15, 6), sticky="ew")
+                if hasattr(ui, "focus_show_all_btn") and ui.focus_show_all_btn.winfo_manager() != "grid":
+                    ui.focus_show_all_btn.grid(row=1, column=0, pady=(0, 12))
             else:
                 if ui.no_problems_msg_label.winfo_manager() == "grid":
                     ui.no_problems_msg_label.grid_remove()
+                if hasattr(ui, "focus_show_all_btn") and ui.focus_show_all_btn.winfo_manager() == "grid":
+                    ui.focus_show_all_btn.grid_remove()
 
         if hasattr(ui, "card_frames") and hasattr(ui, "card_defs_ordered"):
             for card_id in ui.card_defs_ordered:

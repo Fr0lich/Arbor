@@ -13,6 +13,53 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 27: Design-System Visual Polish (`MobilePanel` CTAs & Dark Mode, Startup Typography, Top-Bar `⌘ Commands (Ctrl+K)` Pill)
+- **Date**: 2026-11-22
+- **Feature Area**: Phone Connector (`ui/mobile_panel.py`), Startup Dialog (`ui/dialogs.py`), & Top Navigation Bar (`ui/navigation_bar.py`)
+- **What Changed**:
+  1. **`MobilePanel` Visual Alignment (`ui/mobile_panel.py`)**: Replaced native grey `ttk.Button` Start/Stop controls with Arbor's Vibrant Fern (`#3a7d44`) primary CTA (`▶ Start Mobile Session`) and outlined danger button (`End Mobile Session`), upgraded the panel title to `Lora`, and propagated Dark Mode background/title tokens from `parent_ui`.
+  2. **Startup Typography Alignment (`ui/dialogs.py`)**: Upgraded `StartupDialog` headings and paths from legacy `Courier New` / `Segoe UI` to Arbor's canonical `Lora` (title) and `JetBrains Mono` (section headers, paths, wordmark) per `AI_UI_GUIDE.md`.
+  3. **1-Click Command Palette Pill (`ui/navigation_bar.py`)**: Added a subtle **`⌘ Commands (Ctrl+K)`** pill in the top navigation bar so both new trainees and power users can discover and launch `Ctrl+K` actions in 1 click.
+- **User Impact**: Arbor looks cohesive from the very first launch screen through the Phone Connector and main workspace, with instant 1-click access to Command Palette actions.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Design Tokens verified against `documentation/agent/AI_UI_GUIDE.md`
+
+---
+
+### Entry 26: UI/UX Ergonomics & Clarity Pass (Plain Buttons, Focus Mode Escape Hatch, Friendly Problem Labels, Desktop Field Tooltips & Calm Mobile Setup)
+- **Date**: 2026-11-22
+- **Feature Area**: Startup Dialog (`ui/dialogs.py`), Top Navigation Bar (`ui/navigation_bar.py`), Registration Form (`ui/registry_panel.py`), Mobile Panel (`ui/mobile_panel.py`), & Mobile V2 (`backend/mobile_template_v2.py`)
+- **What Changed**:
+  1. **Plain-Language Primary Buttons & Placeholders**: Renamed Startup **`LAUNCH SYSTEM`** → **`Open Collection →`** and **`…`** → **`Browse…`**; renamed Desktop top bar **`Next+Hist`** → **`Next Ledger Match`** with a descriptive tooltip; updated Mobile V2 search placeholder to `"Search object # or plant name..."` and `"Set as Unknown (ICEDIG)..."` → `"Mark as Blank or Unreadable..."`.
+  2. **Focus Mode Safety Escape Hatch (`ui/registry_panel.py`)**: Added a 1-click **`Show All Fields`** button directly underneath the Focus Mode empty-state message so new users who accidentally toggle Focus Mode on a clean specimen can restore all fields immediately.
+  3. **Human-Friendly Problem Flag Labels & Desktop Field Tooltips**: Formatted raw underscore problem flags (`Box_Label_Problem`, `Collection_Date_Problem`, `PlantPart_Problem`, `Other_problem`) into readable labels (`Box Label Issue`, `Collection Date Issue`, `Plant Part Issue`, `Other Issue`) on Desktop and Mobile V2 while preserving exact Excel column names underneath. Added hover tooltips on `Genus`, `Species`, and `Author` in `ui/registry_panel.py` matching Mobile V2's Field Guide.
+  4. **Calmer `MobilePanel` Setup Card (`ui/mobile_panel.py`)**: Collapsed *Tunnel Provider (Cloudflare/Pinggy)* and *Interface Version (V2/V1)* inside a **`▸ Advanced Connection & Version Options`** toggle so the default launch screen stays clean and 1-glance, and wired live PIN warning updates when switching between Public and LAN modes.
+- **User Impact**: Both experienced curators and brand-new trainees encounter warm, jargon-free labels, instant tooltips for `Author` vs. `Collector` and `Genus`/`Species` GBIF updates, zero Focus Mode panic, and a streamlined Mobile Companion setup screen.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_mobile_companion.py` & `tests/test_mobile_companion_offline.py`
+  - [x] Master Lexicon compliance
+
+---
+
+### Entry 25: User1 & User2 Independence Pass (Mobile PIN Toggle, Offline Login CSS, "What the Fields Mean" Mirror Guide & Docs Cleanup)
+- **Date**: 2026-11-22
+- **Feature Area**: Mobile Server Security & Offline Login (`backend/mobile_server.py`), Phone Connector Panel (`ui/mobile_panel.py`), Mobile V2 Field Guide & Walkthrough (`backend/mobile_template_v2.py`), Problem Triage Queue (`ui/object_problem_resolver.py`), & Documentation (`MOBILE_COMPANION_USER_GUIDE.md`, `README.md`, `MAINTAINER_HANDOFF.md`)
+- **What Changed**:
+  1. **Instant-Load Offline `LOGIN_TEMPLATE` & Security Hardening (`backend/mobile_server.py`)**: Replaced the render-blocking Tailwind CDN script in `LOGIN_TEMPLATE` with self-contained inline CSS so the PIN screen loads instantaneously in concrete vaults, and removed the hardcoded `"43110"` fallback PIN.
+  2. **Live PIN Toggle & Direct Save in `MobilePanel` (`ui/mobile_panel.py`)**: Added a live **Require 4-Digit PIN: ON/OFF** toggle directly in both the setup and active session views (persisted to `user_prefs.json` and calling `server.update_pin_requirement()` live), showing an amber warning if Public Tunnel mode is active without a PIN, plus a 1-click **`💾 Save Workbook Now`** button.
+  3. **1-Tap "What the Fields Mean" Mirror Guide (`backend/mobile_template_v2.py`)**: Added a `?` button in both the Vault List and Specimen Detail headers opening `#fieldGuideModal`, which mirrors the exact specimen page layout with plain-English explanations for every field—including the tip that outdated/synonym `Genus`/`Species` names can be entered as printed on the box and updated later via desktop **GBIF Name Check**, and clarifying `Author` vs. `Collector`.
+  4. **Updated 3-Step Hallway Guide & Unwrapped Reassurance**: Updated Slide 1 to **"Find an Object and Search Its Listed Number"**, added *"it's okay to leave unsolvable problems flagged for someone else later"* reassurance on Slide 3, and removed `truncate` from `#reviewHelperText` so full reassuring text wraps cleanly on narrow phones.
+  5. **Desktop & Documentation Cleanup**: Renamed `BATCH_PROBLEM_QUEUE` → `"Problem Triage Queue"`, renamed `"4. ICEDIG Missing Data Standards"` → `"4. Blank or Unreadable Labels (Standard Codes)"` in `MOBILE_COMPANION_USER_GUIDE.md`, corrected `README.md` `"IndexedDB"` → `"localStorage offline queue + Service Worker"`, and added a `"Customizing Collection Columns (config.py)"` guide to `MAINTAINER_HANDOFF.md`.
+- **User Impact**: New workers without museum training can work independently in concrete vaults with instant login, a 1-tap plain-English Field Guide matching the exact screen in front of them, live PIN control on private Wi-Fi, and 1-click workbook saving.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Mobile Guide, README & Maintainer Handoff synced
+  - [x] Unit Tests: `tests/test_mobile_companion.py` & `tests/test_mobile_companion_offline.py`
+
+---
+
 ### Entry 24: Tutorial Engine Polish (Auto-Dodge HUD, Collapsible Details, Accurate Highlights) & Office Triage (`REV+ERR`) Sandbox Tour
 - **Date**: 2026-11-21
 - **Feature Area**: Interactive Tutorials (`ui/tutorials/tutorial_runner.py`, `ui/tutorials/sandbox_manager.py`, `ui/tutorials/review_tutorial.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/discrepancy_tutorial.py`, `ui/tutorials/database_tutorial.py`, `ui/tutorials/micro_guides.py`), Help Hub (`ui/help_dialogs.py`), Command Palette (`ui/command_palette.py`), & Tests (`tests/test_sandbox_tutorials.py`)

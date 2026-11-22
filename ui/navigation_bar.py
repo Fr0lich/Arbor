@@ -110,6 +110,12 @@ class NavigationBar:
         app.add_tooltip(btn_help, "User guide, shortcuts HUD, and interactive tutorials")
         app.toolbar_buttons["HELP"] = btn_help
 
+        # Subtle Command Palette pill (Ctrl+K discoverability)
+        if hasattr(app, "open_command_palette"):
+            btn_cmd = _nav_btn(nav_links_frame, "⌘ Commands (Ctrl+K)", app.open_command_palette)
+            app.add_tooltip(btn_cmd, "Quickly jump to any specimen, filter, or tool (Ctrl+K)")
+            app.toolbar_buttons["COMMANDS"] = btn_cmd
+
         # 1px separator before secondary controls
         sep2 = tk.Frame(nav_bar, bg=nav_border, width=1)
         app.nav_separators.append(sep2)
@@ -156,11 +162,11 @@ class NavigationBar:
         app.add_tooltip(app.toolbar_buttons['Next Problem'], "Jump to next problem")
 
         app.next_history_btn = ttk.Button(
-            prob_grp, text="Next+Hist", style="Primary.TButton",
+            prob_grp, text="Next Ledger Match", style="Primary.TButton",
             command=app.goto_next_problem_with_history, state="disabled", cursor="hand2")
         app.next_history_btn.pack(side="left", padx=sc(1))
         app.toolbar_buttons['Next+Hist'] = app.next_history_btn
-        app.add_tooltip(app.next_history_btn, "Jump to next object with suggestions")
+        app.add_tooltip(app.next_history_btn, "Jump to the next specimen that has a Historical Ledger suggestion")
 
         # Load preference: default to False (hidden)
         import config as cfg
