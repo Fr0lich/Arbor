@@ -1,12 +1,29 @@
 """
 ui/tutorials/discrepancy_tutorial.py
 
-Action-driven interactive tutorial for comparing specimens against historical ledgers and GBIF.
+Action-driven interactive tutorial for comparing specimens against conflicting historical ledgers.
 Operates strictly in an isolated in-memory sandbox without mutating real user files.
 """
 
-from .sandbox_manager import SandboxManager
+from .sandbox_manager import SandboxManager, mark_tutorial_completed
 from .tutorial_runner import TutorialRunner, ActionStep
+
+
+def _has_applied_1001_change(ui, initial_place: str, initial_date: str) -> bool:
+    """Detect whether the trainee applied a confirmed change to #1001."""
+    app = getattr(ui, "app", None)
+    if getattr(app, "dirty", False):
+        return True
+    df_reg = getattr(app, "df_reg", None)
+    if df_reg is not None and "1001" in df_reg.index:
+        try:
+            cur_place = str(df_reg.loc["1001", "Collection Place"] or "")
+            cur_date = str(df_reg.loc["1001", "Collection Date"] or "")
+            if cur_place != initial_place or cur_date != initial_date:
+                return True
+        except Exception:
+            pass
+    return False
 
 
 def start_discrepancy_tutorial(ui, on_complete=None):
@@ -20,64 +37,102 @@ def start_discrepancy_tutorial(ui, on_complete=None):
         except Exception:
             pass
 
+    initial_place = ""
+    initial_date = ""
+    if getattr(ui.app, "df_reg", None) is not None and "1001" in ui.app.df_reg.index:
+        try:
+            initial_place = str(ui.app.df_reg.loc["1001", "Collection Place"] or "")
+            initial_date = str(ui.app.df_reg.loc["1001", "Collection Date"] or "")
+        except Exception:
+            pass
+
+    def _finish_cb():
+        mark_tutorial_completed("discrepancy")
+        if callable(on_complete):
+            on_complete()
+
     steps = [
+        ActionStep(
+            step_id="discrepancy_intro",
+            title="0. When to Use Historical Ledger Comparison",
+            instruction=(
+                "Use this workflow at your desk when older museum catalog books disagree with multiple fields in your currently registered collection.\n\n"
+                "In this Practice Sandbox, specimen #1001 is compared against TWO older books that disagree with each other — "
+                "so you can practice evaluating historical clues carefully."
+            ),
+            action_hint="Click Next → to open Historical Ledger Comparison.",
+            details=(
+                "Remember: comparing older catalog books at your desk is NOT a physical inspection of the object, "
+                "so you will leave 'Reviewed' unchecked unless you also inspect the physical object itself."
+            ),
+        ),
         ActionStep(
             step_id="open_resolver",
             title="1. Open Historical Ledger Comparison",
-            instruction="Click the highlighted history indicator above the form (or press Ctrl+H) to open Historical Ledger Comparison.",
+            instruction="Click the blue 'History' pill above the registration form (or press Ctrl+H) to open Historical Ledger Comparison.",
             target_id="history_indicator_label",
-            action_hint="Click the history indicator or press Ctrl+H.",
+            action_hint="Click the History pill or press Ctrl+H.",
             keycaps=["Ctrl", "H"],
             details=(
-                "Whenever a loaded historical ledger book disagrees with the current specimen sheet, "
-                "Arbor flags it with a slate-blue [CFCT] badge so you can compare both versions side by side."
+                "Whenever loaded historical ledger books disagree with your currently registered record, "
+                "Arbor shows a blue History pill and a slate-blue [CFCT] badge so you can compare versions side by side."
             ),
             validator=lambda u: bool(
                 getattr(u, "_current_resolver_win", None) or
                 any(getattr(w, "tutorial_id", "") == "hr_sidebar" for w in u.root.winfo_children() if hasattr(w, "winfo_children"))
-            )
+            ),
         ),
         ActionStep(
             step_id="field_directory",
             title="2. Browse Fields That Disagree",
-            instruction="The left sidebar lists every field where the current workbook differs from historical ledgers. Click any field to jump straight to its card.",
+            instruction="The left sidebar lists every field where the current collection record differs from older ledgers. Click any field to jump straight to its card.",
             target_id="hr_sidebar",
-            action_hint="Inspect the field sidebar, then click Next →.",
+            action_hint="Click a field in the left sidebar, then click Next →.",
             details=(
-                "You never have to change a field if you aren't sure — only fields you explicitly select or apply are updated."
+                "You never have to change a field if you aren't sure — only fields you explicitly apply are updated."
             ),
         ),
         ActionStep(
             step_id="select_resolution",
-            title="3. Pick the Confirmed Value",
-            instruction="Each card shows the current Excel value alongside historical ledger suggestions. Click a suggested card to load that value into the box.",
+            title="3. Compare Multiple Books — Pick Carefully",
+            instruction=(
+                "Each card shows your currently registered value alongside suggestions from multiple older ledgers. "
+                "Notice Book 1 and Book 2 disagree with each other! Click a suggested value card to preview it in the input box."
+            ),
             target_id="hr_cards",
-            action_hint="Click a suggested value card, then click Next →.",
+            action_hint="Click a suggested value card to preview it, then click Next →.",
             details=(
-                "Excel impact: Clicking a suggestion previews it in the field input. Nothing is written to the Registration sheet until you click Apply."
+                "Excel impact: Clicking a suggestion only previews it in the field input. "
+                "Nothing is written to the Registration sheet until you click Apply."
             ),
         ),
         ActionStep(
             step_id="apply_changes",
-            title="4. Apply Confirmed Changes",
-            instruction="Click 'Apply' on a card (or 'Apply All') to update the specimen and automatically clear its mapped problem flag.",
-            target_id="hr_apply_all",
-            action_hint="Click 'Apply' or Next → to finish.",
-            details=(
-                "Every applied fix records a 'before -> after' entry in the Log sheet and pushes an Undo state so Ctrl+Z can reverse it cleanly."
+            title="4. Apply One Card (Without Marking Reviewed)",
+            instruction=(
+                "Click 'Apply' on a single confirmed card (avoid clicking 'Apply All' until you have checked every card!).\n\n"
+                "Important: fixing data from historical ledgers at your desk does NOT count as a physical review — "
+                "leave 'Reviewed' unchecked until someone inspects the physical object."
             ),
+            target_id="hr_apply_all",
+            action_hint="Click 'Apply' on a card (or click Skip Step →).",
+            details=(
+                "Excel impact: Applying a card updates the Registration sheet in memory, logs 'before -> after' on the Log sheet, "
+                "and pushes an Undo state (Ctrl+Z). Experienced curators can use 'Apply All' after verifying every card."
+            ),
+            validator=lambda u: _has_applied_1001_change(u, initial_place, initial_date),
         ),
         ActionStep(
             step_id="discrepancy_complete",
             title="5. Practice Complete!",
-            instruction="You finished the Historical Ledger Comparison walkthrough. Click Finish ✓ to exit Practice Mode and return to your workspace.",
+            instruction="You finished Historical Ledger Comparison! Click Finish ✓ to exit Practice Mode and return to your workspace.",
             action_hint="Click 'Finish ✓' below to exit Practice Mode.",
             details=(
-                "Remember: if a historical conflict cannot be resolved right now, it is completely fine to close the window and leave the flag active for a specialist later."
+                "If a historical conflict cannot be resolved right now, it is completely fine to close the window and leave it for a specialist later."
             ),
-        )
+        ),
     ]
 
-    runner = TutorialRunner(ui, steps, tutorial_name="Historical Ledger Comparison", on_complete=on_complete)
+    runner = TutorialRunner(ui, steps, tutorial_name="Historical Ledger Comparison", on_complete=_finish_cb)
     sm._active_runner = runner
     return runner

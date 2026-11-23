@@ -805,6 +805,7 @@ class MobileServer:
         self.session_id = uuid.uuid4().hex[:12]
         prefs = config.load_prefs()
         self._pin_required = prefs.get("require_mobile_pin", True)
+        self._show_walkthrough = bool(prefs.get("mobile_show_walkthrough", True))
         self._image_url_pattern_override = prefs.get("image_url_pattern_override", "")
         if not self._image_url_pattern_override:
             self._image_url_pattern_override = prefs.get("advanced", {}).get("image_url_pattern_override", "")
@@ -909,6 +910,10 @@ class MobileServer:
     def update_pin_requirement(self, is_required: bool):
         """Update the cached mobile PIN requirement without restarting the server."""
         self._pin_required = bool(is_required)
+
+    def update_walkthrough_setting(self, enabled: bool):
+        """Enable or disable auto-launching the first-time mobile walkthrough."""
+        self._show_walkthrough = bool(enabled)
 
     def _get_client_ip(self):
         """Extract the true client IP from Cloudflare/Proxy headers or remote_addr."""
@@ -1309,7 +1314,12 @@ class MobileServer:
 
             effective_token = tok or self.session_token
             effective_sid = sid or self.session_id
-            rendered = INDEX_TEMPLATE_V2.replace('{{ token }}', effective_token).replace('{{ session_id }}', effective_sid)
+            rendered = (
+                INDEX_TEMPLATE_V2
+                .replace('{{ token }}', effective_token)
+                .replace('{{ session_id }}', effective_sid)
+                .replace('{{ show_walkthrough }}', 'true' if getattr(self, '_show_walkthrough', True) else 'false')
+            )
             resp = make_response(rendered)
             resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
             resp.headers['Pragma'] = 'no-cache'

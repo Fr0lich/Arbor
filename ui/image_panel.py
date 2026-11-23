@@ -155,6 +155,13 @@ class ImagePanel(ttk.Frame):
                         bg="#1e293b" if is_dark else "#e0f2fe",
                         highlightbackground="#334155" if is_dark else "#bae6fd"
                     )
+        # Re-render the No-Images Specimen Summary Hub immediately if it is currently displayed
+        if getattr(self, "_showing_summary_hub", False) and hasattr(self, "image_container") and self.image_container.winfo_exists():
+            curr_oid = getattr(self, "_summary_hub_oid", None)
+            try:
+                self.render_specimen_summary_hub(curr_oid)
+            except Exception:
+                pass
 
     def _on_online_btn_enter(self, btn):
         btn.configure(
@@ -479,16 +486,27 @@ class ImagePanel(ttk.Frame):
         else:
             self.view_btn.pack_forget()
 
-        # Check panedwindow parent toggling for offline mode
+        # Delegate pane collapse / restore to main_ui so Location can dock cleanly at the bottom
+        if self.main_ui and hasattr(self.main_ui, "_sync_middle_panes"):
+            try:
+                self.main_ui._sync_middle_panes()
+                return
+            except Exception:
+                pass
+
+        # Standalone fallback when ImagePanel runs without ObjectProgramUI
         if self.image_mode == "offline":
             if self.parent and hasattr(self.parent, "panes") and str(self) in self.parent.panes():
                 self.parent.forget(self)
         else:
             if self.parent and hasattr(self.parent, "panes") and str(self) not in self.parent.panes():
                 try:
-                    self.parent.insert(1, self, weight=3)
+                    self.parent.insert(0, self, weight=3)
                 except Exception:
-                    pass
+                    try:
+                        self.parent.add(self, weight=3)
+                    except Exception:
+                        pass
 
     def toggle_image_tools(self):
         if not hasattr(self, "image_toolbar") or not self.image_toolbar.winfo_exists():
@@ -1037,6 +1055,7 @@ class ImagePanel(ttk.Frame):
             self.render_specimen_summary_hub(oid)
             return
 
+        self._showing_summary_hub = False
         if self.image_view_mode == "gallery":
             self.root.after(0, self._render_image_gallery)
         else:
@@ -1843,45 +1862,152 @@ class ImagePanel(ttk.Frame):
         except Exception:
             pass
 
+    @staticmethod
+    def _humanize_problem_flag(col_name: str) -> str:
+        clean = re.sub(r"[_ ]?[Pp]roblem$", "", str(col_name or "")).replace("_", " ").strip()
+        clean = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", clean)
+        if not clean or clean.lower() == "other":
+            return "Other Issue"
+        return f"{clean} Issue"
+
+    def _hide_photo_pane_from_hub(self):
+        """Hides the middle photo pane (same as pressing F8) so Left + Right expand cleanly."""
+        self.show_images_var.set(False)
+        if self.main_ui and hasattr(self.main_ui, "toggle_images_panel"):
+            self.main_ui.toggle_images_panel()
+        elif self.main_ui and hasattr(self.main_ui, "_sync_middle_panes"):
+            self.main_ui._sync_middle_panes()
+
     def render_specimen_summary_hub(self, oid):
-        """Renders the Specimen Audit Summary Hub when an object has no images or in offline mode."""
+        """Renders the Specimen Audit Summary Hub when an object has no images or no source is linked."""
+        self._showing_summary_hub = True
+        self._summary_hub_oid = oid
         self._update_image_controls_visibility()
         for w in self.image_container.winfo_children():
             w.destroy()
 
+        is_dark = bool(getattr(self, "dark_mode", False))
+        card_bg = "#222723" if is_dark else "#ffffff"
+        sub_bg = "#181c19" if is_dark else "#fbfaf8"
+        banner_bg = "#1e2620" if is_dark else "#f2f5f1"
+        border_col = "#333a35" if is_dark else "#d1d5d0"
+        divider_col = "#333a35" if is_dark else "#e9ece5"
+        fg_primary = "#e8ebe9" if is_dark else "#2c302e"
+        fg_muted = "#9ca39e" if is_dark else "#757d77"
+        fg_empty = "#6b726d" if is_dark else "#9ca3af"
+        btn_bg = "#2a312c" if is_dark else "#f2f5f1"
+        btn_fg = "#e8ebe9" if is_dark else "#2c302e"
+        btn_active_bg = "#353e37" if is_dark else "#e3ebe1"
+        accent_bg = "#3a7d44"
+        accent_fg = "#ffffff"
+
+        # Actionable empty-source strip so users without images can link a folder, use online photos, or hide the pane
+        if self.image_mode is None:
+            action_banner = tk.Frame(
+                self.image_container,
+                bg=banner_bg,
+                highlightthickness=1,
+                highlightbackground=border_col,
+                padx=sc(14),
+                pady=sc(10),
+            )
+            action_banner.pack(fill="x", padx=sc(16), pady=(sc(14), 0))
+            tk.Label(
+                action_banner,
+                text="No image folder connected",
+                font=("Inter", sc(10), "bold"),
+                bg=banner_bg,
+                fg=fg_primary,
+                anchor="w",
+            ).pack(fill="x")
+            tk.Label(
+                action_banner,
+                text="Link a local photo folder, use online photos, or hide this pane to give the registration form more room.",
+                font=("Inter", sc(9)),
+                bg=banner_bg,
+                fg=fg_muted,
+                anchor="w",
+                wraplength=sc(460),
+                justify="left",
+            ).pack(fill="x", pady=(sc(2), sc(8)))
+
+            cta_row = tk.Frame(action_banner, bg=banner_bg)
+            cta_row.pack(fill="x")
+            tk.Button(
+                cta_row,
+                text="Select Image Folder…",
+                font=("Inter", sc(9), "bold"),
+                bg=accent_bg,
+                fg=accent_fg,
+                activebackground="#2f6638",
+                activeforeground="#ffffff",
+                relief="flat",
+                bd=0,
+                padx=sc(10),
+                pady=sc(5),
+                cursor="hand2",
+                command=self.select_image_folder,
+            ).pack(side="left", padx=(0, sc(6)))
+            tk.Button(
+                cta_row,
+                text="Use Online Photos",
+                font=("Inter", sc(9), "bold"),
+                bg=btn_bg,
+                fg=btn_fg,
+                activebackground=btn_active_bg,
+                activeforeground=btn_fg,
+                relief="solid",
+                bd=1,
+                padx=sc(10),
+                pady=sc(4),
+                cursor="hand2",
+                command=self.enable_online_images,
+            ).pack(side="left", padx=(0, sc(6)))
+            tk.Button(
+                cta_row,
+                text="Hide Photo Pane (F8)",
+                font=("Inter", sc(9)),
+                bg=btn_bg,
+                fg=fg_muted,
+                activebackground=btn_active_bg,
+                activeforeground=btn_fg,
+                relief="solid",
+                bd=1,
+                padx=sc(10),
+                pady=sc(4),
+                cursor="hand2",
+                command=self._hide_photo_pane_from_hub,
+            ).pack(side="left")
+
         if not oid:
             empty_frame = tk.Frame(
                 self.image_container,
-                bg="#ffffff",
+                bg=card_bg,
                 highlightthickness=1,
-                highlightbackground="#d1d1d1",
+                highlightbackground=border_col,
                 padx=sc(24),
                 pady=sc(32)
             )
-            empty_frame.pack(fill="both", expand=True, padx=sc(20), pady=sc(20))
-            tk.Label(
-                empty_frame,
-                text="🏛️",
-                font=("Segoe UI Emoji", sc(32)),
-                bg="#ffffff"
-            ).pack(pady=(sc(10), sc(4)))
+            empty_frame.pack(fill="both", expand=True, padx=sc(16), pady=sc(16))
             tk.Label(
                 empty_frame,
                 text="No Specimen Selected",
                 font=("Lora", sc(16), "bold"),
-                bg="#ffffff",
-                fg="#2c302e"
-            ).pack(pady=sc(4))
+                bg=card_bg,
+                fg=fg_primary
+            ).pack(pady=(sc(10), sc(4)))
             tk.Label(
                 empty_frame,
-                text="Select an object from the left list, or adjust your search filters to begin auditing.",
-                font=("Segoe UI", sc(10)),
-                bg="#ffffff",
-                fg="#757d77"
+                text="Select a specimen from the Specimen Directory, or adjust your search filters to begin auditing.",
+                font=("Inter", sc(10)),
+                bg=card_bg,
+                fg=fg_muted,
+                wraplength=sc(420),
+                justify="center"
             ).pack(pady=sc(4))
             return
 
-        # Fetch data for specimen
+        # Fetch data for specimen (prefer fast cached row dicts when available)
         genus = ""
         species = ""
         author = ""
@@ -1891,88 +2017,106 @@ class ImagePanel(ttk.Frame):
         coll_date = ""
         coll_place = ""
         box_label = ""
-        obs_text = ""
         is_reviewed = False
         active_problems = []
 
-        if self.app:
-            if getattr(self.app, "df_reg", None) is not None:
-                str_oid = str(oid)
-                int_oid = int(oid) if str_oid.isdigit() else None
-                row = None
-                if str_oid in self.app.df_reg.index:
-                    row = self.app.df_reg.loc[str_oid]
-                elif int_oid is not None and int_oid in self.app.df_reg.index:
-                    row = self.app.df_reg.loc[int_oid]
+        str_oid = str(oid)
+        int_oid = int(oid) if str_oid.isdigit() else None
 
-                if row is not None:
-                    try:
-                        def _g(k):
-                            v = row.get(k, "")
-                            s = str(v).strip()
-                            return "" if s in ("nan", "None", "<NA>") else s
-                        genus = _g("Genus")
-                        species = _g("Species")
-                        author = _g("Author")
-                        family = _g("Family")
-                        high_class = _g("Higher Classification")
-                        collector = _g("Collector")
-                        coll_date = _g("Collection Date")
-                        coll_place = _g("Collection Place")
-                        box_label = _g("Box Label")
-                        obs_text = _g("Observation")
-                    except Exception:
-                        pass
+        reg_row = None
+        if self.main_ui and hasattr(self.main_ui, "_get_reg_dict"):
+            try:
+                rd = self.main_ui._get_reg_dict()
+                reg_row = rd.get(str_oid)
+                if reg_row is None and int_oid is not None:
+                    reg_row = rd.get(int_oid)
+            except Exception:
+                reg_row = None
 
-            if getattr(self.app, "df_obs", None) is not None:
-                str_oid = str(oid)
-                int_oid = int(oid) if str_oid.isdigit() else None
+        if reg_row is None and self.app and getattr(self.app, "df_reg", None) is not None:
+            if str_oid in self.app.df_reg.index:
+                reg_row = self.app.df_reg.loc[str_oid]
+            elif int_oid is not None and int_oid in self.app.df_reg.index:
+                reg_row = self.app.df_reg.loc[int_oid]
+
+        if reg_row is not None:
+            try:
+                def _g(k):
+                    v = reg_row.get(k, "")
+                    s = str(v).strip()
+                    return "" if s in ("nan", "None", "<NA>") else s
+                genus = _g("Genus")
+                species = _g("Species")
+                author = _g("Author")
+                family = _g("Family")
+                high_class = _g("Higher Classification")
+                collector = _g("Collector")
+                coll_date = _g("Collection Date")
+                coll_place = _g("Collection Place") or _g("Collection place")
+                box_label = _g("Box Label") or _g("Box label")
+            except Exception:
+                pass
+
+        obs_row = None
+        if self.main_ui and hasattr(self.main_ui, "_get_obs_dict"):
+            try:
+                od = self.main_ui._get_obs_dict()
+                obs_row = od.get(str_oid)
+                if obs_row is None and int_oid is not None:
+                    obs_row = od.get(int_oid)
+            except Exception:
                 obs_row = None
-                if str_oid in self.app.df_obs.index:
-                    obs_row = self.app.df_obs.loc[str_oid]
-                elif int_oid is not None and int_oid in self.app.df_obs.index:
-                    obs_row = self.app.df_obs.loc[int_oid]
 
-                if obs_row is not None:
-                    try:
-                        rev_val = obs_row.get("Reviewed", False)
-                        is_reviewed = bool(rev_val) and str(rev_val).lower() not in ("false", "0", "nan", "none")
-                        if self.app.config and "ui_sections" in self.app.config and "problems" in self.app.config["ui_sections"]:
-                            for p in self.app.config["ui_sections"]["problems"]:
-                                p_name = p.get("name")
-                                if p_name and p_name in obs_row:
-                                    val = obs_row[p_name]
-                                    if bool(val) and str(val).lower() not in ("false", "0", "nan", "none"):
-                                        active_problems.append(p_name.replace("_Problem", ""))
-                    except Exception:
-                        pass
+        if obs_row is None and self.app and getattr(self.app, "df_obs", None) is not None:
+            if str_oid in self.app.df_obs.index:
+                obs_row = self.app.df_obs.loc[str_oid]
+            elif int_oid is not None and int_oid in self.app.df_obs.index:
+                obs_row = self.app.df_obs.loc[int_oid]
+
+        if obs_row is not None:
+            try:
+                rev_val = obs_row.get("Reviewed", False)
+                is_reviewed = bool(rev_val) and str(rev_val).lower() not in ("false", "0", "nan", "none")
+                if self.app and self.app.config and "ui_sections" in self.app.config and "problems" in self.app.config["ui_sections"]:
+                    for p in self.app.config["ui_sections"]["problems"]:
+                        p_name = p.get("name")
+                        if p_name and p_name in obs_row:
+                            val = obs_row[p_name]
+                            if bool(val) and str(val).lower() not in ("false", "0", "nan", "none"):
+                                active_problems.append(self._humanize_problem_flag(p_name))
+            except Exception:
+                pass
 
         # Build Hub Container
         hub_frame = tk.Frame(
             self.image_container,
-            bg="#ffffff",
+            bg=card_bg,
             highlightthickness=1,
-            highlightbackground="#d1d1d1",
+            highlightbackground=border_col,
             padx=sc(20),
             pady=sc(16)
         )
-        hub_frame.pack(fill="both", expand=True, padx=sc(16), pady=sc(16))
+        hub_frame.pack(fill="both", expand=True, padx=sc(16), pady=sc(14))
 
         # Top Badge & Section Label
-        top_row = tk.Frame(hub_frame, bg="#ffffff")
+        top_row = tk.Frame(hub_frame, bg=card_bg)
         top_row.pack(fill="x", pady=(0, sc(8)))
 
         tk.Label(
             top_row,
             text="SPECIMEN AUDIT & TAXONOMIC SUMMARY",
             font=("JetBrains Mono", sc(9), "bold"),
-            fg="#757d77",
-            bg="#ffffff"
+            fg=fg_muted,
+            bg=card_bg
         ).pack(side="left")
 
-        status_text = "✓ REVIEWED" if is_reviewed else "⏳ UNREVIEWED"
-        status_bg = "#dcfce7" if is_reviewed else "#fef3c7"
-        status_fg = "#15803d" if is_reviewed else "#92400e"
+        status_text = "✓ REVIEWED" if is_reviewed else "UNREVIEWED"
+        if is_dark:
+            status_bg = "#143522" if is_reviewed else "#3b2c12"
+            status_fg = "#86efac" if is_reviewed else "#fcd34d"
+        else:
+            status_bg = "#dcfce7" if is_reviewed else "#fef3c7"
+            status_fg = "#15803d" if is_reviewed else "#92400e"
         tk.Label(
             top_row,
             text=status_text,
@@ -1982,6 +2126,29 @@ class ImagePanel(ttk.Frame):
             padx=sc(6),
             pady=sc(2)
         ).pack(side="right")
+
+        # Subtle note if an image source IS configured but this specific specimen has 0 photos
+        if self.image_mode in ("folder", "online"):
+            note_row = tk.Frame(hub_frame, bg=card_bg)
+            note_row.pack(fill="x", pady=(0, sc(6)))
+            tk.Label(
+                note_row,
+                text=f"No photos matched Specimen #{oid}.",
+                font=("Inter", sc(9)),
+                fg=fg_muted,
+                bg=card_bg,
+                anchor="w",
+            ).pack(side="left")
+            link_lbl = tk.Label(
+                note_row,
+                text="Change Image Source…",
+                font=("Inter", sc(9), "underline"),
+                fg="#86efac" if is_dark else "#3a7d44",
+                bg=card_bg,
+                cursor="hand2",
+            )
+            link_lbl.pack(side="left", padx=(sc(8), 0))
+            link_lbl.bind("<Button-1>", lambda e: self.open_image_menu())
 
         # Scientific Name Header
         name_parts = []
@@ -1994,8 +2161,8 @@ class ImagePanel(ttk.Frame):
             hub_frame,
             text=full_taxon,
             font=("Lora", sc(18), "bold italic"),
-            fg="#2c302e",
-            bg="#ffffff",
+            fg=fg_primary,
+            bg=card_bg,
             anchor="w",
             justify="left"
         ).pack(fill="x", pady=(0, sc(2)))
@@ -2008,26 +2175,26 @@ class ImagePanel(ttk.Frame):
                 hub_frame,
                 text="  •  ".join(tax_meta),
                 font=("Inter", sc(10)),
-                fg="#757d77",
-                bg="#ffffff",
+                fg=fg_muted,
+                bg=card_bg,
                 anchor="w"
             ).pack(fill="x", pady=(0, sc(12)))
 
-        tk.Frame(hub_frame, bg="#e9ece5", height=1).pack(fill="x", pady=(0, sc(12)))
+        tk.Frame(hub_frame, bg=divider_col, height=1).pack(fill="x", pady=(0, sc(12)))
 
         # Metadata Details Grid
-        grid_frame = tk.Frame(hub_frame, bg="#ffffff")
+        grid_frame = tk.Frame(hub_frame, bg=card_bg)
         grid_frame.pack(fill="x", pady=(0, sc(12)))
         grid_frame.columnconfigure(0, weight=1)
         grid_frame.columnconfigure(1, weight=1)
 
         def _add_meta_item(parent, row, col, label, val):
-            box = tk.Frame(parent, bg="#fbfaf8", highlightthickness=1, highlightbackground="#e9ece5", padx=sc(8), pady=sc(6))
+            box = tk.Frame(parent, bg=sub_bg, highlightthickness=1, highlightbackground=divider_col, padx=sc(8), pady=sc(6))
             box.grid(row=row, column=col, sticky="nsew", padx=sc(4), pady=sc(4))
-            tk.Label(box, text=label.upper(), font=("JetBrains Mono", sc(8), "bold"), fg="#757d77", bg="#fbfaf8", anchor="w").pack(fill="x")
+            tk.Label(box, text=label.upper(), font=("JetBrains Mono", sc(8), "bold"), fg=fg_muted, bg=sub_bg, anchor="w").pack(fill="x")
             val_text = val if val else "—"
-            val_fg = "#2c302e" if val else "#9ca3af"
-            tk.Label(box, text=val_text, font=("Inter", sc(9)), fg=val_fg, bg="#fbfaf8", anchor="w", wraplength=sc(200), justify="left").pack(fill="x")
+            val_fg = fg_primary if val else fg_empty
+            tk.Label(box, text=val_text, font=("Inter", sc(9)), fg=val_fg, bg=sub_bg, anchor="w", wraplength=sc(200), justify="left").pack(fill="x")
 
         _add_meta_item(grid_frame, 0, 0, "Collector", collector)
         _add_meta_item(grid_frame, 0, 1, "Collection Date", coll_date)
@@ -2035,37 +2202,46 @@ class ImagePanel(ttk.Frame):
         _add_meta_item(grid_frame, 1, 1, "Box Label", box_label)
 
         # Problem / Data Quality Card
-        prob_box = tk.Frame(hub_frame, bg="#ffffff", highlightthickness=1, highlightbackground="#e9ece5", padx=sc(10), pady=sc(8))
+        prob_box = tk.Frame(hub_frame, bg=card_bg, highlightthickness=1, highlightbackground=divider_col, padx=sc(10), pady=sc(8))
         prob_box.pack(fill="x", pady=(0, sc(14)))
 
         if active_problems:
-            tk.Label(prob_box, text="⚠️ ACTIVE PROBLEM FLAGS", font=("JetBrains Mono", sc(8), "bold"), fg="#b91c1c", bg="#ffffff", anchor="w").pack(fill="x", pady=(0, sc(4)))
-            prob_pill_frame = tk.Frame(prob_box, bg="#ffffff")
+            err_fg = "#fca5a5" if is_dark else "#b91c1c"
+            err_bg = "#451215" if is_dark else "#fee2e2"
+            tk.Label(prob_box, text="ACTIVE ISSUE FLAGS", font=("JetBrains Mono", sc(8), "bold"), fg=err_fg, bg=card_bg, anchor="w").pack(fill="x", pady=(0, sc(6)))
+            prob_pill_frame = tk.Frame(prob_box, bg=card_bg)
             prob_pill_frame.pack(fill="x")
-            for p in active_problems:
+            cols = 2
+            for c_idx in range(cols):
+                prob_pill_frame.columnconfigure(c_idx, weight=1)
+            for idx, p in enumerate(active_problems):
                 tk.Label(
                     prob_pill_frame,
                     text=f"• {p}",
                     font=("Inter", sc(9), "bold"),
-                    bg="#fee2e2",
-                    fg="#b91c1c",
-                    padx=sc(6),
-                    pady=sc(2)
-                ).pack(side="left", padx=sc(2), pady=sc(2))
+                    bg=err_bg,
+                    fg=err_fg,
+                    padx=sc(8),
+                    pady=sc(3),
+                    anchor="w",
+                ).grid(row=idx // cols, column=idx % cols, sticky="ew", padx=sc(3), pady=sc(2))
         else:
-            tk.Label(prob_box, text="✓ No flagged data errors for this specimen.", font=("Inter", sc(9)), fg="#15803d", bg="#ffffff", anchor="w").pack(fill="x")
+            ok_fg = "#86efac" if is_dark else "#15803d"
+            tk.Label(prob_box, text="✓ No flagged data issues for this specimen.", font=("Inter", sc(9)), fg=ok_fg, bg=card_bg, anchor="w").pack(fill="x")
 
         # Contextual Actions Frame
-        btn_frame = tk.Frame(hub_frame, bg="#ffffff")
+        btn_frame = tk.Frame(hub_frame, bg=card_bg)
         btn_frame.pack(fill="x", pady=(sc(4), 0))
 
         if self.main_ui and hasattr(self.main_ui, "run_gbif_verification_for_current"):
             tk.Button(
                 btn_frame,
-                text="🧬 Validate with GBIF",
-                font=("Segoe UI", sc(9), "bold"),
-                bg="#f2f5f1",
-                fg="#2c302e",
+                text="GBIF Name Check",
+                font=("Inter", sc(9), "bold"),
+                bg=btn_bg,
+                fg=btn_fg,
+                activebackground=btn_active_bg,
+                activeforeground=btn_fg,
                 relief="solid",
                 bd=1,
                 padx=sc(10),
@@ -2077,10 +2253,12 @@ class ImagePanel(ttk.Frame):
         if self.main_ui and hasattr(self.main_ui, "open_historical_resolver_for_current"):
             tk.Button(
                 btn_frame,
-                text="📖 Check Historical Books",
-                font=("Segoe UI", sc(9), "bold"),
-                bg="#f2f5f1",
-                fg="#2c302e",
+                text="Check Historical Books",
+                font=("Inter", sc(9), "bold"),
+                bg=btn_bg,
+                fg=btn_fg,
+                activebackground=btn_active_bg,
+                activeforeground=btn_fg,
                 relief="solid",
                 bd=1,
                 padx=sc(10),

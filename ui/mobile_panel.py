@@ -73,6 +73,7 @@ class MobilePanel:
         prefs = config.load_prefs() if hasattr(config, "load_prefs") else {}
         self.auto_save_var = tk.BooleanVar(value=bool(prefs.get("mobile_autosave_on_stop", False)))
         self.require_pin_var = tk.BooleanVar(value=bool(prefs.get("require_mobile_pin", True)))
+        self.show_walkthrough_var = tk.BooleanVar(value=bool(prefs.get("mobile_show_walkthrough", True)))
 
         self._build_ui()
 
@@ -439,6 +440,25 @@ class MobilePanel:
         )
         self.lbl_pin_tip.pack(fill="x")
 
+        # First-time phone tutorial toggle (ON by default)
+        self.walkthrough_row = tk.Frame(setup_card, bg="#fbfbf9")
+        self.walkthrough_row.pack(fill="x", pady=(10, 0))
+        self.cb_mobile_walkthrough = tk.Checkbutton(
+            self.walkthrough_row,
+            text="Launch with mobile companion tutorial for first-time users",
+            variable=self.show_walkthrough_var,
+            command=self._on_walkthrough_toggle,
+            font=("Inter", 9),
+            bg="#fbfbf9",
+            fg="#1b4332",
+            activebackground="#fbfbf9",
+            activeforeground="#1b4332",
+            selectcolor="#ffffff",
+            anchor="w",
+            cursor="hand2",
+        )
+        self.cb_mobile_walkthrough.pack(fill="x")
+
         self.start_btn = tk.Button(
             self.setup_frame,
             text="▶ Start Mobile Session",
@@ -790,6 +810,20 @@ class MobilePanel:
             except Exception:
                 pass
 
+    def _on_walkthrough_toggle(self):
+        enabled = bool(self.show_walkthrough_var.get())
+        try:
+            prefs = config.load_prefs() or {}
+            prefs["mobile_show_walkthrough"] = enabled
+            config.save_prefs(prefs)
+        except Exception:
+            pass
+        if self.server and hasattr(self.server, "update_walkthrough_setting"):
+            try:
+                self.server.update_walkthrough_setting(enabled)
+            except Exception:
+                pass
+
     def _toggle_pin_required(self):
         new_val = not self.require_pin_var.get()
         self.require_pin_var.set(new_val)
@@ -949,6 +983,8 @@ class MobilePanel:
         # Populate PIN and local URL (kept as LAN fallback)
         if hasattr(self.server, "update_pin_requirement"):
             self.server.update_pin_requirement(self.require_pin_var.get())
+        if hasattr(self.server, "update_walkthrough_setting"):
+            self.server.update_walkthrough_setting(self.show_walkthrough_var.get())
         self.pin_var.set(self.server.pin)
         self._update_pin_ui()
         local_ip = get_local_ip()

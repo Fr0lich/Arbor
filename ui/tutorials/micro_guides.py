@@ -6,6 +6,7 @@ Run directly in-place (use_sandbox=False) without mutating or resetting the user
 """
 
 from .tutorial_runner import TutorialRunner, ActionStep
+from .sandbox_manager import mark_tutorial_completed
 
 
 def start_hallway_followup_guide(ui, on_complete=None):
@@ -50,52 +51,95 @@ def start_hallway_followup_guide(ui, on_complete=None):
 
 
 def start_armed_shelf_guide(ui, on_complete=None):
-    """45-second micro-guide explaining the 1-Tap Armed Target Shelf pattern on phones."""
+    """Interactive in-place Desktop-to-Phone Setup & Hallway Walkthrough (Step 3 of Learning Path)."""
+    def _is_mobile_dialog_open(u) -> bool:
+        md = getattr(u, "mobile_dialog", None)
+        if md is not None:
+            win = getattr(md, "win", md)
+            try:
+                if win and win.winfo_exists():
+                    return True
+            except Exception:
+                pass
+        root = getattr(u, "root", None)
+        if root is not None:
+            try:
+                for w in root.winfo_children():
+                    if "Mobile" in str(getattr(w, "title", lambda: "")()):
+                        return True
+            except Exception:
+                pass
+        return False
+
     steps = [
         ActionStep(
-            step_id="mg_armed_setup",
-            title="1. Set Your Cabinet & Shelf Once",
+            step_id="mg_mobile_intro",
+            title="0. Why Use Mobile Companion? (Optional · Needs Your Phone)",
             instruction=(
-                "On your phone, pick the Building, Floor, Cabinet, and Shelf you are standing in front of. "
-                "Arbor arms that location as your Target Shelf."
+                "Connect your phone to walk the collection aisles without carrying a laptop:\n"
+                "• Stamp Storage Locations for 30+ boxes in 1 tap (Armed Target Shelf)\n"
+                "• Find already-reviewed objects when pulling items for closer inspection\n"
+                "• Mark objects as Loaned Out, or flag physical issues & mark Reviewed on the spot\n\n"
+                "Works offline in concrete basement vaults too!"
             ),
-            action_hint="Click Next → to see how 1-tap stamping works.",
+            action_hint="Click Next → to open the Phone Connector on your desktop.",
             details=(
-                "You can also use the Batch Location Registrator in Mobile V2 and tap '⚡ Use Cab XX · Sh XX' to copy your armed shelf in one tap."
+                "This guide runs directly on your workspace without entering Practice Mode so your real collection stays ready to pair."
             ),
         ),
         ActionStep(
-            step_id="mg_armed_stamp",
-            title="2. Opening a Specimen Never Overwrites It",
-            instruction=(
-                "Pull a box and type its number (001 matches 1). Mistyped numbers never corrupt a record — "
-                "tap the green 'Stamp Target' banner once to stamp 30+ boxes on the same shelf."
-            ),
-            action_hint="Click Next → for the final tip.",
+            step_id="mg_mobile_open",
+            title="1. Open the Phone Connector",
+            instruction="Click the highlighted 'MOBILE' button in the top navigation bar to open the Phone Connector window.",
+            target_id="mobile_nav_btn",
+            action_hint="Click 'MOBILE' in the top bar (or click Skip Step →).",
+            validator=_is_mobile_dialog_open,
             details=(
-                "If a specimen already has a different Storage Location saved, Arbor shows an amber 'Relocate' warning instead of silently overwriting it."
+                "No app store download is required — your phone connects through its normal web browser (Safari or Chrome)."
+            ),
+        ),
+        ActionStep(
+            step_id="mg_armed_setup",
+            title="2. Start Session & Scan the QR Code",
+            instruction=(
+                "In the Phone Connector window:\n"
+                "• Keep 'Launch with mobile companion tutorial' checked for first-time phone users (you can turn it off anytime).\n"
+                "• Click '▶ Start Mobile Session' and scan the QR code with your phone's camera.\n"
+                "• On your phone, set Floor, Cabinet, and Shelf once to arm your Target Shelf (or toggle Loaned Out on the Location tab)."
+            ),
+            action_hint="Click Next → for the end-of-shift saving rule.",
+            details=(
+                "Tip: Keep 'Require 4-Digit PIN' ON whenever using Public (Internet) mode. On private museum Wi-Fi (LAN only), you can toggle PIN off for faster sign-in."
             ),
         ),
         ActionStep(
             step_id="mg_armed_review",
-            title="3. Flag Problems & Still Mark Reviewed",
+            title="3. Flag Issues, Mark Reviewed & Save on Desktop",
             instruction=(
-                "If a box is damaged or handwriting is unclear, check the problem box and still tap '✓ Mark Reviewed'. "
-                "It's completely okay if you can't solve the issue in the hallway — the amber [REV+ERR] badge keeps it queued for someone else later."
+                "In the hallway, only tap '✓ Mark Reviewed' after physically checking the object. "
+                "Spot a physical issue? Check 'Other Issue', jot a quick Comment, and still tap '✓ Mark Reviewed' (amber [REV+ERR] queues it safely for the desk).\n\n"
+                "When your shift ends, click '💾 Save Workbook Now' (or press Ctrl+S) on this desktop computer to save all phone edits to disk."
             ),
             action_hint="Click Finish ✓ to close this guide.",
+            keycaps=["Ctrl", "S"],
             details=(
-                "Works even in concrete basement vaults with zero Wi-Fi/internet: offline edits queue safely on your phone and sync automatically once reconnected."
+                "Offline vault edits queue automatically on your phone and sync into desktop memory as soon as your phone reconnects."
             ),
         ),
     ]
+
+    def _finish_armed():
+        mark_tutorial_completed("mobile")
+        if callable(on_complete):
+            on_complete()
+
     return TutorialRunner(
         ui,
         steps,
-        tutorial_name="1-Tap Armed Shelf (45s)",
-        on_complete=on_complete,
+        tutorial_name="Mobile Companion Hallway Guide",
+        on_complete=_finish_armed,
         use_sandbox=False,
-        badge_text="⚡ QUICK GUIDE",
+        badge_text="⚡ PHONE QUICK GUIDE",
     )
 
 

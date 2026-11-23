@@ -402,9 +402,8 @@ class GBIFUpdateDialog(tk.Toplevel):
         self.apply()
 
     def center_window(self, parent):
+        import utils
         self.update_idletasks()
         req_w = max(self.winfo_reqwidth(), sc(580))
         req_h = min(max(self.winfo_reqheight(), sc(420)), sc(680))
-        x = parent.winfo_rootx() + (parent.winfo_width() // 2) - (req_w // 2)
-        y = parent.winfo_rooty() + (parent.winfo_height() // 2) - (req_h // 2)
-        self.geometry(f"{req_w}x{req_h}+{max(0, x)}+{max(0, y)}")
+        utils.center_and_fit_toplevel(self, req_w, req_h)

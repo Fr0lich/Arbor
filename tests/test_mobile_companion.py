@@ -2063,5 +2063,51 @@ def test_mobile_v2_field_guide_and_updated_walkthrough():
     assert 'id="reviewHelperText" class="text-[10.5px] leading-snug font-sans text-subdued text-center mt-1.5"' in INDEX_TEMPLATE_V2
 
 
+def test_mobile_v2_touch_gestures_and_targets():
+    """Verify Mobile V2 wires horizontal tab swipe, pinch/pan/double-tap photo zoom, swipe-down sheet, and 40px targets."""
+    from backend.mobile_server import INDEX_TEMPLATE_V2
+
+    # Horizontal swipe on #swipeArea + swipe-down on #storedAsSheetCard
+    assert "function initTouchGestures()" in INDEX_TEMPLATE_V2
+    assert 'id="storedAsSheetCard"' in INDEX_TEMPLATE_V2
+    assert "swipeArea.addEventListener('touchstart'" in INDEX_TEMPLATE_V2
+    assert "swipeArea.addEventListener('touchend'" in INDEX_TEMPLATE_V2
+    assert "sheetCard.addEventListener('touchmove'" in INDEX_TEMPLATE_V2
+
+    # Pinch-to-zoom, drag-pan & double-tap zoom in #photoViewerModal
+    assert "function initPhotoViewerTouchGestures()" in INDEX_TEMPLATE_V2
+    assert 'id="photoViewerViewport"' in INDEX_TEMPLATE_V2
+    assert "touch-action: none;" in INDEX_TEMPLATE_V2
+    assert "photoPanX" in INDEX_TEMPLATE_V2 and "photoPanY" in INDEX_TEMPLATE_V2
+    assert "Math.hypot(" in INDEX_TEMPLATE_V2
+
+    # Enlarged modal close & reconnect touch targets
+    assert 'min-w-[40px] min-h-[40px]' in INDEX_TEMPLATE_V2
+    assert 'onclick="setupEventSource()" class="min-h-[38px]' in INDEX_TEMPLATE_V2
+
+
+def test_mobile_walkthrough_toggle_injection():
+    """Verify MobileServer defaults to showing the first-time phone walkthrough and honors live toggle OFF."""
+    app = AppState()
+    app.config = config.DATABASE_CONFIGS["Økonomisk Botanisk"]
+    app.df_reg = pd.DataFrame([{"ObjectID": "1", "Genus": "Betula"}]).set_index("ObjectID", drop=False)
+    app.df_obs = pd.DataFrame([{"ObjectID": "1", "Reviewed": False}]).set_index("ObjectID", drop=False)
+    server = MobileServer(app)
+    server.update_pin_requirement(False)
+    client = server.flask_app.test_client()
+
+    # Default ON -> renders 'true'
+    server.update_walkthrough_setting(True)
+    res_on = client.get("/v2")
+    assert res_on.status_code == 200
+    assert "const _ARBOR_WT_RAW = 'true';" in res_on.get_data(as_text=True)
+
+    # Toggled OFF -> renders 'false'
+    server.update_walkthrough_setting(False)
+    res_off = client.get("/v2")
+    assert res_off.status_code == 200
+    assert "const _ARBOR_WT_RAW = 'false';" in res_off.get_data(as_text=True)
+
+
 
 

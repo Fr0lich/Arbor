@@ -1043,11 +1043,17 @@ class LayoutSettingsMixin:
                     except Exception:
                         pass
 
-        # Update horizontal location background
+        # Update horizontal location background & bottom dock slot
+        if hasattr(self, "_middle_loc_slot") and self._middle_loc_slot.winfo_exists():
+            try:
+                self._middle_loc_slot.configure(bg=loc_horiz_bg)
+            except Exception:
+                pass
         if hasattr(self, "loc_frame_horizontal") and self.loc_frame_horizontal.winfo_exists():
             if not self.loc_frame_horizontal.winfo_class().startswith("T"):
                 try:
-                    self.loc_frame_horizontal.configure(bg=loc_horiz_bg)
+                    border_col = "#333a35" if self.dark_mode_active else "#d6dad3"
+                    self.loc_frame_horizontal.configure(bg=loc_horiz_bg, highlightbackground=border_col)
                 except Exception:
                     pass
             for w in self._theme_loc_horiz_widgets:

@@ -14,6 +14,11 @@ Features:
 import tkinter as tk
 import math
 from typing import Dict, Callable, Optional
+try:
+    from config import sc
+except Exception:
+    def sc(v):
+        return int(round(v))
 
 # Design Tokens from AI_UI_GUIDE.md
 COLORS_LIGHT = {
@@ -108,7 +113,7 @@ class Tooltip:
         colors = self.get_colors()
         self.tip_window = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(True)
-        tw.wm_geometry(f"+{x}+{y}")
+        tw.wm_geometry(f"{int(x):+d}{int(y):+d}")
         tw.attributes("-topmost", True)
 
         label = tk.Label(
@@ -117,9 +122,9 @@ class Tooltip:
             justify=tk.LEFT,
             background=colors["tooltip_bg"],
             foreground=colors["tooltip_fg"],
-            font=("Segoe UI", 8, "normal"),
-            padx=6,
-            pady=3
+            font=("Inter", sc(8), "normal"),
+            padx=sc(6),
+            pady=sc(3)
         )
         label.pack()
 
@@ -188,16 +193,16 @@ class ImageToolbarButton(tk.Frame):
     def update_mode(self, mode: str):
         self.mode = mode
         if mode == "large":
-            self.icon_label.config(font=("Segoe UI", 13, "bold"))
-            self.text_label.config(font=("Segoe UI", 8, "bold"))
-            self.icon_label.pack(side="left", padx=(8, 4), pady=5)
-            self.text_label.pack(side="left", padx=(0, 8), pady=5)
+            self.icon_label.config(font=("Inter", sc(13), "bold"))
+            self.text_label.config(font=("Inter", sc(8), "bold"))
+            self.icon_label.pack(side="left", padx=(sc(8), sc(4)), pady=sc(5))
+            self.text_label.pack(side="left", padx=(0, sc(8)), pady=sc(5))
         else:
-            self.icon_label.config(font=("Segoe UI", 9, "bold"))
-            self.text_label.config(font=("Segoe UI", 8, "bold"))
-            self.icon_label.pack(side="left", padx=(4, 2), pady=2)
+            self.icon_label.config(font=("Inter", sc(9), "bold"))
+            self.text_label.config(font=("Inter", sc(8), "bold"))
+            self.icon_label.pack(side="left", padx=(sc(4), sc(2)), pady=sc(2))
             if self.label_text:
-                self.text_label.pack(side="left", padx=(0, 4), pady=2)
+                self.text_label.pack(side="left", padx=(0, sc(4)), pady=sc(2))
             else:
                 self.text_label.pack_forget()
 
@@ -259,17 +264,17 @@ class SegmentedDesignToggle(tk.Frame):
         self.btn_std = tk.Label(
             self,
             text="Compact",
-            font=("Segoe UI", 8, "bold"),
-            padx=8,
-            pady=3,
+            font=("Inter", sc(8), "bold"),
+            padx=sc(8),
+            pady=sc(3),
             cursor="hand2"
         )
         self.btn_large = tk.Label(
             self,
             text="Large",
-            font=("Segoe UI", 8, "bold"),
-            padx=8,
-            pady=3,
+            font=("Inter", sc(8), "bold"),
+            padx=sc(8),
+            pady=sc(3),
             cursor="hand2"
         )
 
@@ -358,8 +363,8 @@ class ImageToolbar(tk.Frame):
         self.btn_container.pack(side="left", fill="y")
 
         btn_specs = [
-            ("zoom_in", "➕", "Zoom In", "Zoom in on image canvas", self._handle_zoom_in, "Ctrl+Plus"),
-            ("zoom_out", "➖", "Zoom Out", "Zoom out on image canvas", self._handle_zoom_out, "Ctrl+Minus"),
+            ("zoom_in", "+", "Zoom In", "Zoom in on image canvas", self._handle_zoom_in, "Ctrl+Plus"),
+            ("zoom_out", "−", "Zoom Out", "Zoom out on image canvas", self._handle_zoom_out, "Ctrl+Minus"),
             ("rotate_cw", "↻", "Rotate 90°", "Rotate image clockwise", self._handle_rotate_cw, "Alt+R"),
             ("rotate_ccw", "↺", "Rotate -90°", "Rotate image counter-clockwise", self._handle_rotate_ccw, "Shift+Alt+R"),
             ("reset", "⟲", "Reset", "Reset zoom and rotation", self._handle_reset, "Ctrl+0"),
@@ -413,7 +418,7 @@ class ImageToolbar(tk.Frame):
     def _format_status_text(self) -> str:
         pct = int(round(self.zoom_level * 100))
         deg = self.rotation_angle % 360
-        return f"🔍 {pct}%  |  ↻ {deg}°"
+        return f"{pct}%  ·  ↻ {deg}°"
 
     def set_status(self, zoom: float, rotation: int):
         self.zoom_level = zoom

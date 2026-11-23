@@ -852,29 +852,106 @@ def open_help_window(ui):
             padx=sc(10), pady=sc(5), cursor="hand2", command=mg_cmd
         ).pack(side="left", padx=(0, sc(6)))
 
-    # ── 4. Full Practice Sandboxes ───────────────────────────────────────────
+    # ── 4. Suggested Learning Path (Ordered Tutorials) ───────────────────────
+    from ui.tutorials.sandbox_manager import get_completed_tutorials
+    completed_ids = get_completed_tutorials()
+
     tk.Label(
         frame,
-        text="🎓 PRACTICE SANDBOXES (ZERO RISK — REAL FILES UNTOUCHED)",
+        text="🎓 SUGGESTED LEARNING PATH (ZERO RISK — REAL FILES UNTOUCHED)",
         font=("JetBrains Mono", sc(8), "bold"),
         fg=fg_sub, bg=bg_color, anchor="w"
     ).pack(fill="x", pady=(0, sc(6)))
 
-    sb_row = tk.Frame(frame, bg=bg_color)
-    sb_row.pack(fill="x", pady=(0, sc(8)))
-    for sb_lbl, sb_cmd in [
-        ("1. Review & Badges", lambda: run_help_cmd(lambda: start_review_tutorial(ui))),
-        ("2. Office Triage", lambda: run_help_cmd(lambda: start_triage_tutorial(ui))),
-        ("3. Ledger Conflicts", lambda: run_help_cmd(lambda: start_discrepancy_tutorial(ui))),
-        ("4. New Collection", lambda: run_help_cmd(lambda: start_database_tutorial(ui))),
-    ]:
+    learning_path = [
+        (
+            "review",
+            "1. 3-Minute Quick Tour",
+            "Start Here",
+            "Desktop & Mobile overview, reading real photos (#110), 3-source historical checks (#198), Other Issue & physical review rules.",
+            lambda: run_help_cmd(lambda: start_review_tutorial(ui)),
+        ),
+        (
+            "discrepancy",
+            "2. Historical Ledger Comparison",
+            "",
+            "Deep multi-field reconciliation (Ctrl+H) across conflicting older ledgers without marking Reviewed.",
+            lambda: run_help_cmd(lambda: start_discrepancy_tutorial(ui)),
+        ),
+        (
+            "mobile",
+            "3. Mobile Companion Hallway Guide",
+            "Optional · Needs your phone",
+            "1-Tap Armed Target Shelf, finding already-reviewed objects, and marking objects Loaned Out in the aisles.",
+            lambda: run_help_cmd(lambda: start_armed_shelf_guide(ui)),
+        ),
+        (
+            "triage",
+            "4. Office Triage (REV+ERR)",
+            "",
+            "Isolate hallway-flagged specimens and clear confirmed flags or defer hard issues in the Problem Queue.",
+            lambda: run_help_cmd(lambda: start_triage_tutorial(ui)),
+        ),
+        (
+            "database",
+            "5. Collections & New Specimens",
+            "Optional",
+            "Create a brand-new 4-sheet Excel workbook and add fresh specimen rows (Ctrl+N).",
+            lambda: run_help_cmd(lambda: start_database_tutorial(ui)),
+        ),
+    ]
+
+    for lp_id, lp_title, lp_tag, lp_desc, lp_cmd in learning_path:
+        is_done = lp_id in completed_ids
+        row_card = tk.Frame(
+            frame, bg=card_bg, highlightbackground=border_col,
+            highlightthickness=1, padx=sc(12), pady=sc(8)
+        )
+        row_card.pack(fill="x", pady=(0, sc(6)))
+
+        left_col = tk.Frame(row_card, bg=card_bg)
+        left_col.pack(side="left", fill="both", expand=True)
+
+        title_row = tk.Frame(left_col, bg=card_bg)
+        title_row.pack(fill="x")
+
+        tk.Label(
+            title_row, text=lp_title, font=("Inter", sc(9.5), "bold"),
+            fg=fg_title, bg=card_bg, anchor="w"
+        ).pack(side="left")
+
+        if lp_tag:
+            tag_bg = "#1e3a24" if (dark and lp_tag == "Start Here") else ("#eaf5ec" if lp_tag == "Start Here" else pill_bg)
+            tag_fg = "#85e89d" if (dark and lp_tag == "Start Here") else ("#1b5e20" if lp_tag == "Start Here" else fg_sub)
+            tk.Label(
+                title_row, text=lp_tag, font=("JetBrains Mono", sc(7.5), "bold"),
+                bg=tag_bg, fg=tag_fg, padx=sc(6), pady=sc(1)
+            ).pack(side="left", padx=(sc(6), 0))
+
+        if is_done:
+            tk.Label(
+                title_row, text="✓ Done", font=("JetBrains Mono", sc(7.5), "bold"),
+                bg="#1e3a24" if dark else "#dcfce7",
+                fg="#86efac" if dark else "#15803d",
+                padx=sc(6), pady=sc(1)
+            ).pack(side="left", padx=(sc(6), 0))
+
+        tk.Label(
+            left_col, text=lp_desc, font=("Inter", sc(8.5)),
+            fg=fg_sub, bg=card_bg, wraplength=sc(430), justify="left", anchor="w"
+        ).pack(fill="x", pady=(sc(2), 0))
+
         tk.Button(
-            sb_row, text=sb_lbl, font=("Inter", sc(8.5)),
-            bg=pill_bg, fg=fg_title,
-            activebackground=accent_col, activeforeground="#ffffff",
-            relief="flat", highlightbackground=border_col, highlightthickness=1,
-            padx=sc(10), pady=sc(4), cursor="hand2", command=sb_cmd
-        ).pack(side="left", padx=(0, sc(6)))
+            row_card,
+            text="Replay" if is_done else "Start →",
+            font=("Inter", sc(8.5), "bold"),
+            bg=pill_bg if is_done else accent_col,
+            fg=fg_title if is_done else "#ffffff",
+            activebackground="#2c6034", activeforeground="#ffffff",
+            relief="flat", cursor="hand2",
+            padx=sc(10), pady=sc(4),
+            command=lp_cmd
+        ).pack(side="right", padx=(sc(10), 0))
 
     # ── Footer ───────────────────────────────────────────────────────────────
     tk.Frame(win, bg=border_col, height=1).pack(fill="x", side="bottom")

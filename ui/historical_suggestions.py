@@ -442,22 +442,65 @@ class HistoricalSuggestionsMixin:
         if oid:
             self.update_history_indicator(oid)
 
+    def _on_history_pill_hover(self, entering: bool):
+        lbl = getattr(self, "history_indicator_label", None)
+        if not lbl or not lbl.winfo_exists():
+            return
+        state = getattr(self, "_history_pill_state", "none")
+        if state == "none":
+            return
+        is_dark = bool(getattr(self, "dark_mode_active", False))
+        try:
+            if state == "suggestions":
+                if entering:
+                    lbl.config(bg="#274052" if is_dark else "#d2e5f2")
+                else:
+                    lbl.config(bg="#1d2f3b" if is_dark else "#e6f0f6")
+            elif state == "matched":
+                if entering:
+                    lbl.config(bg="#2d3430" if is_dark else "#e5eae4")
+                else:
+                    lbl.config(bg="#242a26" if is_dark else "#f2f5f1")
+        except Exception:
+            pass
+
     def update_history_indicator(self, oid):
+        lbl = getattr(self, "history_indicator_label", None)
+        if not lbl:
+            return
+        is_dark = bool(getattr(self, "dark_mode_active", False))
 
         if not self.app.historical_dbs:
-            self.history_indicator_label.config(text="")
+            self._history_pill_state = "none"
+            lbl.config(text="")
+            try:
+                lbl.pack_forget()
+            except Exception:
+                pass
             return
-
 
         suggestions = self.collect_historical_suggestions(oid)
 
         if suggestions:
-            self.history_indicator_label.config(
-                text=" Suggestions available (click for details)",
-                foreground="blue"
-            )
+            self._history_pill_state = "suggestions"
+            n = len(suggestions)
+            pill_text = f"History: {n} suggestion{'s' if n != 1 else ''} · Ctrl+H"
+            try:
+                lbl.config(
+                    text=pill_text,
+                    fg="#93c5e6" if is_dark else "#2c536d",
+                    bg="#1d2f3b" if is_dark else "#e6f0f6",
+                    highlightbackground="#4a7b9d",
+                )
+            except Exception:
+                # Fallback for ttk.Label mocks in unit tests
+                lbl.config(text=pill_text, foreground="#4a7b9d")
+            try:
+                if not lbl.winfo_ismapped():
+                    lbl.pack(side="left", padx=(6, 0))
+            except Exception:
+                pass
             return
-
 
         has_any_history = any(
             (self._get_reg_by_id(db) is not None and oid in self._get_reg_by_id(db).index)
@@ -465,12 +508,28 @@ class HistoricalSuggestionsMixin:
         )
 
         if has_any_history:
-            self.history_indicator_label.config(
-                text=" Historical data loaded. No suggestions for current problems",
-                foreground="gray"
-            )
+            self._history_pill_state = "matched"
+            try:
+                lbl.config(
+                    text="History: matches current",
+                    fg="#9ca39e" if is_dark else "#757d77",
+                    bg="#242a26" if is_dark else "#f2f5f1",
+                    highlightbackground="#3b423d" if is_dark else "#d1d5d0",
+                )
+            except Exception:
+                lbl.config(text="History: matches current", foreground="gray")
+            try:
+                if not lbl.winfo_ismapped():
+                    lbl.pack(side="left", padx=(6, 0))
+            except Exception:
+                pass
         else:
-            self.history_indicator_label.config(text="")
+            self._history_pill_state = "none"
+            lbl.config(text="")
+            try:
+                lbl.pack_forget()
+            except Exception:
+                pass
 
 
     def process_remaining_problems(self):

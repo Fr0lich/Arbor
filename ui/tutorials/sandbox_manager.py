@@ -7,9 +7,56 @@ restoring it upon tutorial exit or completion.
 """
 
 import copy
+import os
+import sys
 import pandas as pd
 import config
 from utils import debug_error
+
+
+def get_completed_tutorials() -> set:
+    """Return the set of completed tutorial IDs persisted in user preferences."""
+    try:
+        prefs = config.load_prefs() or {}
+        done = prefs.get("completed_tutorials", [])
+        if isinstance(done, list):
+            return set(str(x) for x in done)
+    except Exception:
+        pass
+    return set()
+
+
+def mark_tutorial_completed(tutorial_id: str) -> None:
+    """Persist a completed tutorial ID to user preferences safely."""
+    if not tutorial_id:
+        return
+    try:
+        prefs = config.load_prefs() or {}
+        done = list(prefs.get("completed_tutorials", []) or [])
+        if tutorial_id not in done:
+            done.append(tutorial_id)
+            prefs["completed_tutorials"] = done
+            config.save_prefs(prefs)
+    except Exception:
+        pass
+
+
+def _resolve_tutorial_images_dir() -> str | None:
+    """Locate bundled data/tutorial_images across source runs and PyInstaller builds."""
+    candidates = []
+    if getattr(sys, "frozen", False):
+        exe_dir = os.path.dirname(sys.executable)
+        candidates.append(os.path.join(exe_dir, "data", "tutorial_images"))
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidates.append(os.path.join(meipass, "data", "tutorial_images"))
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    candidates.append(os.path.join(repo_root, "data", "tutorial_images"))
+    candidates.append(os.path.join(os.getcwd(), "data", "tutorial_images"))
+    for cand in candidates:
+        if os.path.isdir(cand):
+            return cand
+    return None
 
 
 class SandboxManager:
@@ -34,7 +81,8 @@ class SandboxManager:
         try:
             app = ui.app
             if not self.is_sandboxed:
-                # 1. Snapshot existing real session state once
+                # 1. Snapshot existing real session state once (including image panel state)
+                img_panel = getattr(ui, "image_panel", None)
                 self.snapshot = {
                     "config": copy.deepcopy(app.config) if app.config else None,
                     "config_name": app.config_name,
@@ -48,6 +96,10 @@ class SandboxManager:
                     "historical_dbs": copy.deepcopy(app.historical_dbs),
                     "dirty": app.dirty,
                     "current_object_id": app.current_object_id,
+                    "image_mode": getattr(img_panel, "image_mode", None) if img_panel else None,
+                    "image_folder": getattr(img_panel, "image_folder", None) if img_panel else None,
+                    "image_index": copy.deepcopy(getattr(img_panel, "image_index", {})) if img_panel else {},
+                    "show_images": bool(img_panel.show_images_var.get()) if (img_panel and getattr(img_panel, "show_images_var", None) is not None) else True,
                 }
             elif getattr(self, "_current_mock_type", None) == mock_type:
                 return
@@ -75,10 +127,38 @@ class SandboxManager:
             )
 
             # Inject mock historical discrepancy data if needed
-            if mock_hist:
-                app.historical_dbs = mock_hist
-                if hasattr(ui, "_history_cache"):
-                    ui._history_cache.clear()
+            app.historical_dbs = mock_hist if mock_hist else []
+            if hasattr(ui, "_history_cache"):
+                ui._history_cache.clear()
+
+            # Mount bundled real tutorial photos for #110 and #198 in the Quick Tour sandbox
+            img_panel = getattr(ui, "image_panel", None)
+            if mock_type == "review" and img_panel is not None:
+                tut_img_dir = _resolve_tutorial_images_dir()
+                if tut_img_dir:
+                    tut_index = {}
+                    for oid_key, patterns in [
+                        ("110", ("O-V-OE-0110-01.jpg", "O-V-OE-110-02.jpg")),
+                        ("198", ("O-V-OE-0198-01.jpg", "O-V-OE-0198-02.jpg")),
+                    ]:
+                        found = [
+                            os.path.join(tut_img_dir, fn)
+                            for fn in patterns
+                            if os.path.isfile(os.path.join(tut_img_dir, fn))
+                        ]
+                        if found:
+                            tut_index[oid_key] = found
+                    if tut_index:
+                        img_panel.image_mode = "folder"
+                        img_panel.image_folder = tut_img_dir
+                        img_panel.image_index = tut_index
+                        if getattr(img_panel, "show_images_var", None) is not None:
+                            img_panel.show_images_var.set(True)
+                        if hasattr(ui, "_sync_middle_panes"):
+                            try:
+                                ui._sync_middle_panes()
+                            except Exception:
+                                pass
 
             # Select first mock specimen
             if mock_reg is not None and not mock_reg.empty:
@@ -192,6 +272,20 @@ class SandboxManager:
             app.historical_dbs = snap["historical_dbs"]
             app.dirty = snap["dirty"]
 
+            # Restore image panel state before reloading the real workspace
+            img_panel = getattr(ui, "image_panel", None)
+            if img_panel is not None:
+                img_panel.image_mode = snap.get("image_mode")
+                img_panel.image_folder = snap.get("image_folder")
+                img_panel.image_index = copy.deepcopy(snap.get("image_index", {}))
+                if getattr(img_panel, "show_images_var", None) is not None:
+                    img_panel.show_images_var.set(bool(snap.get("show_images", True)))
+                if hasattr(ui, "_sync_middle_panes"):
+                    try:
+                        ui._sync_middle_panes()
+                    except Exception:
+                        pass
+
             if snap["df_reg"] is not None and snap["df_obs"] is not None:
                 ui._precompute_startup_caches(snap["df_reg"], snap["df_obs"], snap["df_photo"])
                 ui._finish_open_excel(
@@ -243,6 +337,178 @@ class SandboxManager:
 
     def _create_mock_datasets(self, mock_type):
         """Creates sample in-memory DataFrames matching Arbor's real workbook columns."""
+        if mock_type == "review":
+            reg_data = [
+                {
+                    "ObjectID": "110",
+                    "Object Number": "110",
+                    "UID": "e1566f8d",
+                    "Genus": "Ephedra",
+                    "Species": "major",
+                    "Taxon": "Ephedra major",
+                    "Author": "Host",
+                    "Family": "Ephedraceae",
+                    "Higher Classification": "46",
+                    "(N) Plant Part": "Greiner med blad og hannblomster",
+                    "Plant Part": "branches with leaves and male flowers",
+                    "Collector": "Vicioso",
+                    "Innsammling Nr.": "",
+                    "Collection Date": "",  # Intentionally blank for Step 1 (label says "juni 1910" -> 00.06.1910)
+                    "Year": "",
+                    "Collection Place": "Spain, Aragon",
+                    "Locality": "Spain, Aragon",
+                    "Country": "Spain",
+                    "Box Label": "Ephedra scopasia Lange Spania: Aragon juni 1910 Vicioso",
+                    "Conservation Status": "plant behind glass frame, tape starting to fall off. Okay form",
+                    "Comment": "",
+                    "Reviewed": False,
+                    "Reviewed_By": "",
+                    "Reviewed_At": "",
+                    "Problem_Flags": "Collection_Date_Problem",
+                },
+                {
+                    "ObjectID": "198",
+                    "Object Number": "198",
+                    "UID": "98ba9882",
+                    "Genus": "Corylus",
+                    "Species": "colurna",
+                    "Taxon": "Corylus colurna",
+                    "Author": "L.",
+                    "Family": "Betulaceae",
+                    "Higher Classification": "1886",
+                    "(N) Plant Part": "Fruktstander",
+                    "Plant Part": "fruitcluster",
+                    "Collector": "ukjent",
+                    "Innsammling Nr.": "",
+                    "Collection Date": "1963",  # Intentionally wrong current value (real label: 1927; Ledger 1: 1927; Ledger 2: 1912)
+                    "Year": "1963",
+                    "Collection Place": "Norway, Oslo, Tøyen",
+                    "Locality": "Norway, Oslo, Tøyen",
+                    "Country": "Norway",
+                    "Box Label": "Corylus colurna Töyenhaven 1927",
+                    "Conservation Status": "two clusters mounted on a wooden platform. good form",
+                    "Comment": "",
+                    "Reviewed": False,
+                    "Reviewed_By": "",
+                    "Reviewed_At": "",
+                    "Problem_Flags": "Collection_Date_Problem",
+                },
+                {
+                    "ObjectID": "1003",
+                    "Object Number": "1003",
+                    "UID": "a4c91003",
+                    "Genus": "Salix",
+                    "Species": "herbacea",
+                    "Taxon": "Salix herbacea",
+                    "Author": "L.",
+                    "Family": "Salicaceae",
+                    "Higher Classification": "",
+                    "(N) Plant Part": "",
+                    "Plant Part": "",
+                    "Collector": "R. F. Fristedt",
+                    "Innsammling Nr.": "304",
+                    "Collection Date": "22.06.1853",
+                    "Year": "1853",
+                    "Collection Place": "Norway, Jotunheimen",
+                    "Locality": "Norway, Jotunheimen",
+                    "Country": "Norway",
+                    "Box Label": "Salix herbacea Jotunheimen 1853",
+                    "Conservation Status": "Good",
+                    "Comment": "",
+                    "Reviewed": True,
+                    "Reviewed_By": "Curator",
+                    "Reviewed_At": "2026-01-10 14:30:00",
+                    "Problem_Flags": "",
+                },
+            ]
+
+            obs_data = [
+                {
+                    "ObjectID": "110",
+                    "Reviewed": False,
+                    "ReviewedAt": "",
+                    "Building": "Økern",
+                    "Floor": "1",
+                    "Cabinet": "04",
+                    "Shelf": "02",
+                    "Stored as": "in plastic box",
+                    "Genus_Problem": False,
+                    "Species_Problem": False,
+                    "Collection_Date_Problem": True,
+                    "Box_Label_Problem": False,
+                    "Other_problem": False,
+                },
+                {
+                    "ObjectID": "198",
+                    "Reviewed": False,
+                    "ReviewedAt": "",
+                    "Building": "Økern",
+                    "Floor": "1",
+                    "Cabinet": "06",
+                    "Shelf": "06",
+                    "Stored as": "Mounted on wooded platform",
+                    "Genus_Problem": False,
+                    "Species_Problem": False,
+                    "Collection_Date_Problem": True,
+                    "Box_Label_Problem": False,
+                    "Other_problem": False,
+                },
+                {
+                    "ObjectID": "1003",
+                    "Reviewed": True,
+                    "ReviewedAt": "10.01.2026 14:30",
+                    "Building": "Økern",
+                    "Floor": "1",
+                    "Cabinet": "21",
+                    "Shelf": "01",
+                    "Stored as": "in plastic box",
+                    "Genus_Problem": False,
+                    "Species_Problem": False,
+                    "Collection_Date_Problem": False,
+                    "Box_Label_Problem": False,
+                    "Other_problem": False,
+                },
+            ]
+
+            df_reg = pd.DataFrame(reg_data).set_index("ObjectID", drop=False)
+            df_obs = pd.DataFrame(obs_data).set_index("ObjectID", drop=False)
+            df_photo = pd.DataFrame(columns=["ObjectID", "PhotoURL", "PhotoType"])
+            df_log = pd.DataFrame(columns=["Timestamp", "ObjectID", "Action", "User"])
+            df_unval = pd.DataFrame()
+
+            # 3-source historical conflict for #198 ONLY (#110 intentionally has NO historical records)
+            hist_book_1 = pd.DataFrame([
+                {
+                    "ObjectID": "198",
+                    "Genus": "Corylus",
+                    "Species": "colurna",
+                    "Taxon": "Corylus colurna",
+                    "Family": "Betulaceae",
+                    "Collection Date": "1927",
+                    "Year": "1927",
+                    "Collection Place": "Norway, Oslo, Tøyen",
+                }
+            ]).set_index("ObjectID", drop=False)
+
+            hist_book_2 = pd.DataFrame([
+                {
+                    "ObjectID": "198",
+                    "Genus": "Corylus",
+                    "Species": "colurna",
+                    "Taxon": "Corylus colurna",
+                    "Family": "Betulaceae",
+                    "Collection Date": "1912",
+                    "Year": "1912",
+                    "Collection Place": "Oslo, Tøyenhaven",
+                }
+            ]).set_index("ObjectID", drop=False)
+
+            mock_hist = [
+                {"name": "Historical Ledger Book 1", "df": hist_book_1},
+                {"name": "Old Card Catalog (Ledger 2)", "df": hist_book_2},
+            ]
+            return df_reg, df_obs, df_photo, df_log, df_unval, mock_hist
+
         reg_data = [
             {
                 "ObjectID": "1001",
@@ -357,6 +623,68 @@ class SandboxManager:
             }
         ]
 
+        if mock_type == "database":
+            reg_data = [
+                {
+                    "ObjectID": "3001",
+                    "Genus": "Betula",
+                    "Species": "pubescens",
+                    "Taxon": "Betula pubescens",
+                    "Family": "Betulaceae",
+                    "Author": "Ehrh.",
+                    "Collector": "O. Dahl",
+                    "Collection Date": "1952",
+                    "Collection Place": "Norway, Oslo",
+                    "Comment": "",
+                    "Reviewed": False,
+                    "Problem_Flags": "",
+                },
+                {
+                    "ObjectID": "3002",
+                    "Genus": "Picea",
+                    "Species": "abies",
+                    "Taxon": "Picea abies",
+                    "Family": "Pinaceae",
+                    "Author": "(L.) H.Karst.",
+                    "Collector": "J. Lid",
+                    "Collection Date": "1961",
+                    "Collection Place": "Norway, Nordmarka",
+                    "Comment": "",
+                    "Reviewed": False,
+                    "Problem_Flags": "",
+                },
+            ]
+            obs_data = [
+                {
+                    "ObjectID": "3001",
+                    "Reviewed": False,
+                    "ReviewedAt": "",
+                    "Building": "Økern",
+                    "Floor": "1",
+                    "Cabinet": "01",
+                    "Shelf": "01",
+                    "Stored as": "in plastic box",
+                    "Other_problem": False,
+                },
+                {
+                    "ObjectID": "3002",
+                    "Reviewed": False,
+                    "ReviewedAt": "",
+                    "Building": "Økern",
+                    "Floor": "1",
+                    "Cabinet": "01",
+                    "Shelf": "02",
+                    "Stored as": "in plastic box",
+                    "Other_problem": False,
+                },
+            ]
+            df_reg = pd.DataFrame(reg_data).set_index("ObjectID", drop=False)
+            df_obs = pd.DataFrame(obs_data).set_index("ObjectID", drop=False)
+            df_photo = pd.DataFrame(columns=["ObjectID", "PhotoURL", "PhotoType"])
+            df_log = pd.DataFrame(columns=["Timestamp", "ObjectID", "Action", "User"])
+            df_unval = pd.DataFrame()
+            return df_reg, df_obs, df_photo, df_log, df_unval, []
+
         if mock_type == "triage":
             reg_data = [
                 {
@@ -376,7 +704,8 @@ class SandboxManager:
                     "Reviewed": True,
                     "Reviewed_By": "Hallway Intern",
                     "Reviewed_At": "2026-11-20 10:15:00",
-                    "Problem_Flags": "Box_Label_Problem",
+                    "Comment": "Bent display — needs workshop check",
+                    "Problem_Flags": "Other_problem",
                 },
                 {
                     "ObjectID": "2002",
@@ -430,7 +759,8 @@ class SandboxManager:
                     "Genus_Problem": False,
                     "Species_Problem": False,
                     "Collection_Date_Problem": False,
-                    "Box_Label_Problem": True,
+                    "Box_Label_Problem": False,
+                    "Other_problem": True,
                     "Taxon_Mismatch": False,
                     "Coordinate_Problem": False,
                     "Unidentified": False,
@@ -484,8 +814,8 @@ class SandboxManager:
         df_unval = pd.DataFrame()
 
         mock_hist = []
-        if mock_type in ("discrepancy", "review"):
-            hist_books = pd.DataFrame([
+        if mock_type == "discrepancy":
+            hist_book_1 = pd.DataFrame([
                 {
                     "ObjectID": "1001",
                     "Taxon": "Betula pendula",
@@ -508,9 +838,36 @@ class SandboxManager:
                 }
             ]).set_index("ObjectID", drop=False)
 
+            hist_book_2 = pd.DataFrame([
+                {
+                    "ObjectID": "1001",
+                    "Taxon": "Betula pubescens",
+                    "Author": "Ehrh.",
+                    "Family": "Betulaceae",
+                    "Collection Place": "Rondane",
+                    "Locality": "Rondane",
+                    "Collection Date": "1958",
+                    "Year": "1958"
+                },
+                {
+                    "ObjectID": "1002",
+                    "Genus": "Pinus",
+                    "Species": "sylvestris",
+                    "Taxon": "Pinus sylvestris",
+                    "Family": "Pinaceae",
+                    "Collection Date": "1987",
+                    "Year": "1987",
+                    "Collection Place": "Tynset, Hedmark"
+                }
+            ]).set_index("ObjectID", drop=False)
+
             mock_hist.append({
                 "name": "Historical Ledger Book 1",
-                "df": hist_books
+                "df": hist_book_1
+            })
+            mock_hist.append({
+                "name": "Old Card Catalog (Ledger 2)",
+                "df": hist_book_2
             })
 
         return df_reg, df_obs, df_photo, df_log, df_unval, mock_hist

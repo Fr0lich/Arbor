@@ -356,6 +356,44 @@ def test_mobile_dialog_scrollable_and_dpi_safe(tk_root, monkeypatch):
     dlg.win.destroy()
 
 
+def test_multimonitor_negative_coordinates_positioning(tk_root, monkeypatch):
+    """Verify helper, ToastManager, and center_and_fit_toplevel preserve negative secondary-monitor coordinates."""
+    import utils
+    from ui.toast import ToastManager
+
+    # 1. Signed Tk geometry formatter never produces "+-" syntax
+    assert utils.format_tk_geometry(-1200, -150, 500, 400) == "500x400-1200-150"
+    assert utils.format_tk_geometry(-45, 80) == "-45+80"
+
+    # 2. center_and_fit_toplevel centers over a master placed on a left/upper secondary monitor
+    monkeypatch.setattr(tk_root, "winfo_viewable", lambda: True)
+    monkeypatch.setattr(tk_root, "winfo_width", lambda: 1400)
+    monkeypatch.setattr(tk_root, "winfo_height", lambda: 900)
+    monkeypatch.setattr(tk_root, "winfo_rootx", lambda: -1600)
+    monkeypatch.setattr(tk_root, "winfo_rooty", lambda: -100)
+
+    child = tk.Toplevel(tk_root)
+    recorded_geoms = []
+    orig_geom = child.geometry
+
+    def _capture_geom(g=None):
+        if g is not None:
+            recorded_geoms.append(g)
+        return orig_geom(g) if g is not None else orig_geom()
+
+    monkeypatch.setattr(child, "geometry", _capture_geom)
+    utils.center_and_fit_toplevel(child, 500, 400)
+    assert recorded_geoms, "Expected geometry to be applied"
+    assert "+-" not in recorded_geoms[-1]
+    assert "-1150" in recorded_geoms[-1]  # -1600 + (1400 - 500)//2 = -1150
+    child.destroy()
+
+    # 3. ToastManager renders cleanly with signed negative coordinates without raising TclError
+    ToastManager.show(tk_root, "Saved on secondary monitor", toast_type="success", duration_ms=5000)
+    assert ToastManager._active_toast is not None and ToastManager._active_toast.winfo_exists()
+    ToastManager.dismiss()
+
+
 
 
 

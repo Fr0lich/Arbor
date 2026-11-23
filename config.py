@@ -83,22 +83,52 @@ def load_prefs():
     _prefs_cache = {}
     return _prefs_cache
 
+import threading
+import tempfile
+
 _save_job_id = None
 _prefs_dirty = False
+_prefs_io_lock = threading.Lock()
 
 def _write_prefs_now():
     global _save_job_id, _prefs_dirty
     _save_job_id = None
-    if _prefs_cache is None:
+    snapshot = _prefs_cache
+    if snapshot is None:
         return
-    try:
-        tmp_path = _PREFS_PATH + ".tmp"
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(_prefs_cache, f, indent=2)
-        os.replace(tmp_path, _PREFS_PATH)
-        _prefs_dirty = False
-    except Exception as e:
-        print(f"CRITICAL: Failed to save user preferences: {e}", file=sys.stderr)
+    tmp_path = None
+    with _prefs_io_lock:
+        try:
+            # Pre-serialize in memory before touching disk so any serialization error
+            # or mid-write mutation can never leave a truncated/corrupt user_prefs.json.
+            payload = json.dumps(dict(snapshot), indent=2, ensure_ascii=False)
+            target_dir = os.path.dirname(os.path.abspath(_PREFS_PATH)) or "."
+            os.makedirs(target_dir, exist_ok=True)
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=target_dir,
+                prefix="user_prefs.",
+                suffix=".tmp",
+                delete=False,
+            ) as f:
+                tmp_path = f.name
+                f.write(payload)
+                f.flush()
+                try:
+                    os.fsync(f.fileno())
+                except OSError:
+                    pass
+            os.replace(tmp_path, _PREFS_PATH)
+            tmp_path = None
+            _prefs_dirty = False
+        except Exception as e:
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
+            print(f"CRITICAL: Failed to save user preferences: {e}", file=sys.stderr)
 
 def flush_prefs():
     """Synchronously flush any pending debounced preference write (safe at exit)."""

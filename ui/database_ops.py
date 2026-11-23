@@ -490,8 +490,8 @@ class DatabaseOpsMixin:
         ).pack(fill="x", pady=(0, sc(8)))
 
         desc = (
-            "Practice inspecting a specimen, fixing a date, flagging a label issue, "
-            "and marking it Reviewed inside a safe Practice Sandbox.\n\n"
+            "Get a quick overview of Desktop & Mobile Arbor, practice reading real specimen photos (#110 & #198), "
+            "compare 3 historical ledger sources, flag a physical issue, and learn when to click Mark as Reviewed.\n\n"
             "Nothing you do in Practice Mode can ever overwrite your real museum Excel files."
         )
         tk.Label(
@@ -518,7 +518,7 @@ class DatabaseOpsMixin:
         for line in (
             "•  Zero Risk — Practice Mode blocks all disk saves automatically",
             "•  Hands-On — Visual keycaps guide every step in ~3 minutes",
-            "•  Always Available — Replay anytime from ❓ HELP ▾ or F1",
+            "•  Always Available — Replay anytime from HELP ▾ or F1",
         ):
             tk.Label(
                 info_card,
@@ -570,6 +570,13 @@ class DatabaseOpsMixin:
         btn_row = tk.Frame(outer, bg=bg)
         btn_row.pack(fill="x")
 
+        def _open_learning_path():
+            _persist_dismiss()
+            if win.winfo_exists():
+                win.destroy()
+            from ui.help_dialogs import open_help_window
+            open_help_window(self)
+
         tk.Button(
             btn_row,
             text="🎓 Start 3-Minute Quick Tour",
@@ -584,6 +591,21 @@ class DatabaseOpsMixin:
             cursor="hand2",
             command=_start_tour,
         ).pack(side="left")
+
+        tk.Button(
+            btn_row,
+            text="Learning Path",
+            font=("Inter", sc(9.5)),
+            bg=card_bg,
+            fg=fg,
+            relief="flat",
+            highlightbackground=border,
+            highlightthickness=1,
+            padx=sc(12),
+            pady=sc(9),
+            cursor="hand2",
+            command=_open_learning_path,
+        ).pack(side="left", padx=(sc(8), 0))
 
         tk.Button(
             btn_row,

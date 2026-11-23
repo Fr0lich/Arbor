@@ -43,12 +43,14 @@ ui/tutorials/
 
 ### `SandboxManager` (`ui/tutorials/sandbox_manager.py`)
 * `enter_sandbox(ui, mock_type)`:
-  1. Deep-copies the active `AppState` (DataFrames, file paths, dirty flags, history caches).
-  2. Generates in-memory synthetic DataFrames (`df_reg`, `df_obs`, `df_photo`, `df_log`) populated with sample specimens (e.g. `1001`, `1002`, `1003`).
+  1. Deep-copies the active `AppState` (DataFrames, file paths, dirty flags, history caches) and snapshots `ui.image_panel` state (`image_mode`, `image_folder`, `image_index`, `show_images_var`).
+  2. Generates in-memory DataFrames (`df_reg`, `df_obs`, `df_photo`, `df_log`): for `"review"`, loads real specimens `#110` (*Ephedra major*, blank Collection Date, no historical records) and `#198` (*Corylus colurna*, 3-source historical conflict across 2 ledgers), auto-mounting bundled front/back photos from `data/tutorial_images/`.
   3. Re-initializes UI caches and refreshes the main visualizer via `ui._finish_open_excel("[Tutorial Sandbox]", ...)`.
 * `exit_sandbox(ui)`:
-  1. Restores the exact prior `AppState` and DataFrames.
+  1. Restores the exact prior `AppState`, DataFrames, and `image_panel` state.
   2. Rebuilds the UI back to the user's real open file. Zero disk operations occur.
+* `mark_tutorial_completed(tutorial_id)` / `get_completed_tutorials()`:
+  * Persists finished tutorial IDs (`review`, `discrepancy`, `mobile`, `triage`, `database`) in `user_prefs.json["completed_tutorials"]` for the 5-step Suggested Learning Path in `ui/help_dialogs.py`.
 
 ### `TutorialRunner` & `ActionStep` (`ui/tutorials/tutorial_runner.py`)
 * Manages a non-modal, top-level floating HUD displaying progress, step titles, action hints, and control buttons.

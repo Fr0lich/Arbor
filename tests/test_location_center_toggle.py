@@ -103,3 +103,128 @@ def test_location_panel_integration_modes(tk_root):
     assert vert_panel.dark_mode is True
     horiz_panel.set_dark_mode(True)
     assert horiz_panel.dark_mode is True
+
+
+def test_hide_images_docks_location_at_bottom_and_collapses_middle_frame(tk_root):
+    """Hiding images collapses middle_frame from panes and docks Location at the bottom of root."""
+    from tkinter import ttk
+    from ui.main_window import ObjectProgramUI
+
+    class _DummyUI:
+        _sync_middle_panes = ObjectProgramUI._sync_middle_panes
+        toggle_location_panel = ObjectProgramUI.toggle_location_panel
+
+    ui = _DummyUI()
+    ui.root = tk_root
+    ui.dark_mode_active = False
+    ui.show_images_var = tk.BooleanVar(value=True)
+    ui.location_in_center_var = tk.BooleanVar(value=True)
+    ui.focus_mode_var = tk.BooleanVar(value=False)
+    ui.focus_visibility_vars = {}
+    ui.refresh_image_view = lambda: None
+
+    ui.panes = ttk.Panedwindow(tk_root, orient="horizontal")
+    ui.panes.pack(fill="both", expand=True)
+
+    ui.left_frame = ttk.Frame(ui.panes)
+    ui.middle_frame = ttk.Frame(ui.panes)
+    ui.reg_outer = ttk.Frame(ui.panes)
+    ui.panes.add(ui.left_frame, weight=1)
+    ui.panes.add(ui.middle_frame, weight=1)
+    ui.panes.add(ui.reg_outer, weight=1)
+
+    ui.object_context_bar = tk.Frame(tk_root)
+    ui.middle_panes = ttk.Panedwindow(ui.middle_frame, orient="vertical")
+    ui.middle_panes.pack(fill="both", expand=True)
+    ui.image_panel = tk.Frame(ui.middle_panes)
+    ui.image_panel.image_mode = None
+    ui.right_frame = ui.image_panel
+    ui._middle_loc_slot = tk.Frame(ui.middle_panes)
+    ui.loc_frame_horizontal = tk.Frame(tk_root)
+
+    # 1. Images visible + Location in center -> middle_frame in panes, loc inside _middle_loc_slot
+    ui._sync_middle_panes()
+    assert str(ui.middle_frame) in ui.panes.panes()
+    assert str(ui.image_panel) == ui.middle_panes.panes()[0]
+    assert str(ui._middle_loc_slot) in ui.middle_panes.panes()
+    assert ui.loc_frame_horizontal.pack_info()["in"] == ui._middle_loc_slot
+
+    # 2. Hide images (F8) + Location in center -> middle_frame collapsed, Location docked at bottom of root
+    ui.show_images_var.set(False)
+    ui._sync_middle_panes()
+    assert str(ui.middle_frame) not in ui.panes.panes()
+    assert ui.loc_frame_horizontal.pack_info()["in"] == tk_root
+    assert ui.loc_frame_horizontal.pack_info()["side"] == "bottom"
+    assert ui.object_context_bar.pack_info()["in"] == tk_root
+    assert ui.object_context_bar.pack_info()["side"] == "top"
+
+    # 3. Turn images back on -> middle_frame restored, image_panel at index 0, loc back in middle_panes
+    ui.show_images_var.set(True)
+    ui._sync_middle_panes()
+    assert str(ui.middle_frame) in ui.panes.panes()
+    assert str(ui.image_panel) == ui.middle_panes.panes()[0]
+    assert ui.loc_frame_horizontal.pack_info()["in"] == ui._middle_loc_slot
+    assert ui.object_context_bar.pack_info()["in"] == ui.middle_frame
+
+    # 4. Hide images + Location on Left -> middle_frame collapsed AND loc_frame_horizontal unpacked
+    ui.location_in_center_var.set(False)
+    ui.show_images_var.set(False)
+    ui._sync_middle_panes()
+    assert str(ui.middle_frame) not in ui.panes.panes()
+    assert ui.loc_frame_horizontal.winfo_manager() == ""
+
+
+def test_summary_hub_dark_mode_and_empty_source_actions(tk_root):
+    """No-images Specimen Summary Hub renders Dark Mode tokens, humanized flags, and folder/online/hide CTAs."""
+    import pandas as pd
+    from ui.image_panel import ImagePanel
+
+    mock_app = MagicMock()
+    mock_app.df_reg = pd.DataFrame(
+        [{"Genus": "Betula", "Species": "pendula", "Collector": "Linné"}],
+        index=["101"],
+    )
+    mock_app.df_obs = pd.DataFrame(
+        [{"Reviewed": False, "Box_Label_Problem": True, "Collection_Date_Problem": True}],
+        index=["101"],
+    )
+    mock_app.config = {
+        "ui_sections": {
+            "problems": [
+                {"name": "Box_Label_Problem"},
+                {"name": "Collection_Date_Problem"},
+            ]
+        }
+    }
+
+    panel = ImagePanel(tk_root, app=mock_app, dark_mode=True)
+    panel.image_mode = None
+    panel.render_specimen_summary_hub("101")
+    tk_root.update_idletasks()
+
+    texts = []
+    bgs = []
+
+    def _walk(w):
+        for c in w.winfo_children():
+            try:
+                t = c.cget("text")
+                if t:
+                    texts.append(t)
+            except Exception:
+                pass
+            try:
+                bgs.append(c.cget("bg"))
+            except Exception:
+                pass
+            _walk(c)
+
+    _walk(panel.image_container)
+    assert "Select Image Folder…" in texts
+    assert "Use Online Photos" in texts
+    assert "Hide Photo Pane (F8)" in texts
+    assert "• Box Label Issue" in texts
+    assert "• Collection Date Issue" in texts
+    assert "#222723" in bgs
+    assert "#ffffff" not in bgs
+    panel.destroy()

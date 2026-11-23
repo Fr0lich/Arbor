@@ -90,18 +90,19 @@ class TestSandboxTutorials(unittest.TestCase):
         self.sm.enter_sandbox(self.ui, mock_type="review")
         self.assertTrue(self.sm.is_sandboxed)
         self.assertEqual(self.ui.app.excel_path, "[Tutorial Sandbox]")
-        # Sandbox must contain mock specimen 1001
-        self.assertIn("1001", self.ui.app.df_reg.index)
+        # Sandbox must contain real tutorial specimens 110 and 198
+        self.assertIn("110", self.ui.app.df_reg.index)
+        self.assertIn("198", self.ui.app.df_reg.index)
 
         # 2. Mutate sandbox state (simulate user doing tutorial work)
-        self.ui.app.df_reg.loc["1001", "Reviewed"] = True
+        self.ui.app.df_reg.loc["110", "Reviewed"] = True
 
         # 3. Exit sandbox
         self.sm.exit_sandbox(self.ui)
         self.assertFalse(self.sm.is_sandboxed)
         self.assertEqual(self.ui.app.excel_path, orig_path)
         self.assertIn("999", self.ui.app.df_reg.index)
-        self.assertNotIn("1001", self.ui.app.df_reg.index)
+        self.assertNotIn("110", self.ui.app.df_reg.index)
 
     def test_tutorial_runner_step_progression(self):
         step1 = ActionStep(
@@ -138,9 +139,12 @@ class TestSandboxTutorials(unittest.TestCase):
     def test_start_review_tutorial(self):
         runner = start_review_tutorial(self.ui)
         self.assertTrue(self.sm.is_sandboxed)
-        self.assertEqual(len(runner.steps), 5)
-        self.assertEqual(runner.steps[0].step_id, "select_object")
-        self.assertEqual(runner.steps[3].step_id, "mark_reviewed")
+        self.assertEqual(len(runner.steps), 7)
+        self.assertEqual(runner.steps[0].step_id, "welcome_overview")
+        self.assertEqual(runner.steps[1].step_id, "transcribe_110_date")
+        self.assertEqual(runner.steps[3].step_id, "check_198_history")
+        self.assertEqual(runner.steps[4].step_id, "flag_other_issue")
+        self.assertEqual(runner.steps[5].step_id, "mark_reviewed")
 
         runner.exit_tutorial()
         self.assertFalse(self.sm.is_sandboxed)
@@ -148,9 +152,10 @@ class TestSandboxTutorials(unittest.TestCase):
     def test_start_discrepancy_tutorial(self):
         runner = start_discrepancy_tutorial(self.ui)
         self.assertTrue(self.sm.is_sandboxed)
-        self.assertEqual(len(runner.steps), 5)
-        self.assertEqual(runner.steps[0].step_id, "open_resolver")
-        self.assertEqual(runner.steps[3].step_id, "apply_changes")
+        self.assertEqual(len(runner.steps), 6)
+        self.assertEqual(runner.steps[0].step_id, "discrepancy_intro")
+        self.assertEqual(runner.steps[1].step_id, "open_resolver")
+        self.assertEqual(runner.steps[4].step_id, "apply_changes")
 
         runner.exit_tutorial()
         self.assertFalse(self.sm.is_sandboxed)
@@ -158,9 +163,12 @@ class TestSandboxTutorials(unittest.TestCase):
     def test_start_database_tutorial(self):
         runner = start_database_tutorial(self.ui)
         self.assertTrue(self.sm.is_sandboxed)
-        self.assertEqual(len(runner.steps), 4)
-        self.assertEqual(runner.steps[0].step_id, "open_db_wizard")
-        self.assertEqual(runner.steps[1].step_id, "add_new_object")
+        self.assertEqual(len(runner.steps), 5)
+        self.assertEqual(runner.steps[0].step_id, "database_intro")
+        self.assertEqual(runner.steps[2].step_id, "add_new_object")
+        self.assertIn("3001", self.ui.app.df_reg.index)
+        self.assertNotIn("110", self.ui.app.df_reg.index)
+        runner.exit_tutorial()
 
     def test_sandbox_exit_when_initial_state_was_none(self):
         self.ui.app.excel_path = None
@@ -202,15 +210,22 @@ class TestSandboxTutorials(unittest.TestCase):
         runner.exit_tutorial()
 
     def test_sandbox_practice_banner_and_physical_scenario_columns(self):
-        """Phase 1: Practice Mode banner mounts/unmounts cleanly and mock 1002 has Cabinet 21 scenario."""
+        """Practice Mode banner mounts/unmounts cleanly and #110/#198 have real data + 3-source historical conflict."""
         self.sm.enter_sandbox(self.ui, mock_type="review")
         self.assertIsNotNone(self.sm._practice_banner)
         self.assertTrue(self.sm._practice_banner.winfo_exists())
-        self.assertEqual(self.ui.app.df_reg.loc["1002", "Collection Date"], "2008")
-        self.assertEqual(self.ui.app.df_obs.loc["1002", "Cabinet"], "21")
-        self.assertFalse(bool(self.ui.app.df_obs.loc["1002", "Box_Label_Problem"]))
-        self.assertFalse(bool(self.ui.app.df_obs.loc["1002", "Reviewed"]))
-        self.assertTrue(len(self.ui.app.historical_dbs) >= 1)
+        # #110: Ephedra major, blank date, NO historical entries
+        self.assertEqual(self.ui.app.df_reg.loc["110", "Genus"], "Ephedra")
+        self.assertEqual(self.ui.app.df_reg.loc["110", "Collection Date"], "")
+        # #198: Corylus colurna, wrong current date 1963, 2 conflicting historical books (1927 & 1912)
+        self.assertEqual(self.ui.app.df_reg.loc["198", "Genus"], "Corylus")
+        self.assertEqual(self.ui.app.df_reg.loc["198", "Collection Date"], "1963")
+        self.assertFalse(bool(self.ui.app.df_obs.loc["198", "Other_problem"]))
+        self.assertFalse(bool(self.ui.app.df_obs.loc["198", "Reviewed"]))
+        self.assertEqual(len(self.ui.app.historical_dbs), 2)
+        for h in self.ui.app.historical_dbs:
+            self.assertNotIn("110", h["df"].index)
+            self.assertIn("198", h["df"].index)
 
         self.sm.exit_sandbox(self.ui)
         self.assertIsNone(self.sm._practice_banner)
@@ -400,7 +415,9 @@ class TestSandboxTutorials(unittest.TestCase):
         self.assertIn("2001", self.ui.app.df_reg.index)
         self.assertIn("2002", self.ui.app.df_reg.index)
         self.assertTrue(bool(self.ui.app.df_obs.loc["2001", "Reviewed"]))
-        self.assertTrue(bool(self.ui.app.df_obs.loc["2001", "Box_Label_Problem"]))
+        self.assertTrue(bool(self.ui.app.df_obs.loc["2001", "Other_problem"]))
+        self.assertEqual(len(runner.steps), 5)
+        self.assertEqual(runner.steps[0].step_id, "triage_intro")
         self.assertEqual(runner.badge_lbl.cget("text"), "🛡️ PRACTICE SANDBOX")
         runner.finish_tutorial()
         self.assertFalse(self.sm.is_sandboxed)
@@ -418,20 +435,99 @@ class TestSandboxTutorials(unittest.TestCase):
 
         orig_path = self.ui.app.excel_path
         r1 = start_review_tutorial(self.ui)
-        self.assertIn("1002", self.ui.app.df_reg.index)
+        self.assertIn("198", self.ui.app.df_reg.index)
 
         # Switch directly into Office Triage without exiting Practice Mode first
         r2 = start_triage_tutorial(self.ui)
         self.assertIsNone(r1.hud_win)
         self.assertTrue(self.sm.is_sandboxed)
         self.assertIn("2001", self.ui.app.df_reg.index)
-        self.assertNotIn("1002", self.ui.app.df_reg.index)
+        self.assertNotIn("198", self.ui.app.df_reg.index)
 
         # Exiting restores the real original workbook (not the intermediate review sandbox)
         r2.exit_tutorial()
         self.assertFalse(self.sm.is_sandboxed)
         self.assertEqual(self.ui.app.excel_path, orig_path)
         self.assertIn("999", self.ui.app.df_reg.index)
+
+    def test_quick_tour_date_validators_and_tutorial_image_mounting(self):
+        """Verify #110 accepts 00.06.1910 or 06.1910, #198 accepts 1927 or 00.00.1927, and tutorial images mount & restore."""
+        from ui.tutorials.review_tutorial import _is_110_date_entered, _is_198_date_fixed
+
+        class _DummyImgPanel:
+            def __init__(self, root):
+                self.image_mode = None
+                self.image_folder = None
+                self.image_index = {}
+                self.show_images_var = tk.BooleanVar(value=False)
+
+        self.ui.image_panel = _DummyImgPanel(self.root)
+        self.sm.enter_sandbox(self.ui, mock_type="review")
+
+        # Bundled tutorial photos for #110 and #198 must mount automatically
+        self.assertEqual(self.ui.image_panel.image_mode, "folder")
+        self.assertEqual(len(self.ui.image_panel.image_index.get("110", [])), 2)
+        self.assertEqual(len(self.ui.image_panel.image_index.get("198", [])), 2)
+        self.assertTrue(self.ui.image_panel.show_images_var.get())
+
+        # #110 date validator: accepts 00.06.1910 and 06.1910, rejects wrong/blank
+        self.assertFalse(_is_110_date_entered(self.ui))
+        self.ui.app.df_reg.loc["110", "Collection Date"] = "06.1910"
+        self.assertTrue(_is_110_date_entered(self.ui))
+        self.ui.app.df_reg.loc["110", "Collection Date"] = "00.06.1910"
+        self.assertTrue(_is_110_date_entered(self.ui))
+
+        # #198 date validator: accepts 1927 and 00.00.1927, rejects 1963/1912
+        self.assertFalse(_is_198_date_fixed(self.ui))
+        self.ui.app.df_reg.loc["198", "Collection Date"] = "1912"
+        self.assertFalse(_is_198_date_fixed(self.ui))
+        self.ui.app.df_reg.loc["198", "Collection Date"] = "00.00.1927"
+        self.assertTrue(_is_198_date_fixed(self.ui))
+        self.ui.app.df_reg.loc["198", "Collection Date"] = "1927"
+        self.assertTrue(_is_198_date_fixed(self.ui))
+
+        # Exiting sandbox restores original image_panel state cleanly
+        self.sm.exit_sandbox(self.ui)
+        self.assertIsNone(self.ui.image_panel.image_mode)
+        self.assertEqual(self.ui.image_panel.image_index, {})
+        self.assertFalse(self.ui.image_panel.show_images_var.get())
+
+    def test_historical_suggestions_slate_blue_pill(self):
+        """Verify update_history_indicator renders the Slate-Blue pill with count, matches state, and hides when none."""
+        from ui.historical_suggestions import HistoricalSuggestionsMixin
+
+        class _PillHost(HistoricalSuggestionsMixin):
+            def __init__(self, root, app):
+                self.root = root
+                self.app = app
+                self.dark_mode_active = False
+                self.history_indicator_label = tk.Label(root, text="")
+                self._suggestions = []
+
+            def collect_historical_suggestions(self, oid):
+                return self._suggestions
+
+            def _get_reg_by_id(self, db):
+                return db["df"]
+
+        self.sm.enter_sandbox(self.ui, mock_type="review")
+        host = _PillHost(self.root, self.ui.app)
+
+        # 1. Suggestions available -> Slate-Blue pill with count
+        host._suggestions = [{"field": "Collection Date", "value": "1927"}]
+        host.update_history_indicator("198")
+        self.assertIn("History: 1 suggestion", host.history_indicator_label.cget("text"))
+        self.assertEqual(host.history_indicator_label.cget("bg"), "#e6f0f6")
+
+        # 2. Historical data exists for #198, but no differing suggestions -> muted pill
+        host._suggestions = []
+        host.update_history_indicator("198")
+        self.assertEqual(host.history_indicator_label.cget("text"), "History: matches current")
+
+        # 3. #110 has NO historical data -> cleared and hidden
+        host.update_history_indicator("110")
+        self.assertEqual(host.history_indicator_label.cget("text"), "")
+        self.sm.exit_sandbox(self.ui)
 
 
 if __name__ == "__main__":

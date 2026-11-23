@@ -30,6 +30,12 @@ class ZoomableImagePopup:
     def __init__(self, parent, tk_img, source=None, is_online=False):
         self.top = tk.Toplevel(parent)
         self.top.title("Image")
+        try:
+            import utils
+            from config import sc
+            utils.center_and_fit_toplevel(self.top, sc(960), sc(760))
+        except Exception:
+            pass
 
         self._scale = getattr(parent, "_scale", 1.0)
         self._compact = False

@@ -58,9 +58,10 @@ class QuickPeekController:
         win = tk.Toplevel(ui.root)
         ui.quick_peek_window = win
         win.title("Quick Peek")
-        win.geometry(f"{sc(1000)}x{sc(700)}")
         win.configure(bg=COLORS["surface"])
         win.transient(ui.root)  # Start modal-ish
+        import utils
+        utils.center_and_fit_toplevel(win, sc(1000), sc(700))
 
         # Cleanup on close
         win.bind("<Destroy>", lambda e: setattr(ui, "quick_peek_window", None) if e.widget == win else None)

@@ -121,7 +121,7 @@ class ToastManager:
             x = rx + max(0, (rw - tw) // 2)
             y = ry + max(0, rh - th - sc(36))
 
-            toast.geometry(f"{tw}x{th}+{x}+{y}")
+            toast.geometry(f"{tw}x{th}{int(x):+d}{int(y):+d}")
 
             cls._active_toast = toast
             cls._root_ref = root

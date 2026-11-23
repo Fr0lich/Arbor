@@ -259,7 +259,7 @@ INDEX_TEMPLATE_V2 = """
         <span class="text-sm">⚠</span>
         <span id="offlineBannerText">Host disconnected. Reconnecting...</span>
       </div>
-      <button type="button" onclick="setupEventSource()" class="min-h-[30px] px-2.5 py-1 bg-ember text-white rounded font-bold text-[11px] tap-active">
+      <button type="button" onclick="setupEventSource()" class="min-h-[38px] px-3 py-1.5 bg-ember text-white rounded font-bold text-[11px] tap-active">
         Retry
       </button>
     </div>
@@ -1197,13 +1197,14 @@ INDEX_TEMPLATE_V2 = """
 
     <!-- MODAL: Stored As Bottom Sheet -->
     <div id="storedAsBottomSheet" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="if(event.target===this)closeStoredAsBottomSheet()">
-      <div class="bg-surface border-t border-bordercol rounded-t-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto shadow-2xl">
+      <div id="storedAsSheetCard" class="bg-surface border-t border-bordercol rounded-t-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto shadow-2xl transition-transform">
+        <div class="w-10 h-1 bg-stone-300 rounded-full mx-auto -mt-1 mb-1"></div>
         <div class="flex items-center justify-between pb-2 border-b border-stone-200">
           <div>
             <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Additional Storage Vessels</h3>
             <p class="text-[10px] font-mono text-subdued">Select botanical archival method</p>
           </div>
-          <button class="p-1 text-muted hover:text-ink font-mono text-sm" onclick="closeStoredAsBottomSheet()" type="button">✕</button>
+          <button class="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-stone-100 text-muted hover:text-ink font-mono text-sm tap-active" onclick="closeStoredAsBottomSheet()" type="button">✕</button>
         </div>
         <div class="space-y-1.5 font-mono text-xs" id="storedAsModalOptions">
           <!-- Populated dynamically -->
@@ -1219,7 +1220,7 @@ INDEX_TEMPLATE_V2 = """
             <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Customize Quick-Select</h3>
             <p class="text-[10px] font-mono text-subdued">Select 3 presets for the primary 2x2 grid</p>
           </div>
-          <button class="p-1 text-muted hover:text-ink font-mono text-sm" onclick="closePresetsModal()" type="button">✕</button>
+          <button class="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-stone-100 text-muted hover:text-ink font-mono text-sm tap-active" onclick="closePresetsModal()" type="button">✕</button>
         </div>
         <div class="flex items-center justify-between text-[11px] font-mono bg-stone-100 px-2.5 py-1.5 rounded border border-stone-200">
           <span class="text-subdued uppercase text-[9px] font-bold">Selection count:</span>
@@ -1240,7 +1241,7 @@ INDEX_TEMPLATE_V2 = """
       <div class="bg-surface border border-bordercol rounded w-full max-w-md shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         <header class="p-3.5 bg-tonal1 border-b border-tonal2 flex items-center justify-between shrink-0">
           <h2 class="font-serif font-bold text-sm text-ink">Curatorial Advanced Filter</h2>
-          <button type="button" onclick="closeFilterModal()" class="text-ink-muted hover:text-ink font-bold text-sm">✕</button>
+          <button type="button" onclick="closeFilterModal()" class="min-w-[40px] min-h-[40px] flex items-center justify-center rounded hover:bg-stone-200/70 text-ink-muted hover:text-ink font-bold text-sm tap-active">✕</button>
         </header>
         <div class="p-4 overflow-y-auto space-y-4 flex-1">
           <div>
@@ -1292,7 +1293,7 @@ INDEX_TEMPLATE_V2 = """
             <svg class="w-4 h-4 text-fern" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
             <h2 class="font-serif font-bold text-sm text-ink" id="commentModalTitle">Edit Comment</h2>
           </div>
-          <button type="button" onclick="closeCommentEditor()" class="text-ink-muted hover:text-ink font-bold text-sm">✕</button>
+          <button type="button" onclick="closeCommentEditor()" class="min-w-[40px] min-h-[40px] flex items-center justify-center rounded hover:bg-stone-200/70 text-ink-muted hover:text-ink font-bold text-sm tap-active">✕</button>
         </header>
         <div class="p-4 space-y-3">
           <div>
@@ -1300,8 +1301,8 @@ INDEX_TEMPLATE_V2 = """
             <textarea id="commentEditTextarea" rows="6" placeholder="Enter comments or curatorial notes..." class="w-full bg-surface border border-bordercol rounded p-2.5 text-xs font-mono text-ink outline-none focus:border-fern focus:ring-1 focus:ring-fern resize-none leading-relaxed"></textarea>
           </div>
           <div class="flex justify-end gap-2 pt-2 border-t border-tonal2">
-            <button type="button" onclick="closeCommentEditor()" class="px-3 py-1.5 border border-bordercol text-ink-muted rounded text-xs font-mono">Cancel</button>
-            <button type="button" onclick="saveCommentFromEditor()" class="px-4 py-1.5 bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold font-mono">Save Comment</button>
+            <button type="button" onclick="closeCommentEditor()" class="min-h-[38px] px-3 py-1.5 border border-bordercol text-ink-muted rounded text-xs font-mono tap-active">Cancel</button>
+            <button type="button" onclick="saveCommentFromEditor()" class="min-h-[38px] px-4 py-1.5 bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold font-mono tap-active">Save Comment</button>
           </div>
         </div>
       </div>
@@ -1312,18 +1313,18 @@ INDEX_TEMPLATE_V2 = """
       <div class="flex items-center justify-between text-white">
         <span class="font-mono text-xs" id="photoViewerTitle">Specimen Photo</span>
         <div class="flex items-center gap-2">
-          <button type="button" onclick="rotatePhoto()" class="px-2 py-1 bg-white/20 hover:bg-white/30 rounded text-xs font-mono">↻ Rotate</button>
-          <button type="button" onclick="closePhotoViewerModal()" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded text-xs font-bold">✕</button>
+          <button type="button" onclick="rotatePhoto()" class="min-h-[38px] px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded text-xs font-mono tap-active">↻ Rotate</button>
+          <button type="button" onclick="closePhotoViewerModal()" class="min-w-[40px] min-h-[40px] flex items-center justify-center bg-white/20 hover:bg-white/30 rounded text-sm font-bold tap-active">✕</button>
         </div>
       </div>
-      <div class="flex-1 flex items-center justify-center overflow-hidden my-2">
-        <img id="photoViewerImg" src="" alt="Specimen Inspection" class="max-w-full max-h-full object-contain transition-transform">
+      <div id="photoViewerViewport" class="flex-1 flex items-center justify-center overflow-hidden my-2" style="touch-action: none;">
+        <img id="photoViewerImg" src="" alt="Specimen Inspection" class="max-w-full max-h-full object-contain select-none" draggable="false">
       </div>
-      <div class="flex items-center justify-center gap-3 text-white text-xs font-mono">
-        <button type="button" onclick="zoomPhoto(-0.3)" class="px-3 py-1.5 bg-white/20 rounded font-bold">− Zoom</button>
-        <span id="zoomLevelDisplay">1.0x</span>
-        <button type="button" onclick="zoomPhoto(0.3)" class="px-3 py-1.5 bg-white/20 rounded font-bold">+ Zoom</button>
-        <button type="button" onclick="resetPhotoTransform()" class="px-3 py-1.5 bg-white/20 rounded">Reset</button>
+      <div class="flex items-center justify-center gap-2.5 text-white text-xs font-mono">
+        <button type="button" onclick="zoomPhoto(-0.3)" class="min-h-[40px] px-3.5 py-2 bg-white/20 hover:bg-white/30 rounded font-bold tap-active">− Zoom</button>
+        <span id="zoomLevelDisplay" class="min-w-[42px] text-center">1.0x</span>
+        <button type="button" onclick="zoomPhoto(0.3)" class="min-h-[40px] px-3.5 py-2 bg-white/20 hover:bg-white/30 rounded font-bold tap-active">+ Zoom</button>
+        <button type="button" onclick="resetPhotoTransform()" class="min-h-[40px] px-3.5 py-2 bg-white/20 hover:bg-white/30 rounded tap-active">Reset</button>
       </div>
     </div>
 
@@ -1332,7 +1333,7 @@ INDEX_TEMPLATE_V2 = """
       <div class="bg-surface border border-bordercol rounded w-full max-w-sm p-4 shadow-xl space-y-3">
         <div class="flex items-center justify-between border-b border-tonal2 pb-2">
           <h3 class="font-serif font-bold text-sm text-ink">⚡ Desktop Host Link</h3>
-          <button type="button" onclick="closeModal('connectionModal')" class="text-ink-muted font-bold text-sm">✕</button>
+          <button type="button" onclick="closeModal('connectionModal')" class="min-w-[40px] min-h-[40px] flex items-center justify-center rounded hover:bg-stone-200/70 text-ink-muted font-bold text-sm tap-active">✕</button>
         </div>
         <div class="space-y-1.5 text-xs font-mono">
           <div class="flex justify-between py-1 border-b border-tonal2">
@@ -1872,6 +1873,8 @@ INDEX_TEMPLATE_V2 = """
       } catch (e) {}
 
       initStationLaunchpad();
+      initTouchGestures();
+      initPhotoViewerTouchGestures();
       triggerHaptic('stepper');
       showToast(`🎯 Station armed: Cab ${cab || '—'} · Sh ${shelf || '—'}`);
     }
@@ -1883,6 +1886,8 @@ INDEX_TEMPLATE_V2 = """
       await initIndexedDB();
       applyFilterPillVisibility();
       initStationLaunchpad();
+      initTouchGestures();
+      initPhotoViewerTouchGestures();
       await fetchSchema();
       await fetchObjects();
       setupEventSource();
@@ -2269,6 +2274,8 @@ INDEX_TEMPLATE_V2 = """
       document.getElementById('detailView').classList.add('hidden');
       document.getElementById('batchLocationView').classList.add('hidden');
       initStationLaunchpad();
+      initTouchGestures();
+      initPhotoViewerTouchGestures();
       const searchBox = document.getElementById('searchBox');
       if (searchBox) {
         searchBox.value = '';
@@ -2769,6 +2776,8 @@ INDEX_TEMPLATE_V2 = """
       } catch(e) {}
       updateArmedShelfBannerUI(state.currentRecord?.observation || {});
       initStationLaunchpad();
+      initTouchGestures();
+      initPhotoViewerTouchGestures();
     }
 
     function stampArmedLocation() {
@@ -3066,6 +3075,103 @@ INDEX_TEMPLATE_V2 = """
       });
     }
 
+    let _touchGesturesBound = false;
+    function initTouchGestures() {
+      if (_touchGesturesBound) return;
+      _touchGesturesBound = true;
+
+      // 1. Horizontal swipe between Details / Location / Problems tabs on #swipeArea
+      const swipeArea = document.getElementById('swipeArea');
+      if (swipeArea) {
+        let startX = 0;
+        let startY = 0;
+        let startTime = 0;
+        let tracking = false;
+
+        swipeArea.addEventListener('touchstart', (e) => {
+          if (!e.touches || e.touches.length !== 1) {
+            tracking = false;
+            return;
+          }
+          const target = e.target;
+          if (target && target.closest && target.closest('input, textarea, select, [data-no-swipe]')) {
+            tracking = false;
+            return;
+          }
+          // Skip if starting inside an actively horizontally-scrollable strip
+          const hScroll = target && target.closest ? target.closest('.overflow-x-auto') : null;
+          if (hScroll && hScroll.scrollWidth > hScroll.clientWidth + 4) {
+            tracking = false;
+            return;
+          }
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+          startTime = Date.now();
+          tracking = true;
+        }, { passive: true });
+
+        swipeArea.addEventListener('touchend', (e) => {
+          if (!tracking || !e.changedTouches || e.changedTouches.length === 0) return;
+          tracking = false;
+          const dx = e.changedTouches[0].clientX - startX;
+          const dy = e.changedTouches[0].clientY - startY;
+          const dt = Date.now() - startTime;
+          if (dt > 700) return;
+          if (Math.abs(dx) >= 52 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            const nextIdx = dx < 0
+              ? Math.min(2, currentTabIdx + 1)
+              : Math.max(0, currentTabIdx - 1);
+            if (nextIdx !== currentTabIdx) {
+              switchTab(nextIdx);
+              if (typeof triggerHaptic === 'function') triggerHaptic('light');
+            }
+          }
+        }, { passive: true });
+      }
+
+      // 2. Swipe-down to dismiss #storedAsBottomSheet
+      const sheetCard = document.getElementById('storedAsSheetCard');
+      if (sheetCard) {
+        let sheetStartY = 0;
+        let sheetDragY = 0;
+        let sheetDragging = false;
+
+        sheetCard.addEventListener('touchstart', (e) => {
+          if (!e.touches || e.touches.length !== 1) return;
+          if (sheetCard.scrollTop > 2) return;
+          sheetStartY = e.touches[0].clientY;
+          sheetDragY = 0;
+          sheetDragging = true;
+          sheetCard.style.transition = 'none';
+        }, { passive: true });
+
+        sheetCard.addEventListener('touchmove', (e) => {
+          if (!sheetDragging || !e.touches || e.touches.length !== 1) return;
+          const dy = e.touches[0].clientY - sheetStartY;
+          if (dy > 0) {
+            sheetDragY = dy;
+            sheetCard.style.transform = `translateY(${Math.min(dy, 260)}px)`;
+          } else {
+            sheetDragY = 0;
+            sheetCard.style.transform = '';
+          }
+        }, { passive: true });
+
+        sheetCard.addEventListener('touchend', () => {
+          if (!sheetDragging) return;
+          sheetDragging = false;
+          sheetCard.style.transition = '';
+          if (sheetDragY >= 85) {
+            sheetCard.style.transform = '';
+            closeStoredAsBottomSheet();
+          } else {
+            sheetCard.style.transform = '';
+          }
+          sheetDragY = 0;
+        }, { passive: true });
+      }
+    }
+
     // -------------------------------------------------------------
     // DETAILS & PROBLEMS FORM RENDERING
     // -------------------------------------------------------------
@@ -3328,8 +3434,16 @@ INDEX_TEMPLATE_V2 = """
 
     let photoZoom = 1;
     let photoRotation = 0;
+    let photoPanX = 0;
+    let photoPanY = 0;
+    let _photoTouchBound = false;
+
     function zoomPhoto(delta) {
-      photoZoom = Math.min(Math.max(photoZoom + delta, 0.5), 4);
+      photoZoom = Math.min(Math.max(photoZoom + delta, 0.5), 4.5);
+      if (photoZoom <= 1.02) {
+        photoPanX = 0;
+        photoPanY = 0;
+      }
       updatePhotoTransform();
     }
     function rotatePhoto() {
@@ -3339,12 +3453,99 @@ INDEX_TEMPLATE_V2 = """
     function resetPhotoTransform() {
       photoZoom = 1;
       photoRotation = 0;
+      photoPanX = 0;
+      photoPanY = 0;
       updatePhotoTransform();
     }
     function updatePhotoTransform() {
       const img = document.getElementById('photoViewerImg');
-      document.getElementById('zoomLevelDisplay').textContent = `${photoZoom.toFixed(1)}x`;
-      if (img) img.style.transform = `scale(${photoZoom}) rotate(${photoRotation}deg)`;
+      const disp = document.getElementById('zoomLevelDisplay');
+      if (disp) disp.textContent = `${photoZoom.toFixed(1)}x`;
+      if (img) img.style.transform = `translate(${photoPanX.toFixed(1)}px, ${photoPanY.toFixed(1)}px) scale(${photoZoom}) rotate(${photoRotation}deg)`;
+    }
+
+    function initPhotoViewerTouchGestures() {
+      if (_photoTouchBound) return;
+      const viewport = document.getElementById('photoViewerViewport');
+      if (!viewport) return;
+      _photoTouchBound = true;
+
+      let pinchStartDist = 0;
+      let pinchStartZoom = 1;
+      let panStartX = 0;
+      let panStartY = 0;
+      let panBaseX = 0;
+      let panBaseY = 0;
+      let isPanning = false;
+      let lastTapTime = 0;
+
+      function _touchDist(t0, t1) {
+        return Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+      }
+
+      viewport.addEventListener('touchstart', (e) => {
+        if (!e.touches) return;
+        if (e.touches.length === 2) {
+          isPanning = false;
+          pinchStartDist = _touchDist(e.touches[0], e.touches[1]) || 1;
+          pinchStartZoom = photoZoom;
+        } else if (e.touches.length === 1) {
+          const now = Date.now();
+          if (now - lastTapTime < 280) {
+            // Double-tap toggles between 1.0x centered and 2.2x close inspection
+            if (photoZoom > 1.2) {
+              resetPhotoTransform();
+            } else {
+              photoZoom = 2.2;
+              photoPanX = 0;
+              photoPanY = 0;
+              updatePhotoTransform();
+            }
+            lastTapTime = 0;
+            isPanning = false;
+            return;
+          }
+          lastTapTime = now;
+          if (photoZoom > 1.05) {
+            isPanning = true;
+            panStartX = e.touches[0].clientX;
+            panStartY = e.touches[0].clientY;
+            panBaseX = photoPanX;
+            panBaseY = photoPanY;
+          }
+        }
+      }, { passive: true });
+
+      viewport.addEventListener('touchmove', (e) => {
+        if (!e.touches) return;
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+          e.preventDefault();
+          const dist = _touchDist(e.touches[0], e.touches[1]);
+          photoZoom = Math.min(Math.max(pinchStartZoom * (dist / pinchStartDist), 0.8), 4.5);
+          if (photoZoom <= 1.02) {
+            photoPanX = 0;
+            photoPanY = 0;
+          }
+          updatePhotoTransform();
+        } else if (e.touches.length === 1 && isPanning && photoZoom > 1.05) {
+          e.preventDefault();
+          const maxOffset = Math.max(120, viewport.clientWidth * (photoZoom - 1) * 0.65);
+          const dx = e.touches[0].clientX - panStartX;
+          const dy = e.touches[0].clientY - panStartY;
+          photoPanX = Math.min(Math.max(panBaseX + dx, -maxOffset), maxOffset);
+          photoPanY = Math.min(Math.max(panBaseY + dy, -maxOffset), maxOffset);
+          updatePhotoTransform();
+        }
+      }, { passive: false });
+
+      viewport.addEventListener('touchend', (e) => {
+        if (!e.touches || e.touches.length < 2) {
+          pinchStartDist = 0;
+        }
+        if (!e.touches || e.touches.length === 0) {
+          isPanning = false;
+        }
+      }, { passive: true });
     }
 
     function isProblemActiveOnRecord(probName, rec) {
@@ -4047,7 +4248,7 @@ INDEX_TEMPLATE_V2 = """
                 </div>
                 <div class="font-serif italic text-xs text-ink truncate">${item.sciName}</div>
               </div>
-              <button type="button" onclick="removeBatchItem(${idx})" class="text-stone-400 hover:text-brick p-1 text-sm font-bold">✕</button>
+              <button type="button" onclick="removeBatchItem(${idx})" class="min-w-[38px] min-h-[38px] flex items-center justify-center rounded hover:bg-stone-100 text-stone-400 hover:text-brick text-sm font-bold tap-active">✕</button>
             </div>
             <div class="flex items-center justify-between text-[10px] font-mono pt-1 border-t border-stone-100 gap-2">
               <div class="flex items-center gap-1 text-muted truncate min-w-0">
@@ -4540,20 +4741,20 @@ INDEX_TEMPLATE_V2 = """
       {
         badge: 'STEP 1 OF 3 · FAST LOOKUP',
         title: 'Find an Object and Search Its Listed Number',
-        body: 'Pick up a physical specimen box or sheet and type the number printed on its label into the search bar. Leading zeros and prefixes are handled automatically.',
+        body: 'Pick up a physical specimen box or sheet and type its number into the search bar — or filter for already-reviewed objects when pulling items for closer inspection. Leading zeros and prefixes are handled automatically.',
         callout: 'Tip: Typing "001" or "O-V-1" both find #1. Tap [123 / Aa] to switch between number pad and plant names.'
       },
       {
-        badge: 'STEP 2 OF 3 · ARMED TARGET SHELF',
-        title: 'Set Your Cabinet Once, Stamp in 1 Tap',
-        body: 'Pick the Building, Cabinet, and Shelf you are standing in front of once. Opening an object never changes its saved location by accident — tap the green Stamp Target button to assign 30+ objects on the same shelf in 1 tap.',
-        callout: '⚡ Armed Target: Cab 21 · Sh 01  →  Tap [ 📍 Stamp Target ]'
+        badge: 'STEP 2 OF 3 · ARMED SHELF & LOANS',
+        title: 'Stamp Shelves in 1 Tap — Or Mark Loaned Out',
+        body: 'Set the Floor, Cabinet, and Shelf you are standing in front of once, then tap Stamp Target to assign 30+ boxes in 1 tap. Need to lend an object out? Switch to the Location tab and toggle Loaned Out directly from your phone.',
+        callout: '⚡ Armed Target: Fl 1 · Cab 21 · Sh 01  →  Tap [ 📍 Stamp Target ]'
       },
       {
-        badge: 'STEP 3 OF 3 · MARK REVIEWED',
-        title: 'Flag Issues & Still Mark Reviewed',
-        body: 'Found a damaged box, faded handwriting, or a mismatch? Check the problem flag and still tap ✓ Mark Reviewed. You do not have to solve every problem in the hallway — it is completely okay to leave it flagged so someone else can check it later on the office computer.',
-        callout: '🟠 REV + 1 ISSUE = You checked the object + safely queued the issue for later. Tap ? anytime for What the Fields Mean!'
+        badge: 'STEP 3 OF 3 · PHYSICAL REVIEW & ISSUES',
+        title: 'Flag Issues & Mark Reviewed After Physical Check',
+        body: 'Only tap ✓ Mark Reviewed once you have physically checked the object. Spot a physical condition issue (like a bent display) or mismatch? Check Other Issue (or a field flag), jot a quick Comment, and still tap ✓ Mark Reviewed — it is completely okay to leave hard issues flagged for later.',
+        callout: '🟠 REV + 1 ISSUE = Physically checked + issue safely queued for the desk. Tap ? anytime for What the Fields Mean!'
       }
     ];
     let _wtIndex = 0;
@@ -4761,7 +4962,11 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
+    const _ARBOR_WT_RAW = '{{ show_walkthrough }}';
+    const ARBOR_SHOW_WALKTHROUGH = (_ARBOR_WT_RAW !== 'false');
+
     function maybeShowFirstRunWalkthrough() {
+      if (!ARBOR_SHOW_WALKTHROUGH) return;
       try {
         if (localStorage.getItem('arbor_v2_walkthrough_seen') !== 'true') {
           openWalkthroughModal(0);

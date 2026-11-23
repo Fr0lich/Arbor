@@ -260,7 +260,7 @@ class ToolTipManager:
         self.hide()
         self.tooltip = tk.Toplevel(w)
         self.tooltip.wm_overrideredirect(True)
-        self.tooltip.wm_geometry(f"+{x}+{y}")
+        self.tooltip.wm_geometry(f"{int(x):+d}{int(y):+d}")
 
         from config import sc
         bg_col = "#1e1e2d" if is_dark else "#f2f5f1"
@@ -2092,7 +2092,7 @@ class ObjectProgramUI(
             
         win.update_idletasks()
         width = max(sc(130), win.winfo_reqwidth())
-        win.geometry(f"{width}x{win.winfo_reqheight()}+{x}+{y}")
+        win.geometry(f"{width}x{win.winfo_reqheight()}{int(x):+d}{int(y):+d}")
         
         def _dismiss_dropdown(event=None):
             if not win.winfo_exists():
@@ -2861,7 +2861,7 @@ class ObjectProgramUI(
         y = entry.winfo_rooty() + entry.winfo_height()
         w = entry.winfo_width()
 
-        self.search_popup.geometry(f"{w}x200+{x}+{y}")
+        self.search_popup.geometry(f"{w}x200{int(x):+d}{int(y):+d}")
 
     def _on_search_select(self, event=None):
         if not self.search_listbox.curselection():
@@ -3360,25 +3360,111 @@ class ObjectProgramUI(
     def _sync_middle_panes(self):
         if not hasattr(self, 'middle_panes'):
             return
-            
-        # Manage ordering and visibility safely without thrashing
-        if not self.show_images_var.get() and hasattr(self, 'right_frame') and str(self.right_frame) in self.middle_panes.panes():
-            self.middle_panes.forget(self.right_frame)
-        elif self.show_images_var.get() and hasattr(self, 'right_frame') and str(self.right_frame) not in self.middle_panes.panes():
-            # U2-A: 200px minimum keeps image panel usable when sash is dragged left
-            self.middle_panes.insert(0, self.right_frame, weight=3)
-            self.refresh_image_view()
-        elif self.show_images_var.get() and hasattr(self, 'right_frame'):
-            self.refresh_image_view()
+
+        img_mode = getattr(getattr(self, "image_panel", None), "image_mode", None)
+        show_images_flag = bool(self.show_images_var.get()) if self.show_images_var is not None else True
+        images_visible = show_images_flag and img_mode != "offline"
 
         focus_active = hasattr(self, "focus_mode_var") and self.focus_mode_var.get()
         show_loc = not (focus_active and not self.focus_visibility_vars.get("Location", tk.BooleanVar(value=True)).get())
+        loc_center_visible = bool(
+            hasattr(self, 'location_in_center_var')
+            and self.location_in_center_var.get()
+            and show_loc
+        )
 
-        if not (hasattr(self, 'location_in_center_var') and self.location_in_center_var.get() and show_loc) and hasattr(self, 'loc_frame_horizontal') and str(self.loc_frame_horizontal) in self.middle_panes.panes():
-            self.middle_panes.forget(self.loc_frame_horizontal)
-        elif hasattr(self, 'location_in_center_var') and self.location_in_center_var.get() and show_loc and hasattr(self, 'loc_frame_horizontal') and str(self.loc_frame_horizontal) not in self.middle_panes.panes():
-            # U2-A: 130px minimum keeps location rows readable
-            self.middle_panes.add(self.loc_frame_horizontal, weight=1)
+        loc_slot = getattr(self, "_middle_loc_slot", None)
+        loc_horiz = getattr(self, "loc_frame_horizontal", None)
+        ctx_bar = getattr(self, "object_context_bar", None)
+        mid_frame = getattr(self, "middle_frame", None)
+        panes = getattr(self, "panes", None)
+
+        if images_visible:
+            # Ensure middle_frame is mounted in the outer horizontal Panedwindow
+            if panes is not None and mid_frame is not None and str(mid_frame) not in panes.panes():
+                try:
+                    left_in = hasattr(self, "left_frame") and str(self.left_frame) in panes.panes()
+                    panes.insert(1 if left_in else 0, mid_frame, weight=1)
+                except Exception:
+                    try:
+                        panes.add(mid_frame, weight=1)
+                    except Exception:
+                        pass
+
+            # Keep Curatorial Command Strip docked at top of middle_frame
+            if ctx_bar is not None and mid_frame is not None:
+                try:
+                    ctx_bar.pack_forget()
+                    ctx_bar.pack(in_=mid_frame, fill="x", side="top", before=self.middle_panes)
+                except Exception:
+                    pass
+
+            # Mount image panel at index 0 of middle_panes (use add() when panedwindow is empty)
+            if hasattr(self, 'right_frame') and str(self.right_frame) not in self.middle_panes.panes():
+                if self.middle_panes.panes():
+                    self.middle_panes.insert(0, self.right_frame, weight=3)
+                else:
+                    self.middle_panes.add(self.right_frame, weight=3)
+            if hasattr(self, 'right_frame'):
+                self.refresh_image_view()
+
+            # Mount horizontal Location inside middle_panes (below images) if enabled
+            if loc_center_visible and loc_horiz is not None:
+                if loc_slot is not None:
+                    if str(loc_slot) not in self.middle_panes.panes():
+                        self.middle_panes.add(loc_slot, weight=1)
+                    try:
+                        loc_horiz.configure(highlightthickness=0)
+                        loc_horiz.pack_forget()
+                        loc_horiz.pack(in_=loc_slot, fill="both", expand=True)
+                    except Exception:
+                        pass
+                elif str(loc_horiz) not in self.middle_panes.panes():
+                    self.middle_panes.add(loc_horiz, weight=1)
+            else:
+                if loc_horiz is not None:
+                    try:
+                        loc_horiz.pack_forget()
+                    except Exception:
+                        pass
+                if loc_slot is not None and str(loc_slot) in self.middle_panes.panes():
+                    self.middle_panes.forget(loc_slot)
+                elif loc_horiz is not None and str(loc_horiz) in self.middle_panes.panes():
+                    self.middle_panes.forget(loc_horiz)
+        else:
+            # Images hidden (F8 or Offline): collapse middle_frame so Left + Right expand cleanly
+            if hasattr(self, 'right_frame') and str(self.right_frame) in self.middle_panes.panes():
+                self.middle_panes.forget(self.right_frame)
+            if loc_slot is not None and str(loc_slot) in self.middle_panes.panes():
+                self.middle_panes.forget(loc_slot)
+            if loc_horiz is not None and str(loc_horiz) in self.middle_panes.panes():
+                self.middle_panes.forget(loc_horiz)
+            if panes is not None and mid_frame is not None and str(mid_frame) in panes.panes():
+                panes.forget(mid_frame)
+
+            # Keep Curatorial Command Strip visible at the top of the workspace above panes
+            if ctx_bar is not None and panes is not None:
+                try:
+                    ctx_bar.pack_forget()
+                    ctx_bar.pack(in_=self.root, fill="x", side="top", before=panes)
+                except Exception:
+                    pass
+
+            # If Location is set to Center/Bottom, dock it cleanly along the bottom above the status bar
+            if loc_center_visible and loc_horiz is not None and panes is not None:
+                try:
+                    is_dark = getattr(self, "dark_mode_active", False)
+                    border_col = "#333a35" if is_dark else "#d6dad3"
+                    loc_horiz.configure(highlightthickness=1, highlightbackground=border_col)
+                    loc_horiz.pack_forget()
+                    loc_horiz.pack(in_=self.root, fill="x", side="bottom", before=panes)
+                except Exception:
+                    pass
+            elif loc_horiz is not None:
+                try:
+                    loc_horiz.pack_forget()
+                except Exception:
+                    pass
 
     def toggle_location_panel(self):
         if hasattr(self, 'location_in_center_var') and self.location_in_center_var.get():
@@ -3390,14 +3476,22 @@ class ObjectProgramUI(
                         self.left_panes.forget(self.left_bottom_container)
             self._sync_middle_panes()
         else:
-            if hasattr(self, 'loc_frame_horizontal') and str(self.loc_frame_horizontal) in self.middle_panes.panes():
-                self.middle_panes.forget(self.loc_frame_horizontal)
+            if hasattr(self, 'loc_frame_horizontal'):
+                try:
+                    self.loc_frame_horizontal.pack_forget()
+                except Exception:
+                    pass
+                if str(self.loc_frame_horizontal) in self.middle_panes.panes():
+                    self.middle_panes.forget(self.loc_frame_horizontal)
+            if hasattr(self, '_middle_loc_slot') and str(self._middle_loc_slot) in self.middle_panes.panes():
+                self.middle_panes.forget(self._middle_loc_slot)
             if hasattr(self, 'loc_container'):
                 if hasattr(self, 'left_panes') and hasattr(self, 'left_bottom_container'):
                     if str(self.left_bottom_container) not in self.left_panes.panes():
                         self.left_panes.add(self.left_bottom_container, weight=0)
                 if self.loc_container.winfo_manager() != "pack":
                     self.loc_container.pack(side="top", fill="x")
+            self._sync_middle_panes()
 
     def toggle_images_panel(self):
         self._sync_middle_panes()
@@ -3516,15 +3610,15 @@ class ObjectProgramUI(
         # tuple: (enum, threshold_width, full_text)
 
         self.responsive_btn_config = {
-            'Next+Hist': (oi.OutlineIcon.HISTORY_TOGGLE, 1300, "Next+Hist"),
+            'Next+Hist': (oi.OutlineIcon.HISTORY_TOGGLE, 1300, "Next Ledger Match"),
             'Next Problem': (oi.OutlineIcon.ALERT_TRIANGLE, 1200, "⚠ Next Problem"),
             'SPECIMEN ▾': (oi.OutlineIcon.FILE_PLUS, 1150, "SPECIMEN ▾"),
-            '🌿 AUDIT & TOOLS ▾': (oi.OutlineIcon.DATABASE, 1050, "🌿 AUDIT & TOOLS ▾"),
+            'TOOLS ▾': (oi.OutlineIcon.DATABASE, 1050, "TOOLS ▾"),
             'VIEW ▾': (oi.OutlineIcon.PHOTO, 1000, "VIEW ▾"),
             'FILE ▾': (oi.OutlineIcon.FILE, 950, "FILE ▾"),
-            '📱 MOBILE': (getattr(oi.OutlineIcon, 'DEVICE_MOBILE', oi.OutlineIcon.SETTINGS), 900, "📱 MOBILE"),
+            'MOBILE': (getattr(oi.OutlineIcon, 'DEVICE_MOBILE', oi.OutlineIcon.SETTINGS), 900, "MOBILE"),
             '⚙ SETTINGS': (oi.OutlineIcon.SETTINGS, 850, "⚙ SETTINGS"),
-            '❓ HELP ▾': (oi.OutlineIcon.HELP, 800, "❓ HELP ▾"),
+            'HELP ▾': (oi.OutlineIcon.HELP, 800, "HELP ▾"),
             'Prev': (oi.OutlineIcon.PLAYER_TRACK_PREV, 800, "◄"),
             'Next': (oi.OutlineIcon.PLAYER_TRACK_NEXT, 800, "►"),
             'Last': (oi.OutlineIcon.ARROW_BAR_TO_LEFT, 800, "Last"),
@@ -3716,9 +3810,10 @@ class ObjectProgramUI(
         panes.add(middle, weight=1)
 
         # Contextual Action Strip for Active Specimen (Item B)
+        # Master is self.root so it can seamlessly dock at top of workspace when middle_frame is collapsed
         from ui.object_context_bar import ObjectContextBar
-        self.object_context_bar = ObjectContextBar(middle, app=self.app, main_ui=self)
-        self.object_context_bar.pack(fill="x", side="top")
+        self.object_context_bar = ObjectContextBar(self.root, app=self.app, main_ui=self)
+        self.object_context_bar.pack(in_=middle, fill="x", side="top")
 
         # Retain component aliases for full compatibility with existing hooks
         self.header_id_badge = self.object_context_bar.id_badge
@@ -3734,8 +3829,11 @@ class ObjectProgramUI(
         self.middle_panes.pack(fill="both", expand=True)
 
         # --- Horizontal Location Container ---
-        self.loc_frame_horizontal = tk.Frame(self.middle_panes, bg="#f5f5f5")
-        # will be added in toggle_location_panel()
+        # Master is self.root so it can dock inside _middle_loc_slot (when images visible)
+        # OR along the bottom of self.root above the status bar (when images are hidden).
+        self._middle_loc_slot = tk.Frame(self.middle_panes, bg="#f5f5f5")
+        self.loc_frame_horizontal = tk.Frame(self.root, bg="#f5f5f5")
+        # will be mounted in _sync_middle_panes() / toggle_location_panel()
 
         self.image_panel = ImagePanel(
             self.middle_panes,
@@ -3784,22 +3882,34 @@ class ObjectProgramUI(
         )
         self.history_btn.pack(side="left", padx=(8, 0))
 
-        self.history_indicator_label = ttk.Label(
+        self.history_indicator_label = tk.Label(
             reg_header,
             text="",
-            foreground="#444748",
+            fg="#2c536d",
+            bg="#e6f0f6",
+            highlightthickness=1,
+            highlightbackground="#4a7b9d",
+            padx=sc(8),
+            pady=sc(2),
             cursor="hand2",
-            font=("Inter", sc(9))
+            font=("Inter", sc(8.5), "bold")
         )
         self.history_indicator_label.tutorial_id = "history_indicator_label"
-        self.history_indicator_label.pack(side="left", padx=(4, 0))
         self.history_indicator_label.bind(
             "<Button-1>",
             lambda e: self.open_historical_suggestions()
         )
+        self.history_indicator_label.bind(
+            "<Enter>",
+            lambda e: self._on_history_pill_hover(True)
+        )
+        self.history_indicator_label.bind(
+            "<Leave>",
+            lambda e: self._on_history_pill_hover(False)
+        )
         self.add_tooltip(
             self.history_indicator_label,
-            "Show historical data (Ctrl+H)"
+            "Compare against earlier historical ledgers (Ctrl+H)"
         )
 
         # Focus Mode toggle (stays in header)

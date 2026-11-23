@@ -342,7 +342,9 @@ class AutosaveMixin:
 
         win = tk.Toplevel(self.root)
         win.title("Autosave Archive Manager")
-        win.geometry("520x380")
+        win.transient(self.root)
+        import utils
+        utils.center_and_fit_toplevel(win, sc(520), sc(380))
         win.grab_set()
 
         ttk.Label(win, text="Archived Autosaves", font=("Segoe UI", sc(11), "bold")).pack(anchor="w", padx=15, pady=(12, 4))

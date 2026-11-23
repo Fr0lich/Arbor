@@ -125,3 +125,46 @@ def test_load_prefs_file_not_exists():
         result = config.load_prefs()
         assert result == {}
         assert config._prefs_cache == {}
+
+
+def test_atomic_save_prefs_preserves_valid_json_on_error_and_concurrency(tmp_path, monkeypatch):
+    """Verify atomic save_prefs() handles concurrent writes and never corrupts existing JSON on serialization error."""
+    import json
+    import threading
+
+    prefs_file = tmp_path / "user_prefs.json"
+    monkeypatch.setattr(config, "_PREFS_PATH", str(prefs_file))
+    monkeypatch.setattr(config, "_prefs_cache", None)
+
+    # Initial valid write
+    config._prefs_cache = {"dark_mode": True, "profile": "Økonomisk Botanisk"}
+    config._write_prefs_now()
+    assert json.loads(prefs_file.read_text(encoding="utf-8"))["profile"] == "Økonomisk Botanisk"
+
+    # Attempt to write unserializable payload -> must leave existing valid file untouched with no leftover .tmp
+    config._prefs_cache = {"bad": object()}
+    config._write_prefs_now()
+    assert json.loads(prefs_file.read_text(encoding="utf-8"))["dark_mode"] is True
+    assert list(tmp_path.glob("*.tmp")) == []
+
+    # Concurrent rapid writes from multiple threads -> final file must always be valid JSON
+    errors = []
+
+    def _writer(idx):
+        try:
+            for j in range(5):
+                config._prefs_cache = {"worker": idx, "step": j}
+                config._write_prefs_now()
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=_writer, args=(i,)) for i in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors
+    parsed = json.loads(prefs_file.read_text(encoding="utf-8"))
+    assert "worker" in parsed and "step" in parsed
+    assert list(tmp_path.glob("*.tmp")) == []

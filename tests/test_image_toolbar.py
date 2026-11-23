@@ -102,3 +102,12 @@ def test_dark_mode_switch(tk_root):
     toolbar.set_dark_mode(False)
     assert toolbar.dark_mode is False
     assert toolbar.colors["surface"] == "#fbfaf8"
+
+
+def test_toolbar_typographic_icons(tk_root):
+    toolbar = create_image_toolbar(tk_root, zoom_level=1.0, rotation_angle=0)
+    assert toolbar.buttons["zoom_in"].icon_symbol == "+"
+    assert toolbar.buttons["zoom_out"].icon_symbol == "−"
+    status = toolbar._format_status_text()
+    assert "🔍" not in status
+    assert "100%" in status and "0°" in status

@@ -43,6 +43,8 @@ datas = [
 ]
 if os.path.exists('data/demo_collection.xlsx'):
     datas.append(('data/demo_collection.xlsx', 'data'))
+if os.path.isdir('data/tutorial_images'):
+    datas.append(('data/tutorial_images', 'data/tutorial_images'))
 datas += collect_data_files('pytablericons')
 datas += collect_data_files('flask')
 datas += collect_data_files('jinja2')

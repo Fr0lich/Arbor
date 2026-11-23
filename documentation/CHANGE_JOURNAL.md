@@ -13,6 +13,94 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 33: Slate-Blue Historical Suggestions Pill, Mobile First-Time Tutorial Toggle & Learning Path Steps 2–5 Upgrade
+- **Date**: 2026-11-23
+- **Feature Area**: Historical Suggestions Indicator (`ui/main_window.py`, `ui/historical_suggestions.py`), Phone Connector & Mobile V2 (`ui/mobile_panel.py`, `backend/mobile_server.py`, `backend/mobile_template_v2.py`), Learning Path Tutorials Steps 2–5 (`ui/tutorials/discrepancy_tutorial.py`, `ui/tutorials/micro_guides.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/database_tutorial.py`, `ui/tutorials/sandbox_manager.py`), & Tests (`tests/test_sandbox_tutorials.py`, `tests/test_mobile_companion.py`)
+- **What Changed**:
+  1. **Slate-Blue Clickable Historical Suggestions Pill (`ui/main_window.py`, `ui/historical_suggestions.py`)**: Upgraded `history_indicator_label` from plain blue text into an Arbor-styled Slate Blue (`#4a7b9d`) hoverable pill showing the exact count (`History: N suggestion(s) · Ctrl+H`), a calm muted pill when historical records match (`History: matches current`), and hidden cleanly when no historical data exists for the specimen (full Light & Dark Mode support).
+  2. **Mobile First-Time Tutorial Toggle (`ui/mobile_panel.py`, `backend/mobile_server.py`, `backend/mobile_template_v2.py`)**: Added a `"Launch with mobile companion tutorial for first-time users"` checkbox to the Phone Connector setup card (ON by default, persisted to `user_prefs.json["mobile_show_walkthrough"]`), wired live to `MobileServer.update_walkthrough_setting()` and injected into Mobile V2 (`ARBOR_SHOW_WALKTHROUGH`) so experienced staff can disable auto-launching the 3-step phone guide while keeping manual replay available.
+  3. **Learning Path Steps 2–5 Polish (User1 & User2 Pass)**:
+     - **Plain-Language Copy**: Removed bare *"Excel"* references from main tutorial instructions in favor of *"your currently registered collection"* / *"collection file"* (keeping Excel details inside the optional collapsible drawer).
+     - **Step 2 (`discrepancy_tutorial.py`)**: Added Step 0 framing, per-card `Apply` validator (guarding User1 against blind `Apply All`), and kept the desk-only physical-review rule.
+     - **Step 3 (`micro_guides.py:start_armed_shelf_guide`)**: Upgraded into an interactive Desktop-to-Phone walkthrough highlighting the top-bar `MOBILE` button (`mobile_nav_btn`), explaining QR pairing, PIN & tutorial toggles, and end-of-shift saving on desktop.
+     - **Step 4 (`triage_tutorial.py`, `sandbox_manager.py`)**: Added Step 0, clickable menu paths for User1 alongside `Ctrl+G`/`Ctrl+K`/`Alt+→` for User2, real validators, and updated `#2001` to realistic `Other Issue` (`"Bent display — needs workshop check"`) vs. `#2002` clearable date flag.
+     - **Step 5 (`database_tutorial.py`, `sandbox_manager.py`)**: Added dedicated clean 2-row `mock_type="database"` sandbox (decoupled from `#110` photos), Step 0 optional framing, `New Specimen` wording, and a hands-on Step 3 field-entry validator.
+- **User Impact**: Curators immediately spot when historical suggestions exist via a crisp Slate Blue pill, staff launching Mobile Companion can toggle the first-time phone walkthrough on or off, and every tutorial in the 5-step Learning Path is hands-on, jargon-free, and tailored for both brand-new trainees and experienced curators.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py` & `tests/test_mobile_companion.py`
+  - [x] AI UI Guide & Master Lexicon compliance
+
+---
+
+### Entry 32: Real-Photo 3-Minute Quick Tour (#110 & #198), 3-Source Historical Verification & 5-Step Suggested Learning Path
+- **Date**: 2026-11-23
+- **Feature Area**: Interactive Tutorials (`ui/tutorials/review_tutorial.py`, `ui/tutorials/sandbox_manager.py`, `ui/tutorials/discrepancy_tutorial.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/database_tutorial.py`, `ui/tutorials/micro_guides.py`), Help Hub & Demo Welcome (`ui/help_dialogs.py`, `ui/database_ops.py`), Mobile V2 Walkthrough (`backend/mobile_template_v2.py`), Bundled Tutorial Photos (`data/tutorial_images/`, `main.spec`, `build_exe.bat`), & Tests (`tests/test_sandbox_tutorials.py`)
+- **What Changed**:
+  1. **Real-Photo Quick Tour (`#110` & `#198`)**: Optimized and bundled 4 real front/back specimen photos in `data/tutorial_images/` (~886 KB total, packaged in `main.spec` & `build_exe.bat`) and auto-mounted them inside `SandboxManager` (restoring the user's original image mode/folder on exit).
+  2. **Redesigned 7-Step 3-Minute Quick Tour (`ui/tutorials/review_tutorial.py`)**:
+     - **Step 0**: Concise Desktop vs. Mobile Companion overview (hallway auditing, finding already-reviewed objects, loaning out objects) + Practice Mode safety.
+     - **Step 1 (`#110` *Ephedra major*, NO historical data)**: Teaches that Arbor shows currently registered data, clarifies that photos stand in for inspecting the physical object, and teaches the `DAY.MONTH.YEAR` format (`01.08.2015` / `00.08.2015` / year-only) — validator accepts `00.06.1910` or `06.1910` for *"juni 1910"*.
+     - **Steps 2–3 (`#198` *Corylus colurna*, 3-source historical conflict)**: Compares Current (`1963`), Ledger Book 1 (`1927` ✅), and Old Card Catalog (`1912` ❌) so trainees learn that older ledgers can be wrong and must be checked against the physical object (`1927` or `00.00.1927`).
+     - **Step 4 (`Other Issue`)**: Explains that field-specific flags are mostly auto-flagged by Arbor, while physical condition issues (like `#198`'s bent display) are flagged with **`Other Issue`** (`Other_problem`) + optional `Comment`.
+     - **Step 5 (Golden Rule of `✓ Mark as Reviewed`)**: Explicitly teaches that **`✓ Mark as Reviewed` is ONLY for objects you have physically inspected** — never just from historical data at a desk.
+  3. **5-Step Suggested Learning Path (`ui/help_dialogs.py`, `ui/database_ops.py`)**: Replaced the unlabeled 4-button sandbox row in the Help Hub with an ordered 5-step Learning Path (1. 3-Minute Quick Tour · 2. Historical Ledger Comparison · 3. Mobile Companion Hallway Guide *(Optional · Needs your phone)* · 4. Office Triage · 5. Collections & New Specimens *(Optional)*) with persistent `✓ Done` badges, plus a **Learning Path** button on the Demo Welcome Card.
+  4. **Aligned Discrepancy Tour & Mobile 3-Step Walkthrough**: Upgraded `discrepancy` sandbox to 2 conflicting historical books + explicit reminder NOT to mark Reviewed without physical inspection; updated Mobile V2 `WALKTHROUGH_SLIDES` to cover already-reviewed lookups, **Loaned Out** toggling, `Other Issue` + `Comment`, and the physical-inspection rule.
+- **User Impact**: New trainees immediately understand Desktop vs. Mobile roles, practice transcribing real labels (`#110` & `#198`) with the exact `DD.MM.YYYY` convention, learn to treat historical suggestions critically, never confuse desk edits with physical review, and can follow a clear 5-step Learning Path at their own pace.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Tutorial Developer Guide: `documentation/agent/TUTORIAL_GUIDE.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py` & `tests/test_mobile_companion.py`
+  - [x] Packaging: `main.spec` & `build_exe.bat`
+
+---
+
+### Entry 31: Mobile Companion V2 Touch Gestures Pass (Horizontal Tab Swipe, Pinch/Pan/Double-Tap Photo Zoom, Swipe-Down Bottom Sheet & 40px+ Targets)
+- **Date**: 2026-11-23
+- **Feature Area**: Mobile Companion V2 (`backend/mobile_template_v2.py`) & Tests (`tests/test_mobile_companion.py`)
+- **What Changed**:
+  1. **Horizontal Tab Swipe (`initTouchGestures()` on `#swipeArea`)**: Wired real `touchstart` / `touchend` swipe detection (with vertical-scroll lock `|dx| >= 52 && |dx| > |dy| * 1.5` and input/horizontal-scroller guards) so hallway auditors can flick one-handed between **Details ↔ Location ↔ Problems** with light haptic feedback.
+  2. **Pinch-to-Zoom, 1-Finger Drag-Pan & Double-Tap Zoom (`initPhotoViewerTouchGestures()` on `#photoViewerViewport`)**: Added 2-finger pinch zoom (`0.8×–4.5×`), 1-finger drag panning (`photoPanX` / `photoPanY`) when zoomed in, and double-tap toggle between `1.0×` and `2.2×` inside the fullscreen Specimen Photo viewer (`touch-action: none`).
+  3. **Swipe-Down Bottom Sheet Dismiss (`#storedAsSheetCard`)**: Added a top drag handle and live pull-down-to-close gesture (`>= 85px`) on the Storage Vessel bottom sheet.
+  4. **Enlarged 40px+ Modal & Action Touch Targets**: Bumped close `✕` buttons across modals/bottom sheets (`min-w-[40px] min-h-[40px]`), fullscreen photo controls (`min-h-[38px]`–`40px`), offline Retry button (`min-h-[38px]`), and Batch queue remove buttons (`min-w-[38px] min-h-[38px]`) with consistent `tap-active` press feedback.
+- **User Impact**: Phone auditing feels genuinely native in the hallway—trainees can swipe between tabs with one thumb, pinch and pan handwritten specimen labels cleanly, pull bottom sheets down to dismiss them, and tap close/action buttons reliably even while wearing gloves.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_mobile_companion.py`
+  - [x] Zero-Build, Offline-First & Zero-Barcodes compliance verified
+
+---
+
+### Entry 30: Desktop Visual Polish Pass (Clean Top Nav Icons, Crisp Image Toolbar Glyphs & DPI Scaling, Hardened Atomic `save_prefs()`)
+- **Date**: 2026-11-23
+- **Feature Area**: Top Navigation Bar (`ui/navigation_bar.py`, `ui/main_window.py`, `ui/database_ops.py`), Image Toolbar (`ui/image_toolbar.py`), Preferences Persistence (`config.py`), & Tests (`tests/test_config.py`, `tests/test_image_toolbar.py`)
+- **What Changed**:
+  1. **Cohesive, Laptop-Friendly Top Navigation Bar (`ui/navigation_bar.py`, `ui/main_window.py`, `ui/database_ops.py`)**: Replaced clashing color emojis and the macOS `⌘` glyph with clean labels (`TOOLS ▾`, `MOBILE`, `⚙ SETTINGS`, `HELP ▾`, `Commands (Ctrl+K)`), kept legacy `toolbar_buttons` aliases intact, and synced `responsive_btn_config` (including `Next Ledger Match`) so narrow-window Tabler icon collapse stays aligned.
+  2. **Crisp Typographic Image Toolbar Icons & DPI `sc()` Scaling (`ui/image_toolbar.py`)**: Replaced emoji `➕`/`➖`/`🔍` with uniform typographic `+` / `−` / `{pct}% · ↻ {deg}°`, switched `"Segoe UI"` → `"Inter"`, and wrapped hardcoded font sizes and paddings in `sc(...)`.
+  3. **Hardened Atomic `save_prefs()` (`config.py`)**: Added a thread lock (`_prefs_io_lock`), in-memory JSON pre-serialization before touching disk, unique per-write temp files (`tempfile.NamedTemporaryFile`), `flush()` + `os.fsync()`, atomic `os.replace()`, and automatic temp cleanup on failure so rapid or concurrent preference saves can never corrupt `user_prefs.json`.
+- **User Impact**: The top navigation bar and image toolbar look calmer, sharper, and less cramped on 13-inch laptops at 125%–150% scaling, and user preferences are protected against accidental file corruption on rapid/concurrent saves.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_config.py` & `tests/test_image_toolbar.py`
+  - [x] AI UI Guide & Master Lexicon compliance
+
+---
+
+### Entry 29: No-Images Bottom Location Dock, Dark-Mode Summary Hub & Multi-Monitor Window Positioning Pass
+- **Date**: 2026-11-23
+- **Feature Area**: Main Workspace Layout (`ui/main_window.py`, `ui/layout_settings.py`), Specimen Image Panel (`ui/image_panel.py`), Multi-Monitor Window & Overlay Positioning (`utils.py`, `ui/gbif_dialog.py`, `ui/toast.py`, `ui/autosave_handler.py`, `ui/quick_peek.py`, `ui/image_popup.py`, `ui/image_toolbar.py`, `ui/widgets.py`), & Tests (`tests/test_location_center_toggle.py`, `tests/test_navigation_and_dialogs.py`)
+- **What Changed**:
+  1. **Clean 2-Column Workspace + Bottom Storage Location Dock (`ui/main_window.py`, `ui/image_panel.py`, `ui/layout_settings.py`)**: When the photo viewport is hidden (`F8` or Offline mode), Arbor now collapses the empty middle column so the **Specimen Directory** and **Registration Panel** expand into a clean 2-column layout, docks the **Curatorial Command Strip** along the top of the workspace, and—if **Storage Location** is set to Center/Bottom—docks it neatly along the bottom of the screen just above the Bottom Progress Bar (with zero blank void). Also fixed `ImagePanel.update_image_view_button()` to delegate to `_sync_middle_panes()` and restore images at index `0`.
+  2. **Actionable, Dark-Mode-Aware No-Images Summary Hub (`ui/image_panel.py`)**: Upgraded `render_specimen_summary_hub()` with full Dark Mode palette support, a compact top action bar when no image folder is connected (**Select Image Folder…**, **Use Online Photos**, **Hide Photo Pane (F8)**), a subtle `Change Image Source…` link when a single specimen has 0 matched photos, humanized 2-column wrapping issue pills (`Box Label Issue`, `Collection Date Issue`), and Canonical Trainee Lexicon copy.
+  3. **Complete Multi-Monitor Window & Overlay Positioning (`utils.py`, `ui/gbif_dialog.py`, `ui/toast.py`, `ui/autosave_handler.py`, `ui/quick_peek.py`, `ui/image_popup.py`, `ui/image_toolbar.py`, `ui/widgets.py`, `ui/main_window.py`)**: Added `utils.format_tk_geometry()`, routed `GBIFMatchDialog`, `Autosave Archive Manager`, `Quick Peek`, and `ImagePopup` through `utils.center_and_fit_toplevel()`, and switched `Toast`, tooltips, top-bar dropdown menus, and the search popup to signed `{x:+d}{y:+d}` coordinates (removing primary-monitor `max(0, x)` / `screen_w` snapping on secondary displays).
+- **User Impact**: Curators working without specimen photos get a spacious 2-column layout with Storage Location cleanly anchored along the bottom of the screen (or 1-click folder/hide buttons when the middle pane is open), and users who drag Arbor onto a second monitor see every dialog, toast, dropdown, and tooltip open on that exact screen.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_location_center_toggle.py` & `tests/test_navigation_and_dialogs.py`
+  - [x] Master Lexicon & AI UI Guide compliance
+
+---
+
 ### Entry 28: Mobile Companion V2 Hallway Ergonomics & Visual Polish (Floor Selector, Glove-Friendly Touch Targets, 360px Header, Offline Active Tab)
 - **Date**: 2026-11-22
 - **Feature Area**: Mobile Companion V2 (`backend/mobile_template_v2.py`) & Tests (`tests/test_mobile_companion.py`)

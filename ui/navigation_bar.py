@@ -85,11 +85,12 @@ class NavigationBar:
         app.add_tooltip(btn_spec, "Specimen accession options (New, Duplicate, Delete, Review)")
         app.toolbar_buttons["CREATE"] = btn_spec
 
-        # AUDIT & TOOLS — GBIF, Problem Queue, Historical Books, Statistics, Bulk Edit
-        btn_tools = _nav_btn(nav_links_frame, "🌿 AUDIT & TOOLS ▾", app.show_audit_tools_dropdown)
+        # TOOLS — GBIF, Problem Queue, Historical Books, Statistics, Bulk Edit
+        btn_tools = _nav_btn(nav_links_frame, "TOOLS ▾", app.show_audit_tools_dropdown)
         app.add_tooltip(btn_tools, "Taxonomy validation, problem queue & historical tools")
         app.toolbar_buttons["DATA"] = btn_tools
         app.toolbar_buttons["🌿 GBIF ▾"] = btn_tools
+        app.toolbar_buttons["🌿 AUDIT & TOOLS ▾"] = btn_tools
 
         # VIEW — Image display, rotation & panel visibility (Focus mode omitted)
         btn_view = _nav_btn(nav_links_frame, "VIEW ▾", app.show_view_dropdown)
@@ -97,8 +98,10 @@ class NavigationBar:
         app.toolbar_buttons["IMAGES ▾"] = btn_view
 
         # MOBILE — opens mobile companion dialog
-        btn_mob = _nav_btn(nav_links_frame, "📱 MOBILE", app.open_mobile_dialog)
+        btn_mob = _nav_btn(nav_links_frame, "MOBILE", app.open_mobile_dialog)
+        btn_mob.tutorial_id = "mobile_nav_btn"
         app.add_tooltip(btn_mob, "Connect your phone to review & edit records remotely")
+        app.toolbar_buttons["📱 MOBILE"] = btn_mob
 
         # SETTINGS — opens unified settings
         btn_settings = _nav_btn(nav_links_frame, "⚙ SETTINGS", lambda: app._open_unified("general"))
@@ -106,13 +109,14 @@ class NavigationBar:
         app.toolbar_buttons["SETTINGS"] = btn_settings
 
         # HELP — documentation & tutorials
-        btn_help = _nav_btn(nav_links_frame, "❓ HELP ▾", app.show_help_dropdown)
+        btn_help = _nav_btn(nav_links_frame, "HELP ▾", app.show_help_dropdown)
         app.add_tooltip(btn_help, "User guide, shortcuts HUD, and interactive tutorials")
         app.toolbar_buttons["HELP"] = btn_help
+        app.toolbar_buttons["❓ HELP ▾"] = btn_help
 
         # Subtle Command Palette pill (Ctrl+K discoverability)
         if hasattr(app, "open_command_palette"):
-            btn_cmd = _nav_btn(nav_links_frame, "⌘ Commands (Ctrl+K)", app.open_command_palette)
+            btn_cmd = _nav_btn(nav_links_frame, "Commands (Ctrl+K)", app.open_command_palette)
             app.add_tooltip(btn_cmd, "Quickly jump to any specimen, filter, or tool (Ctrl+K)")
             app.toolbar_buttons["COMMANDS"] = btn_cmd
 

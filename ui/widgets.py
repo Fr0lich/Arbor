@@ -221,15 +221,19 @@ class InfoButton(tk.Canvas):
         screen_w = tw.winfo_screenwidth()
         screen_h = tw.winfo_screenheight()
 
-        if x + tip_w > screen_w - 10:
-            x = self.winfo_rootx() - tip_w - sc(6)
+        # Only apply primary-monitor edge clamping when widget is on the primary monitor;
+        # secondary monitors may have negative X/Y or X >= screen_w.
+        anchor_x = self.winfo_rootx()
+        anchor_y = self.winfo_rooty()
+        if 0 <= anchor_x < screen_w and x + tip_w > screen_w - 10:
+            x = anchor_x - tip_w - sc(6)
             if x < 10:
                 x = max(10, screen_w - tip_w - 10)
 
-        if y + tip_h > screen_h - 10:
+        if 0 <= anchor_y < screen_h and y + tip_h > screen_h - 10:
             y = max(10, screen_h - tip_h - 10)
 
-        tw.wm_geometry(f"+{int(x)}+{int(y)}")
+        tw.wm_geometry(f"{int(x):+d}{int(y):+d}")
 
     def hide_tip(self, event=None):
         if self.tip_window:

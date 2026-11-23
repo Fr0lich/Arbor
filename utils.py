@@ -392,6 +392,14 @@ def fade_in_toplevel(win, target_alpha=1.0, duration_ms=120, step_ms=15):
 
 
 
+def format_tk_geometry(x, y, w=None, h=None) -> str:
+    """Format a Tk geometry string with signed coordinates so negative multi-monitor X/Y never break."""
+    ix, iy = int(x), int(y)
+    if w is not None and h is not None:
+        return f"{int(w)}x{int(h)}{ix:+d}{iy:+d}"
+    return f"{ix:+d}{iy:+d}"
+
+
 def center_and_fit_toplevel(win, base_w=None, base_h=None):
     win.update_idletasks()
 

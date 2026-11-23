@@ -126,6 +126,16 @@ if exist "data\demo_collection.xlsx" (
     echo [WARNING] data\demo_collection.xlsx not found; Demo Project will not be bundled.
 )
 
+if exist "data\tutorial_images" (
+    if not exist "dist\data\tutorial_images" mkdir "dist\data\tutorial_images"
+    xcopy /Y /Q "data\tutorial_images\*.*" "dist\data\tutorial_images\" >nul
+    if !ERRORLEVEL! NEQ 0 (
+        echo [WARNING] Failed to copy data\tutorial_images to dist\data\tutorial_images.
+    ) else (
+        echo   - data\tutorial_images copied
+    )
+)
+
 echo.
 echo ===================================================
 echo               BUILD SUCCESSFUL
