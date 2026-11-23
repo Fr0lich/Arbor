@@ -53,7 +53,7 @@ def start_database_tutorial(ui, on_complete=None):
     steps = [
         ActionStep(
             step_id="database_intro",
-            title="0. Optional: Starting a New Collection or Adding Objects",
+            title="Optional: Starting a New Collection or Adding Objects",
             instruction=(
                 "This short tour is optional — if you are working on an existing museum collection file, you can skip it.\n\n"
                 "Use these steps when you need to create a brand-new collection file from scratch or register a specimen that isn't listed yet."
@@ -65,8 +65,8 @@ def start_database_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="open_db_wizard",
-            title="1. Creating a New Collection File",
-            instruction="To start a brand-new collection, use FILE ▾ → New Database (or '+ Create New Database' on startup) to generate a ready-to-use collection file with all standard fields.",
+            title="Creating a New Collection File",
+            instruction="To start a brand-new collection, use FILE ▾ → New Database Wizard... (or '+ Create New Database' on startup) to generate a ready-to-use collection file with all standard fields.",
             action_hint="Click Next → to practice adding a new specimen.",
             details=(
                 "Excel impact: Creates Registration, Observation, Log, and Unvalidated_source sheets with standard columns automatically — no manual spreadsheet setup required."
@@ -74,9 +74,9 @@ def start_database_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="add_new_object",
-            title="2. Add a New Specimen Record",
-            instruction="Click SPECIMEN ▾ → New Specimen in the top bar (or press Ctrl+N) to add a fresh specimen row to this collection.",
-            action_hint="Press Ctrl+N or click SPECIMEN ▾ → New Specimen (or Skip Step →).",
+            title="Add a New Specimen Record",
+            instruction="Click SPECIMEN ▾ → New Specimen Object... in the top bar (or press Ctrl+N) to add a fresh specimen row to this collection.",
+            action_hint="Press Ctrl+N or click SPECIMEN ▾ → New Specimen Object... (or Skip Step →).",
             keycaps=["Ctrl", "N"],
             details=(
                 "Excel impact: Appends a new unique ObjectID row to both the Registration and Observation sheets in memory."
@@ -87,7 +87,7 @@ def start_database_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="enter_specimen_data",
-            title="3. Fill In Specimen Details & Location",
+            title="Fill In Specimen Details & Location",
             instruction=(
                 "Click into the highlighted Registration Form on the right and type a Genus or Collection Place for your new specimen. "
                 "When you're ready to record where it sits, press Ctrl+L to jump straight to Storage Location."
@@ -102,7 +102,7 @@ def start_database_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="database_complete",
-            title="4. Practice Complete!",
+            title="Practice Complete!",
             instruction="You have practiced creating collections and adding new specimens safely in Practice Mode. Click Finish ✓ to return to your workspace.",
             action_hint="Click 'Finish ✓' below to exit Practice Mode.",
             details=(

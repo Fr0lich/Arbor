@@ -1168,6 +1168,11 @@ class ObjectProgramUI(
         self._gbif_checking = False
         if hasattr(self, "gbif_btn") and self.gbif_btn.winfo_exists():
             self.gbif_btn.config(text="🔍 Check GBIF", bg="#2b8a3e")
+        if hasattr(self, "_hide_progress"):
+            try:
+                self._hide_progress("", task_id="gbif_check")
+            except Exception:
+                pass
 
     def check_gbif_action(self):
         if not self.app.current_object_id:
@@ -1187,6 +1192,11 @@ class ObjectProgramUI(
         self._gbif_checking = True
         if hasattr(self, "gbif_btn") and self.gbif_btn.winfo_exists():
             self.gbif_btn.config(text="Loading...", bg="#6c757d")
+        if hasattr(self, "_show_progress"):
+            try:
+                self._show_progress(f"Checking GBIF for {genus}...", indeterminate=True, task_id="gbif_check")
+            except Exception:
+                pass
 
         if hasattr(self, "show_banner"):
             self.show_banner("Checking GBIF...", "info")
@@ -1877,6 +1887,10 @@ class ObjectProgramUI(
 
 
     def load_historical_databases(self):
+        if getattr(self, "_hist_db_loading", False):
+            if hasattr(self, "show_toast"):
+                self.show_toast("Already loading historical databases…", "info")
+            return
         last_dir = __import__("config").get_last_dir("last_db_dir")
         dialog_kwargs = dict(
             title="Select previous Excel databases",
@@ -1891,36 +1905,76 @@ class ObjectProgramUI(
             return
         __import__("config").set_last_dir("last_db_dir", paths[0])
 
+        self._hist_db_loading = True
         self.app.historical_dbs = []
+        total_files = len(paths)
+        self._show_progress(f"Loading historical databases (0/{total_files})...", maximum=total_files, task_id="hist_db")
+        if hasattr(self, "show_toast"):
+            self.show_toast(f"Loading {total_files} historical database(s)…", "info")
 
-        for i, path in enumerate(paths, start=1):
-            try:
-                df_reg, df_obs, *_ = ExcelRepository.load_excel(path, self.app.config)
-                self.app.historical_dbs.append({
-                    "name": f"ARK{i}",
-                    "path": path,
-                    "df_reg": df_reg,
-                    "reg_by_id": None,
-                })
+        def _load_worker():
+            loaded = []
+            failures = []
+            for i, path in enumerate(paths, start=1):
+                try:
+                    df_reg, df_obs, *_ = ExcelRepository.load_excel(path, self.app.config)
+                    loaded.append({
+                        "name": f"ARK{i}",
+                        "path": path,
+                        "df_reg": df_reg,
+                        "reg_by_id": None,
+                    })
+                except Exception as e:
+                    failures.append((path, str(e)))
+                def _step_progress(idx=i, tot=total_files):
+                    if hasattr(self, "image_scan_progress") and self.image_scan_progress.winfo_exists():
+                        self.image_scan_progress.configure(value=idx, maximum=tot)
+                    if hasattr(self, "system_status") and self.system_status.winfo_exists():
+                        self.system_status.config(text=f"Loading historical databases ({idx}/{tot})...")
+                try:
+                    self.root.after(0, _step_progress)
+                except Exception:
+                    pass
+            return loaded, failures
 
-            except Exception as e:
-                messagebox.showwarning(
-                    "Load failed",
-                    f"Could not load {path}\n{e}"
-            )
+        def _on_loaded(result):
+            loaded, failures = result
+            self.app.historical_dbs = loaded
+            for path, err in failures:
+                messagebox.showwarning("Load failed", f"Could not load {path}\n{err}")
 
-        self.system_status.config(
-            text=f"Loaded {len(self.app.historical_dbs)} earlier databases — pre-scanning..."
-        )
+            self.update_history_button_state()
+            if self.app.historical_dbs:
+                self._show_progress(
+                    f"Loaded {len(self.app.historical_dbs)} earlier database(s) — pre-scanning...",
+                    indeterminate=True,
+                    task_id="hist_db",
+                )
+                def _prescan_and_finish():
+                    try:
+                        self._prescan_suggestions_worker()
+                    finally:
+                        def _done_ui():
+                            self._hist_db_loading = False
+                            self._hide_progress(
+                                f"Loaded {len(self.app.historical_dbs)} earlier database(s)",
+                                task_id="hist_db",
+                            )
+                        try:
+                            self.root.after(0, _done_ui)
+                        except Exception:
+                            self._hist_db_loading = False
+                threading.Thread(target=_prescan_and_finish, daemon=True).start()
+            else:
+                self._hist_db_loading = False
+                self._hide_progress("No historical databases loaded", task_id="hist_db")
 
-        self.update_history_button_state()
+        def _on_error(err):
+            self._hist_db_loading = False
+            self._hide_progress("Historical database load failed", task_id="hist_db")
+            messagebox.showwarning("Load failed", f"Could not load historical databases:\n{err}")
 
-        # Pre-build dict caches in a background thread so navigation is instant
-        if self.app.historical_dbs:
-            threading.Thread(
-                target=self._prescan_suggestions_worker,
-                daemon=True
-            ).start()
+        app_worker.run_in_background(_load_worker, _on_loaded, error_callback=_on_error)
 
 
 
@@ -2295,6 +2349,8 @@ class ObjectProgramUI(
             return tutorials.start_review_tutorial(self)
         elif tutorial_type == "discrepancy":
             return tutorials.start_discrepancy_tutorial(self)
+        elif tutorial_type == "triage":
+            return tutorials.start_triage_tutorial(self)
         elif tutorial_type == "database":
             return tutorials.start_database_tutorial(self)
         else:
@@ -2358,7 +2414,7 @@ class ObjectProgramUI(
         PresetsManager.show_load_data_preset_popup(self)
     def show_file_dropdown(self):
         popup = tk.Menu(self.root, tearoff=0)
-        popup.add_command(label="Open Excel Database... (Ctrl+O)", command=self.open_excel)
+        popup.add_command(label="Open Excel Database...", command=self.open_excel)
         popup.add_command(label="New Database Wizard...", command=self.create_new_database)
         popup.add_separator()
         popup.add_command(label="Save Session (Ctrl+S)", command=lambda: self.save_session("SAVE"))
@@ -2430,7 +2486,7 @@ class ObjectProgramUI(
             command=lambda: self.start_tutorial_flow("review"),
         )
         popup.add_separator()
-        popup.add_command(label="🏛️ Help & Quick Guides Hub", command=self.open_help_window)
+        popup.add_command(label="🏛️ Help Hub & Suggested Learning Path", command=self.open_help_window)
         popup.add_command(label="📖 Desktop Work Manual", command=lambda: show_main_help(self, initial_tab="desktop"))
         popup.add_command(label="📱 Mobile Vault Guide", command=lambda: show_main_help(self, initial_tab="mobile"))
         popup.add_command(label="⌨️ Keyboard Shortcuts (F1)", command=self.show_shortcuts)
@@ -2457,21 +2513,29 @@ class ObjectProgramUI(
         )
         popup.add_cascade(label="⚡ 30-Second Quick Guides", menu=quick_menu)
 
-        # Practice Sandboxes cascade
+        # Suggested Learning Path cascade (mirrors Help Hub 5-step sequence)
         tut_menu = tk.Menu(popup, tearoff=0)
         tut_menu.add_command(
-            label="1. 3-Minute Quick Tour (Cabinet 21)",
+            label="1. 3-Minute Quick Tour",
             command=lambda: self.start_tutorial_flow("review")
         )
         tut_menu.add_command(
-            label="2. Fixing Historical & GBIF Conflicts",
+            label="2. Historical Ledger Comparison",
             command=lambda: self.start_tutorial_flow("discrepancy")
         )
         tut_menu.add_command(
-            label="3. Creating a New Collection",
+            label="3. Mobile Companion Hallway Guide",
+            command=lambda: start_armed_shelf_guide(self)
+        )
+        tut_menu.add_command(
+            label="4. Office Triage (REV+ERR)",
+            command=lambda: self.start_tutorial_flow("triage")
+        )
+        tut_menu.add_command(
+            label="5. Collections & New Specimens (Optional)",
             command=lambda: self.start_tutorial_flow("database")
         )
-        popup.add_cascade(label="🎓 Practice Sandboxes", menu=tut_menu)
+        popup.add_cascade(label="🎓 Suggested Learning Path (Zero Risk)", menu=tut_menu)
 
         popup.add_separator()
         popup.add_command(label="🔄 Check for Updates...", command=self.check_for_updates_action)
@@ -2905,28 +2969,93 @@ class ObjectProgramUI(
 
 #---- progress bar
 
-    def _show_progress(self, text="Working", maximum=100):
+    def _apply_progress_ui(self, text, maximum, use_indeterminate):
+        if hasattr(self, "system_status") and self.system_status:
+            self.system_status.config(text=text)
+        if hasattr(self, "image_scan_progress") and self.image_scan_progress:
+            try:
+                self.image_scan_progress.stop()
+            except Exception:
+                pass
+            if use_indeterminate:
+                self.image_scan_progress.configure(mode="indeterminate", maximum=100, value=0)
+                self.image_scan_progress.pack(anchor="e", pady=(2, 0))
+                self.image_scan_progress.start(12)
+            else:
+                self.image_scan_progress.configure(
+                    value=0,
+                    maximum=maximum,
+                    mode="determinate"
+                )
+                self.image_scan_progress.pack(anchor="e", pady=(2, 0))
+
+    def _show_progress(self, text="Working", maximum=100, indeterminate=False, task_id=None):
+        if getattr(self, "_progress_clear_job", None):
+            try:
+                self.root.after_cancel(self._progress_clear_job)
+            except Exception:
+                pass
+            self._progress_clear_job = None
+
         if hasattr(self, "_loading_window") and self._loading_window and self._loading_window.win.winfo_exists():
-            self._loading_window.update_progress_bar(0, maximum)
+            self._loading_window.update_progress_bar(0, maximum if maximum and maximum > 0 else 100)
             self._loading_window.update_status_text(text)
             return
 
-        self.system_status.config(text=text)
-        self.image_scan_progress.configure(
-            value=0,
-            maximum=maximum,
-            mode="determinate"
-        )
-        self.image_scan_progress.pack(anchor="e", pady=(2, 0))
+        use_indeterminate = bool(indeterminate or not maximum or maximum <= 0)
+        tid = task_id or "_default"
+        if not hasattr(self, "_progress_tasks") or self._progress_tasks is None:
+            self._progress_tasks = {}
+        self._progress_tasks[tid] = {
+            "text": text,
+            "maximum": maximum,
+            "indeterminate": use_indeterminate,
+        }
+        self._apply_progress_ui(text, maximum, use_indeterminate)
 
-    def _hide_progress(self, text=""):
+    def _hide_progress(self, text="", task_id=None):
         if hasattr(self, "_loading_window") and self._loading_window and self._loading_window.win.winfo_exists():
             self._loading_window.finish(text)
             return
 
-        self.image_scan_progress.pack_forget()
-        self.system_status.config(text=text)
-        self.root.after(1500, lambda: self.system_status.config(text=""))
+        tasks = getattr(self, "_progress_tasks", None)
+        if isinstance(tasks, dict):
+            tid = task_id or "_default"
+            tasks.pop(tid, None)
+            if tasks:
+                # Another background task is still active — keep bar visible for it
+                last_info = list(tasks.values())[-1]
+                self._apply_progress_ui(
+                    last_info["text"],
+                    last_info["maximum"],
+                    last_info["indeterminate"],
+                )
+                return
+
+        if hasattr(self, "image_scan_progress") and self.image_scan_progress:
+            try:
+                self.image_scan_progress.stop()
+                self.image_scan_progress.configure(mode="determinate", value=0)
+            except Exception:
+                pass
+            self.image_scan_progress.pack_forget()
+        if hasattr(self, "system_status") and self.system_status:
+            self.system_status.config(text=text)
+        if getattr(self, "_progress_clear_job", None):
+            try:
+                self.root.after_cancel(self._progress_clear_job)
+            except Exception:
+                pass
+            self._progress_clear_job = None
+        if text:
+            self._progress_clear_job = self.root.after(
+                1500,
+                lambda: (
+                    self.system_status.config(text="")
+                    if hasattr(self, "system_status") and self.system_status and self.system_status.winfo_exists()
+                    else None
+                ),
+            )
 
 
 
@@ -7886,6 +8015,10 @@ class ObjectProgramUI(
 # ---- Export filtered list
 
     def export_filtered_list(self):
+        if getattr(self, "_export_filtered_in_progress", False):
+            if hasattr(self, "show_toast"):
+                self.show_toast("An export is already in progress…", "info")
+            return
         if self.app.df_reg is None:
             messagebox.showinfo("No data", "Load an Excel file first")
             return
@@ -7913,7 +8046,10 @@ class ObjectProgramUI(
                 df_reg_copy = self.app.df_reg.loc[ids].reset_index() if self.app.df_reg is not None else None
                 df_obs_copy = self.app.df_obs.loc[ids].reset_index() if self.app.df_obs is not None else None
 
-            self.system_status.config(text=f"Exporting {len(ids)} objects...")
+            self._export_filtered_in_progress = True
+            self._show_progress(f"Exporting {len(ids)} objects...", indeterminate=True, task_id="export_filtered")
+            if hasattr(self, "show_toast"):
+                self.show_toast(f"Exporting {len(ids)} objects…", "info")
 
             def _do_export():
                 if df_reg_copy is None or df_obs_copy is None:
@@ -7929,21 +8065,26 @@ class ObjectProgramUI(
                 return len(ids)
 
             def _on_export_done(result):
+                self._export_filtered_in_progress = False
                 if result is not None:
-                    self.system_status.config(
-                        text=f"Exported {result} objects  {os.path.basename(path)}"
-                    )
+                    self._hide_progress(f"Exported {result} objects ({os.path.basename(path)})", task_id="export_filtered")
                     messagebox.showinfo(
                         "Export complete",
                         f"Exported {result} objects to:\n{os.path.basename(path)}"
                     )
+                else:
+                    self._hide_progress("", task_id="export_filtered")
 
             def _on_export_err(err):
+                self._export_filtered_in_progress = False
+                self._hide_progress("Export failed", task_id="export_filtered")
                 messagebox.showerror("Export failed", str(err))
 
             app_worker.run_in_background(_do_export, _on_export_done, error_callback=_on_export_err)
 
         except Exception as e:
+            self._export_filtered_in_progress = False
+            self._hide_progress("Export failed", task_id="export_filtered")
             messagebox.showerror("Export failed", str(e))
 
 

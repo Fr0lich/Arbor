@@ -625,6 +625,20 @@ INDEX_TEMPLATE_V2 = """
 
       <!-- 4. Horizontal Swipeable Tab Track -->
       <div class="flex-1 overflow-hidden relative" id="swipeArea">
+        <!-- Detail Loading & Error Recovery Overlay (blocks accidental taps on previous specimen) -->
+        <div id="detailLoadingOverlay" class="hidden absolute inset-0 z-20 bg-alabaster/95 flex flex-col items-center justify-center p-6 text-center">
+          <div id="detailLoadingSpinner" class="flex flex-col items-center gap-3">
+            <div class="w-8 h-8 border-2 border-forest/25 border-t-forest rounded-full animate-spin"></div>
+            <p class="text-sm font-semibold text-ink">Loading specimen…</p>
+          </div>
+          <div id="detailLoadingError" class="hidden flex flex-col items-center gap-3 max-w-xs">
+            <p class="text-sm font-semibold text-red-700" id="detailLoadingErrorMsg">Could not load specimen.</p>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="retryCurrentSpecimen()" class="px-4 py-2 min-h-[40px] rounded-md bg-forest text-white text-xs font-semibold">Retry</button>
+              <button type="button" onclick="showListView()" class="px-4 py-2 min-h-[40px] rounded-md border border-bordercol bg-surface text-ink text-xs font-semibold">Back to List</button>
+            </div>
+          </div>
+        </div>
         <div class="h-full flex w-[300%]" id="tabTrack" style="transform: translateX(0%);">
 
           <!-- ================= TAB 0: DETAILS & ARCHIVAL SCANS ================= -->
@@ -2261,9 +2275,44 @@ INDEX_TEMPLATE_V2 = """
     // -------------------------------------------------------------
     // SCREEN 2: SPECIMEN DETAIL VIEW LOGIC
     // -------------------------------------------------------------
+    function setDetailLoadingState(mode, errMsg) {
+      const overlay = document.getElementById('detailLoadingOverlay');
+      const spinner = document.getElementById('detailLoadingSpinner');
+      const errBox = document.getElementById('detailLoadingError');
+      const errText = document.getElementById('detailLoadingErrorMsg');
+      if (!overlay) return;
+      if (mode === 'loading') {
+        overlay.classList.remove('hidden');
+        if (spinner) spinner.classList.remove('hidden');
+        if (errBox) errBox.classList.add('hidden');
+      } else if (mode === 'error') {
+        overlay.classList.remove('hidden');
+        if (spinner) spinner.classList.add('hidden');
+        if (errBox) errBox.classList.remove('hidden');
+        if (errText) errText.textContent = errMsg || 'Could not load specimen. Check connection and retry.';
+      } else {
+        overlay.classList.add('hidden');
+      }
+    }
+
+    function retryCurrentSpecimen() {
+      if (state.currentOid) {
+        setDetailLoadingState('loading');
+        fetchObjectDetail(state.currentOid);
+      }
+    }
+
     async function openDetailView(oid) {
       forceSaveImmediate();
       state.currentOid = String(oid);
+      state.currentRecord = null;
+      const accEl = document.getElementById('detailAccession');
+      const nameEl = document.getElementById('detailScientificName');
+      const famEl = document.getElementById('detailFamily');
+      if (accEl) accEl.textContent = '#' + String(oid);
+      if (nameEl) nameEl.textContent = 'Loading specimen…';
+      if (famEl) famEl.textContent = '…';
+      setDetailLoadingState('loading');
       showDetailView();
       await fetchObjectDetail(oid);
     }
@@ -2365,13 +2414,24 @@ INDEX_TEMPLATE_V2 = """
           apiFetch('/api/object/' + encodeURIComponent(oid) + '/history').catch(() => null)
         ]);
         if (data) {
+          if (state.currentOid !== String(oid)) return; // Ignore stale response if user switched specimens
           state.currentRecord = data;
           state.isReviewed = data.review_status === 'reviewed';
           state.currentHistoricalData = (hist && hist.historical_data) ? hist.historical_data : null;
           renderDetailView(renderFull);
+          setDetailLoadingState('ready');
+        } else {
+          if (state.currentOid !== String(oid)) return;
+          setDetailLoadingState('error', 'Specimen not found or empty response.');
         }
       } catch(err) {
         console.error('Failed to load specimen detail:', err);
+        if (state.currentOid === String(oid)) {
+          const nameEl = document.getElementById('detailScientificName');
+          if (nameEl) nameEl.textContent = 'Failed to load specimen';
+          setDetailLoadingState('error', 'Connection error loading #' + String(oid) + '.');
+          if (typeof showToast === 'function') showToast('Could not load #' + String(oid) + ' — tap Retry.', true);
+        }
       }
     }
 

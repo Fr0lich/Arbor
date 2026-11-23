@@ -540,6 +540,50 @@ class TestSandboxTutorials(unittest.TestCase):
         self.assertEqual(host.history_indicator_label.cget("text"), "")
         self.sm.exit_sandbox(self.ui)
 
+    def test_tutorial_validators_and_menu_parity(self):
+        """Verify nested hr_sidebar & Problem Resolution validators, menu parity, and Escape close."""
+        from ui.tutorials import start_triage_tutorial
+        from ui.tutorials.discrepancy_tutorial import _has_widget_with_tutorial_id
+        from ui.tutorials.triage_tutorial import _is_problem_queue_open
+        import ui.main_window as mw_mod
+        import ui.image_panel as ip_mod
+        import ui.object_problem_resolver as opr_mod
+        import inspect
+
+        # 1. Nested hr_sidebar validator finds grandchild inside a Toplevel
+        self.assertFalse(_has_widget_with_tutorial_id(self.root, "hr_sidebar"))
+        top = tk.Toplevel(self.root); top.withdraw()
+        sidebar = tk.Frame(tk.Frame(top)); sidebar.tutorial_id = "hr_sidebar"
+        try:
+            self.assertTrue(_has_widget_with_tutorial_id(self.root, "hr_sidebar"))
+        finally:
+            top.destroy()
+
+        # 2. _is_problem_queue_open ignores modal scope picker, matches Problem Resolution
+        for title, expected in [("Process Objects with Problems", False), ("Problem Resolution (Queue: 2 Specimens)", True)]:
+            w = tk.Toplevel(self.root); w.withdraw(); w.title(title)
+            try:
+                self.assertIs(_is_problem_queue_open(self.ui), expected)
+            finally:
+                w.destroy()
+
+        # 3. Triage Step 3 target & wording + menu/shortcut parity + ProblemQueueDialog <Escape>
+        runner = start_triage_tutorial(self.ui)
+        step3 = next(s for s in runner.steps if s.step_id == "triage_open_queue")
+        self.assertEqual(step3.target_id, "tools_nav_btn")
+        self.assertIn("Open Problem Queue & Resolver...", step3.instruction)
+        runner.exit_tutorial()
+
+        help_src = inspect.getsource(mw_mod.ObjectProgramUI.show_help_dropdown)
+        self.assertNotIn("Cabinet 21", help_src)
+        self.assertIn("Suggested Learning Path", help_src)
+        self.assertIn("4. Office Triage (REV+ERR)", help_src)
+        self.assertIn('tutorial_type == "triage"', inspect.getsource(mw_mod.ObjectProgramUI.start_tutorial_flow))
+        self.assertNotIn("Open Excel Database... (Ctrl+O)", inspect.getsource(mw_mod.ObjectProgramUI.show_file_dropdown))
+        self.assertIn("<Escape>", inspect.getsource(opr_mod.ProblemQueueDialog.__init__))
+        with open(ip_mod.__file__, "r", encoding="utf-8") as f:
+            self.assertIn('self.image_container.tutorial_id = "image_container"', f.read())
+
 
 if __name__ == "__main__":
     unittest.main()

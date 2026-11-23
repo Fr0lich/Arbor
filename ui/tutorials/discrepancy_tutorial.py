@@ -9,6 +9,23 @@ from .sandbox_manager import SandboxManager, mark_tutorial_completed
 from .tutorial_runner import TutorialRunner, ActionStep
 
 
+def _has_widget_with_tutorial_id(root, target_id: str) -> bool:
+    """Recursively check whether any live descendant widget carries tutorial_id == target_id."""
+    if root is None:
+        return False
+    try:
+        if not root.winfo_exists():
+            return False
+        if getattr(root, "tutorial_id", None) == target_id:
+            return True
+        for child in root.winfo_children():
+            if _has_widget_with_tutorial_id(child, target_id):
+                return True
+    except Exception:
+        pass
+    return False
+
+
 def _has_applied_1001_change(ui, initial_place: str, initial_date: str) -> bool:
     """Detect whether the trainee applied a confirmed change to #1001."""
     app = getattr(ui, "app", None)
@@ -54,7 +71,7 @@ def start_discrepancy_tutorial(ui, on_complete=None):
     steps = [
         ActionStep(
             step_id="discrepancy_intro",
-            title="0. When to Use Historical Ledger Comparison",
+            title="When to Use Historical Ledger Comparison",
             instruction=(
                 "Use this workflow at your desk when older museum catalog books disagree with multiple fields in your currently registered collection.\n\n"
                 "In this Practice Sandbox, specimen #1001 is compared against TWO older books that disagree with each other — "
@@ -68,7 +85,7 @@ def start_discrepancy_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="open_resolver",
-            title="1. Open Historical Ledger Comparison",
+            title="Open Historical Ledger Comparison",
             instruction="Click the blue 'History' pill above the registration form (or press Ctrl+H) to open Historical Ledger Comparison.",
             target_id="history_indicator_label",
             action_hint="Click the History pill or press Ctrl+H.",
@@ -78,13 +95,13 @@ def start_discrepancy_tutorial(ui, on_complete=None):
                 "Arbor shows a blue History pill and a slate-blue [CFCT] badge so you can compare versions side by side."
             ),
             validator=lambda u: bool(
-                getattr(u, "_current_resolver_win", None) or
-                any(getattr(w, "tutorial_id", "") == "hr_sidebar" for w in u.root.winfo_children() if hasattr(w, "winfo_children"))
+                getattr(u, "_current_resolver_win", None)
+                or _has_widget_with_tutorial_id(getattr(u, "root", None), "hr_sidebar")
             ),
         ),
         ActionStep(
             step_id="field_directory",
-            title="2. Browse Fields That Disagree",
+            title="Browse Fields That Disagree",
             instruction="The left sidebar lists every field where the current collection record differs from older ledgers. Click any field to jump straight to its card.",
             target_id="hr_sidebar",
             action_hint="Click a field in the left sidebar, then click Next →.",
@@ -94,7 +111,7 @@ def start_discrepancy_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="select_resolution",
-            title="3. Compare Multiple Books — Pick Carefully",
+            title="Compare Multiple Books — Pick Carefully",
             instruction=(
                 "Each card shows your currently registered value alongside suggestions from multiple older ledgers. "
                 "Notice Book 1 and Book 2 disagree with each other! Click a suggested value card to preview it in the input box."
@@ -108,13 +125,13 @@ def start_discrepancy_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="apply_changes",
-            title="4. Apply One Card (Without Marking Reviewed)",
+            title="Apply One Card (Without Marking Reviewed)",
             instruction=(
                 "Click 'Apply' on a single confirmed card (avoid clicking 'Apply All' until you have checked every card!).\n\n"
                 "Important: fixing data from historical ledgers at your desk does NOT count as a physical review — "
                 "leave 'Reviewed' unchecked until someone inspects the physical object."
             ),
-            target_id="hr_apply_all",
+            target_id="hr_cards",
             action_hint="Click 'Apply' on a card (or click Skip Step →).",
             details=(
                 "Excel impact: Applying a card updates the Registration sheet in memory, logs 'before -> after' on the Log sheet, "
@@ -124,7 +141,7 @@ def start_discrepancy_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="discrepancy_complete",
-            title="5. Practice Complete!",
+            title="Practice Complete!",
             instruction="You finished Historical Ledger Comparison! Click Finish ✓ to exit Practice Mode and return to your workspace.",
             action_hint="Click 'Finish ✓' below to exit Practice Mode.",
             details=(

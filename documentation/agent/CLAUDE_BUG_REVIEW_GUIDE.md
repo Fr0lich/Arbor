@@ -83,3 +83,25 @@ Arbor runs a Tkinter UI on the main thread alongside a Flask mobile companion se
     *   **Asynchronous & Thread-Safe:** Use `utils.debug_log(level, msg, extra)` or `utils.debug_error(context, extra, is_crash)` for all logging. These write through Loguru with `enqueue=True`, guaranteeing zero UI-thread disk I/O latency.
     *   **Do Not Implement Custom File Handlers:** Do not create ad-hoc file handlers or custom async queues in new modules. Loguru automatically manages rotation (`10 MB`), 7-day retention, and zip compression in `get_session_log_path()`.
     *   **Local Variable Capture:** In crash reporting, Loguru's `diagnose=True` and `backtrace=True` automatically capture local variables on unhandled Tkinter callback exceptions. Avoid stripping tracebacks or catching exceptions without re-logging via `utils.debug_error()`.
+
+---
+
+## 4. Recurring Issues Watchlist (Always Check Before Release)
+
+These exact issue classes have surfaced repeatedly across Arbor reviews and manual testing. Every agent touching UI dialogs, menus, or tutorials **MUST** check this list before marking work done:
+
+1. **Missing `<Escape>` Close on `tk.Toplevel` Dialogs** *(Hit repeatedly: `ImagePopup`, `QuickPeek`, `CreateCollectionDialog`, `MobileDialog`, `UpdateDialog`, `AutosaveManager`, `ProblemQueueDialog`, `HistoricalConflictResolverWindow`)*
+   - **Rule:** Every modal or popup `tk.Toplevel` with a Cancel/Close action MUST bind `self.bind("<Escape>", lambda e: self.destroy())` (or its custom close handler).
+2. **Unscaled Font Sizes & Non-Integer Fonts on High-DPI Windows** *(Hit repeatedly: `MobilePanel` 76 unscaled fonts + `8.5` float `TclError`; Welcome Card button clipping at 125–150% DPI)*
+   - **Rule:** Always wrap font sizes in `sc(...)` (`ui/scaling.py`), never pass floats like `8.5` directly to Tkinter widgets, and test button rows with auto-fit sizing (`winfo_reqwidth()`) instead of cramped fixed widths.
+3. **Multi-Monitor Off-Screen Positioning** *(Hit repeatedly across `gbif_dialog`, `toast`, `quick_peek`, `image_popup`, `autosave_handler`)*
+   - **Rule:** Never center dialogs with raw `winfo_screenwidth() // 2` (which ignores secondary monitors). Always use `utils.center_and_fit_toplevel()` or `utils.clamp_to_monitor()`.
+4. **Tutorial `target_id` Resolution & Tab-Switch Geometry (`← Previous` Trap)** *(Hit repeatedly: `history_btn`, `problem_flags_frame`, `image_container`, `hr_apply_all`)*
+   - **Rule:** Every `ActionStep.target_id` must be either a direct `ObjectProgramUI` attribute or tagged with `.tutorial_id = "..."` on the widget (never only on a child controller like `image_panel`).
+   - **Rule:** Whenever `on_enter` switches a `ttk.Notebook` tab (e.g., to `Problems`), `TutorialRunner.show_step()` must call `self.root.update_idletasks()` before highlighting, AND preceding steps must restore the default tab (`_focus_details_tab`) so clicking **`← Previous`** never leaves target fields hidden.
+5. **Shallow `winfo_children()` & Overly Broad Title Validators in Tutorials** *(Hit repeatedly: `discrepancy_tutorial` `hr_sidebar`, `triage_tutorial` `"Problem"` matching `ProblemQueueDialog` before `ObjectProblemResolver`)*
+   - **Rule:** Search for nested `tutorial_id` widgets recursively (not just direct `root.winfo_children()`), and match specific window titles (e.g., `"Problem Resolution"`, not `"Problem"`) so intermediate modal pickers never prematurely advance a step.
+6. **Stale Dropdown / Menu Labels & Lying Shortcut Hints** *(Hit repeatedly: `HELP ▾` still saying `"Cabinet 21"` & missing `"Office Triage"`, `start_tutorial_flow` missing `"triage"`, `FILE ▾` labeling `"Open Excel Database... (Ctrl+O)"` when `Ctrl+O` toggles Left Directory)*
+   - **Rule:** Whenever workflows, tutorials, or shortcuts change, audit `show_file_dropdown()`, `show_specimen_dropdown()`, `show_audit_tools_dropdown()`, `show_help_dropdown()`, `ui/command_palette.py`, and `ui/keybindings.py` together so every menu label and shortcut hint is 100% truthful.
+7. **Tutorial Copy Discipline (No Numbered Prefixes, No Spoilers)** *(Hit repeatedly across all 5 tutorials)*
+   - **Rule:** Never prefix `ActionStep.title` with `0.`/`1.`/`2.` (the HUD already displays `STEP X OF Y`), and never spoil answers in the main instruction — place exact values inside `ActionStep.answer` (`▸ The Answer`).

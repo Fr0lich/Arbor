@@ -411,6 +411,7 @@ class ImagePanel(ttk.Frame):
         )
 
         self.image_container = ttk.Frame(self.image_canvas)
+        self.image_container.tutorial_id = "image_container"
         self.image_window = self.image_canvas.create_window(
             (0, 0),
             window=self.image_container,

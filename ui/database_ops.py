@@ -168,6 +168,11 @@ class DatabaseOpsMixin:
 
 
     def open_excel_from_path(self, path):
+        if hasattr(self, "_show_progress"):
+            try:
+                self._show_progress(text="Loading database...", maximum=100)
+            except Exception:
+                pass
         threading.Thread(
             target=self._open_excel_worker,
             args=(path,),
@@ -993,6 +998,10 @@ class DatabaseOpsMixin:
 
 
     def save_as(self):
+        if getattr(self, "_save_as_in_progress", False):
+            if hasattr(self, "show_toast"):
+                self.show_toast("An export is already in progress…", "info")
+            return
         try:
             path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx"), ("SQLite Database", "*.db")], initialdir=__import__("config").get_last_dir("last_db_dir"))
             if not path:
@@ -1001,56 +1010,68 @@ class DatabaseOpsMixin:
 
             # If they choose to save as Excel, perform an export instead of a database move
             if path.endswith(".xlsx"):
-                if self.app.df_reg is not None:
-                    self.save_session("SAVE")  # Save current state first
+                self._save_as_in_progress = True
 
-                sqlite_path = self.app.excel_path
+                def _start_excel_export(save_ok=True, save_err=None):
+                    if not save_ok:
+                        self._save_as_in_progress = False
+                        return
+                    sqlite_path = self.app.excel_path
+                    self._show_progress("Exporting to Excel...", indeterminate=True, task_id="save_as")
+                    if hasattr(self, "show_toast"):
+                        self.show_toast(f"Exporting to {os.path.basename(path)}…", "info")
+                    with self.app.df_lock:
+                        df_reg_copy = self.app.df_reg.copy() if self.app.df_reg is not None else None
+                        df_obs_copy = self.app.df_obs.copy() if self.app.df_obs is not None else None
+                        df_photo_copy = self.app.df_photo.copy() if getattr(self.app, 'df_photo', None) is not None else None
+                        df_log_copy = self.app.df_log.copy() if getattr(self.app, 'df_log', None) is not None else None
+                        df_unvalidated_copy = self.app.df_unvalidated.copy() if getattr(self.app, 'df_unvalidated', None) is not None else None
 
-                self._show_progress("Exporting to Excel...", 100)
-                with self.app.df_lock:
-                    df_reg_copy = self.app.df_reg.copy() if self.app.df_reg is not None else None
-                    df_obs_copy = self.app.df_obs.copy() if self.app.df_obs is not None else None
-                    df_photo_copy = self.app.df_photo.copy() if getattr(self.app, 'df_photo', None) is not None else None
-                    df_log_copy = self.app.df_log.copy() if getattr(self.app, 'df_log', None) is not None else None
-                    df_unvalidated_copy = self.app.df_unvalidated.copy() if getattr(self.app, 'df_unvalidated', None) is not None else None
+                    def _do_export():
+                        from repository import SQLiteRepository
+                        SQLiteRepository.export_to_excel(
+                            sqlite_path, path,
+                            self.app.config,
+                            df_reg=df_reg_copy, df_obs=df_obs_copy, df_log=df_log_copy, df_photo=df_photo_copy,
+                            df_unvalidated=df_unvalidated_copy
+                        )
+                        return True
 
-                def _do_export():
-                    from repository import SQLiteRepository
-                    SQLiteRepository.export_to_excel(
-                        sqlite_path, path,
-                        self.app.config,
-                        df_reg=df_reg_copy, df_obs=df_obs_copy, df_log=df_log_copy, df_photo=df_photo_copy,
-                        df_unvalidated=df_unvalidated_copy
-                    )
-                    return True
+                    def _on_done(result):
+                        self._save_as_in_progress = False
+                        self.app.excel_path = path
+                        self.app.output_path = path
+                        self.app.dirty = False
+                        self.system_status.after(0, lambda: app_bus.publish(DATABASE_UPDATED))
+                        self.system_status.config(text=f"Saved: {os.path.basename(path)}")
+                        self._hide_progress("Export complete", task_id="save_as")
+                        self.show_banner(f"Exported to: {path}", "success")
 
-                def _on_done(result):
-                    self.app.excel_path = path
-                    self.app.output_path = path
-                    self.app.dirty = False
-                    self.system_status.after(0, lambda: app_bus.publish(DATABASE_UPDATED))
-                    self.system_status.config(text=f"Saved: {os.path.basename(path)}")
-                    self._hide_progress("Export complete")
-                    self.show_banner(f"Exported to: {path}", "success")
+                    def _on_error(err):
+                        self._save_as_in_progress = False
+                        from utils import debug_error, ExcelFileLockedError
+                        import traceback
+                        tb = "".join(traceback.format_exception(type(err), err, err.__traceback__)) if hasattr(err, "__traceback__") else str(err)
+                        debug_error("save_as_export_to_excel", str(err))
+                        self._hide_progress("Export failed", task_id="save_as")
+                        err_str = str(err) if err else ""
+                        if "currently open in Microsoft Excel" in err_str or "PermissionError" in err_str or isinstance(err, (PermissionError, ExcelFileLockedError)) or "locked" in err_str.lower():
+                            self.handle_excel_save_lock(path, "SAVE_AS")
+                        else:
+                            self.show_traceback_dialog("Export Error", f"Failed to export: {err}", tb)
 
-                def _on_error(err):
-                    from utils import debug_error, ExcelFileLockedError
-                    import traceback
-                    tb = "".join(traceback.format_exception(type(err), err, err.__traceback__)) if hasattr(err, "__traceback__") else str(err)
-                    debug_error("save_as_export_to_excel", str(err))
-                    self._hide_progress("Export failed")
-                    err_str = str(err) if err else ""
-                    if "currently open in Microsoft Excel" in err_str or "PermissionError" in err_str or isinstance(err, (PermissionError, ExcelFileLockedError)) or "locked" in err_str.lower():
-                        self.handle_excel_save_lock(path, "SAVE_AS")
-                    else:
-                        self.show_traceback_dialog("Export Error", f"Failed to export: {err}", tb)
+                    app_worker.run_in_background(_do_export, _on_done, error_callback=_on_error)
 
-                app_worker.run_in_background(_do_export, _on_done, error_callback=_on_error)
+                if self.app.df_reg is not None and getattr(self.app, "excel_path", None) and getattr(self.app, "dirty", False):
+                    self.save_session("SAVE", on_complete=_start_excel_export)
+                else:
+                    _start_excel_export(True, None)
             else:
                 self.app.excel_path = path
                 self.app.output_path = path
                 self.save_session("SAVE_AS")
         except Exception as e:
+            self._save_as_in_progress = False
             from utils import debug_error
             debug_error("save_as_main_thread", str(e))
             messagebox.showerror("Save As Error", f"An error occurred while preparing to save:\n{e}")
@@ -1064,6 +1085,10 @@ class DatabaseOpsMixin:
 
 
     def import_to_sqlite(self):
+        if getattr(self, "_import_sqlite_in_progress", False):
+            if hasattr(self, "show_toast"):
+                self.show_toast("An import is already in progress…", "info")
+            return
         excel_path = filedialog.askopenfilename(title="Select Excel File to Import", filetypes=[("Excel files", "*.xlsx")], initialdir=__import__("config").get_last_dir("last_db_dir"))
         if not excel_path: return
         __import__("config").set_last_dir("last_db_dir", excel_path)
@@ -1072,48 +1097,63 @@ class DatabaseOpsMixin:
         if not sqlite_path: return
         __import__("config").set_last_dir("last_db_dir", sqlite_path)
 
-        try:
-            self._show_progress("Importing to SQLite...", 100)
+        self._import_sqlite_in_progress = True
+        self._show_progress("Importing to SQLite...", indeterminate=True, task_id="import_sqlite")
+        if hasattr(self, "show_toast"):
+            self.show_toast("Importing database to SQLite…", "info")
+        cfg_ref = self.app.config
+
+        def _do_import():
             from repository import SQLiteRepository
-            df_reg, df_obs, df_photo, df_log, df_unvalidated = SQLiteRepository.import_from_excel(excel_path, sqlite_path, self.app.config)
+            return SQLiteRepository.import_from_excel(excel_path, sqlite_path, cfg_ref)
 
-            self.app.excel_path = sqlite_path
-            self.app.output_path = sqlite_path
-            self.app.df_reg = df_reg
-            self.app.df_obs = df_obs
-            self.app.df_photo = df_photo
-            self.app.df_log = df_log
-            self.app._log_records = df_log.to_dict(orient="records") if df_log is not None and not df_log.empty else []
-            self.app.df_unvalidated = df_unvalidated if df_unvalidated is not None else pd.DataFrame(columns=["ObjectID", "Field_Name", "Unvalidated_Comment"])
+        def _on_import_done(result):
+            self._import_sqlite_in_progress = False
+            try:
+                df_reg, df_obs, df_photo, df_log, df_unvalidated = result
+                self.app.excel_path = sqlite_path
+                self.app.output_path = sqlite_path
+                self.app.df_reg = df_reg
+                self.app.df_obs = df_obs
+                self.app.df_photo = df_photo
+                self.app.df_log = df_log
+                self.app._log_records = df_log.to_dict(orient="records") if df_log is not None and not df_log.empty else []
+                self.app.df_unvalidated = df_unvalidated if df_unvalidated is not None else pd.DataFrame(columns=["ObjectID", "Field_Name", "Unvalidated_Comment"])
 
-            if "ObjectID" in self.app.df_reg.columns:
-                self.app.df_reg.set_index("ObjectID", inplace=True)
-            if "ObjectID" in self.app.df_obs.columns:
-                self.app.df_obs.set_index("ObjectID", inplace=True)
-            if "ObjectID" in self.app.df_photo.columns:
-                self.app.df_photo.set_index("ObjectID", inplace=True)
+                if "ObjectID" in self.app.df_reg.columns:
+                    self.app.df_reg.set_index("ObjectID", inplace=True)
+                if "ObjectID" in self.app.df_obs.columns:
+                    self.app.df_obs.set_index("ObjectID", inplace=True)
+                if "ObjectID" in self.app.df_photo.columns:
+                    self.app.df_photo.set_index("ObjectID", inplace=True)
 
-            self.app.initial_df_obs = self.app.df_obs.copy()
+                self.app.initial_df_obs = self.app.df_obs.copy()
 
-            self.reg_by_id = self.app.df_reg
-            self.obs_by_id = self.app.df_obs
-            self.photo_by_id = self.app.df_photo
+                self.reg_by_id = self.app.df_reg
+                self.obs_by_id = self.app.df_obs
+                self.photo_by_id = self.app.df_photo
 
-            self.app.active_object_ids = list(self.app.df_reg.index)
+                self.app.active_object_ids = list(self.app.df_reg.index)
 
-            self._precompute_startup_caches(self.app.df_reg, self.app.df_obs, self.app.df_photo)
-            self.invalidate_search_index()
-            self.build_search_index()
+                self._precompute_startup_caches(self.app.df_reg, self.app.df_obs, self.app.df_photo)
+                self.invalidate_search_index()
+                self.build_search_index()
 
-            self.refresh_list()
-            self._hide_progress("Import successful")
-            self.show_banner("Imported and backed up successfully!", "success")
-        except Exception as e:
-            self._hide_progress("Import failed")
-            debug_error("Import to SQLite Failed", str(e))
+                self.refresh_list()
+                self._hide_progress("Import successful", task_id="import_sqlite")
+                self.show_banner("Imported and backed up successfully!", "success")
+            except Exception as e:
+                _on_import_error(e)
+
+        def _on_import_error(err):
+            self._import_sqlite_in_progress = False
+            self._hide_progress("Import failed", task_id="import_sqlite")
+            debug_error("Import to SQLite Failed", str(err))
             import traceback
-            tb = traceback.format_exc()
-            self.show_traceback_dialog("Import Error", f"Failed to import: {e}", tb)
+            tb = "".join(traceback.format_exception(type(err), err, err.__traceback__)) if hasattr(err, "__traceback__") else str(err)
+            self.show_traceback_dialog("Import Error", f"Failed to import: {err}", tb)
+
+        app_worker.run_in_background(_do_import, _on_import_done, error_callback=_on_import_error)
 
 
     def export_to_excel(self):

@@ -920,3 +920,34 @@ class TestHybridDockableRail(unittest.TestCase):
         # When ALREADY open, Ctrl+F keeps it OPEN (does not close)
         mw.handle_ctrl_f()
         self.assertTrue(mw.left_pinned.get())
+
+    @patch("ui.main_window.ExcelRepository")
+    def test_progress_bar_indeterminate_and_clear_timer_cancellation(self, mock_repo):
+        from ui.main_window import ObjectProgramUI
+        mw = ObjectProgramUI(self.root, self.app)
+
+        # Indeterminate mode activates cleanly for unknown-duration tasks
+        mw._show_progress("Exporting to Excel...", indeterminate=True)
+        self.assertEqual(str(mw.image_scan_progress.cget("mode")), "indeterminate")
+        self.assertEqual(mw.system_status.cget("text"), "Exporting to Excel...")
+
+        # Hiding stops animation, resets to determinate, and schedules status clear
+        mw._hide_progress("Export complete")
+        self.assertEqual(str(mw.image_scan_progress.cget("mode")), "determinate")
+        self.assertEqual(mw.system_status.cget("text"), "Export complete")
+        self.assertIsNotNone(getattr(mw, "_progress_clear_job", None))
+
+        # Starting a new progress immediately cancels the previous clear timer
+        mw._show_progress("Checking GBIF...", indeterminate=True, task_id="gbif_check")
+        self.assertIsNone(getattr(mw, "_progress_clear_job", None))
+        self.assertEqual(mw.system_status.cget("text"), "Checking GBIF...")
+
+        # Overlapping task_ids stay active until the final task finishes
+        mw._show_progress("Exporting filtered...", indeterminate=True, task_id="export_filtered")
+        mw._hide_progress("GBIF done", task_id="gbif_check")
+        self.assertEqual(str(mw.image_scan_progress.cget("mode")), "indeterminate")
+        self.assertEqual(mw.system_status.cget("text"), "Exporting filtered...")
+
+        mw._hide_progress("Export complete", task_id="export_filtered")
+        self.assertEqual(str(mw.image_scan_progress.cget("mode")), "determinate")
+        self.assertEqual(mw.system_status.cget("text"), "Export complete")

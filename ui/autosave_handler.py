@@ -215,12 +215,27 @@ class AutosaveMixin:
 
 
     def _restore_autosave(self, autosave_path, original_path):
-        """Load data from the autosave file into the current session."""
-        try:
-            # Support restoring both the secure json autosave and legacy Excel autosave.
+        """Load data from the autosave file into the current session asynchronously."""
+        if getattr(self, "_restore_in_progress", False):
+            return
+        self._restore_in_progress = True
+        if hasattr(self, "_show_progress"):
+            try:
+                self._show_progress("Restoring autosave backup...", indeterminate=True, task_id="restore_autosave")
+            except Exception:
+                pass
+        if hasattr(self, "show_toast"):
+            try:
+                self.show_toast("Restoring backup…", "info")
+            except Exception:
+                pass
+
+        cfg_ref = getattr(self.app, "config", None)
+
+        def _parse_worker():
+            import pandas as pd
             if autosave_path.endswith(".json"):
                 import json
-                import pandas as pd
                 import io
                 with open(autosave_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
@@ -240,56 +255,91 @@ class AutosaveMixin:
                             return pd.DataFrame(data=val["data"], index=val.get("index"), columns=val["columns"])
                     return None
 
-                df_reg = load_df("df_reg")
-                df_obs = load_df("df_obs")
-                df_photo = load_df("df_photo")
-                df_log = load_df("df_log")
-                df_unvalidated = load_df("df_unvalidated")
+                return (
+                    load_df("df_reg"),
+                    load_df("df_obs"),
+                    load_df("df_photo"),
+                    load_df("df_log"),
+                    load_df("df_unvalidated"),
+                )
             else:
                 from repository import ExcelRepository
-                df_reg, df_obs, df_photo, df_log, df_unvalidated = ExcelRepository.load_excel(autosave_path, self.app.config)
+                return ExcelRepository.load_excel(autosave_path, cfg_ref)
 
-            self.app.df_reg = df_reg
-            self.app.df_obs = df_obs
-            self.app.df_photo = df_photo
-            self.app.df_log = df_log
-            self.app._log_records = df_log.to_dict(orient="records") if df_log is not None and not df_log.empty else []
-            self.app.df_unvalidated = df_unvalidated if df_unvalidated is not None else pd.DataFrame(columns=["ObjectID", "Field_Name", "Unvalidated_Comment"])
-
-            if self.app.df_reg is not None:
-                if "ObjectID" in self.app.df_reg.columns:
-                    self.app.df_reg.set_index("ObjectID", inplace=True)
-                self.app.df_reg.index.name = "ObjectID"
-            if self.app.df_obs is not None:
-                if "ObjectID" in self.app.df_obs.columns:
-                    self.app.df_obs.set_index("ObjectID", inplace=True)
-                self.app.df_obs.index.name = "ObjectID"
-            if self.app.df_photo is not None:
-                if "ObjectID" in self.app.df_photo.columns:
-                    self.app.df_photo.set_index("ObjectID", inplace=True)
-                self.app.df_photo.index.name = "ObjectID"
-
-            self.app.initial_df_obs = self.app.df_obs.copy()
-            self.reg_by_id = self.app.df_reg
-            self.obs_by_id = self.app.df_obs
-            self.photo_by_id = self.app.df_photo
-            self.app.active_object_ids = list(self.app.df_reg.index)
-            if hasattr(self, "_invalidate_row_cache"):
-                self._invalidate_row_cache()
-            if hasattr(self, "invalidate_search_index"):
-                self.invalidate_search_index()
-            self.app.dirty = True
-            app_bus.publish(DATABASE_UPDATED, refresh_list=True)
-            # Remove the autosave after successful restore
+        def _apply_restored(result):
+            self._restore_in_progress = False
             try:
-                os.remove(autosave_path)
-            except Exception:
-                pass
-            self.show_banner("Autosave restored. Remember to save.", "warning")
-        except Exception as e:
+                import pandas as pd
+                df_reg, df_obs, df_photo, df_log, df_unvalidated = result
+                self.app.df_reg = df_reg
+                self.app.df_obs = df_obs
+                self.app.df_photo = df_photo
+                self.app.df_log = df_log
+                self.app._log_records = df_log.to_dict(orient="records") if df_log is not None and not df_log.empty else []
+                self.app.df_unvalidated = df_unvalidated if df_unvalidated is not None else pd.DataFrame(columns=["ObjectID", "Field_Name", "Unvalidated_Comment"])
+
+                if self.app.df_reg is not None:
+                    if "ObjectID" in self.app.df_reg.columns:
+                        self.app.df_reg.set_index("ObjectID", inplace=True)
+                    self.app.df_reg.index.name = "ObjectID"
+                if self.app.df_obs is not None:
+                    if "ObjectID" in self.app.df_obs.columns:
+                        self.app.df_obs.set_index("ObjectID", inplace=True)
+                    self.app.df_obs.index.name = "ObjectID"
+                if self.app.df_photo is not None:
+                    if "ObjectID" in self.app.df_photo.columns:
+                        self.app.df_photo.set_index("ObjectID", inplace=True)
+                    self.app.df_photo.index.name = "ObjectID"
+
+                self.app.initial_df_obs = self.app.df_obs.copy()
+                self.reg_by_id = self.app.df_reg
+                self.obs_by_id = self.app.df_obs
+                self.photo_by_id = self.app.df_photo
+                self.app.active_object_ids = list(self.app.df_reg.index)
+                if hasattr(self, "_invalidate_row_cache"):
+                    self._invalidate_row_cache()
+                if hasattr(self, "invalidate_search_index"):
+                    self.invalidate_search_index()
+                self.app.dirty = True
+                app_bus.publish(DATABASE_UPDATED, refresh_list=True)
+                try:
+                    os.remove(autosave_path)
+                except Exception:
+                    pass
+                if hasattr(self, "_hide_progress"):
+                    try:
+                        self._hide_progress("Autosave restored", task_id="restore_autosave")
+                    except Exception:
+                        pass
+                self.show_banner("Autosave restored. Remember to save.", "warning")
+            except Exception as e:
+                _on_restore_error(e)
+
+        def _on_restore_error(err):
+            self._restore_in_progress = False
+            if hasattr(self, "_hide_progress"):
+                try:
+                    self._hide_progress("Restore failed", task_id="restore_autosave")
+                except Exception:
+                    pass
             from utils import debug_error
-            debug_error("_restore_autosave", str(e))
-            messagebox.showerror("Restore failed", f"Could not restore autosave:\n{e}", parent=self.root)
+            debug_error("_restore_autosave", str(err))
+            messagebox.showerror("Restore failed", f"Could not restore autosave:\n{err}", parent=self.root)
+
+        from backend.task_queue import app_worker
+        root_widget = getattr(self, "root", None)
+        can_run_async = (
+            getattr(app_worker, "root", None) is not None
+            and root_widget is not None
+            and hasattr(root_widget, "winfo_exists")
+        )
+        if can_run_async:
+            app_worker.run_in_background(_parse_worker, _apply_restored, error_callback=_on_restore_error)
+        else:
+            try:
+                _apply_restored(_parse_worker())
+            except Exception as e:
+                _on_restore_error(e)
 
 
     def _check_archive_clutter(self):

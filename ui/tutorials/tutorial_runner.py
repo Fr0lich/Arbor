@@ -519,6 +519,10 @@ class TutorialRunner:
                 step.on_enter(self.ui)
             except Exception:
                 pass
+            try:
+                self.root.update_idletasks()
+            except Exception:
+                pass
 
         # Highlight target widget & auto-dodge HUD away from it
         target_widget = self._find_target(step.target_id)

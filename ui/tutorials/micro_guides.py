@@ -14,7 +14,7 @@ def start_hallway_followup_guide(ui, on_complete=None):
     steps = [
         ActionStep(
             step_id="mg_hallway_filter",
-            title="1. Isolate Vault-Flagged Specimens",
+            title="Isolate Vault-Flagged Specimens",
             instruction=(
                 "Click 'Hallway Follow-Up (REV+ERR)' in the Filter dialog (Ctrl+G) or search it in Ctrl+K. "
                 "Arbor filters the Specimen Directory to records verified in the vault that still have open flags."
@@ -27,7 +27,7 @@ def start_hallway_followup_guide(ui, on_complete=None):
         ),
         ActionStep(
             step_id="mg_hallway_resolve",
-            title="2. Triage, Clear, or Leave for Later",
+            title="Triage, Clear, or Leave for Later",
             instruction=(
                 "Open 'Triage Problem Queue' (Ctrl+K) to step through the amber [REV+ERR] cards. "
                 "Fix the entry or click '✓ Value is Correct (Clear Flag)' — and if you can't solve a problem today, that's completely okay: just leave the flag active so someone else can look at it later."
@@ -74,7 +74,7 @@ def start_armed_shelf_guide(ui, on_complete=None):
     steps = [
         ActionStep(
             step_id="mg_mobile_intro",
-            title="0. Why Use Mobile Companion? (Optional · Needs Your Phone)",
+            title="Why Use Mobile Companion? (Optional · Needs Your Phone)",
             instruction=(
                 "Connect your phone to walk the collection aisles without carrying a laptop:\n"
                 "• Stamp Storage Locations for 30+ boxes in 1 tap (Armed Target Shelf)\n"
@@ -89,7 +89,7 @@ def start_armed_shelf_guide(ui, on_complete=None):
         ),
         ActionStep(
             step_id="mg_mobile_open",
-            title="1. Open the Phone Connector",
+            title="Open the Phone Connector",
             instruction="Click the highlighted 'MOBILE' button in the top navigation bar to open the Phone Connector window.",
             target_id="mobile_nav_btn",
             action_hint="Click 'MOBILE' in the top bar (or click Skip Step →).",
@@ -100,7 +100,7 @@ def start_armed_shelf_guide(ui, on_complete=None):
         ),
         ActionStep(
             step_id="mg_armed_setup",
-            title="2. Start Session & Scan the QR Code",
+            title="Start Session & Scan the QR Code",
             instruction=(
                 "In the Phone Connector window:\n"
                 "• Keep 'Launch with mobile companion tutorial' checked for first-time phone users (you can turn it off anytime).\n"
@@ -114,7 +114,7 @@ def start_armed_shelf_guide(ui, on_complete=None):
         ),
         ActionStep(
             step_id="mg_armed_review",
-            title="3. Flag Issues, Mark Reviewed & Save on Desktop",
+            title="Flag Issues, Mark Reviewed & Save on Desktop",
             instruction=(
                 "In the hallway, only tap '✓ Mark Reviewed' after physically checking the object. "
                 "Spot a physical issue? Check 'Other Issue', jot a quick Comment, and still tap '✓ Mark Reviewed' (amber [REV+ERR] queues it safely for the desk).\n\n"

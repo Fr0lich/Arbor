@@ -98,6 +98,27 @@ def start_review_tutorial(ui, on_complete=None):
     except Exception:
         pass
 
+    def _focus_problems_tab(u):
+        try:
+            nb = getattr(u, "reg_notebook", None)
+            tabs = getattr(u, "_reg_tabs", None) or {}
+            if nb is not None and "Problems" in tabs:
+                nb.select(tabs["Problems"]["container"])
+        except Exception:
+            pass
+
+    def _focus_details_tab(u):
+        try:
+            nb = getattr(u, "reg_notebook", None)
+            tabs = getattr(u, "_reg_tabs", None) or {}
+            if nb is not None:
+                if "Details" in tabs and isinstance(tabs["Details"], dict) and "container" in tabs["Details"]:
+                    nb.select(tabs["Details"]["container"])
+                elif nb.tabs():
+                    nb.select(0)
+        except Exception:
+            pass
+
     def _finish_cb():
         mark_tutorial_completed("review")
         if callable(on_complete):
@@ -106,7 +127,7 @@ def start_review_tutorial(ui, on_complete=None):
     steps = [
         ActionStep(
             step_id="welcome_overview",
-            title="0. Welcome to Arbor (Desktop & Mobile)",
+            title="Welcome to Arbor (Desktop & Mobile)",
             instruction=(
                 "Arbor has two parts that work together:\n"
                 "• Desktop (here): Look up specific objects, inspect photos, edit registered info, compare historical ledgers, and triage issues.\n"
@@ -121,7 +142,7 @@ def start_review_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="select_110",
-            title="1. Search Up Object #110",
+            title="Search Up Object #110",
             instruction=(
                 "Arbor's core job is showing what the museum already has registered for each object. "
                 "Imagine you found object #110 and want to check its registered data.\n\n"
@@ -137,15 +158,15 @@ def start_review_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="transcribe_110_date",
-            title="2. Read Object #110 & Fill Missing Date",
+            title="Read Object #110 & Fill Missing Date",
             instruction=(
-                "For this example, we use photos to show you object #110 (in real work you won't always have photos and will look at the physical object itself).\n\n"
-                "Notice Collection Date is blank on the right. Look at the photos of #110 to find the collection date and type it in.\n"
-                "Tip: You might have to check out both images (front & back)!\n"
-                "Format: DAY.MONTH.YEAR — use '00' for unknown parts (e.g. 1 Aug 2015 → 01.08.2015, Aug 2015 → 00.08.2015, year only → 2015)."
+                "Here we use photos to show #110 (in real work you will often inspect the physical object itself).\n\n"
+                "Collection Date is blank — check both images (front & back) and type the date you find.\n"
+                "Format: DAY.MONTH.YEAR using '00' for unknown parts (1 Aug 2015 → 01.08.2015, Aug 2015 → 00.08.2015, year only → 2015)."
             ),
             target_id="reg_field:Collection Date",
             action_hint="Find the date on #110's photos and type it into Collection Date.",
+            on_enter=_focus_details_tab,
             details=(
                 "Excel impact: Updates 'Collection Date' on the Registration sheet in memory. "
                 "Notice #110 has no historical ledger entries — most routine checks compare registered data directly against the physical object."
@@ -158,7 +179,7 @@ def start_review_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="select_198",
-            title="3. Pull Object #198",
+            title="Pull Object #198",
             instruction=(
                 "Now let's check a second object that DOES have earlier historical data registered. "
                 "Click specimen #198 in the Specimen Directory (or press Ctrl+F and type 198)."
@@ -173,37 +194,38 @@ def start_review_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="check_198_history",
-            title="4. Compare 3 Historical Sources (#198)",
+            title="Compare Historical Sources (#198)",
             instruction=(
                 "For #198, earlier historical data is registered! Click the highlighted blue History pill (or press Ctrl+H) "
                 "to see if those older records align with what is written on object #198.\n\n"
-                "Notice the 3 sources disagree: Current (1963), Ledger Book 1 (1927), and Old Card Catalog (1912). "
-                "Older ledgers can be wrong too — check the photo of #198 and apply or type the year that matches the object."
+                "Older ledgers can disagree with each other too — compare all 3 sources against #198's photo and apply or type the year that matches the object."
             ),
             target_id="history_indicator_label",
             action_hint="Open Ctrl+H and apply the year that matches #198's photo.",
             keycaps=["Ctrl", "H"],
+            on_enter=_focus_details_tab,
             details=(
                 "Historical suggestions are clues, never automatic truth. Always compare them against the physical object or its label "
                 "before applying a change."
             ),
             answer=(
-                "Object #198's label shows 1927 (matching Ledger Book 1). Apply 1927 from Historical Suggestions, "
-                "or type 1927 (or 00.00.1927) into Collection Date."
+                "The 3 sources show Current (1963), Ledger Book 1 (1927), and Old Card Catalog (1912). "
+                "Object #198's label says 1927 — apply 1927 from Ledger Book 1, or type 1927 (or 00.00.1927) into Collection Date."
             ),
             validator=_is_198_date_fixed,
         ),
         ActionStep(
             step_id="flag_other_issue",
-            title="5. Flag a Physical Issue (Other Issue)",
+            title="Flag a Physical Issue (Other Issue)",
             instruction=(
                 "Most field flags in Arbor (like missing dates or conflicting labels) are flagged automatically by the program. "
-                "When you spot a physical condition issue yourself — like #198's bent display — check 'Other Issue' "
-                "(press Space) and optionally jot a short note (e.g. 'Bent display') in Comment."
+                "When you spot a physical condition issue yourself — like #198's bent display — switch to the Problems tab, "
+                "check 'Other Issue' (press Space), and optionally jot 'Bent display' in Comment."
             ),
             target_id="problem_flags_frame",
-            action_hint="Check 'Other Issue' (or click Skip Step →).",
+            action_hint="Check 'Other Issue' on the Problems tab (or click Skip Step →).",
             keycaps=["Space"],
+            on_enter=_focus_problems_tab,
             details=(
                 "Excel impact: Sets 'Other_problem = TRUE' on the Observation sheet. "
                 "You don't need to fix physical damage yourself — flagging it queues the object safely for follow-up later."
@@ -212,7 +234,7 @@ def start_review_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="mark_reviewed",
-            title="6. Only Mark Reviewed After Physical Inspection",
+            title="Only Mark Reviewed After Physical Inspection",
             instruction=(
                 "Important rule: ONLY click '✓ Mark as Reviewed' when you have finished physically inspecting the object — "
                 "never just because you fixed a date from historical suggestions at your desk.\n\n"
@@ -230,7 +252,7 @@ def start_review_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="review_complete",
-            title="7. Practice Complete!",
+            title="Practice Complete!",
             instruction=(
                 "Great job! Everything here ran in Practice Mode — your real museum files were never touched. "
                 "Click Finish ✓ to return to your workspace.\n\n"

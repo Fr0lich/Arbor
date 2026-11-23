@@ -11,13 +11,13 @@ from .tutorial_runner import TutorialRunner, ActionStep
 
 
 def _is_problem_queue_open(ui) -> bool:
-    """Detect whether the Problem Resolution Queue / Resolver window is open."""
+    """Detect whether the ObjectProblemResolver window (Queue Mode or single) is open."""
     root = getattr(ui, "root", None)
     if root is not None:
         try:
             for w in root.winfo_children():
                 title = str(getattr(w, "title", lambda: "")())
-                if "Problem" in title or "Triage" in title:
+                if "Problem Resolution" in title:
                     return True
         except Exception:
             pass
@@ -50,7 +50,7 @@ def start_triage_tutorial(ui, on_complete=None):
     steps = [
         ActionStep(
             step_id="triage_intro",
-            title="0. What Is Office Triage (REV+ERR)?",
+            title="What Is Office Triage (REV+ERR)?",
             instruction=(
                 "When someone walks the collection with a phone and flags an issue they couldn't fix on the spot, "
                 "the specimen gets an amber [REV+ERR] badge.\n\n"
@@ -64,7 +64,7 @@ def start_triage_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="triage_filter",
-            title="1. Isolate Hallway Follow-Up (REV+ERR)",
+            title="Isolate Hallway Follow-Up (REV+ERR)",
             instruction=(
                 "Open Filter (press Ctrl+G) and pick 'Hallway Follow-Up (REV+ERR)' — or press Ctrl+K and search 'Hallway Follow-Up'. "
                 "This hides clean [REV] specimens like #2003 so you only see items needing attention."
@@ -79,12 +79,12 @@ def start_triage_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="triage_open_queue",
-            title="2. Open Problem Resolution Queue",
+            title="Open Problem Queue & Resolver",
             instruction=(
-                "Click TOOLS ▾ → Problem Resolution Queue in the top bar (or press Ctrl+K and pick 'Triage Problem Queue') "
-                "to step through all flagged specimens in one streamlined window."
+                "Click TOOLS ▾ → Open Problem Queue & Resolver... → OPEN QUEUE in the top bar "
+                "(or press Ctrl+K and pick 'Triage Problem Queue') to step through all flagged specimens in one streamlined window."
             ),
-            target_id="problem_flags_frame",
+            target_id="tools_nav_btn",
             action_hint="Open Problem Resolution Queue (or click Skip Step →).",
             keycaps=["Ctrl", "K"],
             details=(
@@ -94,7 +94,7 @@ def start_triage_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="triage_clear_or_defer",
-            title="3. Clear False Alarms — Leave Hard Issues Flagged",
+            title="Clear False Alarms — Leave Hard Issues Flagged",
             instruction=(
                 "Use Next (Alt+→) to step between #2001 and #2002:\n"
                 "• On #2001 ('Bent display'): you can't fix physical damage at a desk — leave 'Other Issue' active and skip it!\n"
@@ -110,7 +110,7 @@ def start_triage_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="triage_complete",
-            title="4. Office Triage Complete!",
+            title="Office Triage Complete!",
             instruction=(
                 "Great work! You now know the full vault-to-desk triage loop: isolate [REV+ERR], clear confirmed values in 1 click, "
                 "and safely leave hard issues flagged for later. Click Finish ✓ to exit Practice Mode."

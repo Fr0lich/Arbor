@@ -1125,6 +1125,7 @@ class ProblemQueueDialog(tk.Toplevel):
         self.minsize(sc(440), sc(400))
         self.transient(parent)
         self.grab_set()
+        self.bind("<Escape>", lambda e: self.destroy())
 
         import utils
         utils.center_and_fit_toplevel(self, sc(520), sc(490))

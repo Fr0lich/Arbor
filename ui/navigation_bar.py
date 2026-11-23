@@ -87,6 +87,7 @@ class NavigationBar:
 
         # TOOLS — GBIF, Problem Queue, Historical Books, Statistics, Bulk Edit
         btn_tools = _nav_btn(nav_links_frame, "TOOLS ▾", app.show_audit_tools_dropdown)
+        btn_tools.tutorial_id = "tools_nav_btn"
         app.add_tooltip(btn_tools, "Taxonomy validation, problem queue & historical tools")
         app.toolbar_buttons["DATA"] = btn_tools
         app.toolbar_buttons["🌿 GBIF ▾"] = btn_tools

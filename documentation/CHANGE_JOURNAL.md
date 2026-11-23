@@ -13,6 +13,55 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 39: Responsive Loading States Across Desktop & Mobile (Indeterminate Progress, Async Historical DBs & SQLite Import, Mobile Detail Loading)
+- **Date**: 2026-11-23
+- **Feature Area**: Status Bar Progress (`ui/main_window.py`), Database Exports & Imports (`ui/database_ops.py`), Backup Restore (`ui/autosave_handler.py`), & Mobile Companion V2 (`backend/mobile_template_v2.py`)
+- **What Changed**:
+  1. **Ref-Counted Indeterminate Progress & Timer Cancellation (`ui/main_window.py`)**: Upgraded `_show_progress(text, maximum, indeterminate=False, task_id=None)` to animate in `indeterminate` mode for unknown-duration tasks (instead of sitting frozen at 0%), track overlapping background tasks by `task_id` so one finishing never kills another's progress bar, and cancel any stale 1.5s status-clear timer when a new operation starts.
+  2. **Non-Blocking Historical DBs, SQLite Import & Autosave Restore (`ui/main_window.py`, `ui/database_ops.py`, `ui/autosave_handler.py`)**: Moved `load_historical_databases()`, `import_to_sqlite()`, and `_restore_autosave()` off the main Tkinter thread into `app_worker.run_in_background` with in-flight re-entrancy guards, progress bars, and top-of-screen toast cues.
+  3. **Wired `open_excel_from_path()` Progress & Chained `save_as()` (`ui/database_ops.py`, `ui/main_window.py`)**: Added `_show_progress` to `open_excel_from_path()` (presets/recent/new DB loads), chained `save_as()` export via `save_session(..., on_complete=...)` so saves and exports never race, and added in-flight guards + toasts to `export_filtered_list()` and `check_gbif_action()`.
+  4. **Mobile V2 Detail Loading Overlay, Race Guard & Error Retry (`backend/mobile_template_v2.py`)**: Added `#detailLoadingOverlay` over `#swipeArea` in `openDetailView(oid)` so trainees cannot accidentally tap the previous specimen's form or review button on slow vault Wi-Fi, ignored stale fetch responses on rapid taps, and added an inline **Retry / Back to List** recovery state on network errors.
+- **User Impact**: Long operations (loading older Excel databases, exporting, importing, restoring backups, checking GBIF, and opening specimens on mobile) now show clear, animated loading states instead of appearing frozen or flashing stale data.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_ui_ergonomics.py`, `tests/test_mobile_companion.py`, `tests/test_historical.py`, `tests/test_gbif.py`, `tests/test_hardened_data_safety.py`
+  - [x] Mobile V2 JS syntax verified via `node --check`
+
+---
+
+### Entry 38: Round 3 Pre-Release Audit Fixes & Permanent Recurring Issues Watchlist
+- **Date**: 2026-11-23
+- **Feature Area**: Tutorials (`ui/tutorials/triage_tutorial.py`, `ui/tutorials/review_tutorial.py`, `ui/tutorials/micro_guides.py`), Image Viewport (`ui/image_panel.py`), File Menu (`ui/main_window.py`), Problem Queue Dialog (`ui/object_problem_resolver.py`), & Engineering Watchlist (`documentation/agent/CLAUDE_BUG_REVIEW_GUIDE.md`)
+- **What Changed**:
+  1. **Tightened Triage Queue Validator (`triage_tutorial.py`)**: Narrowed `_is_problem_queue_open` from `"Problem"` to `"Problem Resolution"` so opening the modal scope picker (`Process Objects with Problems`) no longer prematurely advances Step 3 before the trainee clicks `OPEN QUEUE`.
+  2. **Fixed Image Guide Highlight & Step Numbering (`image_panel.py`, `micro_guides.py`)**: Tagged `self.image_container.tutorial_id = "image_container"` so `Image Zoom & Rotate — 20 sec` highlights the image viewport cleanly, and removed the remaining `1.`/`2.` title prefixes in `start_hallway_followup_guide`.
+  3. **Fixed Quick Tour `← Previous` Tab Trap (`review_tutorial.py`)**: Added `_focus_details_tab` as `on_enter` on Steps 2 and 4 so navigating backward from Step 5 (`Problems` tab) restores the `Details` tab and keeps `Collection Date` visible for highlighting.
+  4. **Removed Misleading Shortcut Label (`main_window.py`)**: Removed `(Ctrl+O)` from `FILE ▾ → Open Excel Database...` since `Ctrl+O` toggles the Left Specimen Directory.
+  5. **Added `<Escape>` Close to `ProblemQueueDialog` (`object_problem_resolver.py`)**: Bound `<Escape>` to `self.destroy` for full dialog keyboard consistency.
+  6. **Permanent Recurring Issues Watchlist (`documentation/agent/CLAUDE_BUG_REVIEW_GUIDE.md`)**: Documented all 7 recurring pre-release issue patterns (missing `<Escape>`, unscaled/float fonts, multi-monitor centering, tutorial `target_id` & `← Previous` tab-switching, shallow/broad validators, stale menu labels/shortcuts, and tutorial copy discipline) so every future agent checks them automatically.
+- **User Impact**: Tutorials advance at the exact right moment, `← Previous` never leaves you stuck on the wrong tab, `Escape` closes the Problem Queue dialog cleanly, and the File menu no longer shows a conflicting shortcut.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Recurring Issues Watchlist: `documentation/agent/CLAUDE_BUG_REVIEW_GUIDE.md` (Section 4)
+  - [x] Full test suite verified: `python -m pytest tests/ -q`
+
+---
+
+### Entry 37: Tutorial Polish & Menu Parity (Auto-Tab Switch, Nested Validator Fix, 5-Step `HELP ▾` Sync, Exact Menu Labels)
+- **Date**: 2026-11-23
+- **Feature Area**: Interactive Tutorials (`ui/tutorials/review_tutorial.py`, `ui/tutorials/discrepancy_tutorial.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/database_tutorial.py`, `ui/tutorials/micro_guides.py`, `ui/tutorials/tutorial_runner.py`) & Top Bar Menus (`ui/main_window.py`, `ui/navigation_bar.py`)
+- **What Changed**:
+  1. **Quick Tour Flow Polish (`review_tutorial.py`, `tutorial_runner.py`)**: Automatically switches `reg_notebook` to the `Problems` tab on Step 5 (`flag_other_issue`), calls `update_idletasks()` after `step.on_enter` so the highlight frame renders accurately on the first frame, tightened Step 2 copy, and removed the 3-year spoiler from Step 4's main text (kept inside `▸ The Answer`).
+  2. **Clean Step Numbering Across All 5 Tutorials**: Removed redundant `0.`/`1.`/... prefixes from step titles so the HUD's `STEP X OF Y` header is always consistent.
+  3. **Fixed Stuck Validator & Highlight Target (`discrepancy_tutorial.py`)**: Replaced the shallow `winfo_children()` check in Step 2 (`open_resolver`) with recursive `_has_widget_with_tutorial_id()` so opening Historical Ledger Comparison (`Ctrl+H`) auto-advances reliably, and pointed Step 4 (`apply_changes`) to `hr_cards` instead of `hr_apply_all`.
+  4. **Synced `HELP ▾` Dropdown & Menu Labels (`main_window.py`, `navigation_bar.py`, `triage_tutorial.py`, `database_tutorial.py`)**: Updated `HELP ▾` to mirror the 5-Step Suggested Learning Path (removed stale `"Cabinet 21"`, added `"4. Office Triage (REV+ERR)"`, wired `start_tutorial_flow("triage")`, and renamed Hub entry to `"Help Hub & Suggested Learning Path"`). Tagged `TOOLS ▾` with `tutorial_id="tools_nav_btn"` and aligned tutorial copy with exact menu labels (`Open Problem Queue & Resolver...`, `New Database Wizard...`, `New Specimen Object...`).
+- **User Impact**: Every step in the 5-Step Suggested Learning Path now matches the exact menu items in the top bar, highlights visible controls cleanly, and auto-advances when the trainee performs the action.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py`, `tests/test_navigation_and_dialogs.py`
+
+---
+
 ### Entry 36: Pre-Release DPI & Ergonomics Polish (Welcome Card Scaling, Quick Tour `#110` Search + "The Answer" Dropdown, `<Escape>` Close on 6 Dialogs, `MobilePanel` `sc()` Scaling)
 - **Date**: 2026-11-23
 - **Feature Area**: Demo Welcome Card (`ui/database_ops.py`), 3-Minute Quick Tour & HUD (`ui/tutorials/review_tutorial.py`, `ui/tutorials/tutorial_runner.py`), Dialog Keyboard Ergonomics (`ui/image_popup.py`, `ui/quick_peek.py`, `ui/create_collection_dialog.py`, `ui/mobile_dialog.py`, `ui/update_dialog.py`, `ui/autosave_handler.py`), & Phone Connector DPI Scaling (`ui/mobile_panel.py`)
