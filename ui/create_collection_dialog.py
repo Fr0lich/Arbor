@@ -266,6 +266,7 @@ class CreateCollectionDialog:
         self.win.minsize(sc(460), sc(420))
 
         utils.center_and_fit_toplevel(self.win, w, h)
+        self.win.bind("<Escape>", lambda e: self.win.destroy())
 
         self.save_path_var = tk.StringVar()
         default_dir = os.path.join(os.path.expanduser("~"), "Documents")

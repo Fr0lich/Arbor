@@ -14,7 +14,7 @@ from .sandbox_manager import SandboxManager
 
 class ActionStep:
     def __init__(self, step_id, title, instruction, target_id=None,
-                 action_hint=None, on_enter=None, validator=None, keycaps=None, details=None):
+                 action_hint=None, on_enter=None, validator=None, keycaps=None, details=None, answer=None):
         self.step_id = step_id
         self.title = title
         self.instruction = instruction
@@ -24,6 +24,7 @@ class ActionStep:
         self.validator = validator
         self.keycaps = list(keycaps) if keycaps else []
         self.details = details
+        self.answer = answer
 
 
 class TutorialHighlight:
@@ -251,6 +252,42 @@ class TutorialRunner:
         )
         self.details_lbl.pack(fill="x")
 
+        # Collapsible "▸ The Answer" Drawer (optional hint/solution revealed only if trainee clicks)
+        self._answer_expanded = False
+        self.answer_toggle_btn = tk.Button(
+            frame,
+            text="▸ The Answer",
+            font=("Inter", sc(8.5), "bold"),
+            bg="#181c19",
+            fg="#fcd34d",
+            activebackground="#212622",
+            activeforeground="#fde68a",
+            relief="flat",
+            bd=0,
+            anchor="w",
+            cursor="hand2",
+            command=self._toggle_answer,
+        )
+        self.answer_frame = tk.Frame(
+            frame,
+            bg="#262117",
+            highlightbackground="#d9a036",
+            highlightthickness=1,
+            padx=sc(10),
+            pady=sc(8),
+        )
+        self.answer_lbl = tk.Label(
+            self.answer_frame,
+            text="",
+            font=("Inter", sc(9)),
+            bg="#262117",
+            fg="#fef3c7",
+            anchor="w",
+            justify="left",
+            wraplength=sc(360),
+        )
+        self.answer_lbl.pack(fill="x")
+
         # Floating visual keycaps row (shown on steps with keyboard shortcuts)
         self.keycaps_frame = tk.Frame(frame, bg="#181c19")
         self.keycaps_frame.pack(fill="x", pady=(0, sc(10)))
@@ -328,6 +365,15 @@ class TutorialRunner:
             self.details_toggle_btn.config(text="▸ 💡 More Details & Excel Impact")
             self.details_frame.pack_forget()
 
+    def _toggle_answer(self):
+        self._answer_expanded = not self._answer_expanded
+        if self._answer_expanded:
+            self.answer_toggle_btn.config(text="▾ Hide the Answer")
+            self.answer_frame.pack(fill="x", pady=(sc(2), sc(10)), after=self.answer_toggle_btn)
+        else:
+            self.answer_toggle_btn.config(text="▸ The Answer")
+            self.answer_frame.pack_forget()
+
     def _position_hud(self, target_widget=None):
         """Position HUD on the same monitor as self.root, auto-dodging target_widget."""
         try:
@@ -389,12 +435,24 @@ class TutorialRunner:
         # Collapsible details drawer (reset to collapsed on step change for calm scanning)
         self._details_expanded = False
         self.details_frame.pack_forget()
+        anchor_after = self.instruction_lbl
         if getattr(step, "details", None):
             self.details_lbl.config(text=step.details)
             self.details_toggle_btn.config(text="▸ 💡 More Details & Excel Impact")
-            self.details_toggle_btn.pack(fill="x", pady=(0, sc(8)), after=self.instruction_lbl)
+            self.details_toggle_btn.pack(fill="x", pady=(0, sc(6)), after=anchor_after)
+            anchor_after = self.details_toggle_btn
         else:
             self.details_toggle_btn.pack_forget()
+
+        # Collapsible "The Answer" drawer (reset to collapsed on step change)
+        self._answer_expanded = False
+        self.answer_frame.pack_forget()
+        if getattr(step, "answer", None):
+            self.answer_lbl.config(text=step.answer)
+            self.answer_toggle_btn.config(text="▸ The Answer")
+            self.answer_toggle_btn.pack(fill="x", pady=(0, sc(8)), after=anchor_after)
+        else:
+            self.answer_toggle_btn.pack_forget()
 
         # Render visual keycaps if defined on this step
         if hasattr(self, "keycaps_frame") and self.keycaps_frame.winfo_exists():

@@ -345,6 +345,7 @@ class AutosaveMixin:
         win.transient(self.root)
         import utils
         utils.center_and_fit_toplevel(win, sc(520), sc(380))
+        win.bind("<Escape>", lambda e: win.destroy())
         win.grab_set()
 
         ttk.Label(win, text="Archived Autosaves", font=("Segoe UI", sc(11), "bold")).pack(anchor="w", padx=15, pady=(12, 4))

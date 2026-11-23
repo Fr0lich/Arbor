@@ -102,6 +102,7 @@ class MobileDialog:
 
         utils.center_and_fit_toplevel(self.win, sc(540), sc(700))
         self.win.protocol("WM_DELETE_WINDOW", self._end_session)
+        self.win.bind("<Escape>", lambda e: self._end_session())
 
     # ------------------------------------------------------------------
     # Session end

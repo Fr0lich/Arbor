@@ -69,6 +69,7 @@ class ZoomableImagePopup:
 
         # Clean up references when window closes to avoid memory leaks
         self.top.bind("<Destroy>", self._on_close)
+        self.top.bind("<Escape>", lambda e: self.top.destroy())
         self.top.bind("<Configure>", self._fit_to_window)
         self.canvas.bind("<MouseWheel>", self._on_zoom)
         self.canvas.bind("<Button-4>", lambda e: self._on_zoom_linux(e, 1))

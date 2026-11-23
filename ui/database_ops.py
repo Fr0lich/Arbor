@@ -577,6 +577,7 @@ class DatabaseOpsMixin:
             from ui.help_dialogs import open_help_window
             open_help_window(self)
 
+        # Row 1: Primary full-width CTA so label never clips at 125%–150% DPI
         tk.Button(
             btn_row,
             text="🎓 Start 3-Minute Quick Tour",
@@ -586,15 +587,19 @@ class DatabaseOpsMixin:
             activebackground="#2f6638",
             activeforeground="#ffffff",
             relief="flat",
-            padx=sc(18),
+            padx=sc(16),
             pady=sc(9),
             cursor="hand2",
             command=_start_tour,
-        ).pack(side="left")
+        ).pack(fill="x", pady=(0, sc(8)))
+
+        # Row 2: Secondary actions cleanly spaced side-by-side
+        sec_row = tk.Frame(btn_row, bg=bg)
+        sec_row.pack(fill="x")
 
         tk.Button(
-            btn_row,
-            text="Learning Path",
+            sec_row,
+            text="View Learning Path",
             font=("Inter", sc(9.5)),
             bg=card_bg,
             fg=fg,
@@ -602,29 +607,32 @@ class DatabaseOpsMixin:
             highlightbackground=border,
             highlightthickness=1,
             padx=sc(12),
-            pady=sc(9),
+            pady=sc(7),
             cursor="hand2",
             command=_open_learning_path,
-        ).pack(side="left", padx=(sc(8), 0))
+        ).pack(side="left", expand=True, fill="x", padx=(0, sc(6)))
 
         tk.Button(
-            btn_row,
+            sec_row,
             text="Explore on My Own",
-            font=("Inter", sc(10)),
+            font=("Inter", sc(9.5)),
             bg=card_bg,
             fg=fg,
             relief="flat",
             highlightbackground=border,
             highlightthickness=1,
-            padx=sc(14),
-            pady=sc(9),
+            padx=sc(12),
+            pady=sc(7),
             cursor="hand2",
             command=_dismiss,
-        ).pack(side="right")
+        ).pack(side="left", expand=True, fill="x", padx=(sc(6), 0))
 
         win.protocol("WM_DELETE_WINDOW", _dismiss)
         win.bind("<Escape>", lambda e: _dismiss())
-        utils.center_and_fit_toplevel(win, sc(540), sc(410))
+        win.update_idletasks()
+        fit_w = max(sc(520), win.winfo_reqwidth() + sc(16))
+        fit_h = max(sc(430), win.winfo_reqheight() + sc(12))
+        utils.center_and_fit_toplevel(win, fit_w, fit_h)
         try:
             win.lift()
             win.focus_force()

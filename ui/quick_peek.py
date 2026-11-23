@@ -65,6 +65,7 @@ class QuickPeekController:
 
         # Cleanup on close
         win.bind("<Destroy>", lambda e: setattr(ui, "quick_peek_window", None) if e.widget == win else None)
+        win.bind("<Escape>", lambda e: win.destroy())
 
         # Header Frame
         header = tk.Frame(win, bg=COLORS["surface_container_low"], highlightthickness=1, highlightbackground=COLORS["outline_variant"])

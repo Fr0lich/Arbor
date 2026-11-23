@@ -13,6 +13,22 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 36: Pre-Release DPI & Ergonomics Polish (Welcome Card Scaling, Quick Tour `#110` Search + "The Answer" Dropdown, `<Escape>` Close on 6 Dialogs, `MobilePanel` `sc()` Scaling)
+- **Date**: 2026-11-23
+- **Feature Area**: Demo Welcome Card (`ui/database_ops.py`), 3-Minute Quick Tour & HUD (`ui/tutorials/review_tutorial.py`, `ui/tutorials/tutorial_runner.py`), Dialog Keyboard Ergonomics (`ui/image_popup.py`, `ui/quick_peek.py`, `ui/create_collection_dialog.py`, `ui/mobile_dialog.py`, `ui/update_dialog.py`, `ui/autosave_handler.py`), & Phone Connector DPI Scaling (`ui/mobile_panel.py`)
+- **What Changed**:
+  1. **Welcome Card Button Scaling (`ui/database_ops.py`)**: Stacked the primary **`🎓 Start 3-Minute Quick Tour`** CTA full-width above a clean 2-button secondary row (`View Learning Path` | `Explore on My Own`) with auto-fit `winfo_reqwidth()` sizing so button labels never clip at 125%–150% Windows DPI.
+  2. **Quick Tour `#110` Search Step & Collapsible `▸ The Answer` Dropdown (`ui/tutorials/review_tutorial.py`, `ui/tutorials/tutorial_runner.py`)**: Started the Quick Tour sandbox on `#1003` so Step 1 has trainees actively search up **`#110`** (`Ctrl+F`); removed the `00.06.1910` spoiler from Step 2's prompt, added the tip *"You might have to check out both images (front & back)!"*, and added a collapsible amber **`▸ The Answer`** drawer (`ActionStep.answer`) for Steps 2 and 4.
+  3. **Consistent `<Escape>` Close Across 6 Dialogs**: Bound `<Escape>` to close on `ImagePopup` (matching `USER_GUIDE.md`), `Quick Peek`, `Create New Collection`, `MobileDialog`, `UpdateDialog`, and `Autosave Archive Manager`.
+  4. **Phone Connector DPI Scaling (`ui/mobile_panel.py`)**: Wrapped all 76 hardcoded font sizes in `sc(...)` so the Phone Connector scales uniformly with the rest of Arbor on high-DPI Windows laptops.
+- **User Impact**: The Demo Welcome Card and Phone Connector scale crisply without clipped buttons, the Quick Tour lets trainees genuinely discover `#110`'s date from its photos (with a 1-click "The Answer" safety net), and pressing `Escape` closes every popup window consistently.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py`, `tests/test_mobile_companion.py`, `tests/test_navigation_and_dialogs.py`, `tests/test_images.py`
+  - [x] `data/tutorial_images/O-V-OE-110-02.jpg` preserved untouched
+
+---
+
 ### Entry 35: Unified `Comment` Field, Non-Destructive Legacy Note Reveal & Opt-In Cleanup
 - **Date**: 2026-11-23
 - **Feature Area**: Registration Form (`ui/registry_panel.py`, `ui/main_window.py`, `ui/command_palette.py`), Mobile V2 Field Guide (`backend/mobile_template_v2.py`), & Tests (`tests/test_navigation_and_dialogs.py`)

@@ -6,6 +6,7 @@ from datetime import datetime
 import qrcode
 from PIL import ImageTk
 import config
+from config import sc
 
 from backend.mobile_server import MobileServer, get_local_ip
 from backend.tunnel import PinggyTunnel, CloudflareTunnel
@@ -100,7 +101,7 @@ class MobilePanel:
         tk.Label(
             hdr_top,
             text="📱 Arbor Mobile Companion",
-            font=("Lora", 15, "bold"),
+            font=("Lora", sc(15), "bold"),
             bg=self._bg_main,
             fg=self._fg_title,
         ).pack(side="left", anchor="w")
@@ -116,7 +117,7 @@ class MobilePanel:
         tk.Button(
             hdr_top,
             text="📖 Mobile Guide",
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", sc(8), "bold"),
             bg="#f2f5f1",
             fg="#2c302e",
             activebackground="#e2e8e3",
@@ -131,7 +132,7 @@ class MobilePanel:
         tk.Button(
             hdr_top,
             text="[?] Armed Shelf (45s)",
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", sc(8), "bold"),
             bg="#eaf5ec",
             fg="#1b5e20",
             activebackground="#d4ecd9",
@@ -148,12 +149,12 @@ class MobilePanel:
             text="Scan the QR code to inspect & edit records on your phone.",
             bg="#ffffff",
             fg="#5a655e",
-            font=("Segoe UI", 9),
+            font=("Segoe UI", sc(9)),
         ).pack(anchor="w")
 
         # DB info line (filled in after server start when we know the path)
         self._db_info_lbl = tk.Label(
-            hdr, text="", bg="#ffffff", fg="#5a655e", font=("Segoe UI", 8, "italic")
+            hdr, text="", bg="#ffffff", fg="#5a655e", font=("Segoe UI", sc(8), "italic")
         )
         self._db_info_lbl.pack(anchor="w")
 
@@ -167,7 +168,7 @@ class MobilePanel:
         setup_status_bar.pack(fill="x", pady=(0, 10))
 
         setup_status_dot = tk.Label(
-            setup_status_bar, text="●", fg="#2e7d32", bg="#e8f5e9", font=("Segoe UI", 12)
+            setup_status_bar, text="●", fg="#2e7d32", bg="#e8f5e9", font=("Segoe UI", sc(12))
         )
         setup_status_dot.pack(side="left", padx=(0, 6))
 
@@ -176,7 +177,7 @@ class MobilePanel:
             text="⚙️ Setup — Configure Mobile Connection",
             bg="#e8f5e9",
             fg="#1b4332",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
         )
         setup_status_lbl.pack(side="left")
 
@@ -189,7 +190,7 @@ class MobilePanel:
         tk.Label(
             setup_card,
             text="Network Mode:",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#fbfbf9",
             fg="#1b4332",
         ).pack(anchor="w", pady=(0, 4))
@@ -197,14 +198,14 @@ class MobilePanel:
         tk.Label(
             setup_card,
             text="Choose how you want to connect to your mobile device.",
-            font=("Segoe UI", 8),
+            font=("Segoe UI", sc(8)),
             bg="#fbfbf9",
             fg="#5a655e",
         ).pack(anchor="w", pady=(0, 2))
         self.net_hint_lbl = tk.Label(
             setup_card,
             text="• Public (Internet): Recommended for University / Eduroam Wi-Fi (bypasses AP firewall isolation)\n• LAN only: For private home Wi-Fi or offline portable routers",
-            font=("Segoe UI", 7, "italic"),
+            font=("Segoe UI", sc(7), "italic"),
             bg="#fbfbf9",
             fg="#2d6a4f",
             justify="left",
@@ -219,7 +220,7 @@ class MobilePanel:
         self.btn_net_public = tk.Button(
             network_btn_frame,
             text="🌐 Public (Internet)",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#1b4332",
             fg="white",
             relief="flat",
@@ -233,7 +234,7 @@ class MobilePanel:
         self.btn_net_local = tk.Button(
             network_btn_frame,
             text="📶 LAN only",
-            font=("Segoe UI", 9),
+            font=("Segoe UI", sc(9)),
             bg="#e0e3df",
             fg="#333",
             relief="flat",
@@ -249,7 +250,7 @@ class MobilePanel:
         self.btn_adv_toggle = tk.Button(
             setup_card,
             text="▸ Advanced Connection & Version Options",
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", sc(8), "bold"),
             bg="#fbfbf9",
             fg="#5a655e",
             activebackground="#ecefed",
@@ -271,7 +272,7 @@ class MobilePanel:
         tk.Label(
             self.provider_frame,
             text="Tunnel Provider:",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#fbfbf9",
             fg="#1b4332",
         ).pack(anchor="w", pady=(0, 4))
@@ -279,7 +280,7 @@ class MobilePanel:
         tk.Label(
             self.provider_frame,
             text="Cloudflare is recommended to bypass firewalls.",
-            font=("Segoe UI", 8),
+            font=("Segoe UI", sc(8)),
             bg="#fbfbf9",
             fg="#5a655e",
         ).pack(anchor="w", pady=(0, 6))
@@ -292,7 +293,7 @@ class MobilePanel:
         self.btn_prov_cf = tk.Button(
             provider_btn_frame,
             text="☁️ Cloudflare",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#1b4332",
             fg="white",
             relief="flat",
@@ -306,7 +307,7 @@ class MobilePanel:
         self.btn_prov_pinggy = tk.Button(
             provider_btn_frame,
             text="🏓 Pinggy / SSH",
-            font=("Segoe UI", 9),
+            font=("Segoe UI", sc(9)),
             bg="#e0e3df",
             fg="#333",
             relief="flat",
@@ -324,7 +325,7 @@ class MobilePanel:
         tk.Label(
             self.version_frame,
             text="Interface Version:",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#fbfbf9",
             fg="#1b4332",
         ).pack(anchor="w", pady=(0, 4))
@@ -332,7 +333,7 @@ class MobilePanel:
         tk.Label(
             self.version_frame,
             text="V2 Tabbed optimizes physical location and discrepancy resolution.",
-            font=("Segoe UI", 8),
+            font=("Segoe UI", sc(8)),
             bg="#fbfbf9",
             fg="#5a655e",
         ).pack(anchor="w", pady=(0, 6))
@@ -343,7 +344,7 @@ class MobilePanel:
         self.btn_ver_v2 = tk.Button(
             version_btn_frame,
             text="📑 V2 Tabbed (New)",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#1b4332",
             fg="white",
             relief="flat",
@@ -357,7 +358,7 @@ class MobilePanel:
         self.btn_ver_v1 = tk.Button(
             version_btn_frame,
             text="📄 V1 Classic",
-            font=("Segoe UI", 9),
+            font=("Segoe UI", sc(9)),
             bg="#e0e3df",
             fg="#333",
             relief="flat",
@@ -375,7 +376,7 @@ class MobilePanel:
         tk.Label(
             self.autosave_row,
             text="On Session End:",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#fbfbf9",
             fg="#1b4332",
         ).pack(anchor="w", pady=(0, 2))
@@ -385,7 +386,7 @@ class MobilePanel:
 
         self.btn_autosave_toggle = tk.Button(
             autosave_pill_frame,
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", sc(8), "bold"),
             relief="flat",
             padx=8,
             pady=3,
@@ -396,7 +397,7 @@ class MobilePanel:
 
         self.lbl_autosave_tip = tk.Label(
             self.autosave_row,
-            font=("Segoe UI", 7, "italic"),
+            font=("Segoe UI", sc(7), "italic"),
             bg="#fbfbf9",
             fg="#5a655e",
             anchor="w",
@@ -410,7 +411,7 @@ class MobilePanel:
         tk.Label(
             self.pin_toggle_row,
             text="Phone Login PIN:",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#fbfbf9",
             fg="#1b4332",
         ).pack(anchor="w", pady=(0, 2))
@@ -420,7 +421,7 @@ class MobilePanel:
 
         self.btn_pin_toggle = tk.Button(
             pin_pill_frame,
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", sc(8), "bold"),
             relief="flat",
             padx=8,
             pady=3,
@@ -431,7 +432,7 @@ class MobilePanel:
 
         self.lbl_pin_tip = tk.Label(
             self.pin_toggle_row,
-            font=("Segoe UI", 7, "italic"),
+            font=("Segoe UI", sc(7), "italic"),
             bg="#fbfbf9",
             fg="#5a655e",
             anchor="w",
@@ -448,7 +449,7 @@ class MobilePanel:
             text="Launch with mobile companion tutorial for first-time users",
             variable=self.show_walkthrough_var,
             command=self._on_walkthrough_toggle,
-            font=("Inter", 9),
+            font=("Inter", sc(9)),
             bg="#fbfbf9",
             fg="#1b4332",
             activebackground="#fbfbf9",
@@ -462,7 +463,7 @@ class MobilePanel:
         self.start_btn = tk.Button(
             self.setup_frame,
             text="▶ Start Mobile Session",
-            font=("Inter", 10, "bold"),
+            font=("Inter", sc(10), "bold"),
             bg="#3a7d44",
             fg="#ffffff",
             activebackground="#2d6336",
@@ -485,7 +486,7 @@ class MobilePanel:
         self.status_bar.pack(fill="x", pady=(0, 10))
 
         self.status_dot = tk.Label(
-            self.status_bar, text="●", fg="#2e7d32", bg="#e8f5e9", font=("Segoe UI", 12)
+            self.status_bar, text="●", fg="#2e7d32", bg="#e8f5e9", font=("Segoe UI", sc(12))
         )
         self.status_dot.pack(side="left", padx=(0, 6))
 
@@ -494,12 +495,12 @@ class MobilePanel:
             text="🟢 Local Server Ready — Connecting public tunnel...",
             bg="#e8f5e9",
             fg="#1b4332",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
         )
         self.status_lbl.pack(side="left")
 
         self.client_badge = tk.Label(
-            self.status_bar, text="📱 Offline", bg="#e8f5e9", fg="#5a655e", font=("Segoe UI", 9)
+            self.status_bar, text="📱 Offline", bg="#e8f5e9", fg="#5a655e", font=("Segoe UI", sc(9))
         )
         self.client_badge.pack(side="right", padx=(0, 6))
 
@@ -522,7 +523,7 @@ class MobilePanel:
         self.btn_qr_public = tk.Button(
             mode_btn_frame,
             text="🌐 Public (Internet)",
-            font=("Segoe UI", 7, "bold"),
+            font=("Segoe UI", sc(7), "bold"),
             bg="#1b4332",
             fg="white",
             relief="flat",
@@ -536,7 +537,7 @@ class MobilePanel:
         self.btn_qr_local = tk.Button(
             mode_btn_frame,
             text="📶 LAN only",
-            font=("Segoe UI", 7),
+            font=("Segoe UI", sc(7)),
             bg="#e0e3df",
             fg="#333",
             relief="flat",
@@ -554,7 +555,7 @@ class MobilePanel:
         tk.Label(
             info,
             text="1. Scan QR with phone camera",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#fbfbf9",
             fg="#1b4332",
         ).pack(anchor="w", pady=(0, 2))
@@ -562,7 +563,7 @@ class MobilePanel:
         self.local_ip_lbl = tk.Label(
             info,
             text=f"📶 Local Wi-Fi IP: {get_local_ip()}",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             bg="#e8f5e9",
             fg="#1b4332",
             padx=4,
@@ -574,7 +575,7 @@ class MobilePanel:
         tk.Label(
             info,
             text="Or open this link on your phone:",
-            font=("Segoe UI", 8),
+            font=("Segoe UI", sc(8)),
             bg="#fbfbf9",
             fg="#5a655e",
         ).pack(anchor="w")
@@ -584,14 +585,14 @@ class MobilePanel:
 
         self.url_var = tk.StringVar(value="Initializing...")
         self.url_entry = ttk.Entry(
-            url_frame, textvariable=self.url_var, font=("Consolas", 8), state="readonly"
+            url_frame, textvariable=self.url_var, font=("Consolas", sc(8)), state="readonly"
         )
         self.url_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
 
         self.btn_copy_url = tk.Button(
             url_frame,
             text="📋 Copy",
-            font=("Segoe UI", 8),
+            font=("Segoe UI", sc(8)),
             bg="#e0e3df",
             fg="#1b4332",
             relief="flat",
@@ -605,13 +606,13 @@ class MobilePanel:
         pin_row = tk.Frame(info, bg="#fbfbf9")
         pin_row.pack(fill="x", pady=2)
         tk.Label(
-            pin_row, text="PIN: ", font=("Segoe UI", 9, "bold"), bg="#fbfbf9", fg="#1b4332"
+            pin_row, text="PIN: ", font=("Segoe UI", sc(9), "bold"), bg="#fbfbf9", fg="#1b4332"
         ).pack(side="left")
         self.pin_var = tk.StringVar(value="----")
         self.pin_badge = tk.Label(
             pin_row,
             textvariable=self.pin_var,
-            font=("Consolas", 11, "bold"),
+            font=("Consolas", sc(11), "bold"),
             bg="#1b4332",
             fg="#ffffff",
             padx=8,
@@ -621,7 +622,7 @@ class MobilePanel:
 
         self.btn_active_pin_toggle = tk.Button(
             pin_row,
-            font=("Segoe UI", 7, "bold"),
+            font=("Segoe UI", sc(7), "bold"),
             relief="flat",
             padx=6,
             pady=1,
@@ -633,7 +634,7 @@ class MobilePanel:
         self.lbl_active_pin_warning = tk.Label(
             info,
             text="",
-            font=("Segoe UI", 7, "bold"),
+            font=("Segoe UI", sc(7), "bold"),
             bg="#fbfbf9",
             fg="#b45309",
             anchor="w",
@@ -644,7 +645,7 @@ class MobilePanel:
         self.tunnel_lbl = tk.Label(
             info,
             text="Tunnel: Establishing...",
-            font=("Segoe UI", 8, "italic"),
+            font=("Segoe UI", sc(8), "italic"),
             bg="#fbfbf9",
             fg="#d97706",
         )
@@ -654,13 +655,13 @@ class MobilePanel:
         active_ver_row = tk.Frame(info, bg="#fbfbf9")
         active_ver_row.pack(fill="x", pady=(4, 0))
         tk.Label(
-            active_ver_row, text="UI Version: ", font=("Segoe UI", 8, "bold"), bg="#fbfbf9", fg="#1b4332"
+            active_ver_row, text="UI Version: ", font=("Segoe UI", sc(8), "bold"), bg="#fbfbf9", fg="#1b4332"
         ).pack(side="left")
         
         self.btn_active_ver_v2 = tk.Button(
             active_ver_row,
             text="V2 Tabbed",
-            font=("Segoe UI", 7, "bold"),
+            font=("Segoe UI", sc(7), "bold"),
             bg="#1b4332",
             fg="white",
             relief="flat",
@@ -674,7 +675,7 @@ class MobilePanel:
         self.btn_active_ver_v1 = tk.Button(
             active_ver_row,
             text="V1 Classic",
-            font=("Segoe UI", 7),
+            font=("Segoe UI", sc(7)),
             bg="#e0e3df",
             fg="#333",
             relief="flat",
@@ -708,14 +709,14 @@ class MobilePanel:
             text="",
             bg="#fffbeb",
             fg="#92400e",
-            font=("Segoe UI", 8),
+            font=("Segoe UI", sc(8)),
             justify="left",
         )
         self.notice_lbl.pack(side="left", fill="x", expand=True)
 
         self.btn_active_autosave_toggle = tk.Button(
             notice,
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", sc(8), "bold"),
             relief="flat",
             padx=6,
             pady=2,
@@ -729,7 +730,7 @@ class MobilePanel:
             self.active_frame,
             text="Recent Mobile Activity",
             bg="#ffffff",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", sc(9), "bold"),
             fg="#1b4332",
             padx=8,
             pady=6,
@@ -739,7 +740,7 @@ class MobilePanel:
         self.feed_list = tk.Listbox(
             feed_frame,
             bg="#fbfbf9",
-            font=("Segoe UI", 9),
+            font=("Segoe UI", sc(9)),
             bd=0,
             highlightthickness=1,
             selectmode="none",
@@ -761,7 +762,7 @@ class MobilePanel:
         self._save_now_btn = tk.Button(
             bottom,
             text="💾 Save Workbook Now",
-            font=("Inter", 9, "bold"),
+            font=("Inter", sc(9), "bold"),
             bg="#eaf5ec",
             fg="#1b5e20",
             activebackground="#d4ecd9",
@@ -777,7 +778,7 @@ class MobilePanel:
         self._end_btn = tk.Button(
             bottom,
             text="End Mobile Session",
-            font=("Inter", 9, "bold"),
+            font=("Inter", sc(9), "bold"),
             bg="#fdf2f2",
             fg="#ba1a1a",
             activebackground="#f9dcdc",
@@ -1136,15 +1137,15 @@ class MobilePanel:
         try:
             if mode == "local":
                 self.btn_net_local.config(
-                    bg="#1b4332", fg="white", font=("Segoe UI", 9, "bold"))
+                    bg="#1b4332", fg="white", font=("Segoe UI", sc(9), "bold"))
                 self.btn_net_public.config(
-                    bg="#e0e3df", fg="#333", font=("Segoe UI", 9))
+                    bg="#e0e3df", fg="#333", font=("Segoe UI", sc(9)))
                 self.provider_frame.pack_forget()
             else:
                 self.btn_net_public.config(
-                    bg="#1b4332", fg="white", font=("Segoe UI", 9, "bold"))
+                    bg="#1b4332", fg="white", font=("Segoe UI", sc(9), "bold"))
                 self.btn_net_local.config(
-                    bg="#e0e3df", fg="#333", font=("Segoe UI", 9))
+                    bg="#e0e3df", fg="#333", font=("Segoe UI", sc(9)))
                 self.provider_frame.pack(fill="x")
             self._update_pin_ui()
         except Exception:
@@ -1157,14 +1158,14 @@ class MobilePanel:
         try:
             if mode == "cloudflare":
                 self.btn_prov_cf.config(
-                    bg="#1b4332", fg="white", font=("Segoe UI", 9, "bold"))
+                    bg="#1b4332", fg="white", font=("Segoe UI", sc(9), "bold"))
                 self.btn_prov_pinggy.config(
-                    bg="#e0e3df", fg="#333", font=("Segoe UI", 9))
+                    bg="#e0e3df", fg="#333", font=("Segoe UI", sc(9)))
             else:
                 self.btn_prov_pinggy.config(
-                    bg="#1b4332", fg="white", font=("Segoe UI", 9, "bold"))
+                    bg="#1b4332", fg="white", font=("Segoe UI", sc(9), "bold"))
                 self.btn_prov_cf.config(
-                    bg="#e0e3df", fg="#333", font=("Segoe UI", 9))
+                    bg="#e0e3df", fg="#333", font=("Segoe UI", sc(9)))
         except Exception:
             pass
 
@@ -1177,27 +1178,27 @@ class MobilePanel:
             if hasattr(self, 'btn_ver_v2') and hasattr(self, 'btn_ver_v1'):
                 if version == "v2":
                     self.btn_ver_v2.config(
-                        bg="#1b4332", fg="white", font=("Segoe UI", 9, "bold"))
+                        bg="#1b4332", fg="white", font=("Segoe UI", sc(9), "bold"))
                     self.btn_ver_v1.config(
-                        bg="#e0e3df", fg="#333", font=("Segoe UI", 9))
+                        bg="#e0e3df", fg="#333", font=("Segoe UI", sc(9)))
                 else:
                     self.btn_ver_v1.config(
-                        bg="#1b4332", fg="white", font=("Segoe UI", 9, "bold"))
+                        bg="#1b4332", fg="white", font=("Segoe UI", sc(9), "bold"))
                     self.btn_ver_v2.config(
-                        bg="#e0e3df", fg="#333", font=("Segoe UI", 9))
+                        bg="#e0e3df", fg="#333", font=("Segoe UI", sc(9)))
 
             # Update Active screen buttons if present
             if hasattr(self, 'btn_active_ver_v2') and hasattr(self, 'btn_active_ver_v1'):
                 if version == "v2":
                     self.btn_active_ver_v2.config(
-                        bg="#1b4332", fg="white", font=("Segoe UI", 7, "bold"))
+                        bg="#1b4332", fg="white", font=("Segoe UI", sc(7), "bold"))
                     self.btn_active_ver_v1.config(
-                        bg="#e0e3df", fg="#333", font=("Segoe UI", 7))
+                        bg="#e0e3df", fg="#333", font=("Segoe UI", sc(7)))
                 else:
                     self.btn_active_ver_v1.config(
-                        bg="#1b4332", fg="white", font=("Segoe UI", 7, "bold"))
+                        bg="#1b4332", fg="white", font=("Segoe UI", sc(7), "bold"))
                     self.btn_active_ver_v2.config(
-                        bg="#e0e3df", fg="#333", font=("Segoe UI", 7))
+                        bg="#e0e3df", fg="#333", font=("Segoe UI", sc(7)))
 
             if self.server:
                 local_ip = get_local_ip()
@@ -1222,16 +1223,16 @@ class MobilePanel:
         try:
             if mode == "local":
                 self.btn_qr_local.config(
-                    bg="#1b4332", fg="white", font=("Segoe UI", 7, "bold"))
+                    bg="#1b4332", fg="white", font=("Segoe UI", sc(7), "bold"))
                 self.btn_qr_public.config(
-                    bg="#e0e3df", fg="#333", font=("Segoe UI", 7))
+                    bg="#e0e3df", fg="#333", font=("Segoe UI", sc(7)))
                 self.url_var.set(self.local_url_with_token)
                 self._render_qr(self.local_url_with_token)
             else:
                 self.btn_qr_public.config(
-                    bg="#1b4332", fg="white", font=("Segoe UI", 7, "bold"))
+                    bg="#1b4332", fg="white", font=("Segoe UI", sc(7), "bold"))
                 self.btn_qr_local.config(
-                    bg="#e0e3df", fg="#333", font=("Segoe UI", 7))
+                    bg="#e0e3df", fg="#333", font=("Segoe UI", sc(7)))
                 url = self.public_url_with_token or self.local_url_with_token
                 self.url_var.set(url)
                 self._render_qr(url)
@@ -1269,7 +1270,7 @@ class MobilePanel:
                 self.status_lbl.config(
                     text="🟢 Public Tunnel Live & Secure", fg="#1b4332")
                 self.tunnel_lbl.config(
-                    text=f"Public: {url}", fg="#2e7d32", font=("Segoe UI", 8))
+                    text=f"Public: {url}", fg="#2e7d32", font=("Segoe UI", sc(8)))
                 self.btn_qr_public.config(text="🌐 Public (Internet) ✓")
                 # Always switch to the public QR as soon as the tunnel is ready
                 self.switch_qr("public")
@@ -1293,11 +1294,11 @@ class MobilePanel:
                     self.client_badge.config(
                         text=f"📱 Phone Connected ({active_count} Online)",
                         fg="#2e7d32",
-                        font=("Segoe UI", 9, "bold"),
+                        font=("Segoe UI", sc(9), "bold"),
                     )
                 else:
                     self.client_badge.config(
-                        text="📱 Offline", fg="#5a655e", font=("Segoe UI", 9)
+                        text="📱 Offline", fg="#5a655e", font=("Segoe UI", sc(9))
                     )
             except Exception:
                 pass

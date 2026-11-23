@@ -139,12 +139,23 @@ class TestSandboxTutorials(unittest.TestCase):
     def test_start_review_tutorial(self):
         runner = start_review_tutorial(self.ui)
         self.assertTrue(self.sm.is_sandboxed)
-        self.assertEqual(len(runner.steps), 7)
+        self.assertEqual(len(runner.steps), 8)
         self.assertEqual(runner.steps[0].step_id, "welcome_overview")
-        self.assertEqual(runner.steps[1].step_id, "transcribe_110_date")
-        self.assertEqual(runner.steps[3].step_id, "check_198_history")
-        self.assertEqual(runner.steps[4].step_id, "flag_other_issue")
-        self.assertEqual(runner.steps[5].step_id, "mark_reviewed")
+        self.assertEqual(runner.steps[1].step_id, "select_110")
+        self.assertEqual(runner.steps[2].step_id, "transcribe_110_date")
+        # Starts on #1003 so user actively searches up #110 in Step 1
+        self.assertEqual(str(self.ui.app.current_object_id), "1003")
+        # Step 2 hides 00.06.1910 behind the collapsible "The Answer" dropdown
+        self.assertNotIn("00.06.1910", runner.steps[2].instruction)
+        self.assertIn("00.06.1910", runner.steps[2].answer or "")
+        # Advance to Step 2 and verify the collapsible Answer drawer toggles cleanly
+        runner.next_step()
+        runner.next_step()
+        self.assertFalse(runner._answer_expanded)
+        runner._toggle_answer()
+        self.assertTrue(runner._answer_expanded)
+        runner._toggle_answer()
+        self.assertFalse(runner._answer_expanded)
 
         runner.exit_tutorial()
         self.assertFalse(self.sm.is_sandboxed)

@@ -57,6 +57,7 @@ class UpdateDialog:
         self.win.geometry(f"{w}x{h}")
         self.win.minsize(int(440 * s), int(380 * s))
         utils.center_and_fit_toplevel(self.win, w, h)
+        self.win.bind("<Escape>", lambda e: self.win.destroy())
 
         self._build_ui()
 
@@ -322,6 +323,7 @@ class RepoUnreachableDialog:
         h = int(min(360, self.win.winfo_screenheight() - 70) * s)
         self.win.geometry(f"{w}x{h}")
         utils.center_and_fit_toplevel(self.win, w, h)
+        self.win.bind("<Escape>", lambda e: self.win.destroy())
 
         self._build_ui()
 

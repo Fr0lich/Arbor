@@ -87,6 +87,17 @@ def start_review_tutorial(ui, on_complete=None):
     sm = SandboxManager()
     sm.enter_sandbox(ui, mock_type="review")
 
+    # Start on #1003 so the user actively searches up and selects #110 themselves in Step 1
+    try:
+        ui.current_id = "1003"
+        ui.app.current_object_id = "1003"
+        if hasattr(ui, "object_list"):
+            ui.object_list.select_by_id("1003")
+        if hasattr(ui, "load_object"):
+            ui.load_object("1003")
+    except Exception:
+        pass
+
     def _finish_cb():
         mark_tutorial_completed("review")
         if callable(on_complete):
@@ -102,33 +113,52 @@ def start_review_tutorial(ui, on_complete=None):
                 "• Mobile Companion (on your phone): Walk the collection to fix simple issues & mark objects Reviewed, locate already-reviewed objects for closer inspection, or loan out objects.\n\n"
                 "Everything in this tour runs in safe Practice Mode — real museum files are never touched."
             ),
-            action_hint="Click Next → to begin with object #110.",
+            action_hint="Click Next → to find your first object (#110).",
             details=(
                 "You can exit Practice Mode anytime from the green banner at the top of the window, "
-                "or replay any tutorial in order from HELP ▾ → Learning Path."
+                "or replay any tutorial in order from HELP ▾ → Suggested Learning Path."
             ),
         ),
         ActionStep(
-            step_id="transcribe_110_date",
-            title="1. Read Object #110 & Fill Missing Date",
+            step_id="select_110",
+            title="1. Search Up Object #110",
             instruction=(
                 "Arbor's core job is showing what the museum already has registered for each object. "
-                "Imagine you found object #110 and want to check its data — here we use photos to show you #110 "
-                "(in real work you won't always have photos and will look at the physical object itself).\n\n"
-                "Collection Date is blank on the right. Look at the photos of #110, find the date ('juni 1910'), and type it in.\n"
+                "Imagine you found object #110 and want to check its registered data.\n\n"
+                "Press Ctrl+F, type 110 in the search bar, and click specimen #110 in the Specimen Directory."
+            ),
+            target_id="search_entry",
+            action_hint="Search for 110 and click specimen #110 in the Specimen Directory.",
+            keycaps=["Ctrl", "F"],
+            details=(
+                "Arbor matches object numbers even without leading zeros or prefixes (e.g. '0110' or '110')."
+            ),
+            validator=lambda u: str(getattr(getattr(u, "app", None), "current_object_id", "") or "") == "110",
+        ),
+        ActionStep(
+            step_id="transcribe_110_date",
+            title="2. Read Object #110 & Fill Missing Date",
+            instruction=(
+                "For this example, we use photos to show you object #110 (in real work you won't always have photos and will look at the physical object itself).\n\n"
+                "Notice Collection Date is blank on the right. Look at the photos of #110 to find the collection date and type it in.\n"
+                "Tip: You might have to check out both images (front & back)!\n"
                 "Format: DAY.MONTH.YEAR — use '00' for unknown parts (e.g. 1 Aug 2015 → 01.08.2015, Aug 2015 → 00.08.2015, year only → 2015)."
             ),
             target_id="reg_field:Collection Date",
-            action_hint="Type 00.06.1910 (or 06.1910) in Collection Date.",
+            action_hint="Find the date on #110's photos and type it into Collection Date.",
             details=(
                 "Excel impact: Updates 'Collection Date' on the Registration sheet in memory. "
                 "Notice #110 has no historical ledger entries — most routine checks compare registered data directly against the physical object."
+            ),
+            answer=(
+                "Look at the back photo of #110 — the handwritten label says 'juni 1910'. "
+                "Since the day is unknown, type 00.06.1910 (or 06.1910) into Collection Date."
             ),
             validator=_is_110_date_entered,
         ),
         ActionStep(
             step_id="select_198",
-            title="2. Pull Object #198",
+            title="3. Pull Object #198",
             instruction=(
                 "Now let's check a second object that DOES have earlier historical data registered. "
                 "Click specimen #198 in the Specimen Directory (or press Ctrl+F and type 198)."
@@ -137,32 +167,35 @@ def start_review_tutorial(ui, on_complete=None):
             action_hint="Click specimen #198 in the Specimen Directory.",
             keycaps=["Ctrl", "F"],
             details=(
-                "Arbor matches object numbers even without leading zeros or prefixes (e.g. '0198' or '198'). "
-                "Selecting #198 loads its front/back photos, registered fields, and historical ledger indicator."
+                "Selecting #198 loads its front/back photos, registered fields, and the blue History pill above the form."
             ),
             validator=lambda u: str(getattr(getattr(u, "app", None), "current_object_id", "") or "") == "198",
         ),
         ActionStep(
             step_id="check_198_history",
-            title="3. Compare 3 Historical Sources (#198)",
+            title="4. Compare 3 Historical Sources (#198)",
             instruction=(
-                "For #198, earlier historical data is registered! Click the highlighted History indicator (or press Ctrl+H) "
-                "to see if it aligns with what is written on object #198.\n\n"
+                "For #198, earlier historical data is registered! Click the highlighted blue History pill (or press Ctrl+H) "
+                "to see if those older records align with what is written on object #198.\n\n"
                 "Notice the 3 sources disagree: Current (1963), Ledger Book 1 (1927), and Old Card Catalog (1912). "
-                "Older ledgers can be wrong too — apply or type 1927 (or 00.00.1927) because it matches the physical object."
+                "Older ledgers can be wrong too — check the photo of #198 and apply or type the year that matches the object."
             ),
             target_id="history_indicator_label",
-            action_hint="Open Ctrl+H and apply 1927 (or type 1927 / 00.00.1927 in Collection Date).",
+            action_hint="Open Ctrl+H and apply the year that matches #198's photo.",
             keycaps=["Ctrl", "H"],
             details=(
                 "Historical suggestions are clues, never automatic truth. Always compare them against the physical object or its label "
                 "before applying a change."
             ),
+            answer=(
+                "Object #198's label shows 1927 (matching Ledger Book 1). Apply 1927 from Historical Suggestions, "
+                "or type 1927 (or 00.00.1927) into Collection Date."
+            ),
             validator=_is_198_date_fixed,
         ),
         ActionStep(
             step_id="flag_other_issue",
-            title="4. Flag a Physical Issue (Other Issue)",
+            title="5. Flag a Physical Issue (Other Issue)",
             instruction=(
                 "Most field flags in Arbor (like missing dates or conflicting labels) are flagged automatically by the program. "
                 "When you spot a physical condition issue yourself — like #198's bent display — check 'Other Issue' "
@@ -179,7 +212,7 @@ def start_review_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="mark_reviewed",
-            title="5. Only Mark Reviewed After Physical Inspection",
+            title="6. Only Mark Reviewed After Physical Inspection",
             instruction=(
                 "Important rule: ONLY click '✓ Mark as Reviewed' when you have finished physically inspecting the object — "
                 "never just because you fixed a date from historical suggestions at your desk.\n\n"
@@ -197,7 +230,7 @@ def start_review_tutorial(ui, on_complete=None):
         ),
         ActionStep(
             step_id="review_complete",
-            title="6. Practice Complete!",
+            title="7. Practice Complete!",
             instruction=(
                 "Great job! Everything here ran in Practice Mode — your real museum files were never touched. "
                 "Click Finish ✓ to return to your workspace.\n\n"
