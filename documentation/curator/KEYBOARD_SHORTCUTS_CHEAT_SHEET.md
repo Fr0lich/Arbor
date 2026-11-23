@@ -9,7 +9,7 @@
 ┌─────────────────────────────────┬─────────────────────────────────────────────────────────────┐
 │ KEYBOARD SHORTCUT               │ WHAT IT DOES AT YOUR DESK                                   │
 ├─────────────────────────────────┼─────────────────────────────────────────────────────────────┤
-│ [ CTRL ] + [ ENTER ]            │ MARK REVIEWED & ADVANCE (Signs off sheet, advances to next) │
+│ [ CTRL ] + [ ENTER ]            │ MARK REVIEWED & ADVANCE (After physical check only!)        │
 │ [ SPACE ]                       │ TOGGLE PROBLEM CHECKBOX (Flags or unflags selected problem) │
 │ [ ↓ ]  /  [ ↑ ]                 │ MOVE DOWN / UP (Steps through cards in Specimen Directory)  │
 │ [ CTRL ] + [ ↓ ]  /  [ ↑ ]      │ JUMP TO NEXT / PREV PROBLEM (Skips clean records directly)  │
@@ -28,6 +28,7 @@
 │ [ CTRL ] + [ K ]                │ OMNI-SEARCH & COMMAND PALETTE (Type #ID or command name)    │
 │ [ CTRL ] + [ F ]                │ JUMP TO SEARCH BAR (Type genus, species, or accession #)    │
 │ [ CTRL ] + [ G ]                │ FILTER OBJECTS MENU (Filter by status, problem, or location)│
+│ [ CTRL ] + [ H ]                │ HISTORICAL LEDGER COMPARISON (Opens blue History pill)      │
 │ [ CTRL ] + [ SHIFT ] + [ F ]    │ HISTORICAL FILTER TAB (Search historical ledger books)      │
 │ [ 🎯 Hallway Follow-Up ]        │ 1-CLICK PRESET IN FILTER (Shows vault-reviewed items with flags)
 │ [ ALT ] + [ ← ]  /  [ → ]       │ BROWSING HISTORY (Go back or forward in recent records)     │

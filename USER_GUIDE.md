@@ -9,8 +9,8 @@ Welcome to the team! As a museum assistant, work-placement intern, or collection
 
 This manual was written for you. You do not need any computer science experience or advanced botanical background to use Arbor. Arbor is designed to make auditing physical boxes, paper sheets, and handwritten labels fast, accurate, and comfortable.
 
-> 🎓 **New Here? Start with the 3-Minute Practice Tour!**  
-> Open **`❓ HELP ▾` → `🎓 3-Minute Practice Tour (Zero Risk)`** to practice on sample Cabinet 21 specimens in **Practice Mode**. Saving is paused while you practice, so nothing you do can affect real museum files. You can also click any **`[?]`** button inside Arbor for a 30-second quick guide right where you are working.
+> 🎓 **New Here? Start with the 3-Minute Quick Tour & 5-Step Learning Path!**  
+> Open **`HELP ▾`** (or press **`F1`**) to launch the **3-Minute Quick Tour** using real sample photos (`#110` & `#198`) in **Practice Mode**, or follow the ordered **5-Step Suggested Learning Path**. Saving is paused while you practice, so nothing you do can affect real museum files. You can also click any **`[?]`** button inside Arbor for a 30-second quick guide right where you are working.
 
 ---
 
@@ -99,18 +99,19 @@ To help you work smoothly without mental fatigue, follow this 5-step rhythm for 
 Click any card in the left list, or simply press the `Down Arrow` key on your keyboard to advance down the list one card at a time.
 
 ### Step 2: Inspect the Physical Sheet or Photo
-Look at the photograph on the right and compare it with the typed fields in the center:
+Look at the physical object (or its photograph in the center) and compare it with the registered fields on the right:
 * Is the botanical name spelled correctly?
-* Does the collector's name and collection year match the label?
+* Does the collector's name and collection date match the label? *(Dates use **`DAY.MONTH.YEAR`** with `00` for unknown parts — e.g. 1 August 2015 → `01.08.2015`, August 2015 → `00.08.2015`, or just `1927` if only the year is known.)*
+* **Historical Suggestions (`Ctrl+H`)**: If earlier catalog books are loaded and disagree with the current record, a blue **`History: N suggestion(s) · Ctrl+H`** pill appears above the form. Click it to compare sources — remember that older ledgers can be wrong too, so always check them against the physical object.
 * Does the physical storage box on your desk match the Cabinet and Shelf listed on screen?
 
 ### Step 3: Flag if Anything Is Wrong
-If something is misspelled, torn, illegible, or in the wrong box, do not worry! Simply click into the **Problems** section and check the relevant checkbox (or press `Space` while focused on the checkbox). The text box will gently highlight in yellow so anyone reviewing the file knows there is an open question.
-> **In the Excel Spreadsheet**: Checking a problem box writes `TRUE` into that specific column on the `Observation` sheet (for example, `Species_Problem = TRUE` or `Box_Label_Problem = TRUE`).
+Most field-specific flags (like missing dates or conflicting labels) are flagged automatically by Arbor. If you spot a physical condition issue yourself (such as a bent display or fragile mounting) or an unresolved question, click into the **Problems** tab and check **`Other Issue`** (or the relevant checkbox, or press `Space`), and jot a short note in **`Comment`**. You do not have to solve every problem yourself — flagging it queues it safely for follow-up later.
+> **In the Excel Spreadsheet**: Checking a problem box writes `TRUE` into that specific column on the `Observation` sheet (for example, `Other_problem = TRUE` or `Collection_Date_Problem = TRUE`).
 
-### Step 4: Mark Done if Correct
-If all details match reality, click the big green **✓ MARK AS REVIEWED** button at the top of the form, or press `Ctrl + Enter`.
-* The card in the left list immediately receives a clean green `[ REV ]` badge.
+### Step 4: Mark Done After Physical Inspection
+**Important Rule**: Only click the big green **✓ MARK AS REVIEWED** button (or press `Ctrl + Enter`) once you have **finished physically inspecting the object** — never just because you fixed a typo from a historical ledger at your desk.
+* Clean specimens receive a green **`[ REV ]`** badge; physically checked specimens with an open issue flag receive an amber **`[ REV+ERR ]`** badge.
 * Arbor automatically advances your screen to the very next specimen so you can keep your hands on the keyboard.
 > **In the Excel Spreadsheet**: This writes `TRUE` into the `Reviewed` column on the `Observation` sheet for that specimen's `ObjectID`, timestamps your review time into `ReviewedAt`, and records your username in the `Log` sheet.
 
@@ -259,11 +260,13 @@ Everyone's eyes and monitors are different. If the text feels cramped on a small
    * **`Card View: Minimalist`**: Clean, bare view showing strictly the ID number and plant name without extra badges or chips.
 3. You can also adjust profiles in **`Settings ⚙` $\rightarrow$ `Appearance` $\rightarrow$ `Directory Card Profiles`**, where an interactive live preview shows you how cards will look before you apply them.
 
-### Toggling Workspace Panels
+### Toggling Workspace Panels & Working Without Photos
 If you want to maximize screen space for inspecting photos or typing notes, use the function keys:
 * **`[F6]`**: Toggle the Specimen Directory (left column) on or off.
-* **`[F7]`**: Toggle the Registration Form (center column) on or off.
-* **`[F8]`**: Toggle the Specimen Photos Viewport (right column) on or off.
+* **`[F7]`**: Toggle the Registration Form (right column) on or off.
+* **`[F8]`**: Toggle the Specimen Photos Viewport (middle column) on or off.
+* **Clean 2-Column Layout When Photos Are Hidden**: When you press `F8` (or switch to Offline image mode), Arbor collapses the empty middle column so the Specimen Directory and Registration Form expand cleanly — and if **Storage Location** is set to Center/Bottom, it docks neatly along the bottom of your screen right above the Bottom Progress Bar.
+* **Working on a Second Monitor**: If you drag Arbor onto an external monitor, all dialogs, photo popouts, dropdown menus, tooltips, and status notifications automatically open on that same screen.
 
 ---
 
@@ -285,6 +288,9 @@ High-resolution scans let you inspect plant hairs, seeds, and faded ink labels w
 │ Detached Full-Res Popout │ Double-click anywhere on the image canvas        │
 └──────────────────────────┴──────────────────────────────────────────────────┘
 ```
+
+### When No Photo Folder Is Connected Yet
+If you open a collection without selecting an image folder, Arbor displays a clean **Specimen Audit Summary** in the center with 1-click buttons right at the top: **Select Image Folder…**, **Use Online Photos**, or **Hide Photo Pane (F8)**.
 
 ### The Detached High-Resolution Viewer
 For very difficult handwriting or tiny pressed leaves, **double-click** the image. 
@@ -310,9 +316,10 @@ When auditing physical specimens walking down vault corridors or glass cabinet a
 ```
 
 ### How to Connect in 4 Easy Steps:
-1. **Open the Phone Connector**: In Arbor on your desktop computer, click the **`📱 MOBILE`** menu at the top, or press `Ctrl+K` and type `Mobile Companion`.
-2. **Check PIN & Save Options**: Choose whether to require the 4-digit PIN (`🔒 Require 4-Digit PIN: ON / OFF` — keep **ON** on public tunnels, optional on private offline Wi-Fi) and click **▶ Start Mobile Session**.
+1. **Open the Phone Connector**: In Arbor on your desktop computer, click **`MOBILE`** in the top bar, or press `Ctrl+K` and type `Mobile Companion`.
+2. **Check PIN, Tutorial & Save Options**: Choose whether to require the 4-digit PIN (`🔒 Require 4-Digit PIN: ON / OFF` — keep **ON** on public tunnels, optional on private offline Wi-Fi) and whether to **"Launch with mobile companion tutorial for first-time users"** (ON by default; experienced staff can uncheck it anytime), then click **▶ Start Mobile Session**.
 3. **Scan the QR Code**: Point your phone camera at the QR code on screen (or copy the link). Scanning the QR code signs you in automatically.
+4. **Walk & Audit with Touch Gestures**: Swipe left/right to glide between **Details ↔ Location ↔ Problems**, pinch-to-zoom and drag-pan fullscreen specimen photos, use the **Armed Target Shelf** (Floor/Cabinet/Shelf) or **Loaned Out** toggle on the Location tab, and search already-reviewed objects whenever pulling specimens for closer inspection.
 4. **Tap `?` Anytime on Your Phone**: If you aren't sure what a field or badge means while standing in an aisle, tap **`?`** in the phone's top bar to open **"What the Fields Mean"** (including a reminder that outdated plant names on old boxes can be typed as-is and updated later via desktop **GBIF Name Check**).
 
 ---
@@ -371,7 +378,7 @@ When you finish your aisle audit and return to your computer:
    * Click **`✓ Value is Correct (Clear Flag)`** if a flagged value turns out to be fine (turns `[REV+ERR]` back to green `[REV]`, with full `Ctrl+Z` Undo support).
    * Press **`Alt + ←` / `Alt + →`** to step between queued specimens.
    * **Can't solve a problem today?** That is completely okay — simply skip it and leave the flag active so a specialist or curator can revisit it later.
-   * *(Tip: You can practice this entire workflow risk-free in **❓ HELP ▾ → 2. Office Triage** Practice Sandbox!)*
+   * *(Tip: You can practice this entire workflow risk-free in **HELP ▾ → 4. Office Triage (REV+ERR)** inside the Suggested Learning Path!)*
 
 ---
 

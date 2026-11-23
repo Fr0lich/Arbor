@@ -9,7 +9,7 @@ The **Arbor Mobile Companion** is a dedicated, zero-install mobile web applicati
 ```
 ┌────────────────────────────────────────────────────────┐
 │ 1. On your Desktop Workstation:                        │
-│    Click 📱 MOBILE in the top navigation bar.          │
+│    Click MOBILE in the top navigation bar.             │
 │                                                        │
 │ 2. Choose your Network Mode:                           │
 │    • 🌐 Public (Internet): Campus & Eduroam Wi-Fi      │
@@ -37,7 +37,7 @@ The **Arbor Mobile Companion** is a dedicated, zero-install mobile web applicati
 * **Copy Link Button**: Click **📋 Copy** in the desktop pairing window to copy the full URL to your clipboard for instant sharing.
 * **Live 4-Digit PIN Toggle**: By default, phones typing the address manually must enter the 4-digit PIN shown on your desktop screen. You can toggle **`🔒 Require 4-Digit PIN: ON / OFF`** directly inside the Mobile Companion window at any time (even while the server is running).
   * *Safety Tip*: Turning PIN **OFF** is great on a private, offline vault Wi-Fi router so staff can reconnect effortlessly. Keep PIN **ON** whenever using a **Public (Internet)** tunnel.
-* **First-Time 3-Step Guide & `?` Field Guide**: The first time your phone connects, Arbor displays a quick 3-slide visual guide (with a **Skip** button). At any time while auditing, tap **`?`** in the top bar (on either the Vault List or an Object page) to open **"What the Fields Mean"** — a plain-English mirror of the object screen explaining every field and badge, plus a button to replay the 3-Step Guide.
+* **First-Time 3-Step Guide & `?` Field Guide**: By default, the desktop Phone Connector has **"Launch with mobile companion tutorial for first-time users"** checked ON so new phone users automatically see a quick 3-slide visual guide (with a **Skip** button). Experienced staff can uncheck this option on the desktop launch screen anytime. Even when disabled, you can always tap **`?`** in the phone's top bar to open **"What the Fields Mean"** or replay the 3-Step Guide from **`⚙ Settings`**.
 
 ---
 
@@ -75,26 +75,28 @@ Herbarium vaults are often located in basements or shielded behind heavy steel d
 
 ## 3. Hallway Auditing Workflows
 
-### 3.1. Search-First Number Lookup
-* **Numeric Keypad Default**: Pull a physical box, read its accession number, and type it in the top search bar. Use the **`[123 / Aa]`** button to switch between numbers and plant names.
+### 3.1. Search-First Number Lookup & Finding Reviewed Objects
+* **Numeric Keypad Default**: Pull a physical box, read its accession number, and type it in the top search bar — or filter for **already-reviewed objects** when pulling items for closer inspection. Use the **`[123 / Aa]`** button to switch between numbers and plant names.
 * **Automatic Zero & Prefix Handling**: Typing `001`, `1`, or `O-V-1` all find Specimen `#1`. When you tap `< Back` to return to the list, Arbor automatically clears and focuses the search bar for the next box.
 
-### 3.2. The 1-Tap Armed Target Shelf (Auditing 30–50 Boxes at Once)
+### 3.2. The 1-Tap Armed Target Shelf & Loaned Out Toggle
 Opening a specimen **never** overwrites its coordinates automatically — so mistyping a number (like `#101` instead of `#1001`) can never corrupt another record.
-1. **Set Your Shelf Once**: Pick the Building, Floor, Cabinet, and Shelf you are standing in front of. Arbor arms that shelf as your active target.
+1. **Set Your Floor, Cabinet & Shelf Once**: Pick the Building, **Floor** (`-2` to `4`), Cabinet, and Shelf you are standing in front of. Arbor arms that shelf as your active target.
 2. **1-Tap Stamping**: On every next box from that shelf, a green thumb banner appears right under the plant name:
-   `⚡ Armed Target: Cab 21 · Sh 01  [ Stamp Target ]`
+   `⚡ Armed Target: Fl 1 · Cab 21 · Sh 01  [ Stamp Target ]`
 3. Tap **Stamp Target** once to assign all coordinates in a single tap! (If a specimen already belongs to a different cabinet, the button turns amber **`⚠️ Relocate to Cab 21`** so you never relocate a specimen by accident.)
+4. **Lending Objects Out**: Need to borrow or loan out a specimen? Switch to the **Location** tab and toggle **`Loaned Out`** directly from your phone.
 
 ### 3.3. Non-Coercive Review Safeguard
 If you tap **`✓ Mark Reviewed`** on a specimen that has no Storage Location yet while a shelf is armed, Arbor politely asks:
 * **`✓ Yes, Stamp to Target & Review`**: Assigns your armed shelf and marks the specimen Reviewed.
 * **`✕ No, Keep Location & Review`**: Saves your edits, notes, and problem flags and marks Reviewed **without changing its location**.
 
-### 3.4. Flagging Issues While Still Marking Reviewed (`REV + [N] ISSUES`)
-Found a crushed box, unreadable 19th-century handwriting, or a confusing plant name?
-* Check the problem box (e.g., `Box_Label_Problem`) and **still tap `✓ Mark Reviewed`**.
-* **It is completely okay if you cannot solve a problem in the hallway.** The amber **`REV + 1 ISSUE`** badge confirms you physically held the object and verified its shelf while safely queueing the question for someone else to look at later on the office computer (**`🎯 Hallway Follow-Up (REV+ERR)`**).
+### 3.4. Physical Review Rule & Flagging Issues (`REV + [N] ISSUES`)
+* **Only tap `✓ Mark Reviewed` once you have physically checked the object.**
+* Found a bent display, crushed box, unreadable 19th-century handwriting, or a confusing plant name?
+  * Check **`Other Issue`** (or the relevant issue flag), optionally jot a short note in **`Comment`** (e.g. `"Bent display"`), and **still tap `✓ Mark Reviewed`**.
+  * **It is completely okay if you cannot solve a problem in the hallway.** The amber **`REV + 1 ISSUE`** badge confirms you physically held the object and verified its shelf while safely queueing the question for someone else to look at later on the office computer (**`🎯 Hallway Follow-Up (REV+ERR)`**).
 * **Outdated Plant Names (`Genus` & `Species`)**: Sometimes the scientific name printed on an old box is outdated or a synonym. Just type what is written on the physical box label — it can be updated automatically later using the **GBIF Name Check** tool on the desktop program.
 * **Not sure what a field means?** Tap **`?`** in the top bar anytime to open **What the Fields Mean** (explaining every field, including `Author` vs. `Collector`, right on your phone).
 
@@ -121,6 +123,11 @@ Auditing specimens requires looking between physical shelf tags and your phone s
 If you accidentally swipe down to refresh or swipe backwards to close the browser tab in the vault:
 * The application intercepts the gesture and confirms whether you wish to leave if any field is actively being edited.
 * Background app switching or phone lock triggers an immediate `pagehide` flush, saving in-flight keystrokes to `localStorage` or the server before the browser pauses.
+
+### 3.9. Touch Gestures (One-Handed Hallway Navigation & Photo Inspection)
+* **Horizontal Tab Swipe**: Swipe left or right on any specimen screen to glide effortlessly between **Details ↔ Location ↔ Problems** with one thumb (vertical scrolling stays locked so swipes never misfire).
+* **Fullscreen Photo Pinch, Pan & Double-Tap**: Tap a specimen photo to open it fullscreen, then **pinch with two fingers** to zoom (`0.8×–4.5×`), **drag with one finger** to pan across tiny handwriting, or **double-tap** to jump cleanly between `1.0×` and `2.2×`.
+* **Swipe-Down Bottom Sheet**: Pull down on the top drag handle of the Storage Vessel sheet to dismiss it naturally with one thumb.
 
 ---
 
