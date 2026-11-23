@@ -19,9 +19,9 @@ This 1-page reference is for anyone inheriting or maintaining **Arbor**, an offl
   ```bash
   python main.py
   ```
-- **Run the core verification test suite (~130 tests, ~13s)**:
+- **Run the full consolidated test suite (~465 tests across 21 domain suites)**:
   ```bash
-  python -m pytest tests/test_hardened_data_safety.py tests/test_demo_dataset.py tests/test_navigation_and_dialogs.py tests/test_sandbox_tutorials.py tests/test_mobile_companion.py tests/test_mobile_companion_offline.py tests/test_command_palette_and_search.py tests/test_problem_persistence_fix.py tests/test_status_bar.py -q
+  python -m pytest tests/ -q
   ```
 
 ---

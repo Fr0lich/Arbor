@@ -24,6 +24,18 @@ def _safe_tk_init(self, *args, **kwargs):
 
 tk.Tk.__init__ = _safe_tk_init
 
+# Guard tk.Variable.__del__ during headless pytest teardown when a root Tk interpreter
+# has already been destroyed before GC collects lingering StringVar/BooleanVar instances.
+_orig_var_del = tk.Variable.__del__
+
+def _safe_var_del(self):
+    try:
+        _orig_var_del(self)
+    except (RuntimeError, tk.TclError):
+        pass
+
+tk.Variable.__del__ = _safe_var_del
+
 
 @pytest.fixture(autouse=True)
 def _tk_gc_hygiene():
@@ -38,6 +50,7 @@ def tk_root():
     root = tk.Tk()
     root.withdraw()
     yield root
+    gc.collect()
     try:
         root.destroy()
     except Exception:

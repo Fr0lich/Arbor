@@ -31,19 +31,8 @@ jobs:
       - name: Generate offline demo dataset
         run: python scripts/create_demo_dataset.py
 
-      - name: Run core verification test suite
-        run: |
-          python -m pytest `
-            tests/test_hardened_data_safety.py `
-            tests/test_demo_dataset.py `
-            tests/test_navigation_and_dialogs.py `
-            tests/test_sandbox_tutorials.py `
-            tests/test_mobile_companion.py `
-            tests/test_mobile_companion_offline.py `
-            tests/test_command_palette_and_search.py `
-            tests/test_problem_persistence_fix.py `
-            tests/test_status_bar.py `
-            -q
+      - name: Run full consolidated verification test suite
+        run: python -m pytest tests/ -q
 
   build-exe:
     name: Build Standalone Windows Arbor.exe

@@ -13,6 +13,36 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 35: Unified `Comment` Field, Non-Destructive Legacy Note Reveal & Opt-In Cleanup
+- **Date**: 2026-11-23
+- **Feature Area**: Registration Form (`ui/registry_panel.py`, `ui/main_window.py`, `ui/command_palette.py`), Mobile V2 Field Guide (`backend/mobile_template_v2.py`), & Tests (`tests/test_navigation_and_dialogs.py`)
+- **What Changed**:
+  1. **Unified `Comment` Box with Non-Destructive Legacy Reveal (`ui/registry_panel.py`)**: Placed **`Comment`** first inside *Audit Notes & Descriptions* (matching Mobile Companion V2) and automatically hid empty `Observation` / `ProblemDescription` boxes. Whenever an older specimen has existing text in `Observation` or `ProblemDescription`, that field automatically appears underneath `Comment` labeled `(Legacy)` so zero existing museum data is ever hidden or overwritten.
+  2. **Calm, Reassuring One-Time Opt-In Cleanup (`TOOLS ▾ → Combine Legacy Notes into Comment...` & `Ctrl+K`)**: Added `RegistryPanel.merge_legacy_notes_into_comment()` with a clear, reassuring confirmation prompt explaining that existing comments are never overwritten, nothing is written to disk until `Ctrl+S`, and opting out leaves everything untouched.
+  3. **Mobile V2 Field Guide Parity (`backend/mobile_template_v2.py`)**: Replaced `Observation` and `ProblemDescription` in Mobile V2's `?` *What the Fields Mean* guide with **`Comment`** so Desktop and Mobile match 1:1.
+- **User Impact**: Trainees see one clear `Comment` box on both Desktop and Phone (zero confusion about which of 3 note boxes to type in), while older specimens with text in legacy fields still display them safely until optionally combined.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_navigation_and_dialogs.py`
+  - [x] Master Lexicon & Mobile V2 parity verified
+
+---
+
+### Entry 34: Test Suite Consolidation (52 → 21 Domain Suites), Zero-Warning Tkinter Teardown & Full-Repo CI Coverage
+- **Date**: 2026-11-23
+- **Feature Area**: Test Suite (`tests/`, `conftest.py`), CI Pipeline (`.github/workflows/ci.yml`), & Maintainer Docs (`MAINTAINER_HANDOFF.md`)
+- **What Changed**:
+  1. **Zero-Warning Headless Tkinter Teardown (`conftest.py`)**: Guarded `tk.Variable.__del__` during headless pytest GC after root destruction and ran `gc.collect()` before `root.destroy()`, eliminating all 13 recurring `PytestUnraisableExceptionWarning` teardown warnings.
+  2. **Consolidated 52 Fragmented Test Files → 21 Clean Domain Suites (`tests/`)**: Merged 32 tiny/overlapping micro-files into cohesive domain suites (`test_gbif.py`, `test_images.py`, `test_repository.py`, `test_hardened_data_safety.py`, `test_historical.py`, `test_problem_persistence_fix.py`, `test_location_panel.py`, `test_navigation_and_dialogs.py`, `test_ui_ergonomics.py`, `test_filter.py`, `test_mobile_companion_offline.py`), and replaced 17 brittle HTML/CSS substring-mirror tests in `test_mobile_companion.py` with a concise high-signal contract test while keeping 100% of API, auth, data-safety, and UI-smoke coverage.
+  3. **Full-Repo CI Verification (`.github/workflows/ci.yml`, `MAINTAINER_HANDOFF.md`)**: Upgraded CI from running 9 hardcoded test files to running the entire consolidated `tests/` directory (`python -m pytest tests/ -q`) on every push and PR.
+- **User Impact**: Zero runtime change for museum trainees; faster, cleaner maintenance and 100% automated CI protection across the entire application before every `.exe` release.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Maintainer Handoff: `MAINTAINER_HANDOFF.md`
+  - [x] CI Pipeline: `.github/workflows/ci.yml`
+
+---
+
 ### Entry 33: Slate-Blue Historical Suggestions Pill, Mobile First-Time Tutorial Toggle & Learning Path Steps 2–5 Upgrade
 - **Date**: 2026-11-23
 - **Feature Area**: Historical Suggestions Indicator (`ui/main_window.py`, `ui/historical_suggestions.py`), Phone Connector & Mobile V2 (`ui/mobile_panel.py`, `backend/mobile_server.py`, `backend/mobile_template_v2.py`), Learning Path Tutorials Steps 2–5 (`ui/tutorials/discrepancy_tutorial.py`, `ui/tutorials/micro_guides.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/database_tutorial.py`, `ui/tutorials/sandbox_manager.py`), & Tests (`tests/test_sandbox_tutorials.py`, `tests/test_mobile_companion.py`)

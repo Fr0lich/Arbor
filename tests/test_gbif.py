@@ -1,3 +1,9 @@
+
+
+# ============================================================================
+# Merged from test_gbif_mass_update.py
+# ============================================================================
+
 import pytest
 import pandas as pd
 from unittest.mock import patch, MagicMock
@@ -710,3 +716,593 @@ def test_gbif_rollback_timestamp_space_and_iso_normalization():
         assert app.df_reg.at["201", "Author"] == "L."
         assert mock_ui._invalidate_row_cache.called
         assert mock_ui.invalidate_search_index.called
+
+
+# ============================================================================
+# Merged from test_gbif_family_resolution.py
+# ============================================================================
+
+import pytest
+import pandas as pd
+from unittest.mock import patch, MagicMock
+from backend.gbif import (
+    is_undetermined_species,
+    _query_single_taxon,
+    _evaluate_item_diff,
+    batch_gbif_match,
+    check_gbif
+)
+
+
+class TestUndeterminedSpeciesDetection:
+    """Test recognition of open nomenclature and undetermined species markers."""
+
+    def test_exact_undetermined_tokens(self):
+        assert is_undetermined_species("") is True
+        assert is_undetermined_species(None) is True
+        assert is_undetermined_species("sp.") is True
+        assert is_undetermined_species("sp") is True
+        assert is_undetermined_species("SP.") is True
+        assert is_undetermined_species("spp.") is True
+        assert is_undetermined_species("spp") is True
+        assert is_undetermined_species("spec.") is True
+        assert is_undetermined_species("species") is True
+        assert is_undetermined_species("indet.") is True
+        assert is_undetermined_species("indet") is True
+        assert is_undetermined_species("undet.") is True
+        assert is_undetermined_species("unknown") is True
+        assert is_undetermined_species("?") is True
+        assert is_undetermined_species("-") is True
+        assert is_undetermined_species("none") is True
+        assert is_undetermined_species("n/a") is True
+
+    def test_morphospecies_patterns(self):
+        assert is_undetermined_species("sp. 1") is True
+        assert is_undetermined_species("sp. A") is True
+        assert is_undetermined_species("sp. nov.") is True
+        assert is_undetermined_species("sp. nr.") is True
+        assert is_undetermined_species("indet. 2") is True
+        assert is_undetermined_species("species 14") is True
+
+    def test_valid_species_not_undetermined(self):
+        assert is_undetermined_species("terrestris") is False
+        assert is_undetermined_species("pascuorum") is False
+        assert is_undetermined_species("mellifera") is False
+        assert is_undetermined_species("vulgaris") is False
+
+
+class TestTaxonQueryingAndFamilyResolution:
+    """Test that GBIF queries resolve Family for both binomials and genus-only taxa."""
+
+    @patch("backend.gbif.check_gbif")
+    def test_binomial_resolves_family_and_species(self, mock_check):
+        mock_check.return_value = {
+            "matchType": "EXACT",
+            "status": "ACCEPTED",
+            "genus": "Bombus",
+            "species": "pascuorum",
+            "author": "(Scopoli, 1763)",
+            "family": "Apidae",
+            "rank": "SPECIES",
+            "synonym": False
+        }
+
+        res = _query_single_taxon("Bombus", "pascuorum")
+        assert res is not None
+        assert res["family"] == "Apidae"
+        assert res["species"] == "pascuorum"
+        assert res["is_undetermined"] is False
+        mock_check.assert_called_once_with("Bombus", "pascuorum")
+
+    @patch("backend.gbif.check_gbif")
+    def test_undetermined_queries_genus_only_and_preserves_sp(self, mock_check):
+        mock_check.return_value = {
+            "matchType": "EXACT",
+            "status": "ACCEPTED",
+            "genus": "Bombus",
+            "species": "",
+            "author": "Latreille, 1802",
+            "family": "Apidae",
+            "rank": "GENUS",
+            "synonym": False
+        }
+
+        res = _query_single_taxon("Bombus", "sp.")
+        assert res is not None
+        assert res["family"] == "Apidae"
+        assert res["species"] == "sp."  # Preserves raw undetermined string
+        assert res["is_undetermined"] is True
+        # Verify it passed empty species to check_gbif
+        mock_check.assert_called_once_with("Bombus", "")
+
+
+class TestDiffEvaluation:
+    """Test diff generation for missing metadata and undetermined records."""
+
+    def test_missing_family_populated_for_binomial(self):
+        item = {
+            "oid": "101",
+            "genus": "Bombus",
+            "species": "terrestris",
+            "author": "(Linnaeus, 1758)",
+            "family": ""  # Missing family
+        }
+        gbif_data = {
+            "matchType": "EXACT",
+            "status": "ACCEPTED",
+            "genus": "Bombus",
+            "species": "terrestris",
+            "author": "(Linnaeus, 1758)",
+            "family": "Apidae",
+            "rank": "SPECIES",
+            "is_undetermined": False
+        }
+
+        diff = _evaluate_item_diff(item, gbif_data)
+        assert diff is not None
+        assert diff["missing_family"] is True
+        assert diff["is_undetermined"] is False
+        assert len(diff["changes"]) == 1
+        assert diff["changes"][0]["field"] == "Family"
+        assert diff["changes"][0]["new"] == "Apidae"
+
+    def test_undetermined_item_never_changes_species(self):
+        item = {
+            "oid": "102",
+            "genus": "Bombus",
+            "species": "sp.",
+            "author": "",
+            "family": ""
+        }
+        gbif_data = {
+            "matchType": "EXACT",
+            "status": "ACCEPTED",
+            "genus": "Bombus",
+            "species": "sp.",
+            "author": "Latreille, 1802",  # Genus author from GBIF
+            "family": "Apidae",
+            "rank": "GENUS",
+            "is_undetermined": True
+        }
+
+        diff = _evaluate_item_diff(item, gbif_data)
+        assert diff is not None
+        assert diff["is_undetermined"] is True
+        assert diff["missing_family"] is True
+        assert diff["missing_author"] is True
+        # Verify Species is NEVER changed, but Family and Genus Author are proposed
+        changed_fields = [c["field"] for c in diff["changes"]]
+        assert "Species" not in changed_fields
+        assert "Family" in changed_fields
+        assert "Author" in changed_fields
+
+
+class TestBatchGBIFMatchScope:
+    """Test batch matching with deduplication and exclusion flags."""
+
+    @patch("backend.gbif._query_single_taxon")
+    def test_batch_match_deduplicates_undetermined_records(self, mock_query):
+        mock_query.return_value = {
+            "matchType": "EXACT",
+            "status": "ACCEPTED",
+            "genus": "Bombus",
+            "species": "sp.",
+            "author": "",
+            "family": "Apidae",
+            "rank": "GENUS",
+            "is_undetermined": True
+        }
+
+        items = [
+            {"oid": "1", "genus": "Bombus", "species": "sp.", "author": "", "family": ""},
+            {"oid": "2", "genus": "Bombus", "species": "indet.", "author": "", "family": ""},
+            {"oid": "3", "genus": "Bombus", "species": "sp.", "author": "", "family": ""}
+        ]
+
+        results = batch_gbif_match(items, exclude_undetermined=False)
+        assert len(results) == 3
+        # Should have queried unique undetermined taxon only once
+        assert mock_query.call_count == 1
+
+    @patch("backend.gbif._query_single_taxon")
+    def test_batch_match_excludes_undetermined_when_flagged(self, mock_query):
+        mock_query.return_value = {
+            "matchType": "EXACT",
+            "status": "ACCEPTED",
+            "genus": "Apis",
+            "species": "mellifera",
+            "author": "Linnaeus, 1758",
+            "family": "Apidae",
+            "rank": "SPECIES",
+            "is_undetermined": False
+        }
+
+        items = [
+            {"oid": "1", "genus": "Bombus", "species": "sp.", "author": "", "family": ""},
+            {"oid": "2", "genus": "Apis", "species": "mellifera", "author": "", "family": ""},
+        ]
+
+        results = batch_gbif_match(items, exclude_undetermined=True)
+        # Bombus sp. excluded; only Apis mellifera processed
+        assert len(results) == 1
+        assert results[0]["oid"] == "2"
+        assert mock_query.call_count == 1
+
+
+# ============================================================================
+# Merged from test_gbif_rank_discrepancy_and_provenance.py
+# ============================================================================
+
+import pytest
+import pandas as pd
+from unittest.mock import MagicMock, patch
+
+from backend.gbif import (
+    check_gbif,
+    _evaluate_item_diff,
+    is_likely_family_name
+)
+from backend.cross_validation import (
+    collect_field_provenance,
+    validate_candidate_with_gbif,
+    get_validated_provenance_candidates,
+    scan_taxonomic_rank_inversions,
+    restore_provenance_candidate
+)
+from models import AppState
+
+
+class TestGBIFRankDiscrepancyAndPrevention:
+    """Test prevention of family-as-species pollution and proper rank classification."""
+
+    def test_is_likely_family_name(self):
+        assert is_likely_family_name("Pinaceae") is True
+        assert is_likely_family_name("pinaceae") is True
+        assert is_likely_family_name("Asteraceae") is True
+        assert is_likely_family_name("Compositae") is True
+        assert is_likely_family_name("Fabaceae") is True
+        assert is_likely_family_name("excelsa") is False
+        assert is_likely_family_name("sylvestris") is False
+        assert is_likely_family_name("") is False
+
+    def test_gbif_homonym_disambiguation_with_genus(self):
+        # When genus is passed, Pinus excelsa must resolve to species wallichiana, NOT family Pinaceae
+        res = check_gbif("Pinus", "excelsa")
+        assert res is not None
+        assert res.get("rank") == "SPECIES"
+        assert res.get("genus") == "Pinus"
+        assert res.get("species") == "wallichiana"
+        assert res.get("status") == "SYNONYM"
+        assert res.get("family") == "Pinaceae"
+
+    def test_higher_rank_never_pollutes_species(self):
+        # Mock a GBIF response that returns FAMILY
+        mock_resp = {
+            "usageKey": 3925,
+            "scientificName": "Pinaceae",
+            "canonicalName": "Pinaceae",
+            "rank": "FAMILY",
+            "status": "ACCEPTED",
+            "confidence": 97,
+            "matchType": "HIGHERRANK",
+            "family": "Pinaceae"
+        }
+        with patch("backend.gbif._session.get") as mock_get:
+            mock_res = MagicMock()
+            mock_res.json.return_value = mock_resp
+            mock_res.raise_for_status = MagicMock()
+            mock_get.return_value = mock_res
+
+            # Clear cache for isolated test
+            check_gbif.cache_clear()
+            res = check_gbif("UnknownGenus", "fakeSpecies")
+            assert res is not None
+            assert res.get("rank") == "FAMILY"
+            # Species must be empty, NEVER Pinaceae!
+            assert res.get("species") == ""
+            assert res.get("family") == "Pinaceae"
+
+    def test_low_similarity_is_never_labeled_as_spelling(self):
+        item = {
+            "oid": "67",
+            "genus": "Pinus",
+            "species": "excelsa",
+            "family": "Pinaceae"
+        }
+        gbif_data = {
+            "matchType": "EXACT",
+            "status": "ACCEPTED",
+            "is_synonym": False,
+            "genus": "Pinus",
+            "species": "wallichiana",
+            "rank": "SPECIES",
+            "is_undetermined": False
+        }
+        diff = _evaluate_item_diff(item, gbif_data)
+        assert diff is not None
+        sp_chg = next(c for c in diff["changes"] if c["field"] == "Species")
+        # excelsa -> wallichiana is NOT a spelling typo (similarity 22%)
+        assert sp_chg["reason_code"] != "SPELLING"
+        assert sp_chg["reason_code"] == "RECLASSIFICATION"
+
+    def test_rank_discrepancy_flags_and_disables_auto_resolve(self):
+        # Corrupted item where current species is a family name
+        item = {
+            "oid": "67",
+            "genus": "Pinus",
+            "species": "Pinaceae",
+            "family": "Pinaceae"
+        }
+        gbif_data = {
+            "matchType": "EXACT",
+            "status": "SYNONYM",
+            "is_synonym": True,
+            "genus": "Pinus",
+            "species": "wallichiana",
+            "rank": "SPECIES",
+            "is_undetermined": False
+        }
+        diff = _evaluate_item_diff(item, gbif_data)
+        assert diff is not None
+        assert diff["has_rank_discrepancy"] is True
+        assert "Species → Family" in diff["rank_discrepancy"]
+        assert diff["auto_resolve_eligible"] is False
+
+        sp_chg = next(c for c in diff["changes"] if c["field"] == "Species")
+        assert sp_chg["has_rank_discrepancy"] is True
+        assert sp_chg["auto_resolve_eligible"] is False
+        assert sp_chg["reason_code"] == "RANK_DISCREPANCY"
+
+
+class TestProvenanceAndValidation:
+    """Test multi-source collection from books (preserving sheet names) and audit log with GBIF checks."""
+
+    def test_collect_provenance_multi_sheets_and_audit_log(self):
+        app = AppState()
+        # Mock 2 different book sheets with different names
+        df_sheet1 = pd.DataFrame([{"ObjectID": "67", "Species": "excelsa"}])
+        df_sheet2 = pd.DataFrame([{"ObjectID": "67", "Species": "wallichiana"}])
+
+        app.historical_dbs = [
+            {"name": "Books: 1912 Ledger", "df_reg": df_sheet1},
+            {"name": "Books: 1955 Catalog", "df_reg": df_sheet2}
+        ]
+
+        # Mock an audit log entry for this OID
+        app._log_records = [
+            {
+                "Timestamp": "2026-09-03T10:00:00",
+                "Action": "GBIF_UPDATE",
+                "ObjectID": "67",
+                "ChangedValues": 'Species: "excelsa" -> "Pinaceae"'
+            }
+        ]
+        app.df_log = pd.DataFrame(app._log_records)
+
+        candidates = collect_field_provenance(app, "67", "Species")
+        assert len(candidates) == 3
+
+        # Check that sheet names are accurately recorded
+        source_names = [c["source_name"] for c in candidates]
+        assert "Books: 1912 Ledger" in source_names
+        assert "Books: 1955 Catalog" in source_names
+        assert any("Audit Log" in s for s in source_names)
+
+        values = [c["value"] for c in candidates]
+        assert "excelsa" in values
+        assert "wallichiana" in values
+
+    def test_preflight_gbif_validation_on_candidates(self):
+        # excelsa -> Valid historical synonym
+        val_excelsa = validate_candidate_with_gbif("Pinus", "excelsa")
+        assert val_excelsa["status"] == "SYNONYM"
+        assert "Valid Synonym" in val_excelsa["badge_label"]
+        assert "wallichiana" in val_excelsa["accepted_name"].lower()
+
+        # wallichiana -> Accepted species
+        val_wall = validate_candidate_with_gbif("Pinus", "wallichiana")
+        assert val_wall["status"] == "ACCEPTED"
+        assert "Current Accepted Species" in val_wall["badge_label"]
+
+
+class TestScanAndRestoreTaxonomicInversions:
+    """Test dataset-wide scan and safe audit-logged restoration."""
+
+    def test_scan_and_restore_workflow(self):
+        app = AppState()
+        app.df_reg = pd.DataFrame([
+            {"ObjectID": "101", "Genus": "Pinus", "Species": "Pinaceae", "Family": "Pinaceae"},
+            {"ObjectID": "102", "Genus": "Betula", "Species": "pendula", "Family": "Betulaceae"}
+        ]).set_index("ObjectID")
+
+        # Mock historical books containing the genuine species for 101
+        app.historical_dbs = [
+            {
+                "name": "Books: Primary Ledger",
+                "df_reg": pd.DataFrame([{"ObjectID": "101", "Species": "sylvestris"}])
+            }
+        ]
+
+        # 1. Scan detects the rank inversion on 101, but not on 102
+        anomalies = scan_taxonomic_rank_inversions(app)
+        assert len(anomalies) == 1
+        assert anomalies[0]["oid"] == "101"
+        assert anomalies[0]["current_species"] == "Pinaceae"
+        assert len(anomalies[0]["candidates"]) == 1
+        assert anomalies[0]["candidates"][0]["value"] == "sylvestris"
+
+        # 2. Restore 101 to sylvestris
+        ok = restore_provenance_candidate(app, "101", "Species", "sylvestris", "Books: Primary Ledger")
+        assert ok is True
+        assert app.df_reg.at["101", "Species"] == "sylvestris"
+
+        # Verify audit log recorded the restoration
+        assert len(app._log_records) == 1
+        log_e = app._log_records[-1]
+        assert log_e["Action"] == "TAXONOMIC_INVERSION_RESTORE"
+        assert log_e["ObjectID"] == "101"
+        assert 'Species: "Pinaceae" -> "sylvestris"' in log_e["ChangedValues"]
+
+        # 3. Subsequent scan finds zero anomalies
+        clean_scan = scan_taxonomic_rank_inversions(app)
+        assert len(clean_scan) == 0
+
+
+class TestAutoResolveSafeguardsInQt:
+    """Test that Qt bulk selection actions strictly exclude items with rank discrepancies."""
+
+    def test_select_all_and_select_confident_exclude_rank_discrepancy(self):
+        import sys
+        from PySide6.QtWidgets import QApplication
+        _app = QApplication.instance() or QApplication(sys.argv)
+
+        from ui_qt.gbif_review import QtGbifReviewDialog
+
+        app = AppState()
+        dialog = QtGbifReviewDialog(app_state=app, auto_start=False)
+
+        dialog.results = [
+            {
+                "oid": "1",
+                "orig_name": "Betula pendula",
+                "matched_name": "Betula pendula Roth",
+                "status": "ACCEPTED",
+                "confidence": 99,
+                "has_rank_discrepancy": False,
+                "checked": False
+            },
+            {
+                "oid": "2",
+                "orig_name": "Pinus Pinaceae",
+                "matched_name": "Pinaceae",
+                "status": "ACCEPTED",
+                "confidence": 98,
+                "has_rank_discrepancy": True,
+                "rank_discrepancy": "⚠️ Species → Family",
+                "checked": False
+            }
+        ]
+        dialog.visible_indices = [0, 1]
+
+        # 1. Test select_all
+        dialog.select_all()
+        assert dialog.results[0]["checked"] is True
+        assert dialog.results[1]["checked"] is False  # MUST REMAIN FALSE
+
+        # 2. Test deselect_all
+        dialog.deselect_all()
+        assert dialog.results[0]["checked"] is False
+        assert dialog.results[1]["checked"] is False
+
+        # 3. Test select_confident
+        dialog.select_confident()
+        assert dialog.results[0]["checked"] is True
+        assert dialog.results[1]["checked"] is False  # MUST REMAIN FALSE
+
+
+# ============================================================================
+# Merged from test_gbif_synonym_reasoning.py
+# ============================================================================
+
+import pytest
+from unittest.mock import patch, MagicMock
+from backend.gbif import (
+    _evaluate_item_diff,
+    _query_single_taxon,
+    batch_gbif_match
+)
+
+
+class TestGBIFSynonymReasoning:
+    """Test explicit reasoning and categorization for Genus/Species updates."""
+
+    def test_synonym_genus_transfer_generates_synonym_reason_and_explanation(self):
+        item = {
+            "oid": "1",
+            "genus": "Apis",
+            "species": "terrestris",
+            "author": "Linnaeus, 1758",
+            "family": "Apidae"
+        }
+        gbif_data = {
+            "matchType": "EXACT",
+            "status": "SYNONYM",
+            "is_synonym": True,
+            "genus": "Bombus",
+            "species": "terrestris",
+            "author": "(Linnaeus, 1758)",
+            "family": "Apidae",
+            "rank": "SPECIES",
+            "is_undetermined": False,
+            "original_scientific_name": "Apis terrestris Linnaeus, 1758",
+            "accepted_scientific_name": "Bombus terrestris (Linnaeus, 1758)"
+        }
+
+        diff = _evaluate_item_diff(item, gbif_data)
+        assert diff is not None
+        assert diff["is_synonym"] is True
+        assert diff["status"] == "SYNONYM"
+
+        # Check Genus change reason
+        genus_chg = next((c for c in diff["changes"] if c["field"] == "Genus"), None)
+        assert genus_chg is not None
+        assert genus_chg["reason_code"] == "SYNONYM_GENUS"
+        assert "Synonym" in genus_chg["reason_label"]
+        assert "is cataloged as a synonym" in genus_chg["explanation"]
+
+    def test_spelling_correction_generates_spelling_reason(self):
+        item = {
+            "oid": "2",
+            "genus": "Bumbus",
+            "species": "pascuorum",
+            "author": "(Scopoli, 1763)",
+            "family": "Apidae"
+        }
+        gbif_data = {
+            "matchType": "FUZZY",
+            "status": "ACCEPTED",
+            "is_synonym": False,
+            "genus": "Bombus",
+            "species": "pascuorum",
+            "author": "(Scopoli, 1763)",
+            "family": "Apidae",
+            "rank": "SPECIES",
+            "is_undetermined": False
+        }
+
+        diff = _evaluate_item_diff(item, gbif_data)
+        assert diff is not None
+        assert diff["is_synonym"] is False
+
+        genus_chg = next((c for c in diff["changes"] if c["field"] == "Genus"), None)
+        assert genus_chg is not None
+        assert genus_chg["reason_code"] == "SPELLING"
+        assert "Spelling" in genus_chg["reason_label"]
+        assert "Corrected genus spelling" in genus_chg["explanation"]
+
+    def test_missing_family_generates_missing_reason(self):
+        item = {
+            "oid": "3",
+            "genus": "Bombus",
+            "species": "sp.",
+            "author": "",
+            "family": ""
+        }
+        gbif_data = {
+            "matchType": "EXACT",
+            "status": "ACCEPTED",
+            "is_synonym": False,
+            "genus": "Bombus",
+            "species": "sp.",
+            "author": "Latreille, 1802",
+            "family": "Apidae",
+            "rank": "GENUS",
+            "is_undetermined": True
+        }
+
+        diff = _evaluate_item_diff(item, gbif_data)
+        assert diff is not None
+        fam_chg = next((c for c in diff["changes"] if c["field"] == "Family"), None)
+        assert fam_chg is not None
+        assert fam_chg["reason_code"] == "MISSING_FAMILY"
+        assert "Missing Family" in fam_chg["reason_label"]

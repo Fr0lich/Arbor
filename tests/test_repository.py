@@ -290,3 +290,534 @@ class TestRepository:
         assert list(df_obs_loaded["Genus_Problem"]) == [False, True, False, False]
         assert list(df_obs_loaded["Images_Missing"]) == [False, True, False, False]
 
+
+# ============================================================================
+# Merged from test_loading.py
+# ============================================================================
+
+from repository import ExcelRepository
+import pandas as pd
+
+class TestLoading:
+    def test_loading_excel(self, tmp_path):
+        excel_path = tmp_path / "test.xlsx"
+
+        # Create a dummy excel file
+        df_reg = pd.DataFrame({"ObjectID": ["1", "2"]})
+        df_obs = pd.DataFrame({"ObjectID": ["1", "2"]})
+
+        with pd.ExcelWriter(excel_path) as writer:
+            df_reg.to_excel(writer, sheet_name="Registration", index=False)
+            df_obs.to_excel(writer, sheet_name="Observation", index=False)
+
+        config = {
+            "sheets": {"reg": "Registration", "obs": "Observation"},
+            "ui_sections": {
+                "problems": [{"name": "Prob1"}],
+                "location": [{"name": "Loc1"}],
+                "registration": [{"name": "Reg1"}]
+            }
+        }
+
+        df_reg_out, df_obs_out, df_photo_out, df_log_out, df_unval_out = ExcelRepository.load_excel(excel_path, config)
+
+        assert not df_reg_out.empty
+        assert not df_obs_out.empty
+        assert list(df_reg_out["ObjectID"]) == ["1", "2"]
+
+    def test_loading_excel_missing_sheets(self, tmp_path):
+        excel_path = tmp_path / "test_missing.xlsx"
+
+        # Create a dummy excel file with ONLY Registration
+        df_reg = pd.DataFrame({"ObjectID": ["1", "2"]})
+
+        with pd.ExcelWriter(excel_path) as writer:
+            df_reg.to_excel(writer, sheet_name="Registration", index=False)
+
+        config = {
+            "sheets": {"reg": "Registration", "obs": "Observation", "log": "Log"},
+            "ui_sections": {
+                "problems": [{"name": "Prob1"}],
+                "location": [{"name": "Loc1"}],
+                "registration": [{"name": "Reg1"}]
+            }
+        }
+
+        df_reg_out, df_obs_out, df_photo_out, df_log_out, df_unval_out = ExcelRepository.load_excel(excel_path, config)
+
+        assert not df_reg_out.empty
+        assert not df_obs_out.empty
+        assert list(df_reg_out["ObjectID"]) == ["1", "2"]
+        assert list(df_obs_out["ObjectID"]) == ["1", "2"]
+        assert "Prob1" in df_obs_out.columns
+        assert "Loc1" in df_obs_out.columns
+        assert df_log_out.empty  # Normalised log DataFrame is empty of rows
+        assert "Timestamp" in df_log_out.columns
+
+    def test_precompute_startup_caches_clean_object(self):
+        from ui.database_ops import DatabaseOpsMixin
+        from repository import REVIEWED_COLUMN
+
+        class DummyOps(DatabaseOpsMixin):
+            def __init__(self):
+                self.problem_columns = ["Genus_Problem", "Other_problem"]
+                self.problem_to_field = {"Genus_Problem": "Genus", "Other_problem": "Other"}
+                self.image_mode = "online"
+
+        ops = DummyOps()
+        df_reg = pd.DataFrame({"Genus": ["Quercus"]}, index=["1"])
+        df_obs = pd.DataFrame({REVIEWED_COLUMN: [False], "Genus_Problem": [False], "Other_problem": [False]}, index=["1"])
+
+        ops._precompute_startup_caches(df_reg, df_obs, df_photo=None)
+        assert ops._problem_cache["1"] == False
+
+
+# ============================================================================
+# Merged from test_excel_architecture.py
+# ============================================================================
+
+import os
+import pytest
+import pandas as pd
+import openpyxl
+from unittest import mock
+from repository import (
+    ExcelRepository,
+    SQLiteRepository,
+    _normalise_dataframes,
+    _coerce_bool_series,
+    _normalize_object_id_series,
+    _find_sheet_name
+)
+
+
+class TestExcelArchitecture:
+
+    def test_boolean_coercion_edge_cases(self):
+        # Truthy cases
+        truthy_series = pd.Series(["True", "true", "TRUE", "1", 1, 1.0, "yes", "YES", "y", "t", "on", True])
+        coerced_true = _coerce_bool_series(truthy_series, default=False)
+        assert coerced_true.all(), "All truthy variants should coerce to True"
+
+        # Falsy cases - CRITICAL: string "False" must NOT be evaluated as truthy
+        falsy_series = pd.Series(["False", "false", "FALSE", "0", 0, 0.0, "no", "NO", "n", "f", "off", "", None, False])
+        coerced_false = _coerce_bool_series(falsy_series, default=False)
+        assert not coerced_false.any(), "All falsy variants should coerce to False"
+
+    def test_object_id_normalization_edge_cases(self):
+        # 1024.0 -> "1024", but "1024.1" -> "1024.1", "00123" -> "00123", "  ABC-1  " -> "ABC-1"
+        oids = pd.Series([1024, 1025.0, "1026.0", "1027.5", "0042", "  999  ", "O-V-001", None, ""])
+        normalized = _normalize_object_id_series(oids)
+        assert list(normalized) == ["1024", "1025", "1026", "1027.5", "0042", "999", "O-V-001", "", ""]
+
+    def test_normalise_dataframes_comprehensive(self):
+        config = {
+            "ui_sections": {
+                "registration": [{"name": "Genus"}, {"name": "Species"}, {"name": "UID"}],
+                "location": [
+                    {"name": "Building", "type": "choice"},
+                    {"name": "Loaned out", "type": "checkbox"}
+                ],
+                "problems": [
+                    {"name": "Genus_Problem", "type": "bool", "maps_to": "Genus"}
+                ]
+            }
+        }
+
+        df_reg = pd.DataFrame({
+            "ObjectID": [101.0, " 00102 ", "103.5"],
+            "Genus": ["Quercus", "Rosa", "Betula"],
+            "UID": ["", None, "custom_uid"]
+        })
+
+        df_obs = pd.DataFrame({
+            "ObjectID": [101.0, "00102", "103.5"],
+            "Genus_Problem": ["False", "True", "0"],
+            "Loaned out": [1, "false", "yes"],
+            "Reviewed": ["no", "yes", "False"]
+        })
+
+        df_reg_out, df_obs_out = _normalise_dataframes(df_reg, df_obs, config)
+
+        # Verify ObjectID cleaning
+        assert list(df_reg_out["ObjectID"]) == ["101", "00102", "103.5"]
+        assert list(df_obs_out["ObjectID"]) == ["101", "00102", "103.5"]
+
+        # Verify UID generation
+        assert len(df_reg_out.loc[0, "UID"]) == 8
+        assert len(df_reg_out.loc[1, "UID"]) == 8
+        assert df_reg_out.loc[2, "UID"] == "custom_uid"
+
+        # Verify Problem boolean coercion
+        assert df_obs_out.loc[0, "Genus_Problem"] == False
+        assert df_obs_out.loc[1, "Genus_Problem"] == True
+        assert df_obs_out.loc[2, "Genus_Problem"] == False
+        assert df_obs_out["Genus_Problem"].dtype == bool
+
+        # Verify Location Checkbox string contract ("True"/"False")
+        assert df_obs_out.loc[0, "Loaned out"] == "True"
+        assert df_obs_out.loc[1, "Loaned out"] == "False"
+        assert df_obs_out.loc[2, "Loaned out"] == "True"
+
+        # Verify Reviewed boolean coercion
+        assert df_obs_out.loc[0, "Reviewed"] == False
+        assert df_obs_out.loc[1, "Reviewed"] == True
+        assert df_obs_out.loc[2, "Reviewed"] == False
+
+    def test_find_sheet_name_case_and_whitespace(self):
+        sheets = ["Registration ", "OBSERVATION", "Photo", "Log_Sheet"]
+        assert _find_sheet_name(sheets, "registration") == "Registration "
+        assert _find_sheet_name(sheets, "observation") == "OBSERVATION"
+        assert _find_sheet_name(sheets, "Photo") == "Photo"
+        assert _find_sheet_name(sheets, "NonExistent") is None
+
+    def test_export_and_import_with_photo_sheet_and_styling(self, tmp_path):
+        excel_path = str(tmp_path / "styled_export.xlsx")
+
+        config = {
+            "sheets": {
+                "reg": "Registration",
+                "obs": "Observation",
+                "photo": "Photo",
+                "log": "Log"
+            },
+            "ui_sections": {
+                "registration": [{"name": "Genus"}],
+                "location": [],
+                "problems": [{"name": "Genus_Problem"}]
+            }
+        }
+
+        df_reg = pd.DataFrame({"ObjectID": ["1", "2"], "Genus": ["Quercus", "Pinus"], "UID": ["u1", "u2"]})
+        df_obs = pd.DataFrame({"ObjectID": ["1", "2"], "Genus_Problem": [False, True]})
+        df_photo = pd.DataFrame({"ObjectID": ["1", "1", "2"], "Filename": ["img1.jpg", "img2.jpg", "img3.jpg"]})
+        df_log = pd.DataFrame({"Timestamp": ["2026-08-17 12:00:00"], "Action": ["TEST"], "ObjectID": ["1"]})
+
+        # Export to Excel
+        SQLiteRepository.export_to_excel(
+            sqlite_path=None,
+            excel_path=excel_path,
+            config=config,
+            df_reg=df_reg,
+            df_obs=df_obs,
+            df_log=df_log,
+            df_photo=df_photo
+        )
+
+        assert os.path.exists(excel_path)
+
+        # Inspect with openpyxl for freeze_panes and auto_filter
+        wb = openpyxl.load_workbook(excel_path)
+        assert set(wb.sheetnames) == {"Registration", "Observation", "Photo", "Log"}
+
+        ws_reg = wb["Registration"]
+        assert ws_reg.freeze_panes == "A2"
+        assert ws_reg.auto_filter.ref is not None
+        assert ws_reg.column_dimensions["A"].width >= 10
+
+        # Load back with ExcelRepository and verify data integrity
+        df_reg_in, df_obs_in, df_photo_in, df_log_in, df_unval_in = ExcelRepository.load_excel(excel_path, config)
+        assert list(df_reg_in["ObjectID"]) == ["1", "2"]
+        assert list(df_obs_in["ObjectID"]) == ["1", "2"]
+        assert list(df_photo_in["ObjectID"]) == ["1", "1", "2"]
+        assert list(df_photo_in["Filename"]) == ["img1.jpg", "img2.jpg", "img3.jpg"]
+        assert len(df_log_in) == 1
+
+    def test_permission_error_handling_on_export(self, tmp_path):
+        excel_path = str(tmp_path / "locked.xlsx")
+        config = {"sheets": {}, "ui_sections": {}}
+        df_reg = pd.DataFrame({"ObjectID": ["1"]})
+        df_obs = pd.DataFrame({"ObjectID": ["1"]})
+
+        with mock.patch("os.replace", side_effect=PermissionError("File locked by Excel")):
+            with pytest.raises(PermissionError) as exc_info:
+                SQLiteRepository.export_to_excel(
+                    sqlite_path=None,
+                    excel_path=excel_path,
+                    config=config,
+                    df_reg=df_reg,
+                    df_obs=df_obs
+                )
+            assert "open in Microsoft Excel" in str(exc_info.value)
+            # Ensure no orphan tmp file matching .tmp.xlsx remains
+            remaining_tmps = [f for f in os.listdir(str(tmp_path)) if f.endswith(".tmp.xlsx")]
+            assert len(remaining_tmps) == 0
+
+    def test_scientific_notation_and_formula_errors_in_object_id(self):
+        from repository import _normalize_object_id_series
+        # Scientific notation: 1E+05 -> 100000, 1.0e+05 -> 100000, 1.5e3 -> 1500
+        # Preserving leading zeros: "00123" -> "00123"
+        # Alphanumeric: "BOT-1E5" -> "BOT-1E5"
+        # Formula errors: "#REF!", "#VALUE!" -> ""
+        oids = pd.Series(["1E+05", "1.0E+05", "1e5", "1.5e3", "00123", "BOT-1E5", "#REF!", "#VALUE!", None])
+        res = list(_normalize_object_id_series(oids))
+        assert res == ["100000", "100000", "100000", "1500", "00123", "BOT-1E5", "", "", ""]
+
+    def test_header_promotion_and_blank_columns(self):
+        from repository import _detect_and_promote_header, _clean_trailing_and_blank_columns
+        # DataFrame with leading title row and blank row before real header
+        raw_data = [
+            ["Museum Specimen Database 2026", None, None],
+            [None, None, None],
+            ["ObjectID", "Genus", "Unnamed: 2"],
+            ["1001", "Quercus", None],
+            ["1002", "Pinus", None],
+            [None, None, None]  # Trailing ghost row
+        ]
+        df = pd.DataFrame(raw_data)
+        df_promoted = _detect_and_promote_header(df, "ObjectID")
+        assert "ObjectID" in df_promoted.columns
+        assert "Genus" in df_promoted.columns
+
+        df_cleaned = _clean_trailing_and_blank_columns(df_promoted)
+        assert "Unnamed: 2" not in df_cleaned.columns
+        assert len(df_cleaned) == 2
+        assert list(df_cleaned["ObjectID"]) == ["1001", "1002"]
+
+    def test_duplicate_column_deduplication(self):
+        from repository import _deduplicate_columns
+        from utils import sanitize_df_for_excel
+        import sqlite3
+
+        df_dups = pd.DataFrame([["val1", "val2", "val3"]], columns=["Comment", "Comment", "Comment"])
+        deduped = _deduplicate_columns(df_dups)
+        assert list(deduped.columns) == ["Comment", "Comment.1", "Comment.2"]
+
+        # sanitize_df_for_excel should not crash on duplicate columns
+        safe_df = sanitize_df_for_excel(df_dups)
+        assert safe_df is not None
+
+        # SQLite to_sql should succeed with deduplicated columns
+        conn = sqlite3.connect(":memory:")
+        deduped.to_sql("test_table", conn, index=False)
+        read_back = pd.read_sql("SELECT * FROM test_table", conn)
+        assert len(read_back) == 1
+
+
+# ============================================================================
+# Merged from test_audit_log_lifecycle.py
+# ============================================================================
+
+import os
+import tempfile
+import pytest
+import pandas as pd
+from unittest.mock import MagicMock
+from models import AppState
+from repository import ExcelRepository, SQLiteRepository, _normalise_log_dataframe
+import config
+
+
+def test_normalise_log_dataframe_canonical_columns():
+    # Test normalization of empty and incomplete log dataframes
+    empty_df = pd.DataFrame()
+    norm_empty = _normalise_log_dataframe(empty_df)
+    expected_cols = [
+        "Timestamp", "Action", "Reviewed", "ObjectID", "ChangedFields",
+        "ChangedValues", "ProblemsChanged", "ProblemsChangedValues",
+        "LocationChanged", "LocationChangedValues", "User", "SourceFile", "OutputFile"
+    ]
+    assert list(norm_empty.columns) == expected_cols
+    assert norm_empty.empty
+
+    partial_df = pd.DataFrame([{
+        "Timestamp": "2026-09-03T10:00:00",
+        "Action": "EDIT",
+        "ObjectID": "1001",
+        "ChangedFields": "Species"
+    }])
+    norm_partial = _normalise_log_dataframe(partial_df)
+    assert set(norm_partial.columns) == set(expected_cols)
+    assert len(norm_partial.columns) == len(expected_cols)
+    assert norm_partial.at[0, "ChangedFields"] == "Species"
+    assert norm_partial.at[0, "User"] == ""
+
+
+def test_excel_sqlite_log_roundtrip_persistence():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        excel_path = os.path.join(tmpdir, "test_roundtrip.xlsx")
+        sqlite_path = os.path.join(tmpdir, "test_roundtrip.db")
+
+        df_reg = pd.DataFrame([{"ObjectID": "1001", "Genus": "Quercus", "Species": "robur"}]).set_index("ObjectID")
+        df_obs = pd.DataFrame([{"ObjectID": "1001", "Reviewed": True, "Location": "Shelf A"}]).set_index("ObjectID")
+        df_photo = pd.DataFrame(columns=["ObjectID", "ImagePath", "ImageNote"]).set_index("ObjectID")
+        df_unval = pd.DataFrame([{"ObjectID": "1001", "Field_Name": "Collector", "Unvalidated_Comment": "Needs verification"}])
+        
+        raw_log = pd.DataFrame([{
+            "Timestamp": "2026-09-03T10:00:00",
+            "Action": "EDIT",
+            "Reviewed": "Yes",
+            "ObjectID": "1001",
+            "ChangedFields": "Species",
+            "ChangedValues": 'Species: "petraea" -> "robur"',
+            "ProblemsChanged": "",
+            "ProblemsChangedValues": "",
+            "LocationChanged": "Location",
+            "LocationChangedValues": "Shelf A",
+            "User": "admin",
+            "SourceFile": "test_roundtrip.xlsx",
+            "OutputFile": "test_roundtrip.xlsx"
+        }])
+        df_log = _normalise_log_dataframe(raw_log)
+
+        cfg = config.DATABASE_CONFIGS["Økonomisk Botanisk"]
+
+        # 1. Save to Excel
+        ExcelRepository.save_excel(excel_path, cfg, df_reg=df_reg, df_obs=df_obs, df_photo=df_photo, df_log=df_log, df_unvalidated=df_unval)
+        assert os.path.exists(excel_path)
+
+        # 2. Import Excel to SQLite via SQLiteRepository.import_from_excel
+        SQLiteRepository.import_from_excel(excel_path, sqlite_path, cfg)
+        assert os.path.exists(sqlite_path)
+
+        # 3. Load from SQLite
+        l_reg, l_obs, l_photo, l_log, l_unval = SQLiteRepository.load_sqlite(sqlite_path, cfg)
+        assert len(l_log) == 1
+        assert l_log.at[0, "Action"] == "EDIT"
+        assert str(l_log.at[0, "ObjectID"]) == "1001"
+        assert l_log.at[0, "ChangedValues"] == 'Species: "petraea" -> "robur"'
+        assert len(l_unval) == 1
+        assert l_unval.at[0, "Field_Name"] == "Collector"
+
+        # 4. Export SQLite back to Excel
+        excel_out = os.path.join(tmpdir, "exported_back.xlsx")
+        SQLiteRepository.export_to_excel(sqlite_path, excel_out, cfg, df_unvalidated=df_unval)
+        assert os.path.exists(excel_out)
+
+        # 5. Load exported Excel
+        e_reg, e_obs, e_photo, e_log, e_unval = ExcelRepository.load_excel(excel_out, cfg)
+        assert len(e_log) == 1
+        assert e_log.at[0, "ChangedFields"] == "Species"
+        assert len(e_unval) == 1
+
+
+def test_import_to_sqlite_and_save_as_integration():
+    app = AppState()
+    app.config = config.DATABASE_CONFIGS["Økonomisk Botanisk"]
+    app.excel_path = "test.xlsx"
+    app.output_path = "test.xlsx"
+    app.df_reg = pd.DataFrame([{"ObjectID": "1", "Genus": "Pinus"}]).set_index("ObjectID")
+    app.df_obs = pd.DataFrame([{"ObjectID": "1", "Reviewed": False}]).set_index("ObjectID")
+    app.df_photo = pd.DataFrame(columns=["ObjectID", "ImagePath"]).set_index("ObjectID")
+    app.df_log = pd.DataFrame([{
+        "Timestamp": "2026-09-03T10:00:00", "Action": "EDIT", "Reviewed": "No", "ObjectID": "1",
+        "ChangedFields": "Genus", "ChangedValues": 'Genus: "" -> "Pinus"',
+        "ProblemsChanged": "", "ProblemsChangedValues": "",
+        "LocationChanged": "", "LocationChangedValues": "",
+        "User": "tester", "SourceFile": "test.xlsx", "OutputFile": "test.xlsx"
+    }])
+    app.df_unvalidated = pd.DataFrame([{"ObjectID": "1", "Field_Name": "Genus", "Unvalidated_Comment": "Auto"}])
+    app._log_records = app.df_log.to_dict(orient="records")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_xl = os.path.join(tmpdir, "test.xlsx")
+        dest_db = os.path.join(tmpdir, "imported.db")
+        ExcelRepository.save_excel(test_xl, app.config, df_reg=app.df_reg, df_obs=app.df_obs, df_photo=app.df_photo, df_log=app.df_log, df_unvalidated=app.df_unvalidated)
+        
+        # Test import to sqlite flow
+        SQLiteRepository.import_from_excel(test_xl, dest_db, app.config)
+        df_reg, df_obs, df_photo, df_log, df_unvalidated = SQLiteRepository.load_sqlite(dest_db, app.config)
+        
+        app.excel_path = dest_db
+        app.df_reg = df_reg
+        app.df_obs = df_obs
+        app.df_photo = df_photo
+        app.df_log = df_log
+        app.df_unvalidated = df_unvalidated
+        app._log_records = df_log.to_dict(orient="records")
+
+        assert app.excel_path == dest_db
+        assert len(app._log_records) == 1
+        assert app._log_records[0]["Action"] == "EDIT"
+        assert app.df_unvalidated is not None
+        assert len(app.df_unvalidated) == 1
+
+
+def test_sqlite_strict_schema_log_save_with_session_id():
+    import sqlite3
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = os.path.join(tmpdir, "strict_log_test.db")
+        conn = sqlite3.connect(db_path)
+        canonical_cols = [
+            "Timestamp", "Action", "Reviewed", "ObjectID",
+            "ChangedFields", "ChangedValues",
+            "ProblemsChanged", "ProblemsChangedValues",
+            "LocationChanged", "LocationChangedValues",
+            "User", "SourceFile", "OutputFile"
+        ]
+        col_defs = ", ".join([f'"{col}" TEXT' for col in canonical_cols])
+        conn.execute(f'CREATE TABLE "Log" ({col_defs});')
+        conn.execute('CREATE TABLE "Registration" ("ObjectID" TEXT, "Genus" TEXT);')
+        conn.execute('CREATE TABLE "Observation" ("ObjectID" TEXT, "Reviewed" BOOLEAN);')
+        conn.commit()
+        conn.close()
+
+        df_reg = pd.DataFrame([{"ObjectID": "101", "Genus": "Quercus"}]).set_index("ObjectID")
+        df_obs = pd.DataFrame([{"ObjectID": "101", "Reviewed": True}]).set_index("ObjectID")
+        df_photo = pd.DataFrame()
+        df_log = pd.DataFrame([{
+            "Timestamp": "2026-09-03T12:00:00",
+            "Action": "MOBILE_EDIT",
+            "Reviewed": "Yes",
+            "ObjectID": "101",
+            "ChangedFields": "Genus",
+            "ChangedValues": 'Genus: "Fagus" -> "Quercus"',
+            "ProblemsChanged": "",
+            "ProblemsChangedValues": "",
+            "LocationChanged": "",
+            "LocationChangedValues": "",
+            "User": "Mobile-Companion",
+            "SourceFile": "test.db",
+            "OutputFile": "test.db",
+            "_session_id": "session_abc123"
+        }])
+
+        SQLiteRepository.save_sqlite(db_path, df_reg, df_obs, df_photo, df_log)
+        df_read_log = SQLiteRepository.load_sqlite(db_path, {"ui_sections": {}})[3]
+        assert len(df_read_log) == 1
+        assert "_session_id" not in df_read_log.columns
+        assert df_read_log.iloc[0]["Action"] == "MOBILE_EDIT"
+
+
+def test_concurrent_log_action_thread_safety():
+    import threading
+    from models import AppState
+    from ui.main_window import ObjectProgramUI
+    from unittest.mock import MagicMock
+
+    app = AppState()
+    app.config = config.DATABASE_CONFIGS["Økonomisk Botanisk"]
+    app.df_reg = pd.DataFrame([{"ObjectID": f"{i}", "Genus": "Pinus"} for i in range(100)]).set_index("ObjectID")
+    app.df_obs = pd.DataFrame([{"ObjectID": f"{i}", "Reviewed": False} for i in range(100)]).set_index("ObjectID")
+    app.df_photo = pd.DataFrame(columns=["ObjectID", "ImagePath"]).set_index("ObjectID")
+    app.df_log = pd.DataFrame()
+    app._log_records = []
+
+    mock_ui = MagicMock()
+    mock_ui.app = app
+    mock_ui.log_action = ObjectProgramUI.log_action.__get__(mock_ui, MagicMock)
+
+    errors = []
+    def worker(worker_id):
+        try:
+            for i in range(25):
+                oid = f"{(worker_id * 25 + i) % 100}"
+                mock_ui.log_action(
+                    "EDIT",
+                    changed_fields=["Genus"],
+                    changed_values=[f'Genus: "Pinus" -> "Pinus_{worker_id}_{i}"'],
+                    oid=oid
+                )
+        except Exception as e:
+            errors.append(e)
+
+    threads = [threading.Thread(target=worker, args=(w,)) for w in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors
+    assert len(app._log_records) == 100
+    assert len(app.df_log) == 100

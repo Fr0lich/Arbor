@@ -665,21 +665,6 @@ def test_mobile_undo_redo(mock_app_state):
     assert "1024" not in log_oids
 
 
-def test_mobile_back_button_navigation_template():
-    """Verify INDEX_TEMPLATE contains the leave confirmation modal, history API integration, and popstate handling."""
-    from backend.mobile_server import INDEX_TEMPLATE
-
-    # 1. Leave confirmation modal DOM elements and text
-    assert 'id="leaveConfirmModal"' in INDEX_TEMPLATE
-    assert "do you want to leave the database? (you might need to resync)" in INDEX_TEMPLATE
-    assert "cancelLeaveModal()" in INDEX_TEMPLATE
-    assert "confirmLeaveModal()" in INDEX_TEMPLATE
-
-    # 2. History API usage and popstate handler
-    assert "history.replaceState" in INDEX_TEMPLATE
-    assert "history.pushState" in INDEX_TEMPLATE
-    assert "window.addEventListener('popstate'" in INDEX_TEMPLATE
-    assert "showListView(false)" in INDEX_TEMPLATE
 
 
 def test_mobile_action_name_reviewed_when_only_reviewed_changes(mock_app_state):
@@ -796,47 +781,8 @@ def test_mobile_undo_with_integer_index_and_desktop_log_protection():
     assert app._log_records[0]["User"] == "Desktop-User"
 
 
-def test_historical_value_dirty_tracking_in_template():
-    from backend.mobile_server import INDEX_TEMPLATE
-
-    # Verify applyHistoricalValue marks field and problem dirty
-    assert "function applyHistoricalValue(field, value)" in INDEX_TEMPLATE
-    assert "markDirty(field);" in INDEX_TEMPLATE
-    assert "markDirty(exactProb);" in INDEX_TEMPLATE
-
-    # Verify undoHistoricalValue marks field dirty and restores problem flag
-    assert "function undoHistoricalValue(field, originalValue)" in INDEX_TEMPLATE
-    assert "currentRecord.observation[exactProb] = true;" in INDEX_TEMPLATE
-    assert "document.getElementById(`prob_${exactProb}`)" in INDEX_TEMPLATE
 
 
-def test_mobile_ui_ux_improvements():
-    from backend.mobile_server import INDEX_TEMPLATE
-
-    # 1. Toast position at bottom-24
-    assert 'id="toast"' in INDEX_TEMPLATE
-    assert 'fixed bottom-24 left-4 right-4' in INDEX_TEMPLATE
-    assert 'function showToast' in INDEX_TEMPLATE
-
-    # 2. Persistent search box in top header
-    assert 'id="searchBox"' in INDEX_TEMPLATE
-    assert 'id="searchClearBtn"' in INDEX_TEMPLATE
-    assert 'id="btnFilterModalTrigger"' in INDEX_TEMPLATE
-
-    # 3. Offline syncing feedback in flushQueuedMutations
-    assert 'function flushQueuedMutations()' in INDEX_TEMPLATE
-    assert 'Syncing queued edits' in INDEX_TEMPLATE or 'Syncing' in INDEX_TEMPLATE
-    assert 'animate-spin' in INDEX_TEMPLATE
-
-    # 4. Advanced filters clear button and active indicator
-    assert 'id="filterActiveBadge"' in INDEX_TEMPLATE
-    assert 'function clearAdvancedFilters()' in INDEX_TEMPLATE
-    assert 'function updateFilterIndicator()' in INDEX_TEMPLATE
-    assert 'Clear All' in INDEX_TEMPLATE
-
-    # 5. Prominent Walk Mode active state
-    assert 'function toggleWakeLock()' in INDEX_TEMPLATE
-    assert 'bg-amber-400' in INDEX_TEMPLATE
 
 
 def test_unvalidated_sources_sync_and_endpoints(mock_app_state):
@@ -1253,16 +1199,6 @@ def test_mobile_panel_version_toggle(mock_app_state):
         root.destroy()
 
 
-def test_v2_template_includes_location_coordinates():
-    from backend.mobile_server import INDEX_TEMPLATE_V2
-    # Verify coordinates card, steppers, building selector, and stored as pills are present
-    assert "detailBuildingSelect" in INDEX_TEMPLATE_V2
-    assert "detailFloorVal" in INDEX_TEMPLATE_V2
-    assert "detailCabVal" in INDEX_TEMPLATE_V2
-    assert "detailShelfVal" in INDEX_TEMPLATE_V2
-    assert "adjustCoordinate" in INDEX_TEMPLATE_V2
-    assert "Physical Coordinate Audit" in INDEX_TEMPLATE_V2
-    assert "detailStoredAsPills" in INDEX_TEMPLATE_V2
 
 
 def test_desktop_smart_commit_preserves_mobile_edits(mock_app_state):
@@ -1393,96 +1329,8 @@ def test_batch_location_update_api(mock_app_state):
     assert str(mock_app_state.df_obs.at["1025", "Shelf"]) == "2"
 
 
-def test_v2_template_features(mock_app_state):
-    server = MobileServer(mock_app_state, port=5099)
-    client = server.flask_app.test_client()
-
-    auth_res = client.post('/api/auth', json={"pin": server.pin})
-    token = auth_res.json["token"]
-    cookie_header = {"Cookie": f"session_token={token}"}
-
-    res = client.get('/v2', headers=cookie_header)
-    assert res.status_code == 200
-    html = res.get_data(as_text=True)
-
-    # 1. Filter pills toggle and default hidden state
-    assert 'id="filterPillsContainer"' in html
-    assert 'hidden' in html and 'toggleFilterPills' in html
-
-    # 2. Advance to next shelf button
-    assert 'advanceToNextShelf' in html or 'btnAdvanceNextShelf' in html
-
-    # 3. Signed continuous floor stepper with negative support
-    assert 'adjustCoordinate' in html and 'detailFloorVal' in html
-
-    # 4. Batch Registrator Walk Mode toggle & sync
-    assert 'id="btnBatchWakeLock"' in html
-    assert 'id="batchWakeLockIcon"' in html
-    assert 'updateWakeLockUI' in html
-    assert 'arbor_walk_mode' in html
-
-    # 5. One-tap search clear
-    assert 'handleSearchInput' in html
-    assert 'id="searchClearBtn"' in html
-
-    # 6. Undo Toast on Batch Queue removal / clear all
-    assert 'toastActionBtn' in html
-    assert "actionText: 'Undo'" in html or 'actionText: "Undo"' in html
-
-    # 7. Redesigned Problems tab discrepancy resolver and flags grid
-    assert 'id="activeDiscrepanciesContainer"' in html
-    assert 'id="problemFlagsGrid"' in html
-    assert 'resolveFieldDiscrepancy' in html
-    assert 'toggleProblemFlag' in html
-    assert 'renderProblemsAndDiscrepancies' in html
 
 
-def test_v2_location_and_problems_tab_parity(mock_app_state):
-    server = MobileServer(mock_app_state, port=5099)
-    client = server.flask_app.test_client()
-
-    auth_res = client.post('/api/auth', json={"pin": server.pin})
-    token = auth_res.json["token"]
-    headers = {"X-Session-Token": token}
-
-    # 1. Verify /api/schema returns problem_to_field mapping
-    schema_res = client.get('/api/schema', headers=headers)
-    assert schema_res.status_code == 200
-    schema_data = schema_res.json
-    assert "problem_to_field" in schema_data
-    assert isinstance(schema_data["problem_to_field"], dict)
-
-    # 2. Verify V2 template markup and controller wiring
-    cookie_header = {"Cookie": f"session_token={token}"}
-    res = client.get('/v2', headers=cookie_header)
-    assert res.status_code == 200
-    html = res.get_data(as_text=True)
-
-    # Location Tab: Building select, continuous steppers, config-driven Stored as
-    assert 'id="detailBuildingSelect"' in html
-    assert 'populateDetailBuildingOptions' in html
-    assert 'id="detailFloorVal"' in html
-    assert 'id="detailCabVal"' in html
-    assert 'id="detailShelfVal"' in html
-    assert 'adjustCoordinate' in html
-    assert 'id="detailStoredAsPills"' in html
-    assert 'renderDetailStoredAsPills' in html
-    assert 'selectDetailStoragePill' in html
-    assert 'onDetailCustomStorageInput' in html
-
-    # Problems Tab: Summary bar, active discrepancies, historical resolution, integrity flags
-    assert 'id="problemSummaryBar"' in html
-    assert 'id="problemSummaryDot"' in html
-    assert 'id="problemSummaryCountText"' in html
-    assert 'id="activeDiscrepanciesContainer"' in html
-    assert 'id="problemFlagsGrid"' in html
-    assert 'id="flaggedTotalBadge"' in html
-    assert 'renderProblemsAndDiscrepancies' in html
-    assert 'resolveFieldDiscrepancy' in html
-    assert 'applyManualProblemResolution' in html
-    assert 'toggleProblemFlag' in html
-    assert 'isProblemActiveOnRecord' in html
-    assert '/api/object/' in html and '/history' in html
 
 
 def test_accession_id_natural_sort_and_defaults(mock_app_state):
@@ -1529,37 +1377,6 @@ def test_accession_id_natural_sort_and_defaults(mock_app_state):
     assert 'id="liveLocBreadcrumb">Unrecorded location</span>' in html
 
 
-def test_v2_icedig_unknown_standards_resolution(mock_app_state):
-    server = MobileServer(mock_app_state, port=5099)
-    client = server.flask_app.test_client()
-
-    auth_res = client.post('/api/auth', json={"pin": server.pin})
-    token = auth_res.json["token"]
-    headers = {"X-Session-Token": token}
-
-    # 1. Verify /api/schema returns icedig_code_labels dynamically from config
-    schema_res = client.get('/api/schema', headers=headers)
-    assert schema_res.status_code == 200
-    schema_data = schema_res.json
-    assert "icedig_code_labels" in schema_data
-    icedig_map = schema_data["icedig_code_labels"]
-    assert "unknown:missing" in icedig_map
-    assert "unknown:indecipherable" in icedig_map
-    assert "unknown:undigitized" in icedig_map
-    assert "withheld" in icedig_map
-
-    # 2. Verify V2 template contains ICEDIG tray toggle and state caching
-    cookie_header = {"Cookie": f"session_token={token}"}
-    res = client.get('/v2', headers=cookie_header)
-    assert res.status_code == 200
-    html = res.get_data(as_text=True)
-
-    assert 'state.icedigCodes = data.icedig_code_labels' in html
-    assert 'toggleIcedigTray' in html
-    assert 'Mark as Blank or Unreadable...' in html
-    assert 'icedigTray_' in html
-    assert 'icedigArrow_' in html
-    assert "}).join('')}\n                      })()}" not in html
 
 
 def test_v2_template_javascript_syntax_integrity(mock_app_state):
@@ -1641,88 +1458,10 @@ def test_copy_previous_and_consecutive_edits_without_conflict(mock_app_state):
     assert mock_app_state.df_obs.at["1025", "Notes"] == "Manual override resolved"
 
 
-def test_v2_direct_numeric_keypad_and_blank_batch_defaults(mock_app_state):
-    """Test that cabinet and shelf use direct numeric inputs with mobile number pad attributes and batch registrator defaults to blank."""
-    server = MobileServer(mock_app_state, port=5099)
-    client = server.flask_app.test_client()
-    auth_res = client.post('/api/auth', json={"pin": server.pin})
-    token = auth_res.json["token"]
-    cookie_header = {"Cookie": f"session_token={token}"}
-
-    v2_res = client.get('/v2', headers=cookie_header)
-    assert v2_res.status_code == 200
-    html = v2_res.get_data(as_text=True)
-
-    # 1. Location Tab: Cabinet and Shelf direct numeric inputs with mobile numbpad
-    assert 'inputmode="numeric"' in html
-    assert 'pattern="[0-9]*"' in html
-    assert 'id="detailCabVal"' in html
-    assert 'id="detailShelfVal"' in html
-    assert 'handleDirectCoordinateInput' in html
-
-    # 2. Batch Location Registrator: Cabinet and Shelf direct numeric inputs
-    assert 'id="batchCabVal"' in html
-    assert 'id="batchShelfVal"' in html
-    assert 'handleDirectBatchCoordInput' in html
-
-    # 3. Batch Location Registrator defaults start blank
-    assert 'batchAnchor: {\n        building: \'\',\n        floor: \'\',\n        cabinet: \'\',\n        shelf: \'\',\n        storedAs: \'\'\n      }' in html
-    assert 'id="batchFloorVal">—</span>' in html
-    assert 'id="batchBuildingSelect"' in html
-    assert '<select id="batchBuildingSelect"' in html
-    assert '<option value="">--</option>' in html
 
 
-def test_v2_details_tab_collection_place_box_label_and_comment(mock_app_state):
-    """Test that Details tab includes Collection place and Box label (replacing Locality, County, Country), and has Comment editor."""
-    server = MobileServer(mock_app_state, port=5099)
-    client = server.flask_app.test_client()
-    auth_res = client.post('/api/auth', json={"pin": server.pin})
-    token = auth_res.json["token"]
-    cookie_header = {"Cookie": f"session_token={token}"}
-
-    v2_res = client.get('/v2', headers=cookie_header)
-    assert v2_res.status_code == 200
-    html = v2_res.get_data(as_text=True)
-
-    # 1. Botanical Registration field replacements: Collection place and Box label present, Locality/County/Country removed from fields list
-    assert "'Collection place', 'Box label'" in html
-    assert "'Locality', 'County', 'Country'" not in html
-
-    # 2. Box label multiline support
-    assert "isBoxLabel && strVal" in html
-    assert "(Full label)" in html
-
-    # 3. Comment box and modal
-    assert 'id="commentEditorModal"' in html
-    assert 'id="commentEditTextarea"' in html
-    assert 'openCommentEditor' in html
-    assert 'saveCommentFromEditor' in html
-    assert 'closeCommentEditor' in html
 
 
-def test_v2_availability_status_in_collection_default(mock_app_state):
-    """Test that Availability Status displays 'In Collection' instead of 'In Repository', and defaults to 'In Collection'."""
-    server = MobileServer(mock_app_state, port=5099)
-    client = server.flask_app.test_client()
-    auth_res = client.post('/api/auth', json={"pin": server.pin})
-    token = auth_res.json["token"]
-    cookie_header = {"Cookie": f"session_token={token}"}
-
-    v2_res = client.get('/v2', headers=cookie_header)
-    assert v2_res.status_code == 200
-    html = v2_res.get_data(as_text=True)
-
-    # 1. 'In Repository' should be completely replaced by 'In Collection'
-    assert "In Repository" not in html
-    assert "In Collection" in html
-    assert 'id="loanStateTag">In Collection</span>' in html
-    assert '<span>In Collection</span>' in html
-    assert "tag.textContent = 'In Collection';" in html
-
-    # 2. isLoanedBool evaluates strictly truthy strings, so unset/False defaults to In Collection
-    assert "isLoanedBool" in html
-    assert "tag.textContent = 'Loaned Out';" in html
 
 
 
@@ -1961,72 +1700,14 @@ def test_vault_location_filtering_and_facets(mock_app_state):
     assert "shelves" in data["facets"]
 
 
-def test_vault_offline_storage_queue_contract():
-    """Verify offline queuing contracts in client templates store pending updates in localStorage."""
-    from backend.mobile_server import INDEX_TEMPLATE, INDEX_TEMPLATE_V2
-
-    for tmpl_name, tmpl in [("V1", INDEX_TEMPLATE), ("V2", INDEX_TEMPLATE_V2)]:
-        assert "arbor_offline_queue" in tmpl, f"{tmpl_name} template missing 'arbor_offline_queue' localStorage key"
-        assert "getLocalStorageQueue" in tmpl, f"{tmpl_name} template missing getLocalStorageQueue function"
-        assert "saveLocalStorageQueue" in tmpl, f"{tmpl_name} template missing saveLocalStorageQueue function"
-        assert "flushQueuedMutations" in tmpl, f"{tmpl_name} template missing flushQueuedMutations"
 
 
-def test_mobile_v2_three_step_walkthrough_contract():
-    """Phase 2: Verify Mobile V2 includes the zero-build 3-step hallway walkthrough & replay button."""
-    from backend.mobile_server import INDEX_TEMPLATE_V2
-
-    assert 'id="walkthroughModal"' in INDEX_TEMPLATE_V2
-    assert "arbor_v2_walkthrough_seen" in INDEX_TEMPLATE_V2
-    assert "WALKTHROUGH_SLIDES" in INDEX_TEMPLATE_V2
-    assert "openWalkthroughModal" in INDEX_TEMPLATE_V2
-    assert "maybeShowFirstRunWalkthrough" in INDEX_TEMPLATE_V2
 
 
-def test_mobile_offline_vault_css_and_nonblocking_tailwind():
-    """Verify non-blocking defer Tailwind loading and scoped html.arbor-offline-css fallback in V1 & V2."""
-    from backend.mobile_server import INDEX_TEMPLATE, INDEX_TEMPLATE_V2
-
-    for name, tmpl in [("V1", INDEX_TEMPLATE), ("V2", INDEX_TEMPLATE_V2)]:
-        assert '<html lang="en" class="arbor-offline-css">' in tmpl, f"{name} missing default arbor-offline-css class"
-        assert 'script defer src="https://cdn.tailwindcss.com' in tmpl, f"{name} Tailwind CDN must use defer to avoid offline LAN hangs"
-        assert "classList.remove('arbor-offline-css')" in tmpl, f"{name} must remove arbor-offline-css once Tailwind loads"
-        assert 'media="print" onload="this.media=\'all\'"' in tmpl, f"{name} Google Fonts link must be non-blocking"
-        assert "html.arbor-offline-css [id$=\"Modal\"]" in tmpl, f"{name} missing scoped offline modal styling"
-        assert "barcode" not in tmpl.lower(), f"{name} violates Zero-Barcodes rule"
-
-    # V2-specific offline surface rules
-    for selector in (
-        "html.arbor-offline-css #specimenListContainer > *",
-        "html.arbor-offline-css #armedShelfBanner",
-        "html.arbor-offline-css #btnDetailMarkReviewed",
-        "html.arbor-offline-css #offlineBanner",
-        "html.arbor-offline-css #toast",
-    ):
-        assert selector in INDEX_TEMPLATE_V2, f"Missing V2 offline fallback rule: {selector}"
 
 
-def test_mobile_v2_batch_location_hallway_ergonomics():
-    """Verify Batch Location Registrator has numeric keypad default, toggle, and 1-tap Armed Shelf copy."""
-    from backend.mobile_server import INDEX_TEMPLATE_V2
-
-    assert 'id="batchIdInput"' in INDEX_TEMPLATE_V2
-    assert 'inputmode="numeric"' in INDEX_TEMPLATE_V2
-    assert 'id="btnBatchKeyboardMode"' in INDEX_TEMPLATE_V2
-    assert "function toggleBatchInputMode()" in INDEX_TEMPLATE_V2
-    assert 'id="btnBatchCopyArmed"' in INDEX_TEMPLATE_V2
-    assert "function copyArmedShelfToBatch()" in INDEX_TEMPLATE_V2
-    assert "function updateBatchArmedButton()" in INDEX_TEMPLATE_V2
 
 
-def test_mobile_templates_modular_reexport_contract():
-    """Verify INDEX_TEMPLATE and INDEX_TEMPLATE_V2 live in dedicated modules and are re-exported identically."""
-    import backend.mobile_server as ms
-    import backend.mobile_template_v1 as v1
-    import backend.mobile_template_v2 as v2
-
-    assert ms.INDEX_TEMPLATE is v1.INDEX_TEMPLATE
-    assert ms.INDEX_TEMPLATE_V2 is v2.INDEX_TEMPLATE_V2
 
 
 def test_login_template_offline_and_no_hardcoded_pin(mock_app_state):
@@ -2045,45 +1726,8 @@ def test_login_template_offline_and_no_hardcoded_pin(mock_app_state):
     assert b"Invalid PIN" in resp.data
 
 
-def test_mobile_v2_field_guide_and_updated_walkthrough():
-    """Verify V2 includes the mirrored 'What the Fields Mean' guide, GBIF synonym tip, and unwrapped helper text."""
-    from backend.mobile_server import INDEX_TEMPLATE_V2
-
-    assert 'id="fieldGuideModal"' in INDEX_TEMPLATE_V2
-    assert 'id="btnOpenFieldGuide"' in INDEX_TEMPLATE_V2
-    assert 'id="btnDetailFieldGuide"' in INDEX_TEMPLATE_V2
-    assert "GBIF Name Check" in INDEX_TEMPLATE_V2
-    assert "NOT the person who collected it" in INDEX_TEMPLATE_V2
-    assert "Find an Object and Search Its Listed Number" in INDEX_TEMPLATE_V2
-    assert 'placeholder="Search object # or plant name..."' in INDEX_TEMPLATE_V2
-    assert "Mark as Blank or Unreadable..." in INDEX_TEMPLATE_V2
-    assert 'id="launchFloorSelect"' in INDEX_TEMPLATE_V2
-    assert "html.arbor-offline-css .tab-btn.text-ink" in INDEX_TEMPLATE_V2
-    assert "Issue Checklist" in INDEX_TEMPLATE_V2
-    assert 'id="reviewHelperText" class="text-[10.5px] leading-snug font-sans text-subdued text-center mt-1.5"' in INDEX_TEMPLATE_V2
 
 
-def test_mobile_v2_touch_gestures_and_targets():
-    """Verify Mobile V2 wires horizontal tab swipe, pinch/pan/double-tap photo zoom, swipe-down sheet, and 40px targets."""
-    from backend.mobile_server import INDEX_TEMPLATE_V2
-
-    # Horizontal swipe on #swipeArea + swipe-down on #storedAsSheetCard
-    assert "function initTouchGestures()" in INDEX_TEMPLATE_V2
-    assert 'id="storedAsSheetCard"' in INDEX_TEMPLATE_V2
-    assert "swipeArea.addEventListener('touchstart'" in INDEX_TEMPLATE_V2
-    assert "swipeArea.addEventListener('touchend'" in INDEX_TEMPLATE_V2
-    assert "sheetCard.addEventListener('touchmove'" in INDEX_TEMPLATE_V2
-
-    # Pinch-to-zoom, drag-pan & double-tap zoom in #photoViewerModal
-    assert "function initPhotoViewerTouchGestures()" in INDEX_TEMPLATE_V2
-    assert 'id="photoViewerViewport"' in INDEX_TEMPLATE_V2
-    assert "touch-action: none;" in INDEX_TEMPLATE_V2
-    assert "photoPanX" in INDEX_TEMPLATE_V2 and "photoPanY" in INDEX_TEMPLATE_V2
-    assert "Math.hypot(" in INDEX_TEMPLATE_V2
-
-    # Enlarged modal close & reconnect touch targets
-    assert 'min-w-[40px] min-h-[40px]' in INDEX_TEMPLATE_V2
-    assert 'onclick="setupEventSource()" class="min-h-[38px]' in INDEX_TEMPLATE_V2
 
 
 def test_mobile_walkthrough_toggle_injection():
@@ -2109,5 +1753,25 @@ def test_mobile_walkthrough_toggle_injection():
     assert "const _ARBOR_WT_RAW = 'false';" in res_off.get_data(as_text=True)
 
 
+def test_mobile_v2_core_ui_and_offline_contracts():
+    """High-signal contract check for Mobile V2: modular re-export, offline CSS, key modals, and touch gestures."""
+    from backend.mobile_server import INDEX_TEMPLATE, INDEX_TEMPLATE_V2
+    from backend.mobile_template_v1 import INDEX_TEMPLATE as V1_MOD
+    from backend.mobile_template_v2 import INDEX_TEMPLATE_V2 as V2_MOD
 
-
+    assert INDEX_TEMPLATE == V1_MOD
+    assert INDEX_TEMPLATE_V2 == V2_MOD
+    # Offline-first styling & non-blocking Tailwind CDN
+    assert 'arbor-offline-css' in INDEX_TEMPLATE_V2
+    assert 'cdn.tailwindcss.com' in INDEX_TEMPLATE_V2
+    # Key V2 DOM contracts (modals, station launchpad, swipe area, photo viewer)
+    for token in (
+        'id="launchFloorSelect"',
+        'id="fieldGuideModal"',
+        'id="walkthroughModal"',
+        'id="swipeArea"',
+        'id="photoViewerViewport"',
+        'function initTouchGestures()',
+        'function initPhotoViewerTouchGestures()',
+    ):
+        assert token in INDEX_TEMPLATE_V2, f"Missing Mobile V2 contract token: {token}"

@@ -2395,8 +2395,13 @@ class ObjectProgramUI(
         popup.add_separator()
         popup.add_command(label="📊 Database Statistics Dashboard (Ctrl+J)", command=self.show_statistics)
         popup.add_command(label="📝 Bulk Edit Selected Objects...", command=self.open_bulk_edit_window)
+        popup.add_command(label="🧹 Combine Legacy Notes into Comment...", command=self.merge_legacy_notes_action)
         popup.add_command(label="🔍 Filter Objects Menu (Ctrl+G)", command=self.open_filter_menu)
         popup.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
+
+    def merge_legacy_notes_action(self):
+        from ui.registry_panel import RegistryPanel
+        return RegistryPanel.merge_legacy_notes_into_comment(self, interactive=True)
 
     def show_view_dropdown(self):
         popup = tk.Menu(self.root, tearoff=0)

@@ -533,6 +533,13 @@ class CommandPalette(tk.Toplevel):
                 "action": lambda: __import__("ui.bulk_edit", fromlist=["undo_last_bulk_edit"]).undo_last_bulk_edit(ui),
             },
             {
+                "label": "Combine Legacy Notes into Comment (Safe Cleanup)",
+                "category": "Tools",
+                "shortcut": "",
+                "icon": "🧹",
+                "action": lambda: ui.merge_legacy_notes_action() if hasattr(ui, "merge_legacy_notes_action") else None,
+            },
+            {
                 "label": "Guide: Hallway Follow-Up (REV+ERR) — 30 sec",
                 "category": "Quick Guides",
                 "shortcut": "",

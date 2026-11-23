@@ -4862,7 +4862,7 @@ INDEX_TEMPLATE_V2 = """
       const groups = [
         { title: '3. Plant Name (Taxonomy)', fields: ['Genus', 'Species', 'Author', 'Family'] },
         { title: '4. Collection Details', fields: ['Collector', 'Innsammling Nr.', 'Collection Date', 'Collection Place'] },
-        { title: '5. Physical Object & Notes', fields: ['Plant Part', '(N) Plant Part', 'Box Label', 'Conservation Status', 'Observation', 'ProblemDescription', 'UID'] },
+        { title: '5. Physical Object & Notes', fields: ['Plant Part', '(N) Plant Part', 'Box Label', 'Conservation Status', 'Comment', 'UID'] },
       ];
 
       groups.forEach(g => {

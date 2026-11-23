@@ -185,7 +185,7 @@ class RegistryPanel:
                 "id": "notes",
                 "title": "Audit Notes & Descriptions",
                 "icon": "📝",
-                "fields": ["Observation", "Comment", "ProblemDescription"]
+                "fields": ["Comment", "Observation", "ProblemDescription"]
             }
         ]
 
@@ -371,12 +371,22 @@ class RegistryPanel:
                     spacer_lbl.pack(side="left")
 
                 # Col 1: Label with bold clean typography + helpful inline field tooltips
-                lbl = tk.Label(frame, text=name, width=15, anchor="w", font=("Inter", sc(10), "bold"), bg=card_bg, fg=fg_color)
+                _display_names = {
+                    "Observation": "Observation (Legacy)",
+                    "ProblemDescription": "Problem Note (Legacy)",
+                    "Problem Description": "Problem Note (Legacy)",
+                }
+                lbl_text = _display_names.get(name, name)
+                lbl_fg = "#757d77" if name in _display_names else fg_color
+                lbl = tk.Label(frame, text=lbl_text, width=18 if name in _display_names else 15, anchor="w", font=("Inter", sc(9 if name in _display_names else 10), "bold"), bg=card_bg, fg=lbl_fg)
                 lbl.grid(row=0, column=1, sticky="w", padx=(0, 6))
                 _field_tips = {
                     "Genus": "First word of the scientific name. Type what is printed on the box — outdated or synonym names can be updated later with 🔍 Check GBIF.",
                     "Species": "Second word of the scientific name. Type what is printed on the box — outdated or synonym names can be updated later with 🔍 Check GBIF.",
                     "Author": "Scientist who originally named the plant (e.g. L.) — NOT the person who collected it (use Collector for that).",
+                    "Comment": "General notes, physical condition remarks, or messages for the next curator — synced with Mobile Companion.",
+                    "Observation": "Legacy note from an older record — still saved safely. You can optionally combine legacy notes into Comment anytime from TOOLS ▾.",
+                    "ProblemDescription": "Legacy problem note from an older record — still saved safely. You can optionally combine legacy notes into Comment anytime from TOOLS ▾.",
                 }
                 if name in _field_tips and hasattr(ui, "add_tooltip"):
                     ui.add_tooltip(lbl, _field_tips[name])
@@ -649,6 +659,28 @@ class RegistryPanel:
                     pass
 
         visible_count = 0
+        legacy_note_fields = ("Observation", "ProblemDescription", "Problem Description")
+
+        def _has_legacy_note_text(field_name: str) -> bool:
+            w = getattr(ui, "reg_entries", {}).get(field_name)
+            if isinstance(w, tk.Text):
+                try:
+                    return bool(w.get("1.0", "end-1c").strip())
+                except Exception:
+                    pass
+            var = getattr(ui, "reg_vars", {}).get(field_name)
+            if var is not None:
+                try:
+                    return bool(str(var.get() or "").strip())
+                except Exception:
+                    pass
+            df_reg = getattr(getattr(ui, "app", None), "df_reg", None)
+            if df_reg is not None and oid is not None and field_name in df_reg.columns:
+                for key in (oid, str(oid), int(oid) if str(oid).isdigit() else None):
+                    if key is not None and key in df_reg.index:
+                        val = str(df_reg.loc[key, field_name] or "").strip()
+                        return bool(val and val.lower() not in ("nan", "none", "<na>"))
+            return False
 
         for field in ui.app.config["ui_sections"]["registration"]:
             name = field["name"]
@@ -657,7 +689,11 @@ class RegistryPanel:
                 continue
 
             is_visible = True
-            if focus_active:
+            # Non-Destructive Legacy Reveal: hide Observation / ProblemDescription unless this specimen has text in them
+            if name in legacy_note_fields and not _has_legacy_note_text(name):
+                is_visible = False
+
+            if is_visible and focus_active:
                 field_toggle = ui.focus_visibility_vars.get(name, tk.BooleanVar(value=True)).get()
                 has_problem = (name in active_problem_fields)
                 if focus_fallback and has_problem:
@@ -903,3 +939,127 @@ class RegistryPanel:
             filtered = [v for v in all_vals if typed in str(v).lower()]
         if isinstance(widget, ttk.Combobox):
             widget.configure(values=filtered)
+
+    @staticmethod
+    def merge_legacy_notes_into_comment(ui, interactive: bool = True) -> int:
+        """
+        One-time opt-in, non-destructive cleanup that combines legacy Observation and
+        ProblemDescription notes into the unified Comment field without overwriting
+        any existing Comment text.
+        """
+        from tkinter import messagebox
+        import pandas as pd
+
+        app = getattr(ui, "app", None)
+        df_reg = getattr(app, "df_reg", None)
+        if df_reg is None or df_reg.empty:
+            return 0
+
+        if hasattr(ui, "commit_current_object") and getattr(app, "current_object_id", None):
+            try:
+                ui.commit_current_object(skip_heavy=True)
+            except Exception:
+                pass
+
+        legacy_cols = [c for c in ("Observation", "ProblemDescription", "Problem Description") if c in df_reg.columns]
+        if not legacy_cols:
+            if interactive and hasattr(ui, "show_toast"):
+                ui.show_toast("All notes are already in Comment — no legacy notes found.", "info")
+            return 0
+
+        def _clean_text(v) -> str:
+            if v is None or (isinstance(v, float) and pd.isna(v)):
+                return ""
+            s = str(v).strip()
+            return "" if s.lower() in ("nan", "none", "<na>") else s
+
+        # Identify rows with non-empty legacy notes
+        candidate_indices = []
+        for idx in df_reg.index:
+            has_any = any(_clean_text(df_reg.loc[idx, c]) for c in legacy_cols)
+            if has_any:
+                candidate_indices.append(idx)
+
+        if not candidate_indices:
+            if interactive and hasattr(ui, "show_toast"):
+                ui.show_toast("All notes are already in Comment — no legacy notes found.", "info")
+            return 0
+
+        if interactive:
+            count = len(candidate_indices)
+            noun = "specimen" if count == 1 else "specimens"
+            proceed = messagebox.askyesno(
+                "Combine Legacy Notes into Comment",
+                f"Found {count} {noun} with notes in older fields (Observation / Problem Note).\n\n"
+                "Would you like to combine those notes into the main Comment box?\n\n"
+                "• Completely safe & non-destructive: existing Comments are never overwritten — older notes are added neatly underneath.\n"
+                "• Nothing is written to disk until you press Ctrl+S (and Arbor saves a safety backup first).\n"
+                "• You can also click No to keep them as-is; Arbor automatically shows legacy boxes whenever an object has text in them.",
+                parent=getattr(ui, "root", None),
+            )
+            if not proceed:
+                return 0
+
+        if "Comment" not in df_reg.columns:
+            df_reg["Comment"] = ""
+
+        label_map = {
+            "Observation": "Legacy Observation",
+            "ProblemDescription": "Legacy Problem Note",
+            "Problem Description": "Legacy Problem Note",
+        }
+
+        updated = 0
+        lock = getattr(app, "df_lock", None)
+        def _apply_merge():
+            nonlocal updated
+            for idx in candidate_indices:
+                existing = _clean_text(df_reg.loc[idx, "Comment"])
+                parts = [existing] if existing else []
+                for col in legacy_cols:
+                    val = _clean_text(df_reg.loc[idx, col])
+                    if not val:
+                        continue
+                    # Avoid duplicating if already merged previously
+                    if val in existing:
+                        df_reg.loc[idx, col] = ""
+                        continue
+                    prefix = label_map.get(col, col)
+                    parts.append(f"[{prefix}]: {val}" if existing or len(parts) > 0 else val)
+                    df_reg.loc[idx, col] = ""
+                merged = "\n".join(p for p in parts if p)
+                df_reg.loc[idx, "Comment"] = merged
+                updated += 1
+            app.dirty = True
+            if hasattr(app, "_mutation_seq"):
+                app._mutation_seq += 1
+
+        if lock is not None:
+            with lock:
+                _apply_merge()
+        else:
+            _apply_merge()
+
+        if hasattr(ui, "_invalidate_row_cache"):
+            try:
+                ui._invalidate_row_cache()
+            except Exception:
+                pass
+        if hasattr(ui, "update_dirty_ui"):
+            try:
+                ui.update_dirty_ui()
+            except Exception:
+                pass
+        curr_oid = getattr(app, "current_object_id", None)
+        if curr_oid and hasattr(ui, "load_object"):
+            try:
+                ui.load_object(curr_oid)
+            except Exception:
+                pass
+        if interactive and hasattr(ui, "show_toast"):
+            ui.show_toast(
+                f"✓ Safely combined legacy notes into Comment for {updated} specimen(s) — press Ctrl+S to save.",
+                "success",
+                duration_ms=4000,
+            )
+        return updated
