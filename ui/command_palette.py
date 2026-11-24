@@ -533,6 +533,13 @@ class CommandPalette(tk.Toplevel):
                 "action": lambda: __import__("ui.bulk_edit", fromlist=["undo_last_bulk_edit"]).undo_last_bulk_edit(ui),
             },
             {
+                "label": "View Old Names & Synonyms (Current Specimen)",
+                "category": "Tools",
+                "shortcut": "GBIF",
+                "icon": "📜",
+                "action": lambda: ui.open_old_names_dialog() if hasattr(ui, "open_old_names_dialog") else None,
+            },
+            {
                 "label": "Combine Legacy Notes into Comment (Safe Cleanup)",
                 "category": "Tools",
                 "shortcut": "",

@@ -561,6 +561,7 @@ class RegistryPanel:
             return f"{clean} Issue"
 
         ui.problem_checkbuttons = []
+        ui.problem_checkbutton_map = {}
         for i, field in enumerate(ui.app.config["ui_sections"]["problems"]):
             name = field["name"]
             var = ui.problem_vars.get(name)
@@ -580,7 +581,10 @@ class RegistryPanel:
             row = i // 2
             col = i % 2
             cb.grid(row=row, column=col, sticky="w", padx=10, pady=6)
+            if name == "Other_problem":
+                cb.tutorial_id = "other_problem_checkbox"
             ui.problem_checkbuttons.append(cb)
+            ui.problem_checkbutton_map[name] = cb
 
         edit_frame.columnconfigure(0, weight=1)
         edit_frame.columnconfigure(1, weight=1)

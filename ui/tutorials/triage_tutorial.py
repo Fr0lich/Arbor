@@ -3,7 +3,7 @@ ui/tutorials/triage_tutorial.py
 
 Action-driven Practice Sandbox tour for the Office Triage (REV+ERR) workflow.
 Teaches curators how to isolate hallway-flagged specimens, clear confirmed-correct flags,
-navigate the triage queue with Alt+Left/Right, and safely leave unsolvable issues for later.
+navigate the problem queue with Alt+Left/Right, and safely leave unsolvable issues for a specialist.
 """
 
 from .sandbox_manager import SandboxManager, mark_tutorial_completed
@@ -47,48 +47,66 @@ def start_triage_tutorial(ui, on_complete=None):
         if callable(on_complete):
             on_complete()
 
+    def _launch_discrepancy_tutorial(runner):
+        from .discrepancy_tutorial import start_discrepancy_tutorial
+        mark_tutorial_completed("triage")
+        if callable(on_complete):
+            try:
+                on_complete()
+            except Exception:
+                pass
+        start_discrepancy_tutorial(ui)
+
+    def _launch_database_tutorial(runner):
+        from .database_tutorial import start_database_tutorial
+        mark_tutorial_completed("triage")
+        if callable(on_complete):
+            try:
+                on_complete()
+            except Exception:
+                pass
+        start_database_tutorial(ui)
+
     steps = [
         ActionStep(
             step_id="triage_intro",
-            title="What Is Office Triage (REV+ERR)?",
+            title="Sorting Through Hallway-Flagged Objects (REV+ERR)",
             instruction=(
-                "When someone walks the collection with a phone and flags an issue they couldn't fix on the spot, "
-                "the specimen gets an amber [REV+ERR] badge.\n\n"
-                "In this Practice Sandbox, #2001 has a physical 'Other Issue' (bent display — keep flagged for the workshop), "
+                "Office Triage simply means sorting through objects that were checked in the hallway "
+                "but still have an open issue — marked with an amber [REV+ERR] badge.\n\n"
+                "In this Practice Mode, #2001 has a physical 'Other Issue' (bent display — leave flagged for a specialist), "
                 "while #2002 has a date flag whose value is actually fine (clear in 1 click)."
             ),
-            action_hint="Click Next → to isolate the [REV+ERR] queue.",
+            action_hint="Click Next → to filter to just the [REV+ERR] queue.",
             details=(
-                "Clean, finished specimens like #2003 carry a green [REV] badge and stay out of your triage queue."
+                "Clean, finished specimens like #2003 carry a green [REV] badge and stay out of your follow-up list."
             ),
         ),
         ActionStep(
             step_id="triage_filter",
-            title="Isolate Hallway Follow-Up (REV+ERR)",
+            title="Show Only Hallway Follow-Up (REV+ERR)",
             instruction=(
-                "Open Filter (press Ctrl+G) and pick 'Hallway Follow-Up (REV+ERR)' — or press Ctrl+K and search 'Hallway Follow-Up'. "
-                "This hides clean [REV] specimens like #2003 so you only see items needing attention."
+                "Open Filter (press Ctrl+G) and pick 'Hallway Follow-Up (REV+ERR)' — or press Ctrl+K and search 'Hallway Follow-Up'.\n\n"
+                "This hides clean green [REV] objects like #2003 so you only see items that still need attention."
             ),
-            target_id="search_entry",
             action_hint="Press Ctrl+G (or Ctrl+K → Hallway Follow-Up), then click Next →.",
             keycaps=["Ctrl", "G"],
             details=(
-                "Excel impact: Filters the Specimen Directory to rows where Observation.Reviewed = TRUE "
-                "and at least one problem flag column is TRUE."
+                "This filter shows only objects that have already been physically Reviewed and still have at least one active problem checkbox."
             ),
         ),
         ActionStep(
             step_id="triage_open_queue",
             title="Open Problem Queue & Resolver",
             instruction=(
-                "Click TOOLS ▾ → Open Problem Queue & Resolver... → OPEN QUEUE in the top bar "
-                "(or press Ctrl+K and pick 'Triage Problem Queue') to step through all flagged specimens in one streamlined window."
+                "Click the highlighted TOOLS ▾ menu → Open Problem Queue & Resolver... → OPEN QUEUE "
+                "(or press Ctrl+K and pick 'Triage Problem Queue') to step through all flagged objects in one window."
             ),
             target_id="tools_nav_btn",
             action_hint="Open Problem Resolution Queue (or click Skip Step →).",
             keycaps=["Ctrl", "K"],
             details=(
-                "Queue mode lets you work through dozens of hallway-flagged specimens without hunting through the Specimen Directory one by one."
+                "Queue mode lets you work through dozens of hallway-flagged objects one after another without hunting through the Specimen Directory."
             ),
             validator=_is_problem_queue_open,
         ),
@@ -97,14 +115,14 @@ def start_triage_tutorial(ui, on_complete=None):
             title="Clear False Alarms — Leave Hard Issues Flagged",
             instruction=(
                 "Use Next (Alt+→) to step between #2001 and #2002:\n"
-                "• On #2001 ('Bent display'): you can't fix physical damage at a desk — leave 'Other Issue' active and skip it!\n"
+                "• On #2001 ('Bent display'): you can't fix physical damage at a desk — leave 'Other Issue' active for a specialist and move on.\n"
                 "• On #2002 ('1972' is already correct): click '✓ Value is Correct (Clear Flag)' to turn it green [REV]."
             ),
             action_hint="Clear #2002's flag with '✓ Value is Correct' (or click Skip Step →).",
             keycaps=["Alt", "→"],
             details=(
-                "Excel impact: '✓ Value is Correct (Clear Flag)' sets the problem column to FALSE without altering Registration text, "
-                "logs PROBLEM_CLEARED, and pushes an Undo snapshot (Ctrl+Z). Leaving #2001 flagged keeps it safely queued for the workshop."
+                "'✓ Value is Correct (Clear Flag)' clears the problem box without changing the text and supports Undo (Ctrl+Z). "
+                "Tip: For flagged plant name issues, you can also check 'Old Names & Synonyms' to see if an older label name is just a synonym."
             ),
             validator=_is_2002_date_flag_cleared,
         ),
@@ -112,13 +130,15 @@ def start_triage_tutorial(ui, on_complete=None):
             step_id="triage_complete",
             title="Office Triage Complete!",
             instruction=(
-                "Great work! You now know the full vault-to-desk triage loop: isolate [REV+ERR], clear confirmed values in 1 click, "
-                "and safely leave hard issues flagged for later. Click Finish ✓ to exit Practice Mode."
+                "Great work! You now know the full hallway-to-desk follow-up loop: filter to [REV+ERR], clear false alarms in 1 click, "
+                "and safely leave harder issues flagged for a specialist.\n\n"
+                "Click Finish ✓ to return to your workspace, or open another guide below."
             ),
-            action_hint="Click 'Finish ✓' below to exit Practice Mode.",
-            details=(
-                "Everything in this tour ran inside Practice Mode — your real museum collection files were never modified."
-            ),
+            action_hint="Click 'Finish ✓' below to exit Practice Mode, or launch another guide above.",
+            action_buttons=[
+                ("📚 Historical Ledger Comparison", _launch_discrepancy_tutorial, True),
+                ("📁 Collections & New Specimens (Optional)", _launch_database_tutorial, False),
+            ],
         ),
     ]
 

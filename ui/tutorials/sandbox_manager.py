@@ -378,7 +378,7 @@ class SandboxManager:
                     "Higher Classification": "1886",
                     "(N) Plant Part": "Fruktstander",
                     "Plant Part": "fruitcluster",
-                    "Collector": "ukjent",
+                    "Collector": "F. C. Schübeler",
                     "Innsammling Nr.": "",
                     "Collection Date": "1963",  # Intentionally wrong current value (real label: 1927; Ledger 1: 1927; Ledger 2: 1912)
                     "Year": "1963",

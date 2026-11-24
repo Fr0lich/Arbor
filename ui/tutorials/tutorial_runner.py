@@ -14,7 +14,8 @@ from .sandbox_manager import SandboxManager
 
 class ActionStep:
     def __init__(self, step_id, title, instruction, target_id=None,
-                 action_hint=None, on_enter=None, validator=None, keycaps=None, details=None, answer=None):
+                 action_hint=None, on_enter=None, validator=None, keycaps=None,
+                 details=None, details_label=None, answer=None, action_buttons=None):
         self.step_id = step_id
         self.title = title
         self.instruction = instruction
@@ -24,17 +25,26 @@ class ActionStep:
         self.validator = validator
         self.keycaps = list(keycaps) if keycaps else []
         self.details = details
+        self.details_label = details_label
         self.answer = answer
+        self.action_buttons = list(action_buttons) if action_buttons else []
 
 
 class TutorialHighlight:
-    """Animated glowing border frame around a target widget."""
-    def __init__(self, parent, target_widget):
+    """Animated glowing border frame around a target widget (or sub-region via bbox_fn)."""
+    def __init__(self, parent, target_widget, bbox_fn=None):
         self.target_widget = target_widget
+        self.bbox_fn = bbox_fn
         self.win = tk.Toplevel(parent)
-        if parent:
+        owner = parent
+        try:
+            if target_widget is not None and target_widget.winfo_exists():
+                owner = target_widget.winfo_toplevel() or parent
+        except Exception:
+            pass
+        if owner:
             try:
-                self.win.transient(parent)
+                self.win.transient(owner)
             except Exception:
                 pass
         self.win.overrideredirect(True)
@@ -64,10 +74,20 @@ class TutorialHighlight:
                 self._last_geom = None
                 return
 
-            x = self.target_widget.winfo_rootx()
-            y = self.target_widget.winfo_rooty()
-            w = self.target_widget.winfo_width()
-            h = self.target_widget.winfo_height()
+            if self.bbox_fn is not None:
+                box = self.bbox_fn()
+                if box and len(box) == 4:
+                    x, y, w, h = box
+                else:
+                    x = self.target_widget.winfo_rootx()
+                    y = self.target_widget.winfo_rooty()
+                    w = self.target_widget.winfo_width()
+                    h = self.target_widget.winfo_height()
+            else:
+                x = self.target_widget.winfo_rootx()
+                y = self.target_widget.winfo_rooty()
+                w = self.target_widget.winfo_width()
+                h = self.target_widget.winfo_height()
 
             geom_key = (x, y, w, h)
             if geom_key == self._last_geom:
@@ -76,8 +96,9 @@ class TutorialHighlight:
 
             pad = 4
             if self.win.winfo_exists():
+                import utils
                 self.win.deiconify()
-                self.win.geometry(f"{w + pad*2}x{h + pad*2}{x - pad:+d}{y - pad:+d}")
+                self.win.geometry(utils.format_tk_geometry(x - pad, y - pad, w + pad * 2, h + pad * 2))
                 self.canvas.coords(self.rect, pad, pad, w + pad, h + pad)
         except Exception:
             try:
@@ -288,6 +309,10 @@ class TutorialRunner:
         )
         self.answer_lbl.pack(fill="x")
 
+        # Optional direct-action buttons row (e.g. launch next tutorial from final step)
+        self.action_buttons_frame = tk.Frame(frame, bg="#181c19")
+        self.action_buttons_frame.pack(fill="x", pady=(0, sc(10)))
+
         # Floating visual keycaps row (shown on steps with keyboard shortcuts)
         self.keycaps_frame = tk.Frame(frame, bg="#181c19")
         self.keycaps_frame.pack(fill="x", pady=(0, sc(10)))
@@ -353,17 +378,47 @@ class TutorialRunner:
         )
         self.prev_btn.pack(side="right")
 
+        # Forward all global Arbor shortcuts (Ctrl+F, Ctrl+H, Ctrl+K, etc.) from the floating HUD
+        # so trainees never have to click the main window first after interacting with the HUD.
+        self._bind_hud_shortcut_passthrough()
+
         # Position HUD in top-right corner of parent or screen
         self._position_hud()
 
+    def _bind_hud_shortcut_passthrough(self):
+        """Bind main-window global shortcuts onto the floating HUD Toplevel."""
+        try:
+            from ui.keybindings import KeybindingManager
+            if hasattr(self.ui, "handle_ctrl_f"):
+                KeybindingManager(self.ui, self.root).bind_global_shortcuts(target=self.hud_win)
+        except Exception:
+            pass
+
+    def _refocus_main_if_hud_focused(self):
+        """Return keyboard focus to main window after HUD clicks without stealing from other dialogs."""
+        try:
+            if not self.hud_win or not self.hud_win.winfo_exists():
+                return
+            focused = self.root.focus_get()
+            if focused is not None and focused.winfo_toplevel() == self.hud_win:
+                self.root.focus_set()
+        except Exception:
+            pass
+
     def _toggle_details(self):
         self._details_expanded = not self._details_expanded
+        step = self.steps[self.current_idx] if 0 <= self.current_idx < len(self.steps) else None
+        closed_lbl = getattr(step, "details_label", None) or "▸ 💡 More Details & Excel Impact"
         if self._details_expanded:
-            self.details_toggle_btn.config(text="▾ 💡 Hide Details")
+            open_lbl = closed_lbl.replace("▸", "▾", 1) if closed_lbl.startswith("▸") else "▾ 💡 Hide Details"
+            if closed_lbl == "▸ 💡 More Details & Excel Impact":
+                open_lbl = "▾ 💡 Hide Details"
+            self.details_toggle_btn.config(text=open_lbl)
             self.details_frame.pack(fill="x", pady=(sc(2), sc(10)), after=self.details_toggle_btn)
         else:
-            self.details_toggle_btn.config(text="▸ 💡 More Details & Excel Impact")
+            self.details_toggle_btn.config(text=closed_lbl)
             self.details_frame.pack_forget()
+        self._refocus_main_if_hud_focused()
 
     def _toggle_answer(self):
         self._answer_expanded = not self._answer_expanded
@@ -373,6 +428,7 @@ class TutorialRunner:
         else:
             self.answer_toggle_btn.config(text="▸ The Answer")
             self.answer_frame.pack_forget()
+        self._refocus_main_if_hud_focused()
 
     def _position_hud(self, target_widget=None):
         """Position HUD on the same monitor as self.root, auto-dodging target_widget."""
@@ -399,18 +455,20 @@ class TutorialRunner:
                         except Exception:
                             pass
 
+                    import utils
                     if dock_left:
                         x = rx + sc(24)
                     else:
                         x = max(rx + sc(12), rx + rw - w - sc(24))
                     y = max(ry + sc(40), ry + sc(56))
-                    self.hud_win.geometry(f"{x:+d}{y:+d}")
+                    self.hud_win.geometry(utils.format_tk_geometry(x, y))
                     return
 
+            import utils
             sw = self.hud_win.winfo_screenwidth()
             x = max(10, sw - w - sc(24))
             y = sc(56)
-            self.hud_win.geometry(f"{x:+d}{y:+d}")
+            self.hud_win.geometry(utils.format_tk_geometry(x, y))
         except Exception:
             pass
 
@@ -438,7 +496,8 @@ class TutorialRunner:
         anchor_after = self.instruction_lbl
         if getattr(step, "details", None):
             self.details_lbl.config(text=step.details)
-            self.details_toggle_btn.config(text="▸ 💡 More Details & Excel Impact")
+            closed_lbl = getattr(step, "details_label", None) or "▸ 💡 More Details & Excel Impact"
+            self.details_toggle_btn.config(text=closed_lbl)
             self.details_toggle_btn.pack(fill="x", pady=(0, sc(6)), after=anchor_after)
             anchor_after = self.details_toggle_btn
         else:
@@ -451,8 +510,36 @@ class TutorialRunner:
             self.answer_lbl.config(text=step.answer)
             self.answer_toggle_btn.config(text="▸ The Answer")
             self.answer_toggle_btn.pack(fill="x", pady=(0, sc(8)), after=anchor_after)
+            anchor_after = self.answer_toggle_btn
         else:
             self.answer_toggle_btn.pack_forget()
+
+        # Optional direct-action buttons (e.g. launch next tutorial directly from completion card)
+        if hasattr(self, "action_buttons_frame") and self.action_buttons_frame.winfo_exists():
+            for child in self.action_buttons_frame.winfo_children():
+                child.destroy()
+            if getattr(step, "action_buttons", None):
+                self.action_buttons_frame.pack(fill="x", pady=(sc(2), sc(10)), after=anchor_after)
+                for btn_spec in step.action_buttons:
+                    lbl_text, cb = btn_spec[0], btn_spec[1]
+                    is_primary = bool(btn_spec[2]) if len(btn_spec) > 2 else False
+                    tk.Button(
+                        self.action_buttons_frame,
+                        text=lbl_text,
+                        font=("Inter", sc(9), "bold" if is_primary else "normal"),
+                        bg="#3a7d44" if is_primary else "#263128",
+                        fg="#ffffff" if is_primary else "#d4dcd6",
+                        activebackground="#4c9a58" if is_primary else "#314234",
+                        activeforeground="#ffffff",
+                        relief="flat",
+                        cursor="hand2",
+                        anchor="w",
+                        padx=sc(10),
+                        pady=sc(6),
+                        command=lambda fn=cb: fn(self),
+                    ).pack(fill="x", pady=(0, sc(6)))
+            else:
+                self.action_buttons_frame.pack_forget()
 
         # Render visual keycaps if defined on this step
         if hasattr(self, "keycaps_frame") and self.keycaps_frame.winfo_exists():
@@ -525,11 +612,13 @@ class TutorialRunner:
                 pass
 
         # Highlight target widget & auto-dodge HUD away from it
-        target_widget = self._find_target(step.target_id)
+        self._active_highlight_key = None
+        target_widget, bbox_fn = self._resolve_highlight_spec(step.target_id)
         self._position_hud(target_widget=target_widget)
         if target_widget:
             try:
-                self.highlight = TutorialHighlight(self.root, target_widget)
+                self.highlight = TutorialHighlight(self.root, target_widget, bbox_fn=bbox_fn)
+                self._active_highlight_key = (target_widget, bbox_fn)
             except Exception:
                 self.highlight = None
 
@@ -537,9 +626,32 @@ class TutorialRunner:
         if step.validator and auto_validate:
             self._poll_validator(step.validator)
 
+    def _sync_dynamic_highlight(self):
+        """If the current step uses a callable target_id, update the highlight when its target changes."""
+        if not (0 <= self.current_idx < len(self.steps)):
+            return
+        step = self.steps[self.current_idx]
+        if not callable(step.target_id):
+            return
+        target_widget, bbox_fn = self._resolve_highlight_spec(step.target_id)
+        new_key = (target_widget, bbox_fn)
+        if new_key == getattr(self, "_active_highlight_key", None):
+            return
+        self._cleanup_highlight()
+        self._active_highlight_key = new_key
+        if target_widget:
+            try:
+                self.highlight = TutorialHighlight(self.root, target_widget, bbox_fn=bbox_fn)
+            except Exception:
+                self.highlight = None
+
     def _poll_validator(self, validator_fn):
         if not self.hud_win or not self.hud_win.winfo_exists():
             return
+        try:
+            self._sync_dynamic_highlight()
+        except Exception:
+            pass
         try:
             if validator_fn(self.ui):
                 self.next_step()
@@ -547,6 +659,22 @@ class TutorialRunner:
         except Exception:
             pass
         self._poll_job = self.root.after(300, lambda: self._poll_validator(validator_fn))
+
+    def _resolve_highlight_spec(self, target_id):
+        """Resolve target_id (string, widget, tuple, or callable) into (widget, optional_bbox_fn)."""
+        if not target_id:
+            return None, None
+        spec = target_id
+        if callable(spec):
+            try:
+                spec = spec(self.ui)
+            except Exception:
+                return None, None
+        if isinstance(spec, tuple) and len(spec) == 2:
+            w_part, bbox_fn = spec
+            w = self._find_target(w_part)
+            return w, bbox_fn
+        return self._find_target(spec), None
 
     def _find_target(self, target_id):
         if not target_id:
@@ -594,12 +722,14 @@ class TutorialRunner:
     def next_step(self):
         self.current_idx += 1
         self.show_step()
+        self._refocus_main_if_hud_focused()
 
     def prev_step(self):
         if self.current_idx > 0:
             self.current_idx -= 1
             # Disable immediate validator auto-advance so reviewing a prior step never bounces forward
             self.show_step(auto_validate=False)
+            self._refocus_main_if_hud_focused()
 
     def finish_tutorial(self):
         self._cleanup()

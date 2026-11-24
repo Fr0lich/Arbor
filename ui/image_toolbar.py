@@ -113,7 +113,7 @@ class Tooltip:
         colors = self.get_colors()
         self.tip_window = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(True)
-        tw.wm_geometry(f"{int(x):+d}{int(y):+d}")
+        tw.wm_geometry(f"+{int(x)}+{int(y)}")
         tw.attributes("-topmost", True)
 
         label = tk.Label(

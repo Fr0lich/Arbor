@@ -233,7 +233,7 @@ class InfoButton(tk.Canvas):
         if 0 <= anchor_y < screen_h and y + tip_h > screen_h - 10:
             y = max(10, screen_h - tip_h - 10)
 
-        tw.wm_geometry(f"{int(x):+d}{int(y):+d}")
+        tw.wm_geometry(f"+{int(x)}+{int(y)}")
 
     def hide_tip(self, event=None):
         if self.tip_window:

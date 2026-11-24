@@ -137,18 +137,37 @@ class TestSandboxTutorials(unittest.TestCase):
         self.assertIsNone(runner.hud_win)
 
     def test_start_review_tutorial(self):
+        from tkinter import ttk
+        from ui.tutorials.review_tutorial import _is_resolver_open, _step9_target_selector
+
         runner = start_review_tutorial(self.ui)
         self.assertTrue(self.sm.is_sandboxed)
-        self.assertEqual(len(runner.steps), 8)
-        self.assertEqual(runner.steps[0].step_id, "welcome_overview")
-        self.assertEqual(runner.steps[1].step_id, "select_110")
-        self.assertEqual(runner.steps[2].step_id, "transcribe_110_date")
-        # Starts on #1003 so user actively searches up #110 in Step 1
-        self.assertEqual(str(self.ui.app.current_object_id), "1003")
-        # Step 2 hides 00.06.1910 behind the collapsible "The Answer" dropdown
+        self.assertEqual(len(runner.steps), 11)
+        self.assertEqual(
+            [s.step_id for s in runner.steps],
+            [
+                "welcome_overview",
+                "orient_110",
+                "transcribe_110_date",
+                "mark_110_reviewed",
+                "select_198",
+                "open_198_history",
+                "resolve_198_date",
+                "close_198_resolver",
+                "flag_other_issue",
+                "mark_reviewed",
+                "review_complete",
+            ],
+        )
+        # Starts cleanly on #110 (no #1003 jump)
+        self.assertEqual(str(self.ui.app.current_object_id), "110")
+        # Step 2 (orient_110) highlights entire Registration Data panel and has no More Details
+        self.assertEqual(runner.steps[1].target_id, "object_editor_frame")
+        self.assertIsNone(runner.steps[1].details)
+        # Step 3 hides 00.06.1910 behind the collapsible "The Answer" dropdown
         self.assertNotIn("00.06.1910", runner.steps[2].instruction)
         self.assertIn("00.06.1910", runner.steps[2].answer or "")
-        # Advance to Step 2 and verify the collapsible Answer drawer toggles cleanly
+        # Advance to Step 3 and verify the collapsible Answer drawer toggles cleanly
         runner.next_step()
         runner.next_step()
         self.assertFalse(runner._answer_expanded)
@@ -157,21 +176,65 @@ class TestSandboxTutorials(unittest.TestCase):
         runner._toggle_answer()
         self.assertFalse(runner._answer_expanded)
 
+        # Step 6 & 8: _is_resolver_open detects open Problem Resolution Toplevel
+        self.assertFalse(_is_resolver_open(self.ui))
+        res_win = tk.Toplevel(self.root)
+        res_win.withdraw()
+        res_win.title("Problem Resolution")
+        try:
+            self.assertTrue(_is_resolver_open(self.ui))
+        finally:
+            res_win.destroy()
+        self.assertFalse(_is_resolver_open(self.ui))
+
+        # Step 9: dynamic 2-stage target switches from reg_notebook -> Other Issue checkbox
+        nb = ttk.Notebook(self.root)
+        details_tab = ttk.Frame(nb)
+        prob_tab = ttk.Frame(nb)
+        nb.add(details_tab, text="Details")
+        nb.add(prob_tab, text="Problems")
+        other_cb = ttk.Checkbutton(prob_tab, text="Other Issue")
+        other_cb.tutorial_id = "other_problem_checkbox"
+        self.ui.reg_notebook = nb
+        self.ui._reg_tabs = {"Details": {"container": details_tab}, "Problems": {"container": prob_tab}}
+        self.ui.problem_checkbutton_map = {"Other_problem": other_cb}
+        try:
+            nb.select(details_tab)
+            stage1 = _step9_target_selector(self.ui)
+            self.assertIsInstance(stage1, tuple)
+            self.assertIs(stage1[0], nb)
+            nb.select(prob_tab)
+            stage2 = _step9_target_selector(self.ui)
+            self.assertIs(stage2, other_cb)
+        finally:
+            nb.destroy()
+
+        # Step 11: custom details_label + 2 direct launch action buttons
+        runner.current_idx = 10
+        runner.show_step()
+        self.assertEqual(runner.details_toggle_btn.cget("text"), "▸ Need help opening Arbor?")
+        self.assertEqual(len(runner.action_buttons_frame.winfo_children()), 2)
+
         runner.exit_tutorial()
         self.assertFalse(self.sm.is_sandboxed)
 
     def test_start_discrepancy_tutorial(self):
         runner = start_discrepancy_tutorial(self.ui)
         self.assertTrue(self.sm.is_sandboxed)
-        self.assertEqual(len(runner.steps), 6)
+        self.assertEqual(len(runner.steps), 7)
         self.assertEqual(runner.steps[0].step_id, "discrepancy_intro")
         self.assertEqual(runner.steps[1].step_id, "open_resolver")
         self.assertEqual(runner.steps[4].step_id, "apply_changes")
+        self.assertEqual(runner.steps[5].step_id, "close_discrepancy_resolver")
+        self.assertEqual(runner.steps[5].target_id, "hr_apply_all")
+        self.assertEqual(len(runner.steps[6].action_buttons), 2)
 
         runner.exit_tutorial()
         self.assertFalse(self.sm.is_sandboxed)
 
     def test_start_database_tutorial(self):
+        from ui.tutorials.database_tutorial import _has_typed_new_specimen_info
+
         runner = start_database_tutorial(self.ui)
         self.assertTrue(self.sm.is_sandboxed)
         self.assertEqual(len(runner.steps), 5)
@@ -179,7 +242,35 @@ class TestSandboxTutorials(unittest.TestCase):
         self.assertEqual(runner.steps[2].step_id, "add_new_object")
         self.assertIn("3001", self.ui.app.df_reg.index)
         self.assertNotIn("110", self.ui.app.df_reg.index)
+
+        # Validator must not prematurely advance on 1-2 characters
+        initial_ids = {"3001", "3002"}
+        self.ui.app.current_object_id = "3003"
+        self.ui.reg_vars = {"Genus": tk.StringVar(value="Be")}
+        self.assertFalse(_has_typed_new_specimen_info(self.ui, initial_ids))
+        self.ui.reg_vars["Genus"].set("Bet")
+        self.assertTrue(_has_typed_new_specimen_info(self.ui, initial_ids))
+
         runner.exit_tutorial()
+
+    def test_startup_how_to_open_arbor_window_and_menu_label(self):
+        """Verify StartupDialog Help menu starts with plain 'How to Open Arbor' and opens the guide window."""
+        import inspect
+        from ui.dialogs import StartupDialog
+
+        src = inspect.getsource(StartupDialog.show_help)
+        self.assertIn('label="How to Open Arbor"', src)
+
+        dlg = StartupDialog.__new__(StartupDialog)
+        dlg.win = self.root
+        dlg._bind_canvas_mousewheel = lambda c, f=None: None
+        dlg.load_demo_project = lambda: None
+        dlg._show_setup_help_msg()
+        win = getattr(dlg, "_setup_help_win", None)
+        self.assertIsNotNone(win)
+        self.assertTrue(win.winfo_exists())
+        self.assertEqual(win.title(), "Arbor — How to Open Arbor")
+        win.destroy()
 
     def test_sandbox_exit_when_initial_state_was_none(self):
         self.ui.app.excel_path = None
@@ -332,8 +423,7 @@ class TestSandboxTutorials(unittest.TestCase):
 
         self.assertTrue(captured, "Expected HUD geometry to be set")
         geom = captured[-1]
-        self.assertTrue(geom.startswith("-"), f"Expected negative X for left monitor, got {geom}")
-        self.assertNotIn("+-", geom, f"Invalid Tcl geometry string: {geom}")
+        self.assertTrue(geom.startswith("+-"), f"Expected Tk '+-' anchor for negative left-monitor X, got {geom}")
 
     def test_welcome_tour_prompt_centered_and_persistent(self):
         """Regression: Demo/first-run welcome prompt is a persistent centered Toplevel (no auto-dismiss)."""
@@ -602,6 +692,39 @@ class TestSandboxTutorials(unittest.TestCase):
                 self.assertFalse(s.title.startswith(("1.", "2.")))
         finally:
             img_runner.exit_tutorial()
+
+    def test_hud_forwards_global_shortcuts_and_returns_focus(self):
+        """Verify floating tutorial HUD binds Ctrl+F / Ctrl+H passthrough and avoids stealing dialog focus."""
+        from unittest.mock import MagicMock
+        from ui.keybindings import KeybindingManager
+
+        mock_ui = MagicMock()
+        mock_ui.root = self.root
+        called = []
+        mock_ui.handle_ctrl_f = lambda e=None: called.append("ctrl_f")
+        mock_ui.open_history_shortcut = lambda e=None: called.append("ctrl_h")
+
+        runner = TutorialRunner(
+            mock_ui,
+            [ActionStep(step_id="s1", title="Step", instruction="Test")],
+            tutorial_name="Shortcut Passthrough",
+            use_sandbox=False,
+        )
+        try:
+            self.assertTrue(runner.hud_win.bind("<Control-f>"))
+            self.assertTrue(runner.hud_win.bind("<Control-h>"))
+            self.assertTrue(runner.hud_win.bind("<Control-k>"))
+            # Verify target forwarding actually invokes handlers cleanly
+            bound = {}
+            class _Rec:
+                def bind(self, seq, fn):
+                    bound[seq] = fn
+            KeybindingManager(mock_ui, self.root).bind_global_shortcuts(target=_Rec())
+            bound["<Control-f>"](None)
+            bound["<Control-h>"](None)
+            self.assertEqual(called, ["ctrl_f", "ctrl_h"])
+        finally:
+            runner.exit_tutorial()
 
 
 if __name__ == "__main__":

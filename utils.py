@@ -393,11 +393,15 @@ def fade_in_toplevel(win, target_alpha=1.0, duration_ms=120, step_ms=15):
 
 
 def format_tk_geometry(x, y, w=None, h=None) -> str:
-    """Format a Tk geometry string with signed coordinates so negative multi-monitor X/Y never break."""
+    """Format a Tk geometry string with explicit '+' anchors so negative multi-monitor X/Y work.
+
+    In Tk, '-500' means 500px from the RIGHT edge of the primary monitor, whereas '+-500'
+    means virtual desktop coordinate X = -500 (e.g. a monitor to the left of primary).
+    """
     ix, iy = int(x), int(y)
     if w is not None and h is not None:
-        return f"{int(w)}x{int(h)}{ix:+d}{iy:+d}"
-    return f"{ix:+d}{iy:+d}"
+        return f"{int(w)}x{int(h)}+{ix}+{iy}"
+    return f"+{ix}+{iy}"
 
 
 def center_and_fit_toplevel(win, base_w=None, base_h=None):
@@ -438,7 +442,7 @@ def center_and_fit_toplevel(win, base_w=None, base_h=None):
         x = max(0, (screen_w // 2) - (w // 2))
         y = max(0, (screen_h // 2) - (h // 2))
 
-    win.geometry(f"{w}x{h}{x:+d}{y:+d}")
+    win.geometry(format_tk_geometry(x, y, w, h))
     fade_in_toplevel(win)
 
 

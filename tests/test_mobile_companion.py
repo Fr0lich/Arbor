@@ -1771,7 +1771,44 @@ def test_mobile_v2_core_ui_and_offline_contracts():
         'id="walkthroughModal"',
         'id="swipeArea"',
         'id="photoViewerViewport"',
+        'id="oldNamesSheet"',
+        'id="btnOldNames"',
+        'function openOldNamesSheet()',
         'function initTouchGestures()',
         'function initPhotoViewerTouchGestures()',
     ):
         assert token in INDEX_TEMPLATE_V2, f"Missing Mobile V2 contract token: {token}"
+
+
+def test_mobile_synonyms_and_check_label_endpoints():
+    """Verify /api/object/<oid>/synonyms and /check-label routes work cleanly offline & with mocked GBIF."""
+    from unittest.mock import patch
+    from backend import gbif as gbif_mod
+
+    app = AppState()
+    app.config = config.DATABASE_CONFIGS["Økonomisk Botanisk"]
+    app.df_reg = pd.DataFrame([{"ObjectID": "101", "Genus": "Betula", "Species": "pendula", "Family": "Asteraceae"}]).set_index("ObjectID", drop=False)
+    app.df_obs = pd.DataFrame([{"ObjectID": "101", "Reviewed": False}]).set_index("ObjectID", drop=False)
+    server = MobileServer(app)
+    server.update_pin_requirement(False)
+    client = server.flask_app.test_client()
+
+    with patch.object(gbif_mod, "get_synonyms", return_value={
+        "registered_name": "Betula pendula",
+        "registered_family": "Asteraceae",
+        "old_families": [{"name": "Compositae", "note": "Classical name for Asteraceae"}],
+        "primary_synonyms": [{"name": "Betula alba", "author": "L.", "kind": "Basionym"}],
+        "other_synonyms": [],
+        "offline": False,
+        "from_cache": False,
+    }):
+        resp = client.get("/api/object/101/synonyms")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["old_families"][0]["name"] == "Compositae"
+    assert data["primary_synonyms"][0]["name"] == "Betula alba"
+
+    # Offline classical family comparison via /check-label
+    resp2 = client.post("/api/object/101/check-label", json={"label_name": "Compositae"})
+    assert resp2.status_code == 200
+    assert resp2.get_json()["verdict"] == "synonym_match"

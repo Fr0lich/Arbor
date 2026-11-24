@@ -13,6 +13,79 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 45: Startup "How to Open Arbor" Guide Window & Desktop Tutorials Polish
+- **Date**: 2026-11-24
+- **Feature Area**: Startup Window Help (`ui/dialogs.py`) & Interactive Tutorials (`ui/tutorials/discrepancy_tutorial.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/database_tutorial.py`, `ui/tutorials/micro_guides.py`)
+- **What Changed**:
+  1. **Startup "How to Open Arbor" Window (`ui/dialogs.py`)**: Renamed the first item in the Startup Window's bottom-left **Help** menu to plain `"How to Open Arbor"` (no icon) and upgraded `_show_setup_help_msg` into a scrollable 4-step plain-English guide covering every section on Project Setup (`REQUIRED` Excel `.xlsx` collection file / Recent Projects / Demo Project, `RECOMMENDED` Specimen Photos, `OPTIONAL` Historical Books, and `LAUNCH SYSTEM` / `Mobile Companion`).
+  2. **Historical Ledger Comparison (`ui/tutorials/discrepancy_tutorial.py`)**: Aligned window terminology to **"Problem Resolution"**, added Step 6 (`close_discrepancy_resolver`) highlighting `"Apply All Resolved"` (`hr_apply_all`) to save & close cleanly, added an **Old Names & Synonyms** tip in `More Details`, and added direct launch buttons on Step 7 (`Office Triage (REV+ERR)` and `Mobile Companion Hallway Guide`).
+  3. **Office Triage (REV+ERR) (`ui/tutorials/triage_tutorial.py`)**: Replaced jargon with plain trainee language, removed the misleading `search_entry` highlight on Step 2, added an **Old Names & Synonyms** tip in `More Details`, and added direct launch buttons on Step 5.
+  4. **Collections & New Specimens & Short Quick Guides (`ui/tutorials/database_tutorial.py`, `ui/tutorials/micro_guides.py`)**: Removed raw sheet/column jargon, prevented premature auto-advance on Step 4 of Collections & New Specimens (now requires ≥ 3 characters), added a direct **Practice in Sandbox (Office Triage)** button to `Hallway Follow-Up (30s)`, and noted photo thumbnail switching in `Image Zoom & Rotate (20s)`.
+- **User Impact**: New trainees opening Arbor for the first time can click **Help → How to Open Arbor** for a simple visual guide to which files to load, and all desktop tutorials now share consistent window names, accurate highlights, and one-click next-tutorial handoffs.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py` (23 passed)
+  - [ ] Mobile Companion Hallway Guide (`micro_guides.py` → `start_armed_shelf_guide`) — intentionally paused pending upcoming Mobile Companion updates
+
+---
+
+### Entry 44: 1-Tap "Old Names & Synonyms" Lookup (Desktop + Mobile Companion V2)
+- **Date**: 2026-11-24
+- **Feature Area**: Taxonomy Reference (`backend/gbif.py`, `backend/mobile_server.py`, `backend/mobile_template_v2.py`, `ui/old_names_dialog.py`, `ui/main_window.py`, `ui/command_palette.py`)
+- **What Changed**:
+  1. **Offline Old-Family Map, Herbarium-Ranked GBIF Synonyms & Silent Disk Cache (`backend/gbif.py`)**: Added `get_old_family_names()` (8 classical botanical families + 20 common APG family merges/splits, 100% offline), `get_synonyms()` (fetches basionym & GBIF synonyms ranked **Basionym → Homotypic → Other**, cached in memory and silently persisted to `.arbor_synonyms_cache.json` next to the workbook for offline vaults), `collect_local_old_names()` (extracts prior museum names from `Log` & historical ledgers), and `compare_label_name()` with calibrated 3-state verdicts.
+  2. **Mobile Companion V2 1-Tap `📜 Old names` Bottom Sheet (`backend/mobile_server.py`, `backend/mobile_template_v2.py`)**: Added `/api/object/<oid>/synonyms` and `/api/object/<oid>/check-label` endpoints and a hidden-by-default **`📜 Old names`** pill in the specimen header opening a read-only bottom sheet (`#oldNamesSheet`) with 0-typing ranked results, collapsible `Show more`, optional filter / GBIF check fallback, and a 1-tap `Flag Taxon Mismatch & Add Note` handoff.
+  3. **Desktop `📜 Old Names` Popover (`ui/old_names_dialog.py`, `ui/main_window.py`, `ui/command_palette.py`)**: Added a compact `📜 Old Names` button in the Registration header (plus `TOOLS ▾ → View Old Names & Synonyms...` and `Ctrl+K`) opening a non-blocking, `<Escape>`-closable, read-only `OldNamesDialog`.
+- **User Impact**: Trainees walking the hallway with a phone (or working at a desk) see a clean specimen card by default, and can tap **`📜 Old names`** once whenever a physical label has an unfamiliar name — immediately confirming whether it is an outdated synonym/family (keep the modern name!) or a genuine mismatch, even offline in concrete vaults.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_gbif.py`, `tests/test_mobile_companion.py`
+  - [x] Mobile V2 JS syntax verified via `node --check`
+
+---
+
+### Entry 43: Redesigned 11-Step 3-Minute Quick Tour with Dynamic Highlights & Direct Next-Tutorial Buttons
+- **Date**: 2026-11-24
+- **Feature Area**: Interactive Tutorials (`ui/tutorials/review_tutorial.py`, `ui/tutorials/tutorial_runner.py`, `ui/registry_panel.py`)
+- **What Changed**:
+  1. **Streamlined 11-Step Quick Tour (`ui/tutorials/review_tutorial.py`)**: Starts cleanly on `#110` (removing the `#1003` jump), adds a dedicated Registration Data orientation step highlighting the entire Registration Data panel, adds a `Mark Object #110 as Reviewed` step so trainees see green `[REV]` before contrasting it with `#198`'s amber `[REV+ERR]`, splits `#198`'s Problem Resolution workflow into three focused steps (open Problem Resolution → apply `1927` → click `"Apply All Resolved"` to save & close), and removes the `[Space]` shortcut and auto-tab-switch on `"Other Issue"`.
+  2. **2-Stage Dynamic Highlights, Custom Dropdown Label & Direct Launch Buttons (`ui/tutorials/tutorial_runner.py`, `ui/registry_panel.py`)**: Tagged `"Other Issue"` (`Other_problem`) with `tutorial_id="other_problem_checkbox"`, added sub-region `bbox_fn` + callable `target_id` support in `TutorialRunner` so Step 9 highlights the **Problems** tab header first and transitions to the **"Other Issue"** checkbox once clicked, added optional `details_label` (used for `"▸ Need help opening Arbor?"` on Step 11), and added reusable `action_buttons` so trainees can launch **Mobile Companion Hallway Guide (Recommended)** or **Historical Ledger Comparison** directly from the final step.
+- **User Impact**: New trainees get a calmer, clearer desktop walkthrough that starts right on Object `#110`, teaches both clean `[REV]` and flagged `[REV+ERR]` badges, guides them step by step inside Problem Resolution, and lets them jump straight into the Mobile Companion Hallway Guide or Historical Ledger Comparison in one click.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py` (22 passed)
+  - [ ] Trainee Manual (`USER_GUIDE.md`) — sync if Quick Tour step summary is referenced via 1-Prompt Sync Protocol
+
+---
+
+### Entry 42: Multi-Monitor Negative-Coordinate Fix for Tutorial Highlights, HUD & Popups
+- **Date**: 2026-11-24
+- **Feature Area**: Multi-Monitor Positioning (`utils.py`, `ui/tutorials/tutorial_runner.py`, `ui/toast.py`, `ui/widgets.py`, `ui/image_toolbar.py`, `ui/main_window.py`) & Engineering Watchlist (`documentation/agent/CLAUDE_BUG_REVIEW_GUIDE.md`)
+- **What Changed**:
+  1. **Fixed Tk Negative-Coordinate Geometry (`utils.py`, `tutorial_runner.py`, `toast.py`, `widgets.py`, `image_toolbar.py`, `main_window.py`)**: Replaced all 12 `{:+d}` `.geometry(...)` format strings with explicit `+` anchors (`+{int(x)}+{int(y)}` via `utils.format_tk_geometry()`). In Tkinter, `-500` means *"500px from the right edge of the primary monitor"*, whereas `+-500` places the window at virtual coordinate `-500` on a secondary monitor.
+  2. **Dialog-Aware Highlight Ownership (`ui/tutorials/tutorial_runner.py`)**: Updated `TutorialHighlight` to bind `transient(target_widget.winfo_toplevel())` so highlights over child dialogs (like Historical Ledger Comparison) track that dialog's monitor and Z-order cleanly.
+  3. **Live Tk Regression Test & Watchlist**: Updated `test_multimonitor_negative_coordinates_positioning` in `tests/test_navigation_and_dialogs.py` to verify live `winfo_x() == -500`, and documented the `+{x}+{y}` (never `{:+d}`) rule in Section 4 of `CLAUDE_BUG_REVIEW_GUIDE.md`.
+- **User Impact**: When running Arbor on a secondary monitor (including monitors to the left of or above the primary screen), tutorial highlight boxes, tutorial HUD popups, dialogs, toasts, and tooltips now stay locked to the exact monitor where Arbor is open.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Recurring Issues Watchlist: `documentation/agent/CLAUDE_BUG_REVIEW_GUIDE.md`
+  - [x] Unit Tests: `tests/test_navigation_and_dialogs.py`, `tests/test_sandbox_tutorials.py`
+
+---
+
+### Entry 41: Tutorial HUD Global Shortcut Passthrough & Auto-Refocus
+- **Date**: 2026-11-24
+- **Feature Area**: Interactive Tutorials & Keyboard Shortcuts (`ui/keybindings.py`, `ui/tutorials/tutorial_runner.py`)
+- **What Changed**:
+  1. **Target-Window Shortcut Forwarding (`ui/keybindings.py`)**: Extended `KeybindingManager.bind_global_shortcuts(target=None)` so Arbor's global shortcuts (`Ctrl+F`, `Ctrl+H`, `Ctrl+K`, `Ctrl+G`, `Ctrl+Enter`, `Alt+R`, etc.) can be forwarded from a floating non-modal HUD onto the main window (returning focus to `root` before invoking the handler) without leaking into modal dialogs.
+  2. **Floating HUD Passthrough & Gentle Refocus (`ui/tutorials/tutorial_runner.py`)**: Bound global shortcuts onto `TutorialRunner.hud_win` on creation and added `_refocus_main_if_hud_focused()` after `Next →`, `← Back`, and drawer toggles so keyboard focus immediately returns to Arbor's main window without stealing focus from any open child dialog (like Historical Ledger Comparison).
+- **User Impact**: Trainees can now press `Ctrl+F`, `Ctrl+H`, `Ctrl+K`, or any other Arbor shortcut immediately while reading or clicking through the tutorial HUD — no more having to click the main window first.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py`, `tests/test_navigation_and_dialogs.py`
+
+---
+
 ### Entry 40: Overnight Smoke-Test Fixes (Tutorial Validator & `← Previous` Bounce Fixes, 6 Dialog `<Escape>` Bindings, Shortcut Parity, Mobile `Retry` Contrast, & High-DPI Toolbar Spacing)
 - **Date**: 2026-11-24
 - **Feature Area**: Tutorials (`ui/tutorials/micro_guides.py`, `ui/tutorials/tutorial_runner.py`, `ui/tutorials/review_tutorial.py`, `ui/tutorials/discrepancy_tutorial.py`), Dialog Ergonomics (`ui/database_ops.py`, `ui/dialogs.py`, `ui/group_editor.py`, `ui/new_database_wizard.py`), Menus & Toolbars (`ui/main_window.py`, `ui/command_palette.py`, `ui/filter_panel.py`, `ui/object_context_bar.py`, `ui/registry_panel.py`, `ui/image_toolbar.py`), & Mobile Companion V2 (`backend/mobile_template_v2.py`)

@@ -361,9 +361,17 @@ def test_multimonitor_negative_coordinates_positioning(tk_root, monkeypatch):
     import utils
     from ui.toast import ToastManager
 
-    # 1. Signed Tk geometry formatter never produces "+-" syntax
-    assert utils.format_tk_geometry(-1200, -150, 500, 400) == "500x400-1200-150"
-    assert utils.format_tk_geometry(-45, 80) == "-45+80"
+    # 1. Tk geometry formatter uses explicit '+' anchor ('+-') so negative X/Y stay on secondary monitors
+    assert utils.format_tk_geometry(-1200, -150, 500, 400) == "500x400+-1200+-150"
+    assert utils.format_tk_geometry(-45, 80) == "+-45+80"
+
+    # Live Tk check: '+-500+100' keeps winfo_x at -500 (whereas '-500+100' teleports onto primary monitor)
+    probe = tk.Toplevel(tk_root)
+    probe.withdraw()
+    probe.geometry(utils.format_tk_geometry(-500, 100, 200, 100))
+    probe.update_idletasks()
+    assert probe.winfo_x() == -500
+    probe.destroy()
 
     # 2. center_and_fit_toplevel centers over a master placed on a left/upper secondary monitor
     monkeypatch.setattr(tk_root, "winfo_viewable", lambda: True)
@@ -384,8 +392,7 @@ def test_multimonitor_negative_coordinates_positioning(tk_root, monkeypatch):
     monkeypatch.setattr(child, "geometry", _capture_geom)
     utils.center_and_fit_toplevel(child, 500, 400)
     assert recorded_geoms, "Expected geometry to be applied"
-    assert "+-" not in recorded_geoms[-1]
-    assert "-1150" in recorded_geoms[-1]  # -1600 + (1400 - 500)//2 = -1150
+    assert "+-1150" in recorded_geoms[-1]  # -1600 + (1400 - 500)//2 = -1150
     child.destroy()
 
     # 3. ToastManager renders cleanly with signed negative coordinates without raising TclError

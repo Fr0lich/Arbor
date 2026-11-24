@@ -1306,3 +1306,98 @@ class TestGBIFSynonymReasoning:
         assert fam_chg is not None
         assert fam_chg["reason_code"] == "MISSING_FAMILY"
         assert "Missing Family" in fam_chg["reason_label"]
+
+
+class TestOldNamesAndSynonyms:
+    """Tests for 1-tap Old Names & Synonyms engine, silent disk cache, and label comparison."""
+
+    def test_offline_old_family_names_classical_and_apg(self):
+        from backend.gbif import get_old_family_names
+
+        ast = [x["name"] for x in get_old_family_names("Asteraceae")]
+        assert "Compositae" in ast
+        comp = [x["name"] for x in get_old_family_names("Compositae")]
+        assert "Asteraceae" in comp
+        malv = [x["name"] for x in get_old_family_names("Malvaceae")]
+        assert "Tiliaceae" in malv and "Sterculiaceae" in malv
+        assert get_old_family_names("") == []
+
+    def test_get_synonyms_ranking_disk_cache_and_offline_fallback(self, tmp_path):
+        import os
+        from backend import gbif as gbif_mod
+
+        gbif_mod.check_gbif.cache_clear()
+        cache_file = str(tmp_path / ".arbor_synonyms_cache.json")
+
+        fake_match = {
+            "matchType": "EXACT", "status": "ACCEPTED", "canonicalName": "Betula pendula",
+            "usageKey": 5331916, "acceptedUsageKey": None, "family": "Betulaceae",
+            "confidence": 99, "synonym": False,
+        }
+        sp_resp = MagicMock(ok=True)
+        sp_resp.json.return_value = {"basionym": "Betula alba L."}
+        syn_resp = MagicMock(ok=True)
+        syn_resp.raise_for_status = lambda: None
+        syn_resp.json.return_value = {
+            "results": [
+                {"canonicalName": "Betula verrucosa", "authorship": "Ehrh.", "taxonomicStatus": "HETEROTYPIC_SYNONYM", "rank": "SPECIES"},
+                {"canonicalName": "Betula alba", "authorship": "L.", "taxonomicStatus": "HOMOTYPIC_SYNONYM", "rank": "SPECIES"},
+                {"canonicalName": "Betula pendula var. carelica", "authorship": "", "taxonomicStatus": "HETEROTYPIC_SYNONYM", "rank": "VARIETY"},
+            ]
+        }
+
+        mock_sess = MagicMock()
+        mock_sess.get.side_effect = [sp_resp, syn_resp]
+
+        with patch.object(gbif_mod, "check_gbif", return_value=fake_match), \
+             patch.object(gbif_mod, "_get_session", return_value=mock_sess):
+            res = gbif_mod.get_synonyms("Betula", "pendula", family="Betulaceae", cache_path=cache_file)
+
+        assert res["offline"] is False
+        assert res["primary_synonyms"][0]["name"] == "Betula alba"
+        assert res["primary_synonyms"][0]["kind"] == "Basionym"
+        assert any(s["name"] == "Betula verrucosa" for s in res["other_synonyms"])
+        assert os.path.exists(cache_file)
+
+        # Clear in-memory cache and simulate offline -> disk cache still serves results cleanly!
+        gbif_mod.check_gbif.cache_clear()
+        with patch.object(gbif_mod, "check_gbif", return_value={"error": "offline"}):
+            cached = gbif_mod.get_synonyms("Betula", "pendula", family="Betulaceae", cache_path=cache_file)
+        assert cached["from_cache"] is True
+        assert cached["offline"] is False
+        assert cached["primary_synonyms"][0]["name"] == "Betula alba"
+
+        # Uncached taxon offline -> returns offline=True + offline family aliases cleanly
+        with patch.object(gbif_mod, "check_gbif", return_value={"error": "offline"}):
+            off = gbif_mod.get_synonyms("Taraxacum", "officinale", family="Asteraceae", cache_path=cache_file)
+        assert off["offline"] is True
+        assert any(f["name"] == "Compositae" for f in off["old_families"])
+
+    def test_compare_label_name_verdicts(self):
+        from backend import gbif as gbif_mod
+
+        # 1. Offline classical family match -> zero network calls needed
+        fam_res = gbif_mod.compare_label_name("Compositae", "Taraxacum", "officinale", reg_family="Asteraceae")
+        assert fam_res["verdict"] == "synonym_match"
+
+        # 2. Same acceptedUsageKey -> synonym_match
+        with patch.object(gbif_mod, "check_gbif", side_effect=[
+            {"usageKey": 100, "acceptedUsageKey": None, "canonicalName": "Betula pendula", "confidence": 99, "matchType": "EXACT"},
+            {"usageKey": 200, "acceptedUsageKey": 100, "canonicalName": "Betula verrucosa", "confidence": 98, "matchType": "EXACT", "synonym": True},
+        ]):
+            r = gbif_mod.compare_label_name("Betula verrucosa", "Betula", "pendula")
+        assert r["verdict"] == "synonym_match"
+
+        # 3. Different acceptedUsageKey (EXACT) -> different_species
+        with patch.object(gbif_mod, "check_gbif", side_effect=[
+            {"usageKey": 100, "acceptedUsageKey": None, "canonicalName": "Betula pendula", "confidence": 99, "matchType": "EXACT"},
+            {"usageKey": 300, "acceptedUsageKey": None, "canonicalName": "Quercus robur", "confidence": 99, "matchType": "EXACT", "synonym": False},
+        ]):
+            r = gbif_mod.compare_label_name("Quercus robur", "Betula", "pendula")
+        assert r["verdict"] == "different_species"
+
+        # 4. Offline -> neutral uncertain verdict
+        with patch.object(gbif_mod, "check_gbif", return_value={"error": "offline"}):
+            r = gbif_mod.compare_label_name("Unknownus plantus", "Betula", "pendula")
+        assert r["verdict"] == "uncertain"
+        assert r.get("offline") is True

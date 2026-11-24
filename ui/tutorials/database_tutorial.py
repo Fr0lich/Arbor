@@ -10,7 +10,7 @@ from .tutorial_runner import TutorialRunner, ActionStep
 
 
 def _has_typed_new_specimen_info(ui, initial_ids: set) -> bool:
-    """Detect whether the user typed Genus or Collection Place on a newly added specimen."""
+    """Detect whether the user typed at least 3 characters into Genus or Collection Place on a newly added specimen."""
     app = getattr(ui, "app", None)
     oid = str(getattr(app, "current_object_id", "") or "")
     reg_vars = getattr(ui, "reg_vars", None) or {}
@@ -18,7 +18,7 @@ def _has_typed_new_specimen_info(ui, initial_ids: set) -> bool:
         for field in ("Genus", "Collection Place"):
             if field in reg_vars:
                 try:
-                    if str(reg_vars[field].get() or "").strip():
+                    if len(str(reg_vars[field].get() or "").strip()) >= 3:
                         return True
                 except Exception:
                     pass
@@ -30,7 +30,7 @@ def _has_typed_new_specimen_info(ui, initial_ids: set) -> bool:
                     if field in df_reg.columns:
                         try:
                             val = str(df_reg.loc[idx, field] or "").strip()
-                            if val and val.lower() not in ("nan", "none"):
+                            if len(val) >= 3 and val.lower() not in ("nan", "none"):
                                 return True
                         except Exception:
                             pass
@@ -59,9 +59,6 @@ def start_database_tutorial(ui, on_complete=None):
                 "Use these steps when you need to create a brand-new collection file from scratch or register a specimen that isn't listed yet."
             ),
             action_hint="Click Next → to see how new collections and specimens are created.",
-            details=(
-                "Everything here runs inside a clean 2-specimen Practice Sandbox — your real collection files stay untouched."
-            ),
         ),
         ActionStep(
             step_id="open_db_wizard",
@@ -69,7 +66,7 @@ def start_database_tutorial(ui, on_complete=None):
             instruction="To start a brand-new collection, use FILE ▾ → New Database Wizard... (or '+ Create New Database' on startup) to generate a ready-to-use collection file with all standard fields.",
             action_hint="Click Next → to practice adding a new specimen.",
             details=(
-                "Excel impact: Creates Registration, Observation, Log, and Unvalidated_source sheets with standard columns automatically — no manual spreadsheet setup required."
+                "Arbor automatically sets up all 4 linked sheets inside the Excel file with standard columns — no manual spreadsheet setup required."
             ),
         ),
         ActionStep(
@@ -79,7 +76,7 @@ def start_database_tutorial(ui, on_complete=None):
             action_hint="Press Ctrl+N or click SPECIMEN ▾ → New Specimen Object... (or Skip Step →).",
             keycaps=["Ctrl", "N"],
             details=(
-                "Excel impact: Appends a new unique ObjectID row to both the Registration and Observation sheets in memory."
+                "Adds a new unique Specimen ID to your collection in memory."
             ),
             validator=lambda u: bool(
                 u.app.df_reg is not None and len(u.app.df_reg) > initial_count
@@ -93,7 +90,7 @@ def start_database_tutorial(ui, on_complete=None):
                 "When you're ready to record where it sits, press Ctrl+L to jump straight to Storage Location."
             ),
             target_id="object_editor_frame",
-            action_hint="Type into Genus or Collection Place (or click Skip Step →).",
+            action_hint="Type a Genus or Collection Place (or click Skip Step →).",
             keycaps=["Ctrl", "L"],
             details=(
                 "In real workbooks, Arbor creates a rolling safety backup in .arbor_backups/ every time you press Ctrl+S."
@@ -105,9 +102,6 @@ def start_database_tutorial(ui, on_complete=None):
             title="Practice Complete!",
             instruction="You have practiced creating collections and adding new specimens safely in Practice Mode. Click Finish ✓ to return to your workspace.",
             action_hint="Click 'Finish ✓' below to exit Practice Mode.",
-            details=(
-                "You can replay any step of the Suggested Learning Path anytime from HELP ▾ or by pressing F1."
-            ),
         ),
     ]
 

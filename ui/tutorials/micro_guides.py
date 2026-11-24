@@ -11,33 +11,42 @@ from .sandbox_manager import mark_tutorial_completed
 
 def start_hallway_followup_guide(ui, on_complete=None):
     """30-second micro-guide explaining the Hallway Follow-Up (REV+ERR) office triage loop."""
+    def _launch_triage_sandbox(runner):
+        from .triage_tutorial import start_triage_tutorial
+        runner.finish_tutorial()
+        start_triage_tutorial(ui)
+
     steps = [
         ActionStep(
             step_id="mg_hallway_filter",
-            title="Isolate Vault-Flagged Specimens",
+            title="Show Only Hallway-Flagged Specimens",
             instruction=(
                 "Click 'Hallway Follow-Up (REV+ERR)' in the Filter dialog (Ctrl+G) or search it in Ctrl+K. "
-                "Arbor filters the Specimen Directory to records verified in the vault that still have open flags."
+                "Arbor filters the Specimen Directory to objects verified in the hallway that still have open flags."
             ),
             action_hint="Use Ctrl+G (Filter) or Ctrl+K → Hallway Follow-Up.",
             keycaps=["Ctrl", "G"],
             details=(
-                "Excel impact: Filters for rows where Observation.Reviewed = TRUE AND at least one problem flag column is TRUE."
+                "Shows only objects that have already been physically Reviewed and still have at least one active problem box."
             ),
         ),
         ActionStep(
             step_id="mg_hallway_resolve",
-            title="Triage, Clear, or Leave for Later",
+            title="Clear False Alarms or Leave for a Specialist",
             instruction=(
                 "Open 'Triage Problem Queue' (Ctrl+K) to step through the amber [REV+ERR] cards. "
-                "Fix the entry or click '✓ Value is Correct (Clear Flag)' — and if you can't solve a problem today, that's completely okay: just leave the flag active so someone else can look at it later."
+                "Fix the entry or click '✓ Value is Correct (Clear Flag)' — and if you can't solve a problem today, "
+                "that's completely okay: just leave the flag active for a specialist later."
             ),
-            action_hint="Click Finish ✓ to return to your workspace.",
+            action_hint="Click Finish ✓ to return to your workspace, or try the Practice Sandbox above.",
             keycaps=["Ctrl", "K"],
             details=(
                 "Once all problem flags on a specimen are cleared, its badge automatically changes from amber [REV+ERR] to green [REV]. "
-                "Leaving an unresolved flag active keeps it safely queued for a specialist in the future."
+                "Leaving an unresolved flag active keeps it safely queued for a specialist later."
             ),
+            action_buttons=[
+                ("🎯 Practice in Sandbox (Office Triage)", _launch_triage_sandbox, True),
+            ],
         ),
     ]
     return TutorialRunner(
@@ -154,13 +163,13 @@ def start_image_controls_guide(ui, on_complete=None):
     steps = [
         ActionStep(
             step_id="mg_img_zoom",
-            title="Zoom & Pan High-Resolution Scans",
+            title="Zoom, Pan & Switch Specimen Photos",
             instruction=(
                 "Scroll the mousewheel over the highlighted scan to zoom in on handwritten labels, and click-drag to pan. "
-                "Press Ctrl+0 anytime to reset the view."
+                "Click the thumbnails underneath the main photo to switch between front and back images, or press Ctrl+0 anytime to reset the view."
             ),
             target_id="image_container",
-            action_hint="Use mousewheel or Ctrl+1 / Ctrl+2 / Ctrl+3 / Ctrl+0.",
+            action_hint="Use mousewheel, click thumbnails below, or press Ctrl+0.",
             keycaps=["Ctrl", "0"],
             details=(
                 "Quick zoom presets: Ctrl+1 fits the whole sheet, Ctrl+2 fits to width for reading bottom labels, and Ctrl+3 zooms to 100% pixel inspection."

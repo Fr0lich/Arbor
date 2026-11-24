@@ -2188,6 +2188,81 @@ self.addEventListener('fetch', (event) => {
             })
 
 
+        @app.route('/api/object/<oid>/synonyms', methods=['GET'])
+        def get_object_synonyms(oid):
+            oid_s = str(oid).strip()
+            genus = ""
+            species = ""
+            family = ""
+            workbook_path = None
+            local_history = []
+
+            with self.app_state.df_lock:
+                df_reg = getattr(self.app_state, 'df_reg', None)
+                if df_reg is None or df_reg.empty:
+                    return jsonify({"error": "No database loaded"}), 404
+                row = None
+                if oid_s in df_reg.index:
+                    row = df_reg.loc[oid_s]
+                elif oid_s.isdigit() and int(oid_s) in df_reg.index:
+                    row = df_reg.loc[int(oid_s)]
+                if row is None:
+                    return jsonify({"error": "Specimen not found"}), 404
+                if isinstance(row, pd.DataFrame):
+                    row = row.iloc[0]
+                genus = "" if pd.isna(row.get("Genus", "")) else str(row.get("Genus", "")).strip()
+                species = "" if pd.isna(row.get("Species", "")) else str(row.get("Species", "")).strip()
+                family = "" if pd.isna(row.get("Family", "")) else str(row.get("Family", "")).strip()
+                workbook_path = getattr(self.app_state, 'excel_path', None)
+                from backend import gbif as gbif_mod
+                local_history = gbif_mod.collect_local_old_names(self.app_state, oid_s)
+
+            # Perform cache / GBIF lookup strictly outside df_lock
+            cache_path = gbif_mod.get_synonym_cache_path(workbook_path)
+            syn_data = gbif_mod.get_synonyms(genus, species, family=family, cache_path=cache_path)
+            return jsonify({
+                "registered": {
+                    "scientific_name": syn_data.get("registered_name") or f"{genus} {species}".strip(),
+                    "genus": genus,
+                    "species": species,
+                    "family": syn_data.get("registered_family") or family,
+                },
+                "local_history": local_history,
+                "old_families": syn_data.get("old_families", []),
+                "primary_synonyms": syn_data.get("primary_synonyms", []),
+                "other_synonyms": syn_data.get("other_synonyms", []),
+                "offline": bool(syn_data.get("offline", False)),
+                "from_cache": bool(syn_data.get("from_cache", False)),
+            })
+
+        @app.route('/api/object/<oid>/check-label', methods=['POST'])
+        def check_object_label_name(oid):
+            oid_s = str(oid).strip()
+            body = request.get_json(silent=True) or {}
+            label_name = str(body.get("label_name") or "").strip()
+            if not label_name:
+                return jsonify({"verdict": "uncertain", "message": "Enter a name from the physical label to check."})
+
+            with self.app_state.df_lock:
+                df_reg = getattr(self.app_state, 'df_reg', None)
+                if df_reg is None or df_reg.empty:
+                    return jsonify({"error": "No database loaded"}), 404
+                row = None
+                if oid_s in df_reg.index:
+                    row = df_reg.loc[oid_s]
+                elif oid_s.isdigit() and int(oid_s) in df_reg.index:
+                    row = df_reg.loc[int(oid_s)]
+                if row is None:
+                    return jsonify({"error": "Specimen not found"}), 404
+                if isinstance(row, pd.DataFrame):
+                    row = row.iloc[0]
+                genus = "" if pd.isna(row.get("Genus", "")) else str(row.get("Genus", "")).strip()
+                species = "" if pd.isna(row.get("Species", "")) else str(row.get("Species", "")).strip()
+                family = "" if pd.isna(row.get("Family", "")) else str(row.get("Family", "")).strip()
+
+            from backend import gbif as gbif_mod
+            return jsonify(gbif_mod.compare_label_name(label_name, genus, species, reg_family=family))
+
         @app.route('/api/object/<oid>/history', methods=['GET'])
         def get_object_history(oid):
             oid = str(oid).strip()

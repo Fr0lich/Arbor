@@ -585,6 +585,9 @@ INDEX_TEMPLATE_V2 = """
             <span class="text-subdued font-sans">Loc:</span>
             <span class="text-ink font-semibold" id="headerLocSummary">Cab 04 · Sh 02 · Fl -1</span>
           </div>
+          <button type="button" id="btnOldNames" onclick="openOldNamesSheet()" class="ml-auto px-2.5 py-1 min-h-[28px] rounded-full border border-bordercol bg-tonal hover:bg-stone-200/70 text-[11px] font-semibold text-ink-muted flex items-center gap-1 tap-active" title="View older synonyms and family names for this specimen">
+            <span>📜</span><span>Old names</span>
+          </button>
         </div>
 
         <!-- Armed Target Shelf Action Banner -->
@@ -1205,6 +1208,34 @@ INDEX_TEMPLATE_V2 = """
         <div class="px-4 py-3 bg-tonal border-t border-bordercol flex items-center justify-between gap-2">
           <button id="wtBackBtn" type="button" onclick="prevWalkthroughSlide()" class="hidden px-3 py-1.5 border border-bordercol bg-surface text-ink-muted rounded text-xs font-semibold">← Back</button>
           <button id="wtNextBtn" type="button" onclick="nextWalkthroughSlide()" class="ml-auto px-4 py-2 bg-fern hover:bg-fern-dark text-white rounded-lg text-xs font-bold shadow-xs">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Old Names / Synonyms Bottom Sheet (1-tap, read-only) -->
+    <div id="oldNamesSheet" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="if(event.target===this)closeOldNamesSheet()">
+      <div id="oldNamesSheetCard" class="bg-surface border-t border-bordercol rounded-t-xl p-4 space-y-3 max-h-[82vh] flex flex-col shadow-2xl">
+        <div class="w-10 h-1 bg-stone-300 rounded-full mx-auto -mt-1 shrink-0"></div>
+        <div class="flex items-start justify-between gap-2 pb-2 border-b border-stone-200 shrink-0">
+          <div class="min-w-0">
+            <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Old Names &amp; Synonyms</h3>
+            <p id="oldNamesRegisteredLbl" class="text-sm font-serif italic text-ink-muted truncate mt-0.5">—</p>
+          </div>
+          <button type="button" onclick="closeOldNamesSheet()" class="min-w-[36px] min-h-[36px] rounded-md text-muted hover:text-ink flex items-center justify-center text-base font-bold" aria-label="Close">✕</button>
+        </div>
+
+        <div id="oldNamesBody" class="overflow-y-auto space-y-3 flex-1 pr-0.5 text-sm">
+          <!-- Populated dynamically on tap -->
+        </div>
+
+        <!-- Optional quiet filter / GBIF fallback box (avoid typing unless needed) -->
+        <div class="pt-2 border-t border-stone-200 space-y-2 shrink-0">
+          <input type="text" id="oldNamesFilterInput" oninput="filterOldNamesList()" placeholder="Don't see the label name? Filter or check…" class="w-full px-3 py-2 text-xs rounded-md border border-bordercol bg-alabaster text-ink focus:outline-none focus:border-fern" autocomplete="off" />
+          <div id="oldNamesGbifFallback" class="hidden flex items-center justify-between gap-2">
+            <span class="text-[11px] text-muted">No match in loaded list.</span>
+            <button type="button" id="btnCheckLabelGbif" onclick="checkLabelAgainstGbif()" class="px-3 py-1.5 min-h-[36px] rounded-md text-xs font-semibold text-white shrink-0" style="background:#2d5a3c;color:#ffffff;">Check in GBIF</button>
+          </div>
+          <div id="oldNamesVerdictBox" class="hidden rounded-md p-2.5 text-xs space-y-2"></div>
         </div>
       </div>
     </div>
@@ -2405,6 +2436,183 @@ INDEX_TEMPLATE_V2 = """
         btn.textContent = '123';
       }
       input.focus();
+    }
+
+    // ── 1-Tap Old Names & Synonyms Sheet (Read-Only) ───────────────────────
+    let _oldNamesData = null;
+    let _oldNamesShowMore = false;
+
+    function closeOldNamesSheet() {
+      const el = document.getElementById('oldNamesSheet');
+      if (el) el.classList.add('hidden');
+    }
+
+    async function openOldNamesSheet() {
+      if (!state.currentOid) return;
+      const sheet = document.getElementById('oldNamesSheet');
+      const body = document.getElementById('oldNamesBody');
+      const regLbl = document.getElementById('oldNamesRegisteredLbl');
+      const filterEl = document.getElementById('oldNamesFilterInput');
+      const fbEl = document.getElementById('oldNamesGbifFallback');
+      const vEl = document.getElementById('oldNamesVerdictBox');
+      if (!sheet || !body) return;
+
+      _oldNamesData = null;
+      _oldNamesShowMore = false;
+      if (filterEl) filterEl.value = '';
+      if (fbEl) fbEl.classList.add('hidden');
+      if (vEl) { vEl.classList.add('hidden'); vEl.innerHTML = ''; }
+
+      const rec = state.currentRecord || {};
+      const reg = rec.registration || {};
+      const curName = rec.scientific_name || [reg.Genus, reg.Species].filter(Boolean).join(' ') || 'Current Specimen';
+      if (regLbl) regLbl.textContent = curName + (reg.Family ? ' (' + reg.Family + ')' : '');
+
+      body.innerHTML = '<div class="py-6 flex flex-col items-center justify-center gap-2 text-muted text-xs"><div class="w-6 h-6 border-2 border-stone-300 border-t-emerald-700 rounded-full animate-spin"></div><span>Loading known old names…</span></div>';
+      sheet.classList.remove('hidden');
+
+      const oid = state.currentOid;
+      try {
+        const data = await apiFetch('/api/object/' + encodeURIComponent(oid) + '/synonyms');
+        if (state.currentOid !== String(oid)) return;
+        _oldNamesData = data;
+        renderOldNamesSheet();
+      } catch (err) {
+        if (state.currentOid !== String(oid)) return;
+        body.innerHTML = '<div class="p-3 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs">Offline or server unreachable — could not load old names right now.</div>';
+      }
+    }
+
+    function _escHtmlOldNames(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderOldNamesSheet() {
+      const body = document.getElementById('oldNamesBody');
+      const filterEl = document.getElementById('oldNamesFilterInput');
+      const fbEl = document.getElementById('oldNamesGbifFallback');
+      if (!body || !_oldNamesData) return;
+
+      const q = (filterEl ? filterEl.value : '').trim().toLowerCase();
+      const matchQ = (txt) => !q || String(txt || '').toLowerCase().includes(q);
+
+      const localHist = (_oldNamesData.local_history || []).filter(x => matchQ(x.name + ' ' + (x.source || '')));
+      const oldFams = (_oldNamesData.old_families || []).filter(x => matchQ(x.name + ' ' + (x.note || '')));
+      const primary = (_oldNamesData.primary_synonyms || []).filter(x => matchQ(x.name + ' ' + (x.author || '')));
+      const others = (_oldNamesData.other_synonyms || []).filter(x => matchQ(x.name + ' ' + (x.author || '')));
+
+      const totalVisible = localHist.length + oldFams.length + primary.length + others.length;
+      let html = '';
+
+      if (localHist.length) {
+        html += '<div><div class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Past Names in This Museum</div><div class="space-y-1">';
+        localHist.forEach(item => {
+          html += '<div class="px-2.5 py-1.5 rounded bg-tonal border border-bordercol flex items-center justify-between gap-2"><span class="font-serif italic text-xs text-ink">' + _escHtmlOldNames(item.name) + '</span><span class="text-[10px] text-muted shrink-0">' + _escHtmlOldNames(item.source) + '</span></div>';
+        });
+        html += '</div></div>';
+      }
+
+      if (oldFams.length) {
+        html += '<div><div class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Old Family Names</div><div class="space-y-1">';
+        oldFams.forEach(item => {
+          html += '<div class="px-2.5 py-1.5 rounded bg-emerald-50/70 border border-emerald-200/80 flex items-center justify-between gap-2"><span class="font-semibold text-xs text-ink">' + _escHtmlOldNames(item.name) + '</span><span class="text-[10px] text-muted text-right">' + _escHtmlOldNames(item.note) + '</span></div>';
+        });
+        html += '</div></div>';
+      }
+
+      if (primary.length) {
+        html += '<div><div class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Most Likely Old Names (Basionym &amp; Homotypic)</div><div class="space-y-1">';
+        primary.forEach(item => {
+          html += '<div class="px-2.5 py-1.5 rounded bg-surface border border-bordercol flex items-baseline justify-between gap-2"><div class="min-w-0"><span class="font-serif italic text-xs font-semibold text-ink">' + _escHtmlOldNames(item.name) + '</span>' + (item.author ? ' <span class="text-[11px] text-muted">' + _escHtmlOldNames(item.author) + '</span>' : '') + '</div><span class="text-[10px] font-mono text-muted shrink-0">' + _escHtmlOldNames(item.kind || 'Synonym') + '</span></div>';
+        });
+        html += '</div></div>';
+      }
+
+      if (others.length) {
+        if (q || _oldNamesShowMore || primary.length === 0) {
+          html += '<div><div class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Other Known Synonyms (' + others.length + ')</div><div class="space-y-1">';
+          others.forEach(item => {
+            html += '<div class="px-2.5 py-1.5 rounded bg-surface border border-stone-200 flex items-baseline justify-between gap-2"><div class="min-w-0"><span class="font-serif italic text-xs text-ink">' + _escHtmlOldNames(item.name) + '</span>' + (item.author ? ' <span class="text-[11px] text-muted">' + _escHtmlOldNames(item.author) + '</span>' : '') + '</div><span class="text-[10px] font-mono text-subdued shrink-0">' + _escHtmlOldNames(item.kind || '') + '</span></div>';
+          });
+          html += '</div></div>';
+        } else {
+          html += '<button type="button" onclick="toggleMoreOldNames()" class="w-full py-2 rounded-md border border-bordercol bg-tonal text-xs font-semibold text-ink-muted">Show ' + others.length + ' more synonyms ▾</button>';
+        }
+      }
+
+      if (_oldNamesData.offline) {
+        html += '<div class="p-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">Offline — showing local history &amp; old family names only. Connect to internet for full GBIF synonyms.</div>';
+      } else if (totalVisible === 0) {
+        html += '<div class="py-3 text-center text-xs text-muted">' + (q ? 'No loaded old names match "' + _escHtmlOldNames(q) + '".' : 'No older synonyms recorded for this name.') + '</div>';
+      }
+
+      html += '<p class="text-[11px] text-subdued pt-1">Read-only reference: if the physical label matches an old name above, keep the modern registered name.</p>';
+      body.innerHTML = html;
+
+      if (fbEl) {
+        if (q.length >= 3 && totalVisible === 0) fbEl.classList.remove('hidden');
+        else fbEl.classList.add('hidden');
+      }
+    }
+
+    function filterOldNamesList() {
+      const vEl = document.getElementById('oldNamesVerdictBox');
+      if (vEl) { vEl.classList.add('hidden'); vEl.innerHTML = ''; }
+      renderOldNamesSheet();
+    }
+
+    function toggleMoreOldNames() {
+      _oldNamesShowMore = true;
+      renderOldNamesSheet();
+    }
+
+    async function checkLabelAgainstGbif() {
+      if (!state.currentOid) return;
+      const filterEl = document.getElementById('oldNamesFilterInput');
+      const vEl = document.getElementById('oldNamesVerdictBox');
+      const btn = document.getElementById('btnCheckLabelGbif');
+      const label = (filterEl ? filterEl.value : '').trim();
+      if (!label || !vEl) return;
+
+      if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+      try {
+        const res = await apiFetch('/api/object/' + encodeURIComponent(state.currentOid) + '/check-label', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ label_name: label })
+        });
+        vEl.classList.remove('hidden');
+        if (res.verdict === 'synonym_match') {
+          vEl.className = 'rounded-md p-2.5 text-xs bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-1';
+          vEl.innerHTML = '<div class="font-bold">✓ Known Old Name Match</div><div>' + _escHtmlOldNames(res.message) + '</div>';
+        } else if (res.verdict === 'different_species') {
+          vEl.className = 'rounded-md p-2.5 text-xs bg-amber-50 border border-amber-300 text-amber-950 space-y-2';
+          vEl.innerHTML = '<div class="font-bold">⚠ Different Species</div><div>' + _escHtmlOldNames(res.message) + '</div><button type="button" onclick="flagOldNamesMismatch()" class="px-3 py-1.5 min-h-[36px] rounded bg-amber-700 text-white text-xs font-semibold" style="background:#b45309;color:#ffffff;">Flag Taxon Mismatch &amp; Add Note</button>';
+        } else {
+          vEl.className = 'rounded-md p-2.5 text-xs bg-tonal border border-bordercol text-ink-muted space-y-1';
+          vEl.innerHTML = '<div class="font-bold">? Not Confirmed</div><div>' + _escHtmlOldNames(res.message) + '</div>';
+        }
+      } catch (err) {
+        vEl.classList.remove('hidden');
+        vEl.className = 'rounded-md p-2.5 text-xs bg-amber-50 border border-amber-200 text-amber-900';
+        vEl.textContent = 'Offline or unreachable — leave a note in Comment if unsure.';
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Check in GBIF'; }
+      }
+    }
+
+    function flagOldNamesMismatch() {
+      const filterEl = document.getElementById('oldNamesFilterInput');
+      const label = (filterEl ? filterEl.value : '').trim();
+      closeOldNamesSheet();
+      if (typeof switchDetailTab === 'function') switchDetailTab(2);
+      const commentEl = document.getElementById('commentInput') || document.querySelector('[data-field="Comment"]');
+      if (commentEl && label) {
+        const prefix = commentEl.value.trim() ? commentEl.value.trim() + ' | ' : '';
+        commentEl.value = prefix + 'Label reads: ' + label;
+        commentEl.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (typeof showToast === 'function') showToast('Added label note — toggle the problem flag if needed.');
     }
 
     async function fetchObjectDetail(oid, renderFull = true) {

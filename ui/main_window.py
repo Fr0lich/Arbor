@@ -260,7 +260,7 @@ class ToolTipManager:
         self.hide()
         self.tooltip = tk.Toplevel(w)
         self.tooltip.wm_overrideredirect(True)
-        self.tooltip.wm_geometry(f"{int(x):+d}{int(y):+d}")
+        self.tooltip.wm_geometry(f"+{int(x)}+{int(y)}")
 
         from config import sc
         bg_col = "#1e1e2d" if is_dark else "#f2f5f1"
@@ -2146,7 +2146,7 @@ class ObjectProgramUI(
             
         win.update_idletasks()
         width = max(sc(130), win.winfo_reqwidth())
-        win.geometry(f"{width}x{win.winfo_reqheight()}{int(x):+d}{int(y):+d}")
+        win.geometry(f"{width}x{win.winfo_reqheight()}+{int(x)}+{int(y)}")
         
         def _dismiss_dropdown(event=None):
             if not win.winfo_exists():
@@ -2444,6 +2444,7 @@ class ObjectProgramUI(
         popup.add_command(label="↩️ Revert Latest GBIF Taxonomy Update", command=self.rollback_gbif_action)
         if self.app and self.app.current_object_id:
             popup.add_command(label="🔍 Validate Active Specimen with GBIF", command=self.check_gbif_action)
+            popup.add_command(label="📜 View Old Names & Synonyms...", command=self.open_old_names_dialog)
         popup.add_separator()
         popup.add_command(label="⚠️ Open Problem Queue & Resolver...", command=self.open_problem_queue_dialog)
         popup.add_command(label="📜 Load Historical Ledger Books...", command=self.load_books_file)
@@ -2458,6 +2459,10 @@ class ObjectProgramUI(
     def merge_legacy_notes_action(self):
         from ui.registry_panel import RegistryPanel
         return RegistryPanel.merge_legacy_notes_into_comment(self, interactive=True)
+
+    def open_old_names_dialog(self):
+        from ui.old_names_dialog import OldNamesDialog
+        return OldNamesDialog(self)
 
     def show_view_dropdown(self):
         popup = tk.Menu(self.root, tearoff=0)
@@ -2930,7 +2935,7 @@ class ObjectProgramUI(
         y = entry.winfo_rooty() + entry.winfo_height()
         w = entry.winfo_width()
 
-        self.search_popup.geometry(f"{w}x200{int(x):+d}{int(y):+d}")
+        self.search_popup.geometry(f"{w}x200+{int(x)}+{int(y)}")
 
     def _on_search_select(self, event=None):
         if not self.search_listbox.curselection():
@@ -4015,6 +4020,16 @@ class ObjectProgramUI(
             command=self.open_historical_suggestions
         )
         self.history_btn.pack(side="left", padx=(8, 0))
+
+        self.old_names_btn = ttk.Button(
+            reg_header,
+            text="📜 Old Names",
+            style="Nav.TButton",
+            cursor="hand2",
+            command=self.open_old_names_dialog,
+        )
+        self.old_names_btn.pack(side="left", padx=(sc(6), 0))
+        self.add_tooltip(self.old_names_btn, "View older synonyms & family names for this specimen (read-only)")
 
         self.history_indicator_label = tk.Label(
             reg_header,

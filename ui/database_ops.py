@@ -561,7 +561,7 @@ class DatabaseOpsMixin:
 
         tk.Checkbutton(
             outer,
-            text="Don't show this welcome screen again when opening the Demo Project",
+            text="Don't show this welcome screen again when opening Arbor",
             variable=dont_show_var,
             font=("Inter", sc(9)),
             bg=bg,

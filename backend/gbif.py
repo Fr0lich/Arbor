@@ -25,6 +25,7 @@ def _get_session() -> requests.Session:
 _gbif_cache_lock = threading.Lock()
 _check_gbif_cache: LRUCache = LRUCache(maxsize=1024)
 _accepted_name_cache: LRUCache = LRUCache(maxsize=1024)
+_synonyms_cache: LRUCache = LRUCache(maxsize=1024)
 
 CLASSICAL_FAMILY_NAMES = {
     "compositae", "cruciferae", "gramineae", "guttiferae",
@@ -159,6 +160,7 @@ def _clear_gbif_caches():
     with _gbif_cache_lock:
         _check_gbif_cache.clear()
         _accepted_name_cache.clear()
+        _synonyms_cache.clear()
 
 
 check_gbif.cache_clear = _clear_gbif_caches
@@ -706,5 +708,440 @@ def batch_gbif_match(
             results.append(diff)
 
     return results
+
+
+# ── Old Names / Synonyms & Offline Family Aliases ─────────────────────────────
+
+# Classical botanical family pairs (modern -> classical)
+_CLASSICAL_FAMILY_PAIRS = [
+    ("Asteraceae", "Compositae"),
+    ("Fabaceae", "Leguminosae"),
+    ("Poaceae", "Gramineae"),
+    ("Lamiaceae", "Labiatae"),
+    ("Apiaceae", "Umbelliferae"),
+    ("Brassicaceae", "Cruciferae"),
+    ("Arecaceae", "Palmae"),
+    ("Clusiaceae", "Guttiferae"),
+]
+
+# Common APG family merges/splits (modern -> list of older family names frequently seen on museum labels)
+_APG_OLD_FAMILIES: Dict[str, List[str]] = {
+    "Malvaceae": ["Tiliaceae", "Sterculiaceae", "Bombacaceae"],
+    "Plantaginaceae": ["Scrophulariaceae", "Callitrichaceae", "Hippuridaceae"],
+    "Orobanchaceae": ["Scrophulariaceae"],
+    "Asparagaceae": ["Liliaceae", "Agavaceae", "Convallariaceae", "Hyacinthaceae", "Ruscaceae"],
+    "Amaryllidaceae": ["Alliaceae", "Liliaceae"],
+    "Sapindaceae": ["Aceraceae", "Hippocastanaceae"],
+    "Amaranthaceae": ["Chenopodiaceae"],
+    "Apocynaceae": ["Asclepiadaceae"],
+    "Fabaceae": ["Caesalpiniaceae", "Mimosaceae", "Papilionaceae"],
+    "Cupressaceae": ["Taxodiaceae"],
+    "Papaveraceae": ["Fumariaceae"],
+    "Adoxaceae": ["Caprifoliaceae"],
+    "Viburnaceae": ["Caprifoliaceae", "Adoxaceae"],
+    "Salicaceae": ["Flacourtiaceae"],
+    "Phyllanthaceae": ["Euphorbiaceae"],
+    "Hypericaceae": ["Guttiferae", "Clusiaceae"],
+    "Primulaceae": ["Myrsinaceae"],
+    "Ericaceae": ["Pyrolaceae", "Monotropaceae", "Empetraceae"],
+    "Rosaceae": ["Amygdalaceae", "Pomaceae"],
+    "Cannabaceae": ["Ulmaceae", "Celtidaceae"],
+}
+
+
+def get_old_family_names(family: Any) -> List[Dict[str, str]]:
+    """Return known classical and major APG older family names for a given family (100% offline)."""
+    fam = str(family or "").strip()
+    if not fam:
+        return []
+    fam_low = fam.lower()
+    seen = {fam_low}
+    out: List[Dict[str, str]] = []
+
+    def _add(name: str, note: str):
+        nl = name.lower()
+        if nl not in seen:
+            seen.add(nl)
+            out.append({"name": name, "note": note})
+
+    for modern, classical in _CLASSICAL_FAMILY_PAIRS:
+        if fam_low == modern.lower():
+            _add(classical, f"Classical name for {modern}")
+        elif fam_low == classical.lower():
+            _add(modern, f"Modern name for {classical}")
+
+    for modern, olds in _APG_OLD_FAMILIES.items():
+        if fam_low == modern.lower():
+            for old in olds:
+                _add(old, f"Earlier family placement (now {modern})")
+        else:
+            for old in olds:
+                if fam_low == old.lower():
+                    _add(modern, f"Modern APG family (includes {old})")
+    return out
+
+
+def get_synonym_cache_path(workbook_path: Optional[str]) -> Optional[str]:
+    """Return path to the silent per-workbook synonym cache JSON file."""
+    if not workbook_path:
+        return None
+    import os
+    try:
+        folder = os.path.dirname(os.path.abspath(str(workbook_path)))
+        if folder and os.path.isdir(folder):
+            return os.path.join(folder, ".arbor_synonyms_cache.json")
+    except Exception:
+        pass
+    return None
+
+
+def _load_disk_synonym_cache(cache_path: Optional[str]) -> Dict[str, Any]:
+    if not cache_path:
+        return {}
+    import json
+    import os
+    try:
+        if os.path.exists(cache_path):
+            with open(cache_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+    except Exception:
+        pass
+    return {}
+
+
+def _save_disk_synonym_cache_entry(cache_path: Optional[str], key: str, payload: Dict[str, Any]) -> None:
+    if not cache_path:
+        return
+    import json
+    import os
+    import tempfile
+    try:
+        with _gbif_cache_lock:
+            existing = _load_disk_synonym_cache(cache_path)
+            existing[key] = payload
+            # Keep cache compact (cap at 2000 taxa)
+            if len(existing) > 2000:
+                for k in list(existing.keys())[:-2000]:
+                    existing.pop(k, None)
+            folder = os.path.dirname(cache_path)
+            fd, tmp_path = tempfile.mkstemp(prefix=".arbor_syn_", suffix=".tmp", dir=folder)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(existing, f, ensure_ascii=False)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_path, cache_path)
+            except Exception:
+                try:
+                    os.unlink(tmp_path)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+
+def get_synonyms(
+    genus: str,
+    species: str = "",
+    family: str = "",
+    cache_path: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Fetch known old names (basionym, homotypic, heterotypic synonyms) and offline old family names
+    for a registered taxon. Uses in-memory LRU + silent disk cache for offline vault reliability.
+    """
+    g = str(genus or "").strip()
+    s = str(species or "").strip()
+    fam = str(family or "").strip()
+    if is_undetermined_species(s):
+        s = ""
+
+    old_families = get_old_family_names(fam)
+    reg_canonical = f"{g} {s}".strip()
+    cache_key = f"{g.lower()}|{s.lower()}"
+
+    base_empty = {
+        "registered_name": reg_canonical,
+        "registered_family": fam,
+        "old_families": old_families,
+        "primary_synonyms": [],
+        "other_synonyms": [],
+        "offline": False,
+        "from_cache": False,
+    }
+
+    if not g:
+        return base_empty
+
+    # 1. Check in-memory LRU cache
+    with _gbif_cache_lock:
+        mem_hit = _synonyms_cache.get(cache_key)
+        if mem_hit is not None:
+            res = dict(mem_hit)
+            res["old_families"] = get_old_family_names(fam or res.get("registered_family", ""))
+            res["from_cache"] = True
+            return res
+
+    # 2. Check silent disk cache (fast offline vault path)
+    disk_data = _load_disk_synonym_cache(cache_path)
+    if cache_key in disk_data and isinstance(disk_data[cache_key], dict):
+        res = dict(disk_data[cache_key])
+        res["old_families"] = get_old_family_names(fam or res.get("registered_family", ""))
+        res["offline"] = False
+        res["from_cache"] = True
+        with _gbif_cache_lock:
+            _synonyms_cache[cache_key] = res
+        return res
+
+    # 3. Live GBIF lookup
+    match = check_gbif(g, s)
+    if not match or (isinstance(match, dict) and match.get("error")):
+        base_empty["offline"] = True
+        return base_empty
+
+    accepted_key = match.get("acceptedUsageKey") or match.get("usageKey")
+    resolved_family = fam or (match.get("family") or "")
+    old_families = get_old_family_names(resolved_family)
+
+    if not accepted_key:
+        base_empty["old_families"] = old_families
+        return base_empty
+
+    basionym_name = ""
+    raw_synonyms: List[Dict[str, Any]] = []
+    try:
+        sess = _get_session()
+        sp_resp = sess.get(f"https://api.gbif.org/v1/species/{accepted_key}", timeout=5)
+        if sp_resp.ok:
+            sp_json = sp_resp.json() or {}
+            basionym_name = str(sp_json.get("basionym") or "").strip()
+
+        syn_resp = sess.get(
+            f"https://api.gbif.org/v1/species/{accepted_key}/synonyms",
+            params={"limit": 100},
+            timeout=6,
+        )
+        syn_resp.raise_for_status()
+        raw_synonyms = (syn_resp.json() or {}).get("results") or []
+    except Exception:
+        base_empty["old_families"] = old_families
+        base_empty["offline"] = True
+        return base_empty
+
+    reg_low = reg_canonical.lower()
+    seen_canon = {reg_low}
+    if match.get("canonicalName"):
+        seen_canon.add(str(match["canonicalName"]).strip().lower())
+
+    primary: List[Dict[str, str]] = []
+    other_species: List[Dict[str, str]] = []
+    other_infra: List[Dict[str, str]] = []
+
+    basionym_low = basionym_name.lower()
+
+    for rec in raw_synonyms:
+        canon = str(rec.get("canonicalName") or "").strip()
+        sci = str(rec.get("scientificName") or "").strip()
+        if not canon:
+            continue
+        cl = canon.lower()
+        if cl in seen_canon:
+            continue
+        seen_canon.add(cl)
+
+        author = str(rec.get("authorship") or "").strip()
+        if not author and sci.startswith(canon):
+            author = sci[len(canon):].strip()
+
+        status = str(rec.get("taxonomicStatus") or "").upper()
+        rank = str(rec.get("rank") or "").upper()
+
+        is_basionym = bool(basionym_low and (basionym_low.startswith(cl) or cl in basionym_low))
+        if is_basionym:
+            primary.insert(0, {"name": canon, "author": author, "kind": "Basionym"})
+        elif status == "HOMOTYPIC_SYNONYM" and rank in ("SPECIES", "GENUS", ""):
+            primary.append({"name": canon, "author": author, "kind": "Homotypic"})
+        elif rank in ("SPECIES", "GENUS", ""):
+            other_species.append({"name": canon, "author": author, "kind": "Synonym"})
+        else:
+            other_infra.append({"name": canon, "author": author, "kind": rank.title() or "Variant"})
+
+    # If basionym wasn't in the first 100 synonyms, still surface its canonical form
+    if basionym_name:
+        bas_short = " ".join(basionym_name.split()[:2]).strip()
+        if bas_short and bas_short.lower() not in seen_canon:
+            seen_canon.add(bas_short.lower())
+            bas_author = basionym_name[len(bas_short):].strip() if basionym_name.startswith(bas_short) else ""
+            primary.insert(0, {"name": bas_short, "author": bas_author, "kind": "Basionym"})
+
+    result = {
+        "registered_name": reg_canonical,
+        "registered_family": resolved_family,
+        "old_families": old_families,
+        "primary_synonyms": primary,
+        "other_synonyms": other_species + other_infra,
+        "accepted_usage_key": accepted_key,
+        "offline": False,
+        "from_cache": False,
+    }
+
+    with _gbif_cache_lock:
+        _synonyms_cache[cache_key] = result
+    _save_disk_synonym_cache_entry(cache_path, cache_key, result)
+    return dict(result)
+
+
+def compare_label_name(
+    label_name: str,
+    reg_genus: str,
+    reg_species: str = "",
+    reg_family: str = "",
+) -> Dict[str, Any]:
+    """
+    Compare a physical label name/family against a specimen's registered taxon.
+    Returns a calibrated, trainee-safe verdict:
+      - 'synonym_match': high-confidence known old name / family alias
+      - 'different_species': exact match to a different accepted species
+      - 'uncertain': offline, low-confidence, higher-rank only, or unlisted
+    """
+    label = str(label_name or "").strip()
+    if not label:
+        return {"verdict": "uncertain", "message": "Enter a name from the physical label to check."}
+
+    # 1. Offline family alias check first (instant, zero network)
+    label_low = label.lower()
+    if reg_family:
+        if label_low == str(reg_family).strip().lower():
+            return {
+                "verdict": "synonym_match",
+                "message": f"Matches the registered family ({reg_family}).",
+                "matched_name": reg_family,
+            }
+        for fam_entry in get_old_family_names(reg_family):
+            if label_low == fam_entry["name"].lower():
+                return {
+                    "verdict": "synonym_match",
+                    "message": f"Known old family name: {fam_entry['note']}. Keep the modern name.",
+                    "matched_name": fam_entry["name"],
+                }
+
+    # 2. Live GBIF comparison via acceptedUsageKey
+    parts = label.split()
+    lbl_g = parts[0]
+    lbl_s = parts[1] if len(parts) > 1 else ""
+
+    reg_match = check_gbif(reg_genus, "" if is_undetermined_species(reg_species) else reg_species)
+    lbl_match = check_gbif(lbl_g, lbl_s)
+
+    if (
+        not reg_match
+        or not lbl_match
+        or (isinstance(reg_match, dict) and reg_match.get("error"))
+        or (isinstance(lbl_match, dict) and lbl_match.get("error"))
+    ):
+        return {
+            "verdict": "uncertain",
+            "offline": True,
+            "message": "Offline or GBIF unreachable — if unsure, leave a quick note in Comment for desk review.",
+        }
+
+    reg_key = reg_match.get("acceptedUsageKey") or reg_match.get("usageKey")
+    lbl_key = lbl_match.get("acceptedUsageKey") or lbl_match.get("usageKey")
+    lbl_conf = int(lbl_match.get("confidence") or 0)
+    lbl_mtype = str(lbl_match.get("matchType") or "").upper()
+    lbl_canon = str(lbl_match.get("canonicalName") or label).strip()
+
+    if reg_key and lbl_key and reg_key == lbl_key and lbl_conf >= 85 and lbl_mtype != "HIGHERRANK":
+        return {
+            "verdict": "synonym_match",
+            "message": f"Known old name for {reg_match.get('canonicalName') or reg_genus} (GBIF). Keep the modern name — no edit needed.",
+            "matched_name": lbl_canon,
+            "matched_author": lbl_match.get("author") or "",
+        }
+
+    if lbl_mtype == "EXACT" and lbl_conf >= 90 and lbl_key and reg_key and lbl_key != reg_key:
+        # Resolve accepted name for clearer message if label itself is a synonym of another species
+        target_name = lbl_canon
+        if lbl_match.get("synonym") and lbl_match.get("acceptedUsageKey"):
+            acc = get_accepted_name(lbl_match["acceptedUsageKey"])
+            if acc and not acc.get("error") and acc.get("canonicalName"):
+                target_name = acc["canonicalName"]
+        return {
+            "verdict": "different_species",
+            "message": f"Resolves to a different species ({target_name}), not {reg_match.get('canonicalName') or reg_genus}.",
+            "matched_name": target_name,
+        }
+
+    return {
+        "verdict": "uncertain",
+        "message": "Not listed as a known synonym in GBIF — could be an old spelling or unlisted name. If unsure, leave a note in Comment for desk review.",
+    }
+
+
+def collect_local_old_names(app_state, oid: str) -> List[Dict[str, str]]:
+    """Collect any prior Genus/Species/Family for this specimen from local Log & historical ledgers (100% offline)."""
+    if app_state is None or not oid:
+        return []
+    s_oid = str(oid).strip()
+    out: List[Dict[str, str]] = []
+    seen = set()
+
+    def _add(name: str, source: str):
+        n = str(name or "").strip()
+        if not n or n.lower() in ("nan", "none", "ukjent", "unknown"):
+            return
+        key = (n.lower(), source.lower())
+        if key not in seen:
+            seen.add(key)
+            out.append({"name": n, "source": source})
+
+    # 1. Previous GBIF updates recorded on the Log sheet
+    df_log = getattr(app_state, "df_log", None)
+    if df_log is not None and not df_log.empty and "ObjectID" in df_log.columns:
+        try:
+            sub = df_log[df_log["ObjectID"].astype(str) == s_oid]
+            for _, row in sub.iterrows():
+                details = str(row.get("Details") or "")
+                for field in ("Genus", "Species", "Family", "Taxon"):
+                    m = re.search(rf"{field}:\s*([^\->\n;,]+?)\s*->\s*([^\n;,]+)", details)
+                    if m:
+                        old_val = m.group(1).strip()
+                        if old_val:
+                            _add(f"{field}: {old_val}", "Previous update in Log")
+        except Exception:
+            pass
+
+    # 2. Loaded historical databases & ledger books
+    for db in (getattr(app_state, "historical_dbs", None) or []):
+        try:
+            df_h = db.get("reg_by_id") if db.get("reg_by_id") is not None else db.get("df_reg")
+            if df_h is None or df_h.empty:
+                continue
+            if "ObjectID" in df_h.columns and df_h.index.name != "ObjectID":
+                matches = df_h[df_h["ObjectID"].astype(str) == s_oid]
+                if matches.empty:
+                    continue
+                row = matches.iloc[0]
+            elif s_oid in df_h.index:
+                row = df_h.loc[s_oid]
+                if hasattr(row, "iloc") and getattr(row, "ndim", 1) > 1:
+                    row = row.iloc[0]
+            else:
+                continue
+            src_name = str(db.get("name") or "Historical DB")
+            g = str(row.get("Genus", "") or "").strip()
+            s = str(row.get("Species", "") or "").strip()
+            f = str(row.get("Family", "") or "").strip()
+            if g and g.lower() != "nan":
+                _add(f"{g} {s}".strip() if s and s.lower() != "nan" else g, src_name)
+            if f and f.lower() != "nan":
+                _add(f"Family: {f}", src_name)
+        except Exception:
+            pass
+
+    return out
+
 
 

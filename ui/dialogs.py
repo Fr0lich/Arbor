@@ -1220,7 +1220,7 @@ class StartupDialog:
         from ui.help_dialogs import show_main_help, show_shortcuts
 
         menu = tk.Menu(self.win, tearoff=0)
-        menu.add_command(label="🧭 Getting Started & Setup Guide", command=self._show_setup_help_msg)
+        menu.add_command(label="How to Open Arbor", command=self._show_setup_help_msg)
         menu.add_separator()
         menu.add_command(label="📖 Desktop Work Manual", command=lambda: show_main_help(self.win, initial_tab="desktop"))
         menu.add_command(label="📱 Mobile Vault Guide", command=lambda: show_main_help(self.win, initial_tab="mobile"))
@@ -1243,23 +1243,24 @@ class StartupDialog:
                 pass
 
     def _show_setup_help_msg(self):
-        """Display a calm, styled Arbor Setup Guide window (replaces raw system messagebox)."""
+        """Display a simple, plain-English 'How to Open Arbor' window explaining which files to load."""
         import utils
-        from ui.help_dialogs import show_main_help
+        from ui.help_dialogs import show_main_help, show_shortcuts
 
         win = tk.Toplevel(self.win)
-        win.title("Arbor — Getting Started & Setup Guide")
+        win.title("Arbor — How to Open Arbor")
         win.transient(self.win)
         win.configure(bg=self.C_BG)
-        utils.center_and_fit_toplevel(win, sc(580), sc(520))
+        utils.center_and_fit_toplevel(win, sc(600), sc(600))
         win.bind("<Escape>", lambda e: win.destroy())
 
-        body = tk.Frame(win, bg=self.C_BG, padx=sc(22), pady=sc(18))
-        body.pack(fill="both", expand=True)
+        # Header
+        hdr_bar = tk.Frame(win, bg=self.C_BG, padx=sc(22), pady=sc(14))
+        hdr_bar.pack(fill="x", side="top")
 
         tk.Label(
-            body,
-            text="Getting Started with Arbor",
+            hdr_bar,
+            text="How to Open Arbor",
             font=("Lora", sc(15), "bold"),
             bg=self.C_BG,
             fg=self.C_ON_SURFACE,
@@ -1267,81 +1268,18 @@ class StartupDialog:
         ).pack(fill="x")
 
         tk.Label(
-            body,
-            text="Three simple steps to open your collection — nothing can be broken from this screen.",
+            hdr_bar,
+            text="A simple guide to which files you need on this screen — nothing can be broken here.",
             font=("Inter", sc(9.5)),
             bg=self.C_BG,
             fg=self.C_ON_VARIANT,
             anchor="w",
-        ).pack(fill="x", pady=(sc(2), sc(14)))
+        ).pack(fill="x", pady=(sc(2), 0))
 
-        steps = [
-            (
-                "1",
-                "Pick Your Excel Collection (or Try the Demo)",
-                "Select your .xlsx museum workbook and matching layout profile, or click '+ Create New Database'. "
-                "Just learning? Click '🌿 Explore Demo Project' to practice on 220 safe sample specimens first."
-            ),
-            (
-                "2",
-                "Choose How to View Specimen Photos (Optional)",
-                "Pick Online scans, a Local Folder of photos, or Offline mode. "
-                "Not sure? You can skip this — Arbor safely starts in Offline mode and you can change it anytime."
-            ),
-            (
-                "3",
-                "Work at Your Desk or Walk the Vault Aisles",
-                "Click LAUNCH SYSTEM for normal desktop curation, or Mobile Companion to connect your phone "
-                "for 1-tap hallway shelf auditing (works even in concrete vaults without internet)."
-            ),
-        ]
-
-        for num, title, desc in steps:
-            card = tk.Frame(
-                body,
-                bg=self.C_CARD,
-                highlightbackground=self.C_OUTLINE,
-                highlightthickness=1,
-                padx=sc(12),
-                pady=sc(10),
-            )
-            card.pack(fill="x", pady=sc(5))
-
-            hdr = tk.Frame(card, bg=self.C_CARD)
-            hdr.pack(fill="x")
-
-            tk.Label(
-                hdr,
-                text=f" {num} ",
-                font=("JetBrains Mono", sc(9), "bold"),
-                bg="#3a7d44",
-                fg="#ffffff",
-                padx=sc(4),
-                pady=sc(1),
-            ).pack(side="left", padx=(0, sc(8)))
-
-            tk.Label(
-                hdr,
-                text=title,
-                font=("Inter", sc(10), "bold"),
-                bg=self.C_CARD,
-                fg=self.C_ON_SURFACE,
-                anchor="w",
-            ).pack(side="left", fill="x", expand=True)
-
-            tk.Label(
-                card,
-                text=desc,
-                font=("Inter", sc(9)),
-                bg=self.C_CARD,
-                fg=self.C_ON_VARIANT,
-                wraplength=sc(500),
-                justify="left",
-                anchor="w",
-            ).pack(fill="x", pady=(sc(5), 0))
-
-        footer = tk.Frame(body, bg=self.C_BG)
-        footer.pack(fill="x", side="bottom", pady=(sc(14), 0))
+        # Footer (pinned at bottom)
+        footer = tk.Frame(win, bg=self.C_FOOTER_BG, padx=sc(18), pady=sc(10))
+        footer.pack(fill="x", side="bottom")
+        tk.Frame(win, bg=self.C_OUTLINE_VAR, height=1).pack(fill="x", side="bottom")
 
         def _load_demo_and_close():
             win.destroy()
@@ -1380,7 +1318,7 @@ class StartupDialog:
 
         tk.Button(
             footer,
-            text="📱 Phone Guide",
+            text="⌨️ Shortcuts",
             font=("Inter", sc(9)),
             bg=self.C_CARD,
             fg=self.C_ON_SURFACE,
@@ -1390,8 +1328,130 @@ class StartupDialog:
             padx=sc(10),
             pady=sc(5),
             cursor="hand2",
-            command=lambda: (win.destroy(), show_main_help(self.win, initial_tab="mobile")),
+            command=lambda: (win.destroy(), show_shortcuts(self.win)),
         ).pack(side="left")
+
+        tk.Button(
+            footer,
+            text="Close",
+            font=("Inter", sc(9), "bold"),
+            bg=self.C_CARD,
+            fg=self.C_ON_SURFACE,
+            relief="flat",
+            highlightbackground=self.C_OUTLINE,
+            highlightthickness=1,
+            padx=sc(12),
+            pady=sc(5),
+            cursor="hand2",
+            command=win.destroy,
+        ).pack(side="right")
+
+        # Scrollable cards area
+        mid = tk.Frame(win, bg=self.C_BG)
+        mid.pack(fill="both", expand=True)
+        canvas = tk.Canvas(mid, bg=self.C_BG, highlightthickness=0, bd=0)
+        sb = ttk.Scrollbar(mid, orient="vertical", command=canvas.yview)
+        sb.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+        canvas.configure(yscrollcommand=sb.set)
+
+        body = tk.Frame(canvas, bg=self.C_BG, padx=sc(22), pady=sc(4))
+        win_id = canvas.create_window((0, 0), window=body, anchor="nw")
+        canvas.bind("<Configure>", lambda e: canvas.itemconfig(win_id, width=e.width))
+        body.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        self._bind_canvas_mousewheel(canvas, body)
+
+        steps = [
+            (
+                "1",
+                "REQUIRED",
+                "#c93a40",
+                "Your Museum Collection File (Excel .xlsx)",
+                "Click Browse and pick your museum's main .xlsx Excel file. Arbor automatically picks the matching layout profile.\n"
+                "• Opened it before? Just click it under Recent Projects at the bottom of the setup window.\n"
+                "• Just learning? Click 'Explore Demo Project' to practice safely without touching real museum files."
+            ),
+            (
+                "2",
+                "RECOMMENDED",
+                "#3a7d44",
+                "Specimen Photos (Local Folder, Online, or Offline)",
+                "If your team has a folder of specimen photos on this computer (or shared drive), pick Local Folder and select it. "
+                "Not sure where the photos are? You can leave it Offline for now and add photos anytime later."
+            ),
+            (
+                "3",
+                "OPTIONAL",
+                "#747878",
+                "Historical Books (Older Catalog Spreadsheets)",
+                "If your museum has older digitized catalog books to compare against your main file, select them under Historical Books. "
+                "If you don't have any, simply leave this blank."
+            ),
+            (
+                "4",
+                "START",
+                "#2c302e",
+                "Click LAUNCH SYSTEM (or Mobile Companion)",
+                "Click LAUNCH SYSTEM in the bottom right to open Arbor on this computer. "
+                "Heading into the collection aisles with your phone? Click Mobile Companion instead."
+            ),
+        ]
+
+        for num, badge, badge_bg, title, desc in steps:
+            card = tk.Frame(
+                body,
+                bg=self.C_CARD,
+                highlightbackground=self.C_OUTLINE,
+                highlightthickness=1,
+                padx=sc(12),
+                pady=sc(10),
+            )
+            card.pack(fill="x", pady=sc(5))
+
+            hdr = tk.Frame(card, bg=self.C_CARD)
+            hdr.pack(fill="x")
+
+            tk.Label(
+                hdr,
+                text=f" {num} ",
+                font=("JetBrains Mono", sc(8.5), "bold"),
+                bg="#3a7d44",
+                fg="#ffffff",
+                padx=sc(4),
+                pady=sc(1),
+            ).pack(side="left", padx=(0, sc(6)))
+
+            tk.Label(
+                hdr,
+                text=f" {badge} ",
+                font=("JetBrains Mono", sc(7.5), "bold"),
+                bg=badge_bg,
+                fg="#ffffff",
+                padx=sc(4),
+                pady=sc(1),
+            ).pack(side="left", padx=(0, sc(8)))
+
+            tk.Label(
+                hdr,
+                text=title,
+                font=("Inter", sc(10), "bold"),
+                bg=self.C_CARD,
+                fg=self.C_ON_SURFACE,
+                anchor="w",
+            ).pack(side="left", fill="x", expand=True)
+
+            tk.Label(
+                card,
+                text=desc,
+                font=("Inter", sc(9)),
+                bg=self.C_CARD,
+                fg=self.C_ON_VARIANT,
+                wraplength=sc(500),
+                justify="left",
+                anchor="w",
+            ).pack(fill="x", pady=(sc(6), 0))
+
+        self._setup_help_win = win
 
         tk.Button(
             footer,

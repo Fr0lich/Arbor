@@ -217,10 +217,29 @@ class KeybindingManager:
         """Dynamic access to the standardized shortcuts registry."""
         return get_canonical_shortcuts()
 
-    def bind_global_shortcuts(self):
-        """Binds all global shortcuts to the root window."""
+    def bind_global_shortcuts(self, target=None):
+        """Binds all global shortcuts to the root window (or forwards from a floating HUD target)."""
         ui = self.ui
-        r = self.root
+        r = target if target is not None else self.root
+
+        if target is not None:
+            orig_bind = r.bind
+
+            def _forwarded_bind(seq, func):
+                def _handler(event):
+                    try:
+                        if self.root and self.root.winfo_exists():
+                            self.root.focus_set()
+                    except Exception:
+                        pass
+                    return func(event)
+                return orig_bind(seq, _handler)
+
+            class _TargetProxy:
+                def bind(self, seq, func):
+                    return _forwarded_bind(seq, func)
+
+            r = _TargetProxy()
 
         # ── 1. Record & Specimen Navigation ──────────────────────────────────
         r.bind("<Left>", ui._safe_nav_left)
