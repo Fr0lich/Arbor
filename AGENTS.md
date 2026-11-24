@@ -6,15 +6,12 @@ Welcome, Agent. This file is your master router. Before you begin any task, you 
 
 ## ⚠️ CRITICAL PROJECT STATUS & UI DIRECTION
 
-* **Production Application is Tkinter (`ui/` + `main.py`)**: Arbor is an active, production desktop application written in **Tkinter**. All everyday features, bug fixes, enhancements, performance tuning, and database workflows belong in the Tkinter codebase (`ui/`).
-* **PySide6 Migration is PAUSED at Phase 1**: The visual and structural extraction into PySide6 Qt Designer XML files (`.ui`) was **100% completed across all 32 files** and is preserved in `pyside_new_uis/`. Phase 2 (Python logic wiring) is **intentionally on hold** to keep Arbor simple, stable, zero-friction, and immediately deployable without dual-stack maintenance overhead.
-* **Never assume the app runs on PySide6**: Do NOT write new features in `ui_qt/` unless the user explicitly requests working on the experimental Qt blueprint.
+* **Single-Stack Production Application is Tkinter (`ui/` + `main.py`)**: Arbor is an active, production desktop application written in **Tkinter** with an embedded Flask **Mobile Companion V2** (`backend/mobile_server.py`, `backend/mobile_template_v2.py`). All everyday features, bug fixes, enhancements, performance tuning, and database workflows belong in `ui/` and `backend/`.
+* **Legacy PySide6 / Qt Experiment Retired**: The earlier PySide6 exploration was removed from the active tree to keep Arbor simple, zero-friction, and single-stack (preserved in Git history under tag `archive/pyside6-blueprint`). Never introduce Qt/PySide6 dependencies.
 
 ### Folder Usage & Status Guide:
-1. **`ui/` [ACTIVE PRODUCTION]**: The real, working UI. All production changes, dialogs, widgets, and layouts live here.
-2. **`pyside_new_uis/` [COMPLETED PHASE 1 ASSET]**: Contains the 32 verified, 1:1 audited `.ui` files. Serves as a ready-to-wire blueprint if a future team ever decides to migrate to Qt. Verified via `python scripts/verify_all_uis.py`.
-3. **`ui_qt/` [EXPERIMENTAL / OPTIONAL ARCHIVE]**: Early prototype Qt controllers from exploratory work. They point to the old `qt designer/` folder and do NOT wire up `pyside_new_uis/`. Treat as reference only.
-4. **`qt designer/` [DEPRECATED / SUPERSEDED]**: Legacy, early `.ui` drafts. Completely superseded by `pyside_new_uis/`. Do not edit or use for new work.
+1. **`ui/` [ACTIVE PRODUCTION]**: The real, working desktop UI. All production changes, dialogs, widgets, tutorials, and layouts live here.
+2. **`backend/` [ACTIVE PRODUCTION]**: Search, filtering, GBIF lookups, background worker, updater, and the Mobile Companion V2 server & template.
 
 ---
 
@@ -31,7 +28,7 @@ Arbor follows a **Zero-Friction, Offline-First** architecture. When improving, m
 3. **Use Pre-Tested Pip Packages Over Handcrafted Fragile Code**:
    - Do **NOT** reinvent complex utilities from scratch when mature, well-tested Python packages exist. Standard, pre-compiled wheels installed via `pip` (tracked in `requirements.txt`) and bundled into PyInstaller are welcomed and encouraged.
 4. **Mobile Companion Zero-Build Stack**:
-   - The mobile companion frontend must remain strictly Vanilla HTML, JavaScript, and deferred Tailwind CSS (with scoped `html.arbor-offline-css` fallback) stored as pure-Python string constants in `backend/mobile_template_v1.py` (`INDEX_TEMPLATE`) and `backend/mobile_template_v2.py` (`INDEX_TEMPLATE_V2`), re-exported by `backend/mobile_server.py`. Never introduce Node.js, npm, or external build steps.
+   - The mobile companion frontend must remain strictly Vanilla HTML, JavaScript, and deferred Tailwind CSS (with scoped `html.arbor-offline-css` fallback) stored as a pure-Python string constant in `backend/mobile_template_v2.py` (`INDEX_TEMPLATE_V2`), re-exported by `backend/mobile_server.py`. Never introduce Node.js, npm, or external build steps.
 
 ### Approved vs. Prohibited Library Checklist
 
@@ -86,11 +83,6 @@ The agent **MUST ALWAYS**:
 * **Working on the Mobile Companion App or Backend Server (`mobile_server.py`)?**
   * 👉 Read **`documentation/agent/MOBILE_COMPANION_GUIDE.md`** (CRITICAL). This contains strict rules for frontend implementation, logic syncing, and performance.
   * 👉 Read **`documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`** (CRITICAL). Contains ground-truth hallway audit workflows, hallway ergonomics, and the Armed Shelf defensive pattern.
-
-* **Reviewing the PySide6 Blueprint or Resuming Qt Wiring?**
-  * 👉 Read **`documentation/agent/PYSIDE6_MIGRATION_GUIDE.md`** (Status: Phase 1 complete, Phase 2 blueprint).
-  * 👉 Read **`PYSIDE_UI_INTEGRATION_PIPELINE.md`** (Catalog of all 32 `.ui` files with exact widget object names and constructor contracts).
-  * 👉 Run `python scripts/verify_all_uis.py` to validate XML schema compliance.
 
 * **Working on Interactive Tutorials or User Onboarding?**
   * 👉 Read **`documentation/agent/TUTORIAL_GUIDE.md`** (CRITICAL). This contains strict rules for sandboxing, action-driven stepping, operational copy, and modular organization.

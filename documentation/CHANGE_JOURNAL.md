@@ -13,6 +13,21 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 58: Full Clean Removal of Legacy PySide6 / Qt Experiment (~46,600 Lines)
+- **Date**: 2026-11-24
+- **Feature Area**: Repository Cleanup & Single-Stack Focus (`main.py`, `main.spec`, `requirements-dev.txt`, `tests/test_gbif.py`, `AGENTS.md`, `MAINTAINER_HANDOFF.md`)
+- **What Changed**:
+  1. **Bookmarked Full Snapshot in Git**: Created lightweight Git tag `archive/pyside6-blueprint` before removal so the earlier Qt Designer `.ui` blueprint remains recoverable in Git history if ever needed.
+  2. **Removed All 115 Legacy PySide6 / Qt Assets**: Deleted `pyside_new_uis/` (32 `.ui` files), `ui_qt/` (56 files), `qt designer/` (20 files), `main_qt.py`, `scripts/verify_all_uis.py`, `scripts/open_designer.py`, `scripts/verify_ui.py`, `PYSIDE_UI_EXTRACTION_PLAN_PHASE1.md`, `PYSIDE_UI_INTEGRATION_PIPELINE.md`, `documentation/agent/PYSIDE6_MIGRATION_GUIDE.md`, and `tests/test_startup_selection.py`.
+  3. **Simplified Startup & Tests**: Removed `select_ui_framework()` and the Qt branch from `main.py` (preserving `--mobile`/`-m` and Tkinter launch), removed `TestAutoResolveSafeguardsInQt` from `tests/test_gbif.py`, removed `'ui_qt'` from `main.spec` (retaining `'PySide6'` and `'shiboken6'` as defensive PyInstaller guards), and updated `requirements-dev.txt`, `AGENTS.md`, and `MAINTAINER_HANDOFF.md`.
+- **User Impact**: Zero change to the live Desktop app or Mobile Companion workflows; launching `python main.py` from a terminal no longer prompts for a UI framework choice, and the repository is cleanly single-stack.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Maintainer & Agent Guides: `AGENTS.md`, `MAINTAINER_HANDOFF.md`
+  - [x] Full test suite & dangling-reference check verified
+
+---
+
 ### Entry 57: Codebase Cleanup — Retired Mobile V1 (`4,709` Lines), Pruned Legacy Help Hub (`337` Lines) & Isolated Test Prefs
 - **Date**: 2026-11-24
 - **Feature Area**: Codebase Hygiene & Test Isolation (`backend/mobile_template_v1.py`, `backend/mobile_server.py`, `ui/help_dialogs.py`, `conftest.py`, `.gitignore`, `tests/test_mobile_companion.py`, `tests/test_problem_persistence_fix.py`)

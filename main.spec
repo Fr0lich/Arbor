@@ -62,7 +62,6 @@ a = Analysis(
     excludes=[
         'PySide6',
         'shiboken6',
-        'ui_qt',
         'archive',
         'pytest',
         '_pytest',

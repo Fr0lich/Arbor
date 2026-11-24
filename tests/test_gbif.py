@@ -1148,58 +1148,6 @@ class TestScanAndRestoreTaxonomicInversions:
         assert len(clean_scan) == 0
 
 
-class TestAutoResolveSafeguardsInQt:
-    """Test that Qt bulk selection actions strictly exclude items with rank discrepancies."""
-
-    def test_select_all_and_select_confident_exclude_rank_discrepancy(self):
-        import sys
-        from PySide6.QtWidgets import QApplication
-        _app = QApplication.instance() or QApplication(sys.argv)
-
-        from ui_qt.gbif_review import QtGbifReviewDialog
-
-        app = AppState()
-        dialog = QtGbifReviewDialog(app_state=app, auto_start=False)
-
-        dialog.results = [
-            {
-                "oid": "1",
-                "orig_name": "Betula pendula",
-                "matched_name": "Betula pendula Roth",
-                "status": "ACCEPTED",
-                "confidence": 99,
-                "has_rank_discrepancy": False,
-                "checked": False
-            },
-            {
-                "oid": "2",
-                "orig_name": "Pinus Pinaceae",
-                "matched_name": "Pinaceae",
-                "status": "ACCEPTED",
-                "confidence": 98,
-                "has_rank_discrepancy": True,
-                "rank_discrepancy": "⚠️ Species → Family",
-                "checked": False
-            }
-        ]
-        dialog.visible_indices = [0, 1]
-
-        # 1. Test select_all
-        dialog.select_all()
-        assert dialog.results[0]["checked"] is True
-        assert dialog.results[1]["checked"] is False  # MUST REMAIN FALSE
-
-        # 2. Test deselect_all
-        dialog.deselect_all()
-        assert dialog.results[0]["checked"] is False
-        assert dialog.results[1]["checked"] is False
-
-        # 3. Test select_confident
-        dialog.select_confident()
-        assert dialog.results[0]["checked"] is True
-        assert dialog.results[1]["checked"] is False  # MUST REMAIN FALSE
-
-
 # ============================================================================
 # Merged from test_gbif_synonym_reasoning.py
 # ============================================================================

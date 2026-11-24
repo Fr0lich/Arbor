@@ -19,24 +19,24 @@ This 1-page reference is for anyone inheriting or maintaining **Arbor**, an offl
   ```bash
   python main.py
   ```
-- **Run the full consolidated test suite (~465 tests across 21 domain suites)**:
+- **Run the full consolidated test suite (~470 tests across 20 domain suites)**:
   ```bash
   python -m pytest tests/ -q
   ```
 
 ---
 
-## 2. Repository Map (Active vs. Archived)
+## 2. Repository Map
 
 | Path | Status | Purpose |
 | :--- | :--- | :--- |
 | `main.py`, `ui/` | **ACTIVE PRODUCTION** | Live Tkinter desktop application, dialogs, tutorials, command palette, image viewer. |
-| `backend/` | **ACTIVE PRODUCTION** | Embedded Flask mobile companion (`mobile_server.py` + pure-Python frontend modules `mobile_template_v1.py` / `mobile_template_v2.py`), Marshmallow validation (`mobile_schemas.py`), search, filtering, GBIF lookups, background worker, updater. |
+| `backend/` | **ACTIVE PRODUCTION** | Embedded Flask mobile companion (`mobile_server.py` + pure-Python frontend `mobile_template_v2.py`), Marshmallow validation (`mobile_schemas.py`), search, filtering, GBIF lookups, background worker, updater. |
 | `models.py`, `repository.py`, `config.py`, `utils.py` | **ACTIVE PRODUCTION** | `AppState` (`_mutation_seq`, undo/redo), atomic Excel/SQLite persistence, preferences, logging (`loguru`), DPI scaling (`sc()`). |
 | `USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`, `documentation/` | **ACTIVE DOCS** | Trainee manuals, desk cheat sheet, Canonical Trainee Lexicon (`MASTER_DOCUMENTATION_MAP.md`), and `CHANGE_JOURNAL.md`. |
 | `build_exe.bat`, `main.spec` | **ACTIVE PACKAGING** | Builds standalone portable `dist\Arbor.exe` (`console=False`) + bundled guides and demo workbook. |
-| `pyside_new_uis/` | **PAUSED (Phase 1 Blueprint)** | 32 verified `.ui` XML files if a future team ever resumes a Qt migration. Do not build everyday features here. |
-| `ui_qt/`, `qt designer/`, `archive/` | **ARCHIVED / REFERENCE** | Early prototypes and superseded code. Do not edit for production changes. |
+
+*(The legacy PySide6/Qt blueprint was retired from the active tree and bookmarked in Git under tag `archive/pyside6-blueprint`.)*
 
 ---
 
@@ -44,7 +44,7 @@ This 1-page reference is for anyone inheriting or maintaining **Arbor**, an offl
 
 1. **Offline-First in Concrete Vaults**: Core desktop curation, Excel saves, and mobile companion auditing must work with **zero internet**. Cloud calls (GBIF, tunnels) are strictly optional with graceful fallbacks.
 2. **Zero-Friction Portable `.exe`**: Never require external database engines (PostgreSQL, MySQL, Redis, Docker) or system compilers. Everything freezes cleanly into `dist\Arbor.exe`.
-3. **Zero-Build Mobile Frontend**: The mobile UI lives strictly as pure-Python string constants in `backend/mobile_template_v1.py` (`INDEX_TEMPLATE`) and `backend/mobile_template_v2.py` (`INDEX_TEMPLATE_V2`), re-exported by `backend/mobile_server.py` (Vanilla HTML/JS + deferred Tailwind CDN + scoped `html.arbor-offline-css` fallback). No Node.js, npm, Vite, or React.
+3. **Zero-Build Mobile Frontend**: The mobile UI lives strictly as a pure-Python string constant in `backend/mobile_template_v2.py` (`INDEX_TEMPLATE_V2`), re-exported by `backend/mobile_server.py` (Vanilla HTML/JS + deferred Tailwind CDN + scoped `html.arbor-offline-css` fallback). No Node.js, npm, Vite, or React.
 4. **Zero Barcodes**: Barcode scanning was permanently removed. Never re-introduce barcode libraries, UI, or documentation references.
 5. **Atomic Excel Safety**: Saves write to a sibling temp file + `os.replace`, create rolling snapshots in `.arbor_backups/`, and protect against mid-save edits via `AppState._mutation_seq`.
 6. **Canonical Trainee Lexicon & Change Journal**: User-facing copy uses plain museum language (*Specimen Directory*, *Storage Location*, *Mark Reviewed*, *Phone Connector*). Record all user-facing changes in `documentation/CHANGE_JOURNAL.md`.

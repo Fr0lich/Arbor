@@ -4,6 +4,3 @@
 pytest>=8.0,<10.0
 pytest-xvfb>=3.0
 pyinstaller>=6.0,<7.0
-
-# Optional: Only needed if resuming the paused Phase 2 PySide6 migration (pyside_new_uis/)
-# PySide6>=6.6
