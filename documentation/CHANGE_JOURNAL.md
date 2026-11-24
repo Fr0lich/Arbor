@@ -13,6 +13,20 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 57: Codebase Cleanup — Retired Mobile V1 (`4,709` Lines), Pruned Legacy Help Hub (`337` Lines) & Isolated Test Prefs
+- **Date**: 2026-11-24
+- **Feature Area**: Codebase Hygiene & Test Isolation (`backend/mobile_template_v1.py`, `backend/mobile_server.py`, `ui/help_dialogs.py`, `conftest.py`, `.gitignore`, `tests/test_mobile_companion.py`, `tests/test_problem_persistence_fix.py`)
+- **What Changed**:
+  1. **Retired Obsolete Mobile Companion V1 (`-4,709` lines)**: Deleted `backend/mobile_template_v1.py`, routed `GET /` directly to `index_v2()` in `backend/mobile_server.py` (keeping `INDEX_TEMPLATE = INDEX_TEMPLATE_V2` as a compatibility alias), and removed V1-only template assertions from tests.
+  2. **Pruned Dead Legacy Help Hub (`-337` lines)**: Deleted the unused `_legacy_open_help_window()` from `ui/help_dialogs.py` (retaining active `show_main_help()` and `show_shortcuts()`).
+  3. **Eliminated Repo-Root `user_prefs.json.corrupt.*` Pollution**: Added an `autouse=True` `_isolate_user_prefs` fixture in `conftest.py` redirecting `config._PREFS_PATH` to `tmp_path` for every test, deleted 11 stray `.corrupt.*` files, and added `.arbor_synonyms_cache.json` to `.gitignore`.
+- **User Impact**: Visiting the bare Mobile Companion URL (`/`) now lands directly on the modern Mobile Companion V2, the packaged `.exe` drops ~5,000 lines of dead code, and running tests never touches local user preferences.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Full test suite verified: `python -m pytest tests/ -q`
+
+---
+
 ### Entry 56: Automatic Offline Synonym Cache Warm-Up During Batch GBIF
 - **Date**: 2026-11-24
 - **Feature Area**: Taxonomy Reference & Offline Vault Cache (`backend/gbif.py`, `ui/gbif_batch_config.py`)

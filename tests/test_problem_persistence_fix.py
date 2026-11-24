@@ -924,18 +924,6 @@ import pandas as pd
 from ui.registry_panel import _bind_icedig_context_menu, _bind_icedig_shortcuts, _apply_icedig_code
 from ui.object_problem_resolver import ObjectProblemResolver
 import config
-from backend.mobile_server import INDEX_TEMPLATE
-
-
-@pytest.fixture
-def tk_root():
-    root = tk.Tk()
-    root.withdraw()
-    yield root
-    try:
-        root.destroy()
-    except Exception:
-        pass
 
 
 def test_icedig_context_menu_unlocked_on_empty_and_valid_fields(tk_root):
@@ -1030,13 +1018,3 @@ def test_resolver_1click_icedig_buttons(tk_root):
     # Execute resolution via res_var set
     resolver.res_vars["Collector"].set("unknown:missing")
     assert mock_main.is_unknown(resolver.res_vars["Collector"].get()) is True
-
-
-def test_mobile_template_icedig_picker_integration():
-    """Verify that mobile template includes bottom sheet modal and ICEDIG button handlers."""
-    assert 'id="icedigBottomSheetModal"' in INDEX_TEMPLATE
-    assert 'openIcedigBottomSheet' in INDEX_TEMPLATE
-    assert 'applyIcedigChoice' in INDEX_TEMPLATE
-    assert 'showToastWithUndo' in INDEX_TEMPLATE
-    assert 'discrepancyUnvalCheck' in INDEX_TEMPLATE
-    assert 'Missing Data Status' in INDEX_TEMPLATE

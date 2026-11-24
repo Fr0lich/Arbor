@@ -1261,34 +1261,7 @@ class MobileServer:
 
         @app.route('/')
         def index():
-            is_auth, sid, tok = self._get_current_session()
-            token_param = request.args.get('token')
-            if token_param:
-                sess = self._get_session_by_token(token_param)
-                if sess or token_param == self.session_token:
-                    tok = token_param
-                    sid = sess["session_id"] if sess else self.session_id
-                    session['token'] = tok
-                    session['session_id'] = sid
-                    session['authenticated'] = True
-                    is_auth = True
-            if not is_auth:
-                if not self.is_pin_required():
-                    tok, sid = self._create_session(self._get_client_ip())
-                    session['token'] = tok
-                    session['session_id'] = sid
-                    session['authenticated'] = True
-                else:
-                    return redirect(url_for('login', next=request.url))
-
-            effective_token = tok or self.session_token
-            effective_sid = sid or self.session_id
-            rendered = INDEX_TEMPLATE.replace('{{ token }}', effective_token).replace('{{ session_id }}', effective_sid)
-            resp = make_response(rendered)
-            resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-            resp.headers['Pragma'] = 'no-cache'
-            resp.headers['Expires'] = '0'
-            return resp
+            return index_v2()
 
         @app.route('/v2')
         def index_v2():
@@ -3272,7 +3245,7 @@ LOGIN_TEMPLATE = """<!DOCTYPE html>
 </html>"""
 
 
-# Mobile frontend templates live in dedicated pure-Python modules (zero-build compliant)
-# and are re-exported here so all existing imports continue to work identically.
-from .mobile_template_v1 import INDEX_TEMPLATE
+# Mobile frontend template lives in a dedicated pure-Python module (zero-build compliant)
+# and is re-exported here (INDEX_TEMPLATE kept as alias to V2 for backward compatibility).
 from .mobile_template_v2 import INDEX_TEMPLATE_V2
+INDEX_TEMPLATE = INDEX_TEMPLATE_V2

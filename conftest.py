@@ -38,6 +38,27 @@ tk.Variable.__del__ = _safe_var_del
 
 
 @pytest.fixture(autouse=True)
+def _isolate_user_prefs(tmp_path, monkeypatch):
+    """Isolate config._PREFS_PATH to tmp_path so tests never mutate or corrupt repo-root user_prefs.json."""
+    import config
+    monkeypatch.setattr(config, "_PREFS_PATH", str(tmp_path / "user_prefs.json"))
+    # Clear any pending debounced save timer between tests
+    if getattr(config, "_prefs_save_timer", None) is not None:
+        try:
+            config._prefs_save_timer.cancel()
+        except Exception:
+            pass
+        config._prefs_save_timer = None
+    yield
+    if getattr(config, "_prefs_save_timer", None) is not None:
+        try:
+            config._prefs_save_timer.cancel()
+        except Exception:
+            pass
+        config._prefs_save_timer = None
+
+
+@pytest.fixture(autouse=True)
 def _tk_gc_hygiene():
     """Collect lingering Tk Variable/PhotoImage refs on the main thread after each test."""
     yield

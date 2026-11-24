@@ -14,6 +14,7 @@ error.log
 error_test.log
 user_prefs.json
 user_prefs.json.*
+.arbor_synonyms_cache.json
 .arbor_backups/
 .arbor_logs/
 *.autosave.json

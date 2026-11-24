@@ -1760,10 +1760,9 @@ def test_mobile_walkthrough_toggle_injection():
 def test_mobile_v2_core_ui_and_offline_contracts():
     """High-signal contract check for Mobile V2: modular re-export, offline CSS, key modals, and touch gestures."""
     from backend.mobile_server import INDEX_TEMPLATE, INDEX_TEMPLATE_V2
-    from backend.mobile_template_v1 import INDEX_TEMPLATE as V1_MOD
     from backend.mobile_template_v2 import INDEX_TEMPLATE_V2 as V2_MOD
 
-    assert INDEX_TEMPLATE == V1_MOD
+    assert INDEX_TEMPLATE == V2_MOD
     assert INDEX_TEMPLATE_V2 == V2_MOD
     # Offline-first styling & non-blocking Tailwind CDN
     assert 'arbor-offline-css' in INDEX_TEMPLATE_V2
