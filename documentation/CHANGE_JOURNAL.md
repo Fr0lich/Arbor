@@ -13,6 +13,186 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 56: Automatic Offline Synonym Cache Warm-Up During Batch GBIF
+- **Date**: 2026-11-24
+- **Feature Area**: Taxonomy Reference & Offline Vault Cache (`backend/gbif.py`, `ui/gbif_batch_config.py`)
+- **What Changed**:
+  - Added `record_batch_diffs_to_synonym_cache()` in `backend/gbif.py` and wired it cleanly into `GBIFBatchConfigDialog` (`ui/gbif_batch_config.py`) right after `batch_gbif_match()` finishes.
+  - Whenever a curator runs Batch GBIF at their desk, every discovered old name (`Genus`/`Species`) and old family rename is silently merged into `.arbor_synonyms_cache.json` next to the workbook (atomic write, zero extra HTTP requests, zero slowdown).
+- **User Impact**: Offline basement vault checks using **`📜 Old names`** on Mobile Companion automatically know about previously updated synonyms and family names across the collection without requiring any manual pre-cache step.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_gbif.py`
+
+---
+
+### Entry 55: In-App Manuals Synced & Permanent Automated Doc-Parity Guard Added
+- **Date**: 2026-11-24
+- **Feature Area**: Bundled User Manuals (`USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`, `documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`), CI Parity Guard (`tests/test_navigation_and_dialogs.py`), & Agent Watchlist (`documentation/agent/CLAUDE_BUG_REVIEW_GUIDE.md`)
+- **What Changed**:
+  1. **Synced Bundled In-App Manuals**: Updated `USER_GUIDE.md` and `MOBILE_COMPANION_USER_GUIDE.md` to match the live UI 1:1 — direct **`HELP`** button → Help Center, **Details ↔ Location ↔ History** tabs, inline checkboxes on `Details`, **`Set Shelf` + 5-sec `↩ Undo`**, **`📜 Old names`**, **`Stored as`** bottom sheet, **`↗ Loaned`** badges, **⚙ Settings → Advanced Tools** for Batch Location Registrator, and the reordered 5-Step Learning Path. Updated `F1` on `KEYBOARD_SHORTCUTS_CHEAT_SHEET.md` to `OPEN HELP CENTER & LEARNING PATH`.
+  2. **Permanent Doc-Parity Guard (`tests/test_navigation_and_dialogs.py`)**: Added `test_in_app_user_manuals_stay_synced_with_ui()` so every pytest/CI run automatically fails if retired UI labels (`Armed Target Shelf`, `Details ↔ Location ↔ Problems`, `HELP ▾`, `Stamp Target`, etc.) ever creep back into the bundled manuals.
+  3. **Agent Watchlist Rule #8 (`CLAUDE_BUG_REVIEW_GUIDE.md`)**: Documented that `USER_GUIDE.md` and `MOBILE_COMPANION_USER_GUIDE.md` are live bundled UI and must be updated in the same turn as any UI rename.
+- **User Impact**: Trainees opening the Desktop Work Manual or Mobile Vault Guide inside Arbor's Help Center now see accurate, up-to-date instructions matching every button and tab in the app, and CI prevents them from drifting out of sync again.
+- **Documentation Sync Checklist**:
+  - [x] `USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`, `documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`
+  - [x] Automated parity guard: `tests/test_navigation_and_dialogs.py`
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+
+---
+
+### Entry 54: Aligned 5-Step Learning Path Order & Cleaned Up Stale "Armed Target Shelf" Copy
+- **Date**: 2026-11-24
+- **Feature Area**: Help Center & Tutorials (`ui/unified_help.py`, `ui/help_dialogs.py`, `ui/tutorials/review_tutorial.py`)
+- **What Changed**:
+  1. **Reordered Learning Path to Match a Real Museum Shift (`ui/unified_help.py`, `ui/help_dialogs.py`)**: Aligned both Help Center views to **1. 3-Minute Quick Tour → 2. Mobile Companion Hallway Guide → 3. Office Triage (REV+ERR) → 4. Historical Ledger Comparison → 5. Collections & New Specimens (Optional)**.
+  2. **Removed Stale `"Armed Target Shelf"` Wording (`ui/unified_help.py`, `ui/help_dialogs.py`)**: Updated all 3 remaining Help Center descriptions to **`Set Shelf` / `Physical Location` + 5-sec Undo + `Old names`**.
+  3. **Quick Tour Handoff Copy (`ui/tutorials/review_tutorial.py`)**: Updated the final-step Mobile Companion description to echo Slide 1 (*"record Physical Locations and check real objects"*).
+- **User Impact**: Every Help Center card and tutorial transition now follows one consistent, natural workflow (**Learn Desk → Walk Hallway → Triage Back at Desk**) with unified plain-English terminology.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py`, `tests/test_navigation_and_dialogs.py`
+
+---
+
+### Entry 53: Seamless Desktop-to-Phone Mobile Companion Tutorial (4-Step Hallway Quick Guide & `?` Field Guide Sync)
+- **Date**: 2026-11-24
+- **Feature Area**: Interactive Tutorials (`ui/tutorials/micro_guides.py`) & Mobile Companion V2 Onboarding / Field Guide (`backend/mobile_template_v2.py`)
+- **What Changed**:
+  1. **Desktop-to-Phone Handoff (`ui/tutorials/micro_guides.py`)**: Reframed `start_armed_shelf_guide` as Part 2 right after the Desktop 3-Minute Quick Tour — Step 3 (`Start the Mobile Session`) auto-advances when `▶ Start Mobile Session` starts the server, and Step 4 guides the user to scan the QR code and remember `Ctrl+S` after their shift.
+  2. **Visual, Location-First 4-Step `Hallway Quick Guide` + Auto-Dismissing Coach Nudge (`backend/mobile_template_v2.py`)**: Upgraded `WALKTHROUGH_SLIDES` to ≤25-word scannable cards with bold action labels, real-styled visual pill/badge previews (`Set Shelf`, `📍 Save to Cab 21 · Sh 01`, `↩ Undo`, `📜 Old names`, `[REV]` / `[REV+ERR]`), touch swipe + tappable dots, calm "you can't break anything" reassurance, `sessionStorage` per-session tracking (so shared museum phones and re-tests actually show the guide when enabled), and an auto-dismissing 1-line `#listCoachNudge` under `Shelf: Not set` that disappears automatically once a shelf is set.
+  3. **In-Phone `?` Field Guide Sync (`backend/mobile_template_v2.py`)**: Fixed all 3 remaining stale `"Problems tab"` references (`Genus`, `Species`, `Collector`) to reference the inline checkboxes on `Details`, and added `[CFCT]` and `↗ Loaned` to the Status Badges section.
+- **User Impact**: New trainees transitioning from the Desktop 3-Minute Quick Tour into the Mobile Companion now get a single, continuous onboarding flow whose instructions match every button, tab, and badge on the phone 1:1.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_mobile_companion.py`, `tests/test_mobile_companion_offline.py`, `tests/test_sandbox_tutorials.py`
+  - [x] Mobile V2 JS syntax verified via `node --check`
+
+---
+
+### Entry 52: Mobile Companion V2 Hallway QA Fixes — Location Sync, 5-Second Undo Toast, History Resolution & 390px Ergonomics
+- **Date**: 2026-11-24
+- **Feature Area**: Mobile Companion V2 (`backend/mobile_template_v2.py`) & Mobile Server Detail Payload (`backend/mobile_server.py`)
+- **What Changed**:
+  1. **List-vs-Detail Location Sync**: Updated `/api/object/<oid>` to inherit non-empty Storage Location and Loan fields from Registration in the read-only GET payload when Observation is blank (mirroring `/api/objects` without mutating any data on disk), fixing the bug where specimens with saved shelves showed `Loc: Unrecorded` / `Location [Unset]` on open.
+  2. **5-Second `↩ Undo` Toast on All 1-Tap Shelf Saves & 390px Shelf Bar Polish**: Added the protected 5-second `↩ Undo` action button to both relocation and initial 1-tap shelf saves so `"✓ Saved & synchronized"` never overwrites it; shortened `Current Shelf:` → `Shelf:` and `Floor` → `Fl` across List, Detail, and Location summaries so `Sh 01` never truncates at `390px`, and stacked `Fam:`/`Loc:` cleanly beside `📜 Old names` to eliminate orphaned `•` wrapping.
+  3. **Post-`Apply` `History` Sync, Flagged Status Pill & Scroll Reset**: Filtered resolved/matching historical suggestions out of `#tabHistoryBadge` and `[CFCT]` cards immediately after tapping `Apply`; updated the Detail header pill on unreviewed flagged specimens to `[UNREV] · ⚠ N` (matching List View); reset tab scroll to top when switching specimens; and removed stray indentation whitespace in the Comment preview box.
+  4. **Offline Vault CSS & 390px Touch Ergonomics**: Added `[id$="Sheet"]` bottom-sheet and `.inline-flag-btn` fallback rules in `html.arbor-offline-css`; enlarged Batch Location Registrator steppers (`36×36px`), Quick Filter Pills (`34px` height + right-edge scroll fade), and Settings modal `Save`/`Cancel` (`40px`); fixed double dropdown chevrons on `<select>` controls; and raised `#toast` above sticky footer buttons (`bottom-24`). Walk Mode icons (`🌙` / `☀️`) were kept unchanged.
+- **User Impact**: Trainees opening any specimen in the hallway now immediately see its true saved shelf, never lose `Sh 01` off the edge of a 390px screen, get a reliable 5-second `↩ Undo` button after every 1-tap shelf save, see `History` conflict badges clear immediately after tapping `Apply`, and have comfortable one-handed tap targets both online and in offline vaults.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_mobile_companion.py`, `tests/test_mobile_companion_offline.py`
+  - [x] Live `390×844` browser re-verification
+
+---
+
+### Entry 51: Mobile Companion V2 Desktop-Parity Redesign (`Details` Inline Checkboxes, `History` Swipe Tab & Compact Current Shelf Sheet)
+- **Date**: 2026-11-24
+- **Feature Area**: Mobile Companion V2 (`backend/mobile_template_v2.py`, `tests/test_mobile_companion.py`)
+- **What Changed**:
+  1. **3-Tab Horizontal Swipe Redesign (`Details` · `Location` · `History`)**: Added 40×40px inline problem checkboxes (`data-no-swipe`) directly beside each Registration Data field in **Details** (mirroring Desktop Arbor's exact layout), added a 1-tap flagged-fields jump chip (`#detailsFlagSummaryChip`) and a compact **Physical & Other Issues** card (`Other Issue`, `Images Issue`) at the bottom of **Details**, and converted Tab 2 into a dedicated **History** resolver tab (Current value + Historical Suggestions + 1-tap `Apply` + slate-blue count badge + calm empty state with `📜 Check Old Names & Synonyms` shortcut).
+  2. **Compact 1-Line `Current Shelf` Bar + Swipe-Down Bottom Sheet (`#stationSetupSheet`)**: Replaced the expanded 140px List View shelf form with a 1-line bar (`Current Shelf: Not set [Set Shelf]` / `[Change]`) opening a touch-friendly bottom sheet with swipe-down-to-dismiss; auto-hides redundant `Copy from Previous` on Tab 1 when `Current Shelf` is set, and quiets the Detail shelf banner to `✓ On Cab X · Sh Y` when the specimen already matches.
+  3. **Desktop Badge Parity & Cleaner Top Bar**: Aligned Quick Filter pills to Desktop badges (`UNREV`, `REV`, `CFCT`), kept `🌙` Wake Lock directly toggleable in the List top bar, tucked the advanced **Batch Location Registrator** into **Settings → Advanced Tools**, updated Mobile's in-app `?` Field Guide copy, and pruned 4 orphaned dead-code references (`presetsConfigModal`, `openCommentModal`, `commentInput`).
+- **User Impact**: Trainees moving from Desktop Arbor to Mobile Companion now see the exact same mental model — inline field checkboxes on `Details`, one swipe over to `History` to compare older catalog books, more visible specimen cards on small phones, and zero broken modals or buttons.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Mobile V2 JS syntax verified via `node --check` (0 errors) & static DOM/handler audit (0 missing)
+  - [x] Unit Tests: `tests/test_mobile_companion.py`, `tests/test_mobile_companion_offline.py` (80 passed)
+
+---
+
+### Entry 50: Mobile Companion V2 Polish Pass 2 — Undo Guard, Full Curatorial Filters, Loaned Out Visibility, Stored As Sheet & 390px Ergonomics (Batch C + D + E)
+- **Date**: 2026-11-24
+- **Feature Area**: Mobile Companion V2 (`backend/mobile_template_v2.py`), Mobile Server List Payload (`backend/mobile_server.py`), & Schema Choice (`config.py`)
+- **What Changed**:
+  1. **Critical Bug Fixes (Batch C)**:
+     - **5-Second `↩ Undo` Toast Protection**: Prevented background auto-save toasts (`✓ Saved & synchronized`) from overwriting active Undo action toasts, and updated the relocation `↩ Undo` callback to write against the live `state.currentRecord.observation` object so SSE reloads cannot detach the rollback.
+     - **Curatorial Advanced Filters**: Populated the previously empty **Specific Problems & Verification** section with Review Status pills (`All Objects`, `Unreviewed`, `Reviewed`, `Flagged`, `Conflicts`) and Specific Problem checkboxes, wired all Spatial Location inputs (`loc_*`) and `specific_problems` into `/api/objects`, and synced `#filterActiveBadge`.
+     - **Immediate Footer Micro-Copy Refresh**: Refreshed the review helper message immediately after 1-tap `Save to Shelf` and `↩ Undo` so reviewed specimens never show stale *"location not recorded yet"* text.
+     - **Dropdown & Offline CSS Polish**: Eliminated double `<select>` carets and 2-line `Bldg` wrapping via `.arbor-compact-select` (`appearance: none`), shortened `Cab`/`Shelf` placeholders (`21` / `01`), replaced undefined `bg-tonal` with `bg-tonal1`, and added high-contrast `html.arbor-offline-css` rules for `Retry`, `Old names`, and all three states of `Mark Reviewed`.
+  2. **One-Handed 390px Ergonomics, `Loaned Out` & `Stored As` (Batch D)**:
+     - Raised primary and modal tap targets across Specimen List, Specimen Detail, Field Guide, Walkthrough, Filters, Old Names, and Photo Viewer to `≥ 40px` (`36–40px` inside compact search bar/steppers) and fixed search icon padding (`pl-10`).
+     - Locked all 3 segmented tabs (`Details`, `Location`, `Problems`) to an identical `40px` height by using a non-wrapping `Unset` badge.
+     - **Loaned Out Visibility**: Added normalized `loaned_out` + `loaned_out_date` to `/api/objects`, rendered an amber **`↗ Loaned`** pill on Specimen List cards and **`↗ Loaned · DD.MM.YYYY`** in the sticky Detail header, and auto-stamped/cleared `Loaned out date` in Desktop's `DAY.MONTH.YEAR` format with toast confirmation.
+     - **Stored As Bottom Sheet**: Replaced the clipped `26.5px` horizontal pill strip with a `44px` tap-to-pick selector opening `#storedAsBottomSheet` with full-width `44px` choices and plain trainee wording, and fixed `"Mounted on wooded platform"` → `"Mounted on wooden platform"` in `config.py`.
+  3. **Final Copy, Desktop Parity & Photo Viewer (Batch E)**:
+     - Replaced remaining `"Set Target Shelf"` / `"target shelf armed"` copy with **`📍 My Current Shelf`** / **`Set My Current Shelf first`**, humanized flagged/cleared problem toasts and discrepancy card badges (removing raw `*_Problem` column names), included Building in Walkthrough Slide 2 and the active shelf bar, and updated the `?` Field Guide copy to match Mobile V2's read-only Registration Data (removing absent Desktop-only fields and the `"Innsammling"` typo).
+     - Constrained bottom sheets (`#oldNamesSheetCard`, `#storedAsSheetCard`) to `max-w-[440px] mx-auto` and added `‹` / `›` prev/next photo arrows + counter + mouse-drag panning to the fullscreen Photo Viewer.
+- **User Impact**: Trainees walking the hallway with one hand now get reliable 5-second Undo after moving a specimen, working status and problem filters, immediate `↗ Loaned` badges on both the list and detail header, a clean full-width `Stored As` picker with zero clipped text, uniform tab heights, clear offline contrast, and plain English across every toast, modal, and Field Guide entry.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_mobile_companion.py`, `tests/test_mobile_companion_offline.py` (80 passed)
+  - [x] Mobile V2 JS syntax verified via `node --check` (0 errors)
+  - [x] Live `390×844` browser verification completed (0 console errors)
+  - [ ] Trainee Manual (`USER_GUIDE.md`) — sync updated Mobile Companion filters, `Loaned Out` badges, and `Stored As` picker via 1-Prompt Sync Protocol
+
+---
+
+### Entry 49: Mobile Companion V2 Polish — Bug Fixes, 390px Ergonomics & Desktop Parity (Batch A + B)
+- **Date**: 2026-11-24
+- **Feature Area**: Mobile Companion V2 (`backend/mobile_template_v2.py`) & Desktop Phone Guide (`ui/tutorials/micro_guides.py`)
+- **What Changed**:
+  1. **Critical Bug Fixes (`backend/mobile_template_v2.py`)**:
+     - Fixed `Uncaught ReferenceError: activeSchema is not defined` in the Curatorial Filters modal (`openFilterModal`, `applyAdvancedFilters`, `openAddDiscrepancyModal`) by referencing `state.activeSchema`.
+     - Fixed double-counting of active problems in `countActiveProblemsOnRecord()` so the detail header badge, footer button, and `Problems` tab badge always agree.
+     - Fixed false `"✓ Location recorded"` review micro-copy on specimens with no location set, fixed the `detailTotalCount` cap (`220` vs `200`), fixed photo count display (`N Photos`), guarded `<img id="specimenImg">` `onerror` on initial load, and made `?tutorial=1` reliably launch the walkthrough.
+  2. **390px Phone Layout Fixes (`backend/mobile_template_v2.py`)**:
+     - Widened `Cabinet` and `Shelf` inputs (`w-14 min-w-[48px]`) with `36px` `−`/`+` steppers so 2- and 3-digit numbers never clip (`0.` / `0:`).
+     - Shortened the active shelf bar (`Current Shelf: Fl 1 · Cab 04 · Sh 02`) and removed the redundant `Coordinates` label on the `Saved:` breadcrumb so the Shelf number is always visible on 390px screens.
+     - Raised key hallway buttons (`Set Current Shelf`, `Save to Shelf` / `Move to ...`, walkthrough `Back`/`Next`, `Write / Edit Comment`) to `≥ 40px` height.
+  3. **Desktop Continuity & Plain Trainee Language (`backend/mobile_template_v2.py`, `ui/tutorials/micro_guides.py`)**:
+     - Renamed **`Physical Coordinate Audit`** → **`Physical Location`** (*"Where this object lives so we can find it again"*), **`Active Audit Station` / `Armed Target`** → **`My Current Shelf` / `Current Shelf`** (**`Set Current Shelf`**, **`📍 Save to Cab … · Sh …`**, **`⚠️ Move to Cab … · Sh …`**), **`Vault List`** → **`Specimen List`**, and **`Botanical Registration`** → **`Registration Data`** (with a 1-line trainee cue).
+     - Aligned status badges on both Specimen List and Detail View to Desktop's canonical **`[REV]`**, **`[REV+ERR]`**, and **`[UNREV]`** (eliminating `Taxon Issue ⚠` mislabeling on `Other Issue`).
+     - Replaced developer and botanical jargon (`Testing candidate...`, `Viewport reclaimed`, `Other_problem` / `Current Value: True`, `Basionym & Homotypic` / `Homotypic`) with plain trainee wording, and aligned the `?` Field Guide `Collection Date` example to Desktop's `DAY.MONTH.YEAR` format (`15.07.1965`).
+     - Refreshed the 3-step Mobile Walkthrough and Desktop's Mobile Companion Hallway Guide around the two core hallway goals: **(1) check that the physical object matches what is on file**, and **(2) record its Physical Location so it can be found again**.
+- **User Impact**: New trainees moving from the Desktop 3-Minute Quick Tour to the Mobile Companion now see familiar labels (`Registration Data`, `[REV]` / `[REV+ERR]`, `Physical Location`, `DAY.MONTH.YEAR` dates), a warm non-intimidating **My Current Shelf** workflow, readable Cabinet/Shelf inputs on narrow phones, and working Curatorial Filters.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_mobile_companion.py`, `tests/test_mobile_companion_offline.py` (80 passed)
+  - [x] Mobile V2 JS syntax verified via `node --check`
+  - [ ] Trainee Manual (`USER_GUIDE.md`) — sync Mobile Companion terminology (`My Current Shelf`, `Physical Location`) via 1-Prompt Sync Protocol
+
+---
+
+### Entry 48: Tutorial HUD App-Scoped Layering (No Longer Floats Over Chrome) & Live Multi-Monitor Tracking
+- **Date**: 2026-11-24
+- **Feature Area**: Interactive Tutorials (`ui/tutorials/tutorial_runner.py`)
+- **What Changed**:
+  1. **Removed OS-Global `-topmost` on Tutorial HUD**: Replaced `hud_win.attributes("-topmost", True)` with `hud_win.transient(self.root)` so the tutorial popup stays above Arbor's main window without hovering over Chrome or other applications when you switch windows.
+  2. **Zero Primary-Monitor Flash & Mid-Step Monitor Following**: Withdrew `hud_win` until after `_position_hud()` runs so it opens directly on Arbor's current monitor without flashing on the primary monitor, and added a debounced `<Configure>` listener (cleanly unbound on exit) so dragging Arbor to another monitor mid-step brings the tutorial HUD along automatically.
+- **User Impact**: Switching to Chrome or another app during a tutorial no longer leaves the tutorial popup stuck on top of your browser, and moving Arbor between monitors keeps both the tutorial HUD and highlight frames on the right screen.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py`
+
+---
+
+### Entry 47: Default Physical Location Panel Position Changed to Middle (Below Images)
+- **Date**: 2026-11-24
+- **Feature Area**: Workspace Layout Defaults (`ui/main_window.py`, `ui/layout_settings.py`, `ui/unified_settings.py`)
+- **What Changed**:
+  - Updated all default fallbacks for `location_in_center` from `False` (Left column below Specimen Directory) to `True` (Middle column below the specimen images) across initial window setup, saved layout loading, and Unified Settings. Existing user preferences that explicitly saved `location_in_center: false` continue to be honored.
+- **User Impact**: New users and default layouts now see the Storage Location panel centered below the specimen images, leaving the full height of the left column dedicated to the Specimen Directory.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_location_panel.py`, `tests/test_unified_settings.py`
+
+---
+
+### Entry 46: Unified Help Center Window (Matching Settings Layout & Persistent Learning Path)
+- **Date**: 2026-11-24
+- **Feature Area**: Help Center & Navigation (`ui/unified_help.py`, `ui/navigation_bar.py`, `ui/main_window.py`, `ui/help_dialogs.py`, `ui/tutorials/sandbox_manager.py`)
+- **What Changed**:
+  1. **New `UnifiedHelpWindow` (`ui/unified_help.py`)**: Created a Settings-style Help Center window (`840 × 620`, vertical left sidebar, scrollable bordered cards, `<Escape>` close, single-instance reuse) with 5 tabs: **Interactive Tutorials** (read-before-starting cards for all 5 Suggested Learning Path steps), **Quick Guides (30s)** (including an inline *How to Open Arbor* reference), **User Manuals** (Desktop Manual, Mobile Vault Guide, *"Don't Panic!"* Troubleshooting), **Keyboard Shortcuts** (visual keycaps + Cheat Sheet button), and **About & Updates** (version, update check, and **Reset Tutorial Checkmarks**).
+  2. **Direct Top-Bar `HELP` Launch (`ui/navigation_bar.py`, `ui/main_window.py`, `ui/help_dialogs.py`)**: Replaced the nested `HELP ▾` dropdown menu with a direct **`HELP`** button opening the Unified Help Center (matching `F1` and `SETTINGS`).
+  3. **Persistent Learning Path Progress (`ui/tutorials/sandbox_manager.py`)**: Confirmed `completed_tutorials` persists across sessions in `user_prefs.json` and added `reset_completed_tutorials()` so supervisors can reset checkmarks cleanly for a new trainee.
+- **User Impact**: Clicking **HELP** (or pressing `F1`) now opens a calm, organized Help Center matching the Settings window where trainees can read what each tutorial covers before starting it, see their saved completion progress across sessions, and access manuals and shortcuts without navigating nested dropdown menus.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py` (24 passed)
+
+---
+
 ### Entry 45: Startup "How to Open Arbor" Guide Window & Desktop Tutorials Polish
 - **Date**: 2026-11-24
 - **Feature Area**: Startup Window Help (`ui/dialogs.py`) & Interactive Tutorials (`ui/tutorials/discrepancy_tutorial.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/database_tutorial.py`, `ui/tutorials/micro_guides.py`)

@@ -1080,6 +1080,121 @@ def compare_label_name(
     }
 
 
+def record_batch_diffs_to_synonym_cache(
+    diff_results: List[Dict[str, Any]],
+    cache_path: Optional[str],
+) -> int:
+    """
+    Silently persist old->accepted synonym & family pairs discovered during Batch GBIF
+    into the per-workbook `.arbor_synonyms_cache.json` (zero extra network calls).
+    Returns the number of unique accepted taxa updated in the cache.
+    """
+    if not cache_path or not diff_results:
+        return 0
+    import json
+    import os
+    import tempfile
+
+    updates: Dict[str, Dict[str, Any]] = {}
+    for diff in diff_results:
+        if not isinstance(diff, dict):
+            continue
+        cur = diff.get("current") or {}
+        prop = diff.get("proposed") or {}
+        cur_g = str(cur.get("Genus") or "").strip()
+        cur_s = str(cur.get("Species") or "").strip()
+        cur_f = str(cur.get("Family") or "").strip()
+        prop_g = str(prop.get("Genus") or cur_g).strip()
+        prop_s = str(prop.get("Species") or cur_s).strip()
+        prop_f = str(prop.get("Family") or cur_f).strip()
+        if not prop_g:
+            continue
+        if is_undetermined_species(prop_s):
+            prop_s = ""
+        if is_undetermined_species(cur_s):
+            cur_s = ""
+
+        old_canon = f"{cur_g} {cur_s}".strip()
+        new_canon = f"{prop_g} {prop_s}".strip()
+        has_name_change = bool(old_canon and new_canon and old_canon.lower() != new_canon.lower())
+        has_fam_change = bool(cur_f and prop_f and cur_f.lower() != prop_f.lower())
+        if not (has_name_change or has_fam_change):
+            continue
+
+        key = f"{prop_g.lower()}|{prop_s.lower()}"
+        bucket = updates.setdefault(key, {
+            "registered_name": new_canon,
+            "registered_family": prop_f,
+            "names": [],
+            "families": [],
+        })
+        if has_name_change and old_canon not in bucket["names"]:
+            bucket["names"].append(old_canon)
+        if has_fam_change and cur_f not in bucket["families"]:
+            bucket["families"].append(cur_f)
+
+    if not updates:
+        return 0
+
+    try:
+        with _gbif_cache_lock:
+            existing = _load_disk_synonym_cache(cache_path)
+            for key, upd in updates.items():
+                entry = dict(existing.get(key) or {})
+                entry.setdefault("registered_name", upd["registered_name"])
+                entry.setdefault("registered_family", upd["registered_family"])
+                entry.setdefault("primary_synonyms", [])
+                entry.setdefault("other_synonyms", [])
+                entry.setdefault("old_families", get_old_family_names(upd["registered_family"]))
+                entry["offline"] = False
+
+                seen_names = {
+                    str(x.get("name") or "").strip().lower()
+                    for x in (entry["primary_synonyms"] + entry["other_synonyms"])
+                }
+                for old_n in upd["names"]:
+                    if old_n.lower() not in seen_names:
+                        seen_names.add(old_n.lower())
+                        entry["primary_synonyms"].insert(0, {
+                            "name": old_n,
+                            "author": "",
+                            "kind": "Previous name (GBIF)",
+                        })
+
+                seen_fams = {str(x.get("name") or "").strip().lower() for x in entry["old_families"]}
+                for old_f in upd["families"]:
+                    if old_f.lower() not in seen_fams:
+                        seen_fams.add(old_f.lower())
+                        entry["old_families"].insert(0, {
+                            "name": old_f,
+                            "note": f"Earlier family in this collection (updated to {upd['registered_family']})",
+                        })
+
+                existing[key] = entry
+                _synonyms_cache[key] = entry
+
+            if len(existing) > 2000:
+                for k in list(existing.keys())[:-2000]:
+                    existing.pop(k, None)
+
+            folder = os.path.dirname(cache_path)
+            fd, tmp_path = tempfile.mkstemp(prefix=".arbor_syn_", suffix=".tmp", dir=folder)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(existing, f, ensure_ascii=False)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_path, cache_path)
+            except Exception:
+                try:
+                    os.unlink(tmp_path)
+                except Exception:
+                    pass
+        return len(updates)
+    except Exception:
+        return 0
+
+
 def collect_local_old_names(app_state, oid: str) -> List[Dict[str, str]]:
     """Collect any prior Genus/Species/Family for this specimen from local Log & historical ledgers (100% offline)."""
     if app_state is None or not oid:

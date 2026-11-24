@@ -259,7 +259,7 @@ def start_review_tutorial(ui, on_complete=None):
             action_hint="Click Next → to inspect your first object (#110).",
             details=(
                 "You can exit Practice Mode anytime from the green banner at the top of the window, "
-                "or replay any tutorial in order from HELP ▾ → Suggested Learning Path."
+                "or replay any tutorial in order from HELP → Interactive Tutorials."
             ),
         ),
         ActionStep(
@@ -429,12 +429,12 @@ def start_review_tutorial(ui, on_complete=None):
             instruction=(
                 "Great job! You have now solved two issues and uncovered a third.\n\n"
                 "Wondering what to do next?\n\n"
-                "The recommended next step is Mobile Companion Hallway Guide (walk the collection and check physical objects with your phone).\n\n"
+                "The recommended next step is Mobile Companion Hallway Guide (walk the collection with your phone to record Physical Locations and check real objects).\n\n"
                 "Or if you want to stay at your desk, check out Historical Ledger Comparison (resolve multi-field conflicts across older catalog books).\n\n"
                 "Either way, you are ready to work with the real museum files.\n\n"
                 "Click Finish ✓ to return to your workspace, or click one of the tutorials below to begin it. "
                 "If you loaded this tutorial using the demo project, you may need to close Arbor and load it using the real files.\n\n"
-                "Remember, you can always find all the tutorials by opening Arbor and clicking on the HELP ▾ icon."
+                "Remember, you can always find all the tutorials by opening Arbor and clicking on the HELP button."
             ),
             action_hint="Click 'Finish ✓' below to exit Practice Mode, or launch your next guide above.",
             details="Double-click the .exe file and click the \"Help\" button in the bottom left.",

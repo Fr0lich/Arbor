@@ -71,7 +71,7 @@
 │ [ DOUBLE-CLICK PHOTO ]          │ DETACHED HIGH-RES POPUP (Scroll-wheel zoom up to 500%)      │
 │ [ F6 ]  /  [ F7 ]  /  [ F8 ]    │ TOGGLE PANELS (F6: Directory list • F7: Form • F8: Photos)  │
 │ [ ALT ] + [ ← ]  /  [ → ]       │ PREVIOUS / NEXT SPECIMEN in Problem Resolution queue        │
-│ [ F1 ]                          │ OPEN ON-SCREEN SHORTCUTS HUD (Interactive search cheat sheet)│
+│ [ F1 ]                          │ OPEN HELP CENTER & LEARNING PATH (Tutorials, Manuals, Keys) │
 └─────────────────────────────────┴─────────────────────────────────────────────────────────────┘
 ```
 

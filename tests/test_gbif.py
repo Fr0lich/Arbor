@@ -1401,3 +1401,33 @@ class TestOldNamesAndSynonyms:
             r = gbif_mod.compare_label_name("Unknownus plantus", "Betula", "pendula")
         assert r["verdict"] == "uncertain"
         assert r.get("offline") is True
+
+    def test_record_batch_diffs_populates_offline_synonym_cache(self, tmp_path):
+        from backend import gbif as gbif_mod
+
+        gbif_mod.check_gbif.cache_clear()
+        cache_file = str(tmp_path / ".arbor_synonyms_cache.json")
+        diffs = [
+            {
+                "oid": "10",
+                "current": {"Genus": "Betula", "Species": "alba", "Family": "Betulaceae"},
+                "proposed": {"Genus": "Betula", "Species": "pendula", "Family": "Betulaceae"},
+                "is_synonym": True,
+            },
+            {
+                "oid": "11",
+                "current": {"Genus": "Tilia", "Species": "cordata", "Family": "Tiliaceae"},
+                "proposed": {"Genus": "Tilia", "Species": "cordata", "Family": "Malvaceae"},
+                "is_synonym": False,
+            },
+        ]
+        count = gbif_mod.record_batch_diffs_to_synonym_cache(diffs, cache_file)
+        assert count == 2
+
+        # Clear memory cache and verify offline vault lookup serves the recorded old name immediately
+        gbif_mod.check_gbif.cache_clear()
+        with patch.object(gbif_mod, "check_gbif", return_value={"error": "offline"}):
+            res = gbif_mod.get_synonyms("Betula", "pendula", family="Betulaceae", cache_path=cache_file)
+        assert res["from_cache"] is True
+        assert res["offline"] is False
+        assert any(s["name"] == "Betula alba" for s in res["primary_synonyms"])

@@ -1129,27 +1129,31 @@ def test_v2_route_rendering_and_cache_headers(mock_app_state):
     assert "Arbor Companion" in html
     assert 'id="tabContentLocation"' in html
     assert 'id="tabContentDetails"' in html
-    assert 'id="tabContentProblems"' in html
+    assert 'id="tabContentHistory"' in html
     assert 'id="activeDiscrepanciesContainer"' in html
     assert 'id="problemFlagsGrid"' in html
+    assert 'id="stationSetupSheet"' in html
+    assert 'id="detailsFlagSummaryChip"' in html
+    assert 'id="tabDetailsFlagsBadge"' in html
+    assert 'id="tabHistoryBadge"' in html
     assert 'id="tabBtnLocation"' in html
     assert 'id="tabBtnDetails"' in html
-    assert 'id="tabBtnProblems"' in html
+    assert 'id="tabBtnHistory"' in html
     assert 'switchDetailTab' in html
     assert 'resolveFieldDiscrepancy' in html
     assert 'renderProblemsAndDiscrepancies' in html
     assert 'toggleProblemFlag' in html
 
-    # Verify tab order: Details first, Location second, Problems third
+    # Verify tab order: Details first, Location second, History third
     btn_det_idx = html.index('id="tabBtnDetails"')
     btn_loc_idx = html.index('id="tabBtnLocation"')
-    btn_prob_idx = html.index('id="tabBtnProblems"')
-    assert btn_det_idx < btn_loc_idx < btn_prob_idx
+    btn_hist_idx = html.index('id="tabBtnHistory"')
+    assert btn_det_idx < btn_loc_idx < btn_hist_idx
 
     track_det_idx = html.index('id="tabContentDetails"')
     track_loc_idx = html.index('id="tabContentLocation"')
-    track_prob_idx = html.index('id="tabContentProblems"')
-    assert track_det_idx < track_loc_idx < track_prob_idx
+    track_hist_idx = html.index('id="tabContentHistory"')
+    assert track_det_idx < track_loc_idx < track_hist_idx
 
     assert res.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate, max-age=0"
     assert res.headers.get("Pragma") == "no-cache"

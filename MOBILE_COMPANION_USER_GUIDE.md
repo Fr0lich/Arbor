@@ -79,34 +79,32 @@ Herbarium vaults are often located in basements or shielded behind heavy steel d
 * **Numeric Keypad Default**: Pull a physical box, read its accession number, and type it in the top search bar — or filter for **already-reviewed objects** when pulling items for closer inspection. Use the **`[123 / Aa]`** button to switch between numbers and plant names.
 * **Automatic Zero & Prefix Handling**: Typing `001`, `1`, or `O-V-1` all find Specimen `#1`. When you tap `< Back` to return to the list, Arbor automatically clears and focuses the search bar for the next box.
 
-### 3.2. The 1-Tap Armed Target Shelf & Loaned Out Toggle
+### 3.2. 1-Tap Physical Location Saving (`Set Shelf` + 5-Sec Undo), `Stored as` & `Loaned Out`
 Opening a specimen **never** overwrites its coordinates automatically — so mistyping a number (like `#101` instead of `#1001`) can never corrupt another record.
-1. **Set Your Floor, Cabinet & Shelf Once**: Pick the Building, **Floor** (`-2` to `4`), Cabinet, and Shelf you are standing in front of. Arbor arms that shelf as your active target.
-2. **1-Tap Stamping**: On every next box from that shelf, a green thumb banner appears right under the plant name:
-   `⚡ Armed Target: Fl 1 · Cab 21 · Sh 01  [ Stamp Target ]`
-3. Tap **Stamp Target** once to assign all coordinates in a single tap! (If a specimen already belongs to a different cabinet, the button turns amber **`⚠️ Relocate to Cab 21`** so you never relocate a specimen by accident.)
-4. **Lending Objects Out**: Need to borrow or loan out a specimen? Switch to the **Location** tab and toggle **`Loaned Out`** directly from your phone.
+1. **Set Your Shelf Once**: Tap **`Set Shelf`** in the compact top bar (`Shelf: Not set [Set Shelf]`) and pick the **Building, Floor** (`-2` to `4`), **Cabinet**, and **Shelf** you are standing in front of.
+2. **1-Tap Save**: Inside every next box from that shelf, a green thumb button appears right under the plant name:
+   `📍 Save to Cab 21 · Sh 01`
+3. Tap once to save all coordinates! If a specimen already belongs to a different shelf, the button turns amber **`⚠️ Move to Cab 21 · Sh 01`** so you never relocate a specimen by accident — and **every 1-tap save or move shows a protected 5-second `↩ Undo` button** in case you tapped by mistake.
+4. **Container (`Stored as`) & Lending (`Loaned Out`)**: Switch to the **Location** tab to pick **`Stored as`** from a full-width bottom sheet or toggle **`Loaned Out`** (displays an amber **`↗ Loaned`** pill on both the List and Detail header).
 
-### 3.3. Non-Coercive Review Safeguard
-If you tap **`✓ Mark Reviewed`** on a specimen that has no Storage Location yet while a shelf is armed, Arbor politely asks:
-* **`✓ Yes, Stamp to Target & Review`**: Assigns your armed shelf and marks the specimen Reviewed.
-* **`✕ No, Keep Location & Review`**: Saves your edits, notes, and problem flags and marks Reviewed **without changing its location**.
+### 3.3. Checking Old Plant Names (`📜 Old names`) & Older Books (`History` Tab)
+* **Unfamiliar Latin or family name on the box?** Tap **`📜 Old names`** (read-only) right below the scientific name to see past museum names, classical/APG old family names (like *Compositae* → *Asteraceae*), and known GBIF synonyms — if it matches, keep the modern name!
+* **Older catalog books loaded?** Swipe right to the **`History`** tab (`[CFCT]`) to compare older museum books against the current value and tap **`Apply`** if one matches the real object.
 
-### 3.4. Physical Review Rule & Flagging Issues (`REV + [N] ISSUES`)
+### 3.4. Physical Review Rule & Inline Flagging on `Details` (`[REV+ERR]`)
 * **Only tap `✓ Mark Reviewed` once you have physically checked the object.**
-* Found a bent display, crushed box, unreadable 19th-century handwriting, or a confusing plant name?
-  * Check **`Other Issue`** (or the relevant issue flag), optionally jot a short note in **`Comment`** (e.g. `"Bent display"`), and **still tap `✓ Mark Reviewed`**.
-  * **It is completely okay if you cannot solve a problem in the hallway.** The amber **`REV + 1 ISSUE`** badge confirms you physically held the object and verified its shelf while safely queueing the question for someone else to look at later on the office computer (**`🎯 Hallway Follow-Up (REV+ERR)`**).
-* **Outdated Plant Names (`Genus` & `Species`)**: Sometimes the scientific name printed on an old box is outdated or a synonym. Just type what is written on the physical box label — it can be updated automatically later using the **GBIF Name Check** tool on the desktop program.
-* **Not sure what a field means?** Tap **`?`** in the top bar anytime to open **What the Fields Mean** (explaining every field, including `Author` vs. `Collector`, right on your phone).
+* Found a disagreeing field, bent display, crushed box, or unreadable 19th-century handwriting?
+  * Tap the **checkbox right next to that field on `Details`** (matching Desktop Arbor), or scroll to **Physical & Other Issues** at the bottom of `Details` to check **`Other Issue`** and jot a short note in **`Comment`** (e.g. `"Bent display"`), and **still tap `✓ Mark Reviewed`**.
+  * **It is completely okay if you cannot solve a problem in the hallway.** The amber **`[REV+ERR]`** badge confirms you physically held the object and verified its shelf while safely queueing the question for the office computer (**`🎯 Hallway Follow-Up (REV+ERR)`**).
+* **Not sure what a field or badge means?** Tap **`?`** in the top bar anytime to open **What the Fields Mean** or replay the 4-step **Hallway Quick Guide**.
 
 ### 3.5. Viewport-Reclaimed Photo Folio
-If a specimen has no verified online scan yet, Arbor automatically collapses the empty photo frame into a compact single-line bar (`📷 Scan: None verified online`), keeping metadata and problem checkboxes right under your thumb.
+If a specimen has no verified online scan yet, Arbor automatically collapses the empty photo frame into a compact single-line bar, keeping Registration Data and inline problem checkboxes right under your thumb.
 
 ### 3.6. Batch Location Registrator
 To move a stack of specimen folders to a new cabinet at once:
-1. Tap **📦 Batch Relocation** in the header toolbar.
-2. Set your **Target Location** (Building, Floor, Cabinet, Shelf) — or tap **`⚡ Use Cab XX · Sh XX`** to copy your active Armed Target Shelf in 1 tap.
+1. Open **⚙ Settings → Advanced Tools → 📦 Batch Location Registrator**.
+2. Set your **Target Location** (Building, Floor, Cabinet, Shelf) — or tap to reuse your active **`Shelf`**.
 3. Type the Specimen IDs using the numeric keypad (tap **`123 / ABC`** if you need letters).
 4. Tap **Commit Batch Location** to update all listed specimens together (works offline too!).
 
@@ -125,9 +123,9 @@ If you accidentally swipe down to refresh or swipe backwards to close the browse
 * Background app switching or phone lock triggers an immediate `pagehide` flush, saving in-flight keystrokes to `localStorage` or the server before the browser pauses.
 
 ### 3.9. Touch Gestures (One-Handed Hallway Navigation & Photo Inspection)
-* **Horizontal Tab Swipe**: Swipe left or right on any specimen screen to glide effortlessly between **Details ↔ Location ↔ Problems** with one thumb (vertical scrolling stays locked so swipes never misfire).
-* **Fullscreen Photo Pinch, Pan & Double-Tap**: Tap a specimen photo to open it fullscreen, then **pinch with two fingers** to zoom (`0.8×–4.5×`), **drag with one finger** to pan across tiny handwriting, or **double-tap** to jump cleanly between `1.0×` and `2.2×`.
-* **Swipe-Down Bottom Sheet**: Pull down on the top drag handle of the Storage Vessel sheet to dismiss it naturally with one thumb.
+* **Horizontal Tab Swipe**: Swipe left or right on any specimen screen to glide effortlessly between **Details ↔ Location ↔ History** with one thumb (vertical scrolling stays locked so swipes never misfire).
+* **Fullscreen Photo Pinch, Pan, Double-Tap & Arrows**: Tap a specimen photo to open it fullscreen, then **pinch with two fingers** to zoom (`0.8×–4.5×`), **drag with one finger** to pan across tiny handwriting, **double-tap** to jump cleanly between `1.0×` and `2.2×`, or tap `‹` / `›` to step between multiple photos.
+* **Swipe-Down Bottom Sheets**: Pull down on the top drag handle of the **Set Shelf** or **Stored as** sheet to dismiss it naturally with one thumb.
 
 ---
 

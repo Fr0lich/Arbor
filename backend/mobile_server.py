@@ -2159,6 +2159,12 @@ self.addEventListener('fetch', (event) => {
                 flags = compute_status_flags(reg_row, obs_row, history_set, oid, prob_cols, problem_to_field, hist_fields_by_oid)
 
                 acc_num = _clean_val(reg_row.get("ObjectID") or reg_row.get("Accession") or reg_row.get("AccessionID") or reg_row.get("id")) or str(oid)
+                raw_loaned = obs_row.get("Loaned out") if obs_row else None
+                is_loaned_out = (
+                    raw_loaned is True
+                    or str(raw_loaned).strip().lower() in ("true", "1", "yes", "t")
+                )
+                loaned_out_date = _clean_val(obs_row.get("Loaned out date")) if obs_row else ""
 
                 objects.append({
                     "id": str(oid),
@@ -2171,6 +2177,8 @@ self.addEventListener('fetch', (event) => {
                     "collector": collector,
                     "collection_date": collection_date,
                     "location": loc,
+                    "loaned_out": is_loaned_out,
+                    "loaned_out_date": loaned_out_date,
                     "review_status": flags["review_status"],
                     "has_flags": flags["has_flags"],
                     "has_history": flags["has_history"],
@@ -2376,6 +2384,21 @@ self.addEventListener('fetch', (event) => {
                 for col in obs_row.columns:
                     val = obs_row.iloc[0][col]
                     obs_dict[col] = str(val) if pd.notna(val) else ""
+
+            # Mirror /api/objects location & loan fallback: when Observation has no value,
+            # inherit non-empty Registration values in the GET payload (never mutates df_obs).
+            _fallback_cols = ["Building", "Floor", "Cabinet", "Shelf", "Stored as", "Loaned out", "Loaned out date"]
+            if self.app_state.config:
+                for _lf in self.app_state.config.get("ui_sections", {}).get("location", []):
+                    _lf_name = _lf.get("name") if isinstance(_lf, dict) else _lf
+                    if _lf_name and _lf_name not in _fallback_cols:
+                        _fallback_cols.append(_lf_name)
+            for _fcol in _fallback_cols:
+                _cur_obs = str(obs_dict.get(_fcol, "")).strip()
+                if not _cur_obs or _cur_obs.lower() in ("nan", "none", "<na>"):
+                    _reg_val = str(reg_dict.get(_fcol, "")).strip()
+                    if _reg_val and _reg_val.lower() not in ("nan", "none", "<na>"):
+                        obs_dict[_fcol] = _reg_val
 
             genus = reg_dict.get("Genus", "")
             species = reg_dict.get("Species", "")

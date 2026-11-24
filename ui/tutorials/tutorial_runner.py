@@ -171,12 +171,19 @@ class TutorialRunner:
 
     def _build_hud(self):
         self.hud_win = tk.Toplevel(self.root)
+        self.hud_win.withdraw()
         self.hud_win.title(f"Arbor Tutorial - {self.tutorial_name}")
-        self.hud_win.attributes("-topmost", True)
+        try:
+            self.hud_win.transient(self.root)
+        except Exception:
+            pass
         self.hud_win.resizable(False, False)
         self.hud_win.config(bg="#181c19")
         self.hud_win.protocol("WM_DELETE_WINDOW", self.exit_tutorial)
         self.hud_win.bind("<Escape>", lambda e: self.exit_tutorial())
+        self._last_root_pos = None
+        self._reposition_job = None
+        self._root_cfg_bind_id = None
 
         # Main HUD container
         frame = tk.Frame(self.hud_win, bg="#181c19", padx=sc(16), pady=sc(14), highlightbackground="#3a7d44", highlightthickness=1)
@@ -382,8 +389,43 @@ class TutorialRunner:
         # so trainees never have to click the main window first after interacting with the HUD.
         self._bind_hud_shortcut_passthrough()
 
-        # Position HUD in top-right corner of parent or screen
+        # Position HUD on Arbor's current monitor BEFORE showing (prevents 1-frame primary-monitor flash)
         self._position_hud()
+        try:
+            self.hud_win.deiconify()
+        except Exception:
+            pass
+
+        # Keep HUD following Arbor if the user drags the main window to another monitor mid-step
+        try:
+            parent_root = self.ui.root if hasattr(self.ui, "root") else self.root
+            if parent_root and parent_root.winfo_exists():
+                self._last_root_pos = (parent_root.winfo_rootx(), parent_root.winfo_rooty())
+                self._root_cfg_bind_id = parent_root.bind("<Configure>", self._on_root_configure, add="+")
+        except Exception:
+            pass
+
+    def _on_root_configure(self, event=None):
+        """Follow Arbor if the main window is dragged to another monitor mid-step."""
+        try:
+            parent_root = self.ui.root if hasattr(self.ui, "root") else self.root
+            if not parent_root or not parent_root.winfo_exists() or not self.hud_win or not self.hud_win.winfo_exists():
+                return
+            if event is not None and event.widget is not parent_root:
+                return
+            pos = (parent_root.winfo_rootx(), parent_root.winfo_rooty())
+            if pos == self._last_root_pos:
+                return
+            self._last_root_pos = pos
+            if self._reposition_job:
+                try:
+                    parent_root.after_cancel(self._reposition_job)
+                except Exception:
+                    pass
+            target_w = getattr(self.highlight, "target_widget", None) if self.highlight else None
+            self._reposition_job = parent_root.after(150, lambda: self._position_hud(target_widget=target_w))
+        except Exception:
+            pass
 
     def _bind_hud_shortcut_passthrough(self):
         """Bind main-window global shortcuts onto the floating HUD Toplevel."""
@@ -757,6 +799,20 @@ class TutorialRunner:
         if self.use_sandbox and SandboxManager()._active_runner is self:
             SandboxManager()._active_runner = None
         self._cleanup_highlight()
+        if getattr(self, "_reposition_job", None):
+            try:
+                self.root.after_cancel(self._reposition_job)
+            except Exception:
+                pass
+            self._reposition_job = None
+        if getattr(self, "_root_cfg_bind_id", None):
+            try:
+                parent_root = self.ui.root if hasattr(self.ui, "root") else self.root
+                if parent_root and parent_root.winfo_exists():
+                    parent_root.unbind("<Configure>", self._root_cfg_bind_id)
+            except Exception:
+                pass
+            self._root_cfg_bind_id = None
         if self._poll_job:
             try:
                 self.root.after_cancel(self._poll_job)

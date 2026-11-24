@@ -86,16 +86,24 @@ def start_armed_shelf_guide(ui, on_complete=None):
                 pass
         return False
 
+    def _is_mobile_session_running(u) -> bool:
+        srv = getattr(u, "mobile_server", None) or getattr(getattr(u, "mobile_dialog", None), "server", None)
+        if srv is not None and getattr(srv, "running", False):
+            return True
+        md = getattr(u, "mobile_dialog", None) or getattr(u, "_mobile_dialog", None)
+        panel = getattr(md, "panel", md) if md is not None else None
+        if panel is not None and getattr(getattr(panel, "server", None), "running", False):
+            return True
+        return False
+
     steps = [
         ActionStep(
             step_id="mg_mobile_intro",
-            title="Why Use Mobile Companion? (Optional · Needs Your Phone)",
+            title="Take Arbor Into the Hallway (Part 2)",
             instruction=(
-                "Connect your phone to walk the collection aisles without carrying a laptop:\n"
-                "• Stamp Storage Locations for 30+ boxes in 1 tap (Armed Target Shelf)\n"
-                "• Find already-reviewed objects when pulling items for closer inspection\n"
-                "• Mark objects as Loaned Out, or flag physical issues & mark Reviewed on the spot\n\n"
-                "Works offline in concrete basement vaults too!"
+                "Mobile Companion brings Arbor onto your phone so you can walk the collection without a laptop:\n"
+                "• Record each object's Physical Location in 1 tap so we can always find it again\n"
+                "• Check real boxes against Registration Data, flag mismatches, and mark Reviewed — using the same badges you just learned on Desktop."
             ),
             action_hint="Click Next → to open the Phone Connector on your desktop.",
             details=(
@@ -115,30 +123,31 @@ def start_armed_shelf_guide(ui, on_complete=None):
         ),
         ActionStep(
             step_id="mg_armed_setup",
-            title="Start Session & Scan the QR Code",
+            title="Start the Mobile Session",
             instruction=(
                 "In the Phone Connector window:\n"
-                "• Keep 'Launch with mobile companion tutorial' checked for first-time phone users (you can turn it off anytime).\n"
-                "• Click '▶ Start Mobile Session' and scan the QR code with your phone's camera.\n"
-                "• On your phone, set Floor, Cabinet, and Shelf once to arm your Target Shelf (or toggle Loaned Out on the Location tab)."
+                "• Keep 'Launch with mobile companion tutorial for first-time users' checked so the Hallway Quick Guide opens automatically on your phone.\n"
+                "• Click '▶ Start Mobile Session' to generate your QR code."
             ),
-            action_hint="Click Next → for the end-of-shift saving rule.",
+            action_hint="Click '▶ Start Mobile Session' (or click Skip Step →).",
+            validator=_is_mobile_session_running,
             details=(
                 "Tip: Keep 'Require 4-Digit PIN' ON whenever using Public (Internet) mode. On private museum Wi-Fi (LAN only), you can toggle PIN off for faster sign-in."
             ),
         ),
         ActionStep(
             step_id="mg_armed_review",
-            title="Flag Issues, Mark Reviewed & Save on Desktop",
+            title="Scan the QR Code & Save After Your Shift (Ctrl+S)",
             instruction=(
-                "In the hallway, only tap '✓ Mark Reviewed' after physically checking the object. "
-                "Spot a physical issue? Check 'Other Issue', jot a quick Comment, and still tap '✓ Mark Reviewed' (amber [REV+ERR] queues it safely for the desk).\n\n"
-                "When your shift ends, click '💾 Save Workbook Now' (or press Ctrl+S) on this desktop computer to save all phone edits to disk."
+                "1. Scan the QR code with your phone's camera — the Hallway Quick Guide will open automatically on your phone.\n"
+                "2. Every edit you make on your phone syncs straight into Arbor on this computer (and queues automatically if you walk into an offline basement vault).\n"
+                "3. When your hallway shift ends, press Ctrl+S (or click '💾 Save Workbook Now') on this computer to save everything to disk."
             ),
-            action_hint="Click Finish ✓ to close this guide.",
+            action_hint="Scan the QR code, then click Finish ✓ to close this desktop guide.",
             keycaps=["Ctrl", "S"],
             details=(
-                "Offline vault edits queue automatically on your phone and sync into desktop memory as soon as your phone reconnects."
+                "Excel impact: Pressing Ctrl+S writes all phone-synced edits from memory to your Excel workbook and creates a safety backup. "
+                "You can replay the Hallway Quick Guide anytime on your phone from Settings or '?'."
             ),
         ),
     ]

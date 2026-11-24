@@ -278,7 +278,7 @@ def test_mobile_guide_zero_barcodes_and_bundled_in_spec():
     with open(os.path.join(repo_root, "MOBILE_COMPANION_USER_GUIDE.md"), "r", encoding="utf-8") as f:
         mobile_guide = f.read()
     assert "barcode" not in mobile_guide.lower(), "Zero-barcode rule violated in MOBILE_COMPANION_USER_GUIDE.md"
-    assert "Armed Target Shelf" in mobile_guide
+    assert "Set Shelf" in mobile_guide
 
     with open(os.path.join(repo_root, "main.spec"), "r", encoding="utf-8") as f:
         spec_text = f.read()
@@ -296,7 +296,7 @@ def test_startup_setup_help_dialog_opens_cleanly(tk_root):
     dlg._show_setup_help_msg()
     tk_root.update_idletasks()
     children = [w for w in tk_root.winfo_children() if isinstance(w, tk.Toplevel)]
-    assert any("Setup Guide" in w.title() for w in children)
+    assert any("How to Open Arbor" in w.title() for w in children)
     for w in children:
         w.destroy()
 
@@ -1204,3 +1204,95 @@ def test_status_bar_theme_switching_no_errors(status_bar_tk_env):
     assert ui.dark_mode_active is False
     root.update_idletasks()
     assert ui.sb_bottom.cget("background") == "#2c302e"
+
+
+def test_in_app_user_manuals_stay_synced_with_ui():
+    """CI/pytest guard: bundled in-app manuals must never drift back to retired UI labels."""
+    import os
+
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    user_guide = open(os.path.join(root_dir, "USER_GUIDE.md"), encoding="utf-8").read()
+    mobile_guide = open(os.path.join(root_dir, "MOBILE_COMPANION_USER_GUIDE.md"), encoding="utf-8").read()
+    cheat_sheet = open(
+        os.path.join(root_dir, "documentation", "curator", "KEYBOARD_SHORTCUTS_CHEAT_SHEET.md"),
+        encoding="utf-8",
+    ).read()
+
+    retired_labels = (
+        "Armed Target Shelf",
+        "Stamp to This Shelf",
+        "Stamp Target",
+        "Details ↔ Location ↔ Problems",
+        "HELP ▾",
+        "Quick Tour (Cabinet 21)",
+    )
+    for doc_name, text in (
+        ("USER_GUIDE.md", user_guide),
+        ("MOBILE_COMPANION_USER_GUIDE.md", mobile_guide),
+    ):
+        for retired in retired_labels:
+            assert retired not in text, f"Stale UI label '{retired}' found in {doc_name}"
+
+    # Verify current core workflows are documented in the live bundled manuals
+    for required in ("Set Shelf", "Old names", "Details ↔ Location ↔ History"):
+        assert required in user_guide, f"Missing '{required}' in USER_GUIDE.md"
+        assert required in mobile_guide, f"Missing '{required}' in MOBILE_COMPANION_USER_GUIDE.md"
+
+    assert "OPEN HELP CENTER" in cheat_sheet
+
+
+def test_unified_help_and_old_names_dialogs_smoke(tk_root):
+    """Smoke test: UnifiedHelpWindow (all 5 tabs) & OldNamesDialog open, bind <Escape>, and close cleanly."""
+    from unittest.mock import MagicMock, patch
+    from ui.unified_help import UnifiedHelpWindow
+    from ui.old_names_dialog import OldNamesDialog
+    from backend import gbif as gbif_mod
+    import pandas as pd
+
+    mock_ui = MagicMock()
+    mock_ui.root = tk_root
+    mock_ui.dark_mode_active = False
+    mock_ui.app = MagicMock()
+    mock_ui.app.current_object_id = "110"
+    mock_ui.app.excel_path = None
+    mock_ui.app.df_log = pd.DataFrame()
+    mock_ui.app.historical_dbs = []
+    mock_ui.app.df_reg = pd.DataFrame(
+        [{"ObjectID": "110", "Genus": "Ephedra", "Species": "major", "Family": "Asteraceae"}]
+    ).set_index("ObjectID", drop=False)
+    mock_ui.reg_vars = {
+        "Genus": tk.StringVar(master=tk_root, value="Ephedra"),
+        "Species": tk.StringVar(master=tk_root, value="major"),
+        "Family": tk.StringVar(master=tk_root, value="Asteraceae"),
+    }
+
+    # 1. UnifiedHelpWindow opens cleanly, binds <Escape>, and renders all 5 tabs
+    help_win = UnifiedHelpWindow(tk_root, mock_ui)
+    try:
+        assert help_win.win.winfo_exists()
+        assert help_win.win.bind("<Escape>")
+        for tab_key in ("tutorials", "guides", "manuals", "shortcuts", "about"):
+            help_win.show_tab(tab_key)
+            tk_root.update_idletasks()
+    finally:
+        if help_win.win.winfo_exists():
+            help_win.win.destroy()
+
+    # 2. OldNamesDialog opens cleanly, binds <Escape>, and renders offline family aliases
+    with patch.object(gbif_mod, "get_synonyms", return_value={
+        "registered_name": "Ephedra major",
+        "registered_family": "Asteraceae",
+        "old_families": [{"name": "Compositae", "note": "Classical name for Asteraceae"}],
+        "primary_synonyms": [],
+        "other_synonyms": [],
+        "offline": True,
+        "from_cache": False,
+    }):
+        old_dlg = OldNamesDialog(mock_ui)
+        try:
+            assert old_dlg.win.winfo_exists()
+            assert old_dlg.win.bind("<Escape>")
+            tk_root.update_idletasks()
+        finally:
+            if old_dlg.win.winfo_exists():
+                old_dlg.win.destroy()

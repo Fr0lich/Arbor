@@ -665,9 +665,11 @@ class TestSandboxTutorials(unittest.TestCase):
         runner.exit_tutorial()
 
         help_src = inspect.getsource(mw_mod.ObjectProgramUI.show_help_dropdown)
-        self.assertNotIn("Cabinet 21", help_src)
-        self.assertIn("Suggested Learning Path", help_src)
-        self.assertIn("4. Office Triage (REV+ERR)", help_src)
+        self.assertIn("open_help_window", help_src)
+        import ui.unified_help as uh_mod
+        uh_src = inspect.getsource(uh_mod.UnifiedHelpWindow._build_tutorials_tab)
+        self.assertIn("Suggested Learning Path", uh_src)
+        self.assertIn("Office Triage (REV+ERR)", uh_src)
         self.assertIn('tutorial_type == "triage"', inspect.getsource(mw_mod.ObjectProgramUI.start_tutorial_flow))
         self.assertNotIn("Open Excel Database... (Ctrl+O)", inspect.getsource(mw_mod.ObjectProgramUI.show_file_dropdown))
         self.assertIn("<Escape>", inspect.getsource(opr_mod.ProblemQueueDialog.__init__))
@@ -725,6 +727,45 @@ class TestSandboxTutorials(unittest.TestCase):
             self.assertEqual(called, ["ctrl_f", "ctrl_h"])
         finally:
             runner.exit_tutorial()
+
+
+    def test_unified_help_window_tabs_and_progress_persistence(self):
+        """Verify UnifiedHelpWindow renders all 5 tabs, reuses single instance, and persists Learning Path progress."""
+        from unittest.mock import patch
+        from ui.unified_help import open_unified_help, UnifiedHelpWindow
+        from ui.tutorials.sandbox_manager import (
+            get_completed_tutorials,
+            mark_tutorial_completed,
+            reset_completed_tutorials,
+        )
+
+        fake_prefs = {}
+        with patch("ui.tutorials.sandbox_manager.config.load_prefs", side_effect=lambda: dict(fake_prefs)), \
+             patch("ui.tutorials.sandbox_manager.config.save_prefs", side_effect=lambda p: fake_prefs.update(p)):
+            self.assertEqual(get_completed_tutorials(), set())
+            mark_tutorial_completed("review")
+            mark_tutorial_completed("discrepancy")
+            self.assertEqual(get_completed_tutorials(), {"review", "discrepancy"})
+
+            hub = open_unified_help(self.root, app_ref=self.ui)
+            try:
+                self.assertEqual(hub.win.title(), "Arbor Help Center")
+                self.assertEqual(set(hub.tabs.keys()), {"tutorials", "quick_guides", "manuals", "shortcuts", "about"})
+                self.assertIn("2 OF 5", hub.progress_footer_lbl.cget("text"))
+                for tid in ("quick_guides", "manuals", "shortcuts", "about", "tutorials"):
+                    hub.show_tab(tid)
+                    self.assertEqual(hub.active_tab, tid)
+                # Single-instance guard reuses existing window
+                hub2 = open_unified_help(self.root, app_ref=self.ui, initial_tab="manuals")
+                self.assertIs(hub2.win, hub.win)
+                self.assertEqual(hub.active_tab, "manuals")
+
+                # Resetting progress clears persisted list
+                reset_completed_tutorials()
+                self.assertEqual(get_completed_tutorials(), set())
+            finally:
+                hub.win.destroy()
+                UnifiedHelpWindow._active_instance = None
 
 
 if __name__ == "__main__":

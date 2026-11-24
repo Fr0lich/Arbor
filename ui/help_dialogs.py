@@ -637,11 +637,24 @@ def show_about(ui=None):
     ttk.Button(btn_frame, text="Close", command=win.destroy, style="Tool.TButton", width=10).pack(side="right")
 
 
-def open_help_window(ui):
+def open_help_window(ui, initial_tab="tutorials"):
     """
-    Display the calm, scrollable Arbor Help & Quick Guides Hub.
+    Display the Unified Arbor Help Center (matching UnifiedSettingsWindow layout).
     Available in normal desktop sessions, demo mode, and sandbox mode.
     """
+    from ui.unified_help import open_unified_help
+
+    parent = getattr(ui, "root", ui)
+    hub = open_unified_help(parent, app_ref=ui, initial_tab=initial_tab)
+    try:
+        ui.help_win = hub.win
+    except Exception:
+        pass
+    return hub
+
+
+def _legacy_open_help_window(ui):
+    """Legacy Help Hub retained for reference."""
     import utils
     from ui.tutorials import (
         start_review_tutorial,
@@ -872,25 +885,25 @@ def open_help_window(ui):
             lambda: run_help_cmd(lambda: start_review_tutorial(ui)),
         ),
         (
-            "discrepancy",
-            "2. Historical Ledger Comparison",
-            "",
-            "Deep multi-field reconciliation (Ctrl+H) across conflicting older ledgers without marking Reviewed.",
-            lambda: run_help_cmd(lambda: start_discrepancy_tutorial(ui)),
-        ),
-        (
             "mobile",
-            "3. Mobile Companion Hallway Guide",
-            "Optional · Needs your phone",
-            "1-Tap Armed Target Shelf, finding already-reviewed objects, and marking objects Loaned Out in the aisles.",
+            "2. Mobile Companion Hallway Guide",
+            "Recommended Next · Needs your phone",
+            "1-tap Set Shelf Physical Location saving, checking Old Names, flagging issues, and marking items Loaned Out in the aisles.",
             lambda: run_help_cmd(lambda: start_armed_shelf_guide(ui)),
         ),
         (
             "triage",
-            "4. Office Triage (REV+ERR)",
+            "3. Office Triage (REV+ERR)",
             "",
-            "Isolate hallway-flagged specimens and clear confirmed flags or defer hard issues in the Problem Queue.",
+            "Desk follow-up after a hallway shift — isolate [REV+ERR] objects and clear confirmed flags or defer hard issues in the Problem Queue.",
             lambda: run_help_cmd(lambda: start_triage_tutorial(ui)),
+        ),
+        (
+            "discrepancy",
+            "4. Historical Ledger Comparison",
+            "",
+            "Deep multi-field reconciliation (Ctrl+H) across conflicting older ledgers without marking Reviewed.",
+            lambda: run_help_cmd(lambda: start_discrepancy_tutorial(ui)),
         ),
         (
             "database",

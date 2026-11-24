@@ -681,7 +681,7 @@ class ObjectProgramUI(
 
         self.show_list_var = tk.BooleanVar(value=_init_prefs.get("show_list", True))
         self.show_search_var = tk.BooleanVar(value=_init_prefs.get("show_search", True))
-        self.location_in_center_var = tk.BooleanVar(value=_init_prefs.get("location_in_center", False))
+        self.location_in_center_var = tk.BooleanVar(value=_init_prefs.get("location_in_center", True))
         self.show_bulk_edit_var = tk.BooleanVar(value=_init_prefs.get("show_bulk_edit", True))
         self.show_reg_var = tk.BooleanVar(value=_init_prefs.get("show_reg", True))
         
@@ -2478,74 +2478,8 @@ class ObjectProgramUI(
         popup.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
 
     def show_help_dropdown(self):
-        from ui.help_dialogs import show_main_help
-        from ui.tutorials import (
-            start_hallway_followup_guide,
-            start_armed_shelf_guide,
-            start_image_controls_guide,
-        )
-
-        popup = tk.Menu(self.root, tearoff=0)
-        popup.add_command(
-            label="🎓 3-Minute Practice Tour (Zero Risk)",
-            command=lambda: self.start_tutorial_flow("review"),
-        )
-        popup.add_separator()
-        popup.add_command(label="🏛️ Help Hub & Suggested Learning Path (F1)", command=self.open_help_window)
-        popup.add_command(label="📖 Desktop Work Manual", command=lambda: show_main_help(self, initial_tab="desktop"))
-        popup.add_command(label="📱 Mobile Vault Guide", command=lambda: show_main_help(self, initial_tab="mobile"))
-        popup.add_command(label="⌨️ Keyboard Shortcuts", command=self.show_shortcuts)
-        popup.add_command(
-            label="🛟 \"Don't Panic!\" Troubleshooting",
-            command=lambda: show_main_help(self, initial_tab="desktop", initial_chapter="dont-panic"),
-        )
-
-        popup.add_separator()
-
-        # 30-Second Contextual Quick Guides (run in-place, outside sandbox)
-        quick_menu = tk.Menu(popup, tearoff=0)
-        quick_menu.add_command(
-            label="Hallway Follow-Up (REV+ERR) — 30 sec",
-            command=lambda: start_hallway_followup_guide(self),
-        )
-        quick_menu.add_command(
-            label="1-Tap Armed Shelf on Phone — 45 sec",
-            command=lambda: start_armed_shelf_guide(self),
-        )
-        quick_menu.add_command(
-            label="Image Zoom & Rotate — 20 sec",
-            command=lambda: start_image_controls_guide(self),
-        )
-        popup.add_cascade(label="⚡ 30-Second Quick Guides", menu=quick_menu)
-
-        # Suggested Learning Path cascade (mirrors Help Hub 5-step sequence)
-        tut_menu = tk.Menu(popup, tearoff=0)
-        tut_menu.add_command(
-            label="1. 3-Minute Quick Tour",
-            command=lambda: self.start_tutorial_flow("review")
-        )
-        tut_menu.add_command(
-            label="2. Historical Ledger Comparison",
-            command=lambda: self.start_tutorial_flow("discrepancy")
-        )
-        tut_menu.add_command(
-            label="3. Mobile Companion Hallway Guide",
-            command=lambda: start_armed_shelf_guide(self)
-        )
-        tut_menu.add_command(
-            label="4. Office Triage (REV+ERR)",
-            command=lambda: self.start_tutorial_flow("triage")
-        )
-        tut_menu.add_command(
-            label="5. Collections & New Specimens (Optional)",
-            command=lambda: self.start_tutorial_flow("database")
-        )
-        popup.add_cascade(label="🎓 Suggested Learning Path (Zero Risk)", menu=tut_menu)
-
-        popup.add_separator()
-        popup.add_command(label="🔄 Check for Updates...", command=self.check_for_updates_action)
-        popup.add_command(label="ℹ️ About Arbor", command=self.show_about)
-        popup.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
+        """Open the Unified Help Center window (replaces legacy nested dropdown menu)."""
+        self.open_help_window()
     def show_data_dropdown(self):
         self.show_audit_tools_dropdown()
 
@@ -2699,8 +2633,8 @@ class ObjectProgramUI(
 
 
 
-    def open_help_window(self):
-        help_dialogs.open_help_window(self)
+    def open_help_window(self, initial_tab="tutorials"):
+        help_dialogs.open_help_window(self, initial_tab=initial_tab)
 
 
 #--------
@@ -3757,7 +3691,8 @@ class ObjectProgramUI(
             'FILE ▾': (oi.OutlineIcon.FILE, 950, "FILE ▾"),
             'MOBILE': (getattr(oi.OutlineIcon, 'DEVICE_MOBILE', oi.OutlineIcon.SETTINGS), 900, "MOBILE"),
             '⚙ SETTINGS': (oi.OutlineIcon.SETTINGS, 850, "⚙ SETTINGS"),
-            'HELP ▾': (oi.OutlineIcon.HELP, 800, "HELP ▾"),
+            'HELP': (oi.OutlineIcon.HELP, 800, "HELP"),
+            'HELP ▾': (oi.OutlineIcon.HELP, 800, "HELP"),
             'Prev': (oi.OutlineIcon.PLAYER_TRACK_PREV, 800, "◄"),
             'Next': (oi.OutlineIcon.PLAYER_TRACK_NEXT, 800, "►"),
             'Last': (oi.OutlineIcon.ARROW_BAR_TO_LEFT, 800, "Last"),

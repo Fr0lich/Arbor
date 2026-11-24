@@ -444,7 +444,7 @@ DATABASE_CONFIGS = {
                     "name": "Stored as",
                     "type": "choice",
                     "choices": [
-                        "Mounted on wooded platform",
+                        "Mounted on wooden platform",
                         "Petridish",
                         "in plastic box",
                         "in paper box",

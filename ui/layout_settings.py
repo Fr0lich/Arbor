@@ -90,7 +90,7 @@ class LayoutSettingsMixin:
                     self.draft_show_search_var.set(layout.get("show_search", True))
                     self.draft_show_reg_var.set(layout.get("show_reg", True))
                     self.draft_show_images_var.set(layout.get("show_images", True))
-                    self.draft_location_in_center_var.set(layout.get("location_in_center", False))
+                    self.draft_location_in_center_var.set(layout.get("location_in_center", True))
                     self.draft_show_image_tools_var.set(layout.get("show_image_tools", True))
                     self.draft_show_bulk_edit_var.set(layout.get("show_bulk_edit", True))
                     self.draft_layout_focus_mode_var.set(layout.get("focus_problems", False))
@@ -431,7 +431,7 @@ class LayoutSettingsMixin:
         layout = prefs.get("layouts", {}).get("saved", {}).get(name)
         if not layout:
             # Fallback to top-level preferences if present
-            loc_in_center = prefs.get("location_in_center", False)
+            loc_in_center = prefs.get("location_in_center", True)
             if hasattr(self, "location_in_center_var"):
                 self.location_in_center_var.set(loc_in_center)
             if hasattr(self, "toggle_location_panel"):
@@ -465,7 +465,7 @@ class LayoutSettingsMixin:
         self.show_list_var.set(layout.get("show_list", True))
         self.show_search_var.set(layout.get("show_search", True))
         self.show_images_var.set(layout.get("show_images", True))
-        self.location_in_center_var.set(layout.get("location_in_center", False))
+        self.location_in_center_var.set(layout.get("location_in_center", True))
         self.show_image_tools_var.set(layout.get("show_image_tools", True))
         self.show_bulk_edit_var.set(layout.get("show_bulk_edit", True))
         self.show_reg_var.set(layout.get("show_reg", True))

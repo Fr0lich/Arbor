@@ -600,6 +600,13 @@ class GBIFBatchConfigDialog(tk.Toplevel):
                     exclude_undetermined=exclude_undet,
                     stats_out=stats
                 )
+                try:
+                    wb_path = getattr(getattr(self.main_app, "app", None), "excel_path", None)
+                    cache_path = backend.gbif.get_synonym_cache_path(wb_path)
+                    if diff_results and cache_path:
+                        backend.gbif.record_batch_diffs_to_synonym_cache(diff_results, cache_path)
+                except Exception:
+                    pass
             except Exception as e:
                 diff_results = []
                 stats["error_count"] = stats.get("error_count", 0) + 1

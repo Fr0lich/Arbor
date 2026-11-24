@@ -41,6 +41,16 @@ def mark_tutorial_completed(tutorial_id: str) -> None:
         pass
 
 
+def reset_completed_tutorials() -> None:
+    """Clear persisted tutorial completion checkmarks in user preferences."""
+    try:
+        prefs = config.load_prefs() or {}
+        prefs["completed_tutorials"] = []
+        config.save_prefs(prefs)
+    except Exception:
+        pass
+
+
 def _resolve_tutorial_images_dir() -> str | None:
     """Locate bundled data/tutorial_images across source runs and PyInstaller builds."""
     candidates = []

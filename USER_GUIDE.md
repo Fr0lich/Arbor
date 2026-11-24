@@ -10,7 +10,7 @@ Welcome to the team! As a museum assistant, work-placement intern, or collection
 This manual was written for you. You do not need any computer science experience or advanced botanical background to use Arbor. Arbor is designed to make auditing physical boxes, paper sheets, and handwritten labels fast, accurate, and comfortable.
 
 > 🎓 **New Here? Start with the 3-Minute Quick Tour & 5-Step Learning Path!**  
-> Open **`HELP ▾`** (or press **`F1`**) to launch the **3-Minute Quick Tour** using real sample photos (`#110` & `#198`) in **Practice Mode**, or follow the ordered **5-Step Suggested Learning Path**. Saving is paused while you practice, so nothing you do can affect real museum files. You can also click any **`[?]`** button inside Arbor for a 30-second quick guide right where you are working.
+> Click **`HELP`** in the top bar (or press **`F1`**) to open the **Help Center** and launch the **3-Minute Quick Tour** using real sample photos (`#110` & `#198`) in **Practice Mode**, or follow the ordered **5-Step Learning Path** (*Quick Tour → Mobile Companion → Office Triage → Historical Ledgers → New Collections*). Saving is paused while you practice, so nothing you do can affect real museum files.
 
 ---
 
@@ -311,16 +311,20 @@ When auditing physical specimens walking down vault corridors or glass cabinet a
 │                        │    Secure PIN Code    │                        │
 │ • Runs Arbor           │                       │ • Step through records │
 │ • Shows QR Code & PIN  │                       │ • Search-first audit   │
-│ • Holds Excel workbook │                       │ • Armed shelf stamping │
+│ • Holds Excel workbook │                       │ • 1-tap Set Shelf save │
 └────────────────────────┘                       └────────────────────────┘
 ```
 
 ### How to Connect in 4 Easy Steps:
 1. **Open the Phone Connector**: In Arbor on your desktop computer, click **`MOBILE`** in the top bar, or press `Ctrl+K` and type `Mobile Companion`.
-2. **Check PIN, Tutorial & Save Options**: Choose whether to require the 4-digit PIN (`🔒 Require 4-Digit PIN: ON / OFF` — keep **ON** on public tunnels, optional on private offline Wi-Fi) and whether to **"Launch with mobile companion tutorial for first-time users"** (ON by default; experienced staff can uncheck it anytime), then click **▶ Start Mobile Session**.
+2. **Check PIN, Tutorial & Save Options**: Choose whether to require the 4-digit PIN (`🔒 Require 4-Digit PIN: ON / OFF` — keep **ON** on public tunnels, optional on private offline Wi-Fi) and whether to **"Launch with mobile companion tutorial for first-time users"** (ON by default; opens the 4-step **Hallway Quick Guide** on your phone), then click **▶ Start Mobile Session**.
 3. **Scan the QR Code**: Point your phone camera at the QR code on screen (or copy the link). Scanning the QR code signs you in automatically.
-4. **Walk & Audit with Touch Gestures**: Swipe left/right to glide between **Details ↔ Location ↔ Problems**, pinch-to-zoom and drag-pan fullscreen specimen photos, use the **Armed Target Shelf** (Floor/Cabinet/Shelf) or **Loaned Out** toggle on the Location tab, and search already-reviewed objects whenever pulling specimens for closer inspection.
-4. **Tap `?` Anytime on Your Phone**: If you aren't sure what a field or badge means while standing in an aisle, tap **`?`** in the phone's top bar to open **"What the Fields Mean"** (including a reminder that outdated plant names on old boxes can be typed as-is and updated later via desktop **GBIF Name Check**).
+4. **Walk & Audit with Touch Gestures**:
+   * Swipe left/right to glide between **Details ↔ Location ↔ History**.
+   * Flag problems directly via the **inline checkboxes next to each field on Details** (just like Desktop Arbor), or check **Other Issue** + add a unified **Comment** at the bottom of **Details**.
+   * Tap **`📜 Old names`** (read-only) to check if an unfamiliar box label is just an older plant or family name (also available on Desktop next to History!).
+   * Use **`Set Shelf`** at the top of the list for 1-tap Physical Location saving (with a **5-second `↩ Undo`** toast), and use the **Location** tab for **`Stored as`** and **`Loaned Out`** (displays an amber **`↗ Loaned`** badge).
+5. **Tap `?` Anytime on Your Phone**: Open **What the Fields Mean** or replay the **Hallway Quick Guide** anytime right from your phone.
 
 ---
 
@@ -330,55 +334,50 @@ In a real museum vault, historical records rarely know which cabinet or shelf an
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│ 1. PULL OBJECT  │ ──> │ 2. FAST LOOKUP  │ ──> │ 3. STAMP SHELF  │ ──> │ 4. MARK REVIEWED│
-│ Read Accession  │     │ Numeric keypad  │     │ 1-tap on Armed  │     │ Done or Flags   │
-│ Number on label │     │ auto-normalizes │     │ Shelf Banner    │     │ Preserved       │
+│ 1. SET SHELF    │ ──> │ 2. FAST LOOKUP  │ ──> │ 3. 1-TAP SAVE   │ ──> │ 4. MARK REVIEWED│
+│ Building, Floor,│     │ Numeric keypad  │     │ Save to Cab/Sh  │     │ [REV] or        │
+│ Cabinet & Shelf │     │ auto-normalizes │     │ (5s ↩ Undo)     │     │ [REV+ERR]       │
 └─────────────────┘     └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
 
 #### 1. Fast Number Lookup (Search-First)
-* Tap the search bar at the top of your phone screen. Arbor automatically brings up the **numeric keypad** for fast typing (with a `[Aa / 123]` button to switch to letters if your museum uses prefixes).
+* Tap the search bar at the top of your phone screen. Arbor automatically brings up the **numeric keypad** for fast typing (with a `[123 / Aa]` button to switch to plant names).
 * **Automatic Zero Normalization**: If your physical specimen label says `#001` or `#1`, simply type `1` or `001`. Arbor recognizes both formats instantly.
 * When you finish reviewing an object and tap `< Back`, Arbor automatically clears and focuses the search box so you can immediately type the next specimen number!
 
-#### 2. The Armed Target Shelf (Auditing 30–50 Specimens at Once)
+#### 2. 1-Tap Physical Location Saving (`Set Shelf` + 5-Second Undo)
 When you open a cabinet, you will usually inspect dozens of consecutive specimens on the same shelf before moving to the next. Typing the same Building, Floor, Cabinet, and Shelf numbers fifty times would be slow and cause typos.
 
-* **Set the Shelf Once**: On your first specimen, set the correct Cabinet (e.g. `21`) and Shelf (e.g. `01`). Arbor immediately **arms this location as your active target shelf**.
-* **1-Tap Stamping**: When you look up the next specimen, a prominent thumb banner appears directly under the plant title:
-  `📍 Armed Target: Cab 21 › Sh 01 [Stamp to This Shelf]`
-* Simply tap the banner to instantly assign the coordinates!
+* **Set Your Shelf Once**: Tap **`Set Shelf`** in the top bar of the Specimen List (`Shelf: Not set [Set Shelf]`) and pick the Building, Floor, Cabinet, and Shelf you are standing in front of.
+* **1-Tap Save**: Inside every specimen you open, a green thumb button appears right under the plant title:
+  `📍 Save to Cab 21 · Sh 01`
+* Simply tap it once to save all coordinates! If a specimen already belongs to a different shelf, the button turns amber **`⚠️ Move to Cab 21 · Sh 01`** so you never relocate an object by accident — and every 1-tap save or move shows a **5-second `↩ Undo`** button in case you tapped by mistake.
 
-#### 3. The Non-Coercive Review Safeguard
-To keep you moving fast, if you tap **`[ ✓ Mark Reviewed ]`** on a specimen that has no location recorded yet while a shelf is armed, Arbor will politely ask:
-> *"Stamp to Armed Shelf 21 & Mark Reviewed?"*
+#### 3. Checking Old Names (`📜 Old names`) & Older Books (`History` Tab)
+* **Unfamiliar Latin or family name on the box?** Tap **`📜 Old names`** (read-only) to immediately check past museum names, classical/APG old family names (like *Compositae* for *Asteraceae*), and known GBIF synonyms — if it matches, keep the modern name!
+* **Older catalog books loaded?** Swipe right to the **`History`** tab (`[CFCT]`) to compare older books against the current record and tap **`Apply`** if one matches the real object.
 
-You are given two completely safe choices:
-1. **`✓ Yes, Stamp to Target & Review`**: Assigns Cabinet 21, Shelf 01 and marks the specimen as reviewed.
-2. **`✕ No, Keep Location & Review`**: **100% safe!** If you found the specimen in a temporary sorting box or don't want to change its location, choosing "No" saves all your edits, problem checkboxes, and notes, and marks the specimen as reviewed **without altering its location**.
-3. **`Cancel`**: Returns to the form without saving.
-
-#### 4. Flagging Problems While Marking Reviewed (`REV + [N] ISSUES`)
+#### 4. Flagging Problems While Marking Reviewed (`[REV+ERR]`)
 What if you pull a specimen and discover physical damage (e.g., a crushed box), an illegible handwritten label, or a conflicting year?
-* **Path A (Fix on the spot)**: If the physical label in your hand resolves a historical contradiction (e.g., the label says `1998` but a book noted `2008`), tap the suggestion from the Historical Data picker to fix it immediately.
-* **Path B (Flag for desktop triage)**: If the issue requires desktop research or physical box repair, check the appropriate problem box (e.g. `Box / Label Problem` or `Species Problem`), **BUT STILL MARK THE OBJECT AS REVIEWED**.
-* **Why this is a success**: Marking it reviewed stamps the physical coordinates and verifies that a human held the object. The status badge will display **`REV + [N] ISSUES` (Amber)**. This tells the entire team: *"This plant was physically found and its location is confirmed, but there is a note queued for office curation."*
+* **Path A (Fix on the spot)**: If the physical label in your hand resolves a historical contradiction, swipe to **`History`** and tap **`Apply`**.
+* **Path B (Flag for desktop triage)**: Tap the **checkbox right next to the disagreeing field on `Details`** (or check **`Other Issue`** and jot a note in **`Comment`** at the bottom), **AND STILL TAP `✓ Mark Reviewed`**.
+* **Why this is a success**: Marking it reviewed stamps the physical verification and location while displaying the amber **`[REV+ERR]`** badge — safely queueing the note for office curation later.
 
 #### 5. Viewport-Reclaimed Photo Folio
-If an archival photo scan has not yet been uploaded for the specimen, Arbor automatically collapses the empty 192px photo box into a compact 28px single-line bar (`📷 Scan: None verified online`). This reclaims phone screen space so the plant information and problem checkboxes are right under your thumb without endless scrolling!
+If an archival photo scan has not yet been uploaded for the specimen, Arbor automatically collapses the empty photo box into a compact single-line bar, keeping Registration Data and inline problem checkboxes right under your thumb without endless scrolling!
 
 ---
 
 ### Returning to Your Desk: Desktop Hallway Follow-Up
 
 When you finish your aisle audit and return to your computer:
-1. Click **`💾 Save Workbook Now`** (or **🔴 End Mobile Session** and confirm **Yes**) to write your changes to the Excel file.
+1. Click **`💾 Save Workbook Now`** (or press **`Ctrl + S`** / **🔴 End Mobile Session** and confirm **Yes**) to write your changes to the Excel file.
 2. Press **`Ctrl + G`** (or press **`Ctrl + K`** and type `Hallway`) and click **`🎯 Hallway Follow-Up (REV+ERR)`** to isolate every verified specimen with an open flag.
 3. Press **`Ctrl + K`** → **`Triage Problem Queue (Filtered List)`** to work through flagged specimens in one streamlined window:
    * Click **`✓ Value is Correct (Clear Flag)`** if a flagged value turns out to be fine (turns `[REV+ERR]` back to green `[REV]`, with full `Ctrl+Z` Undo support).
    * Press **`Alt + ←` / `Alt + →`** to step between queued specimens.
    * **Can't solve a problem today?** That is completely okay — simply skip it and leave the flag active so a specialist or curator can revisit it later.
-   * *(Tip: You can practice this entire workflow risk-free in **HELP ▾ → 4. Office Triage (REV+ERR)** inside the Suggested Learning Path!)*
+   * *(Tip: You can practice this entire workflow risk-free in **HELP → Interactive Tutorials → Step 3: Office Triage (REV+ERR)**!)*
 
 ---
 

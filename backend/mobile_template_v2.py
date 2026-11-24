@@ -138,20 +138,43 @@ INDEX_TEMPLATE_V2 = """
     html.arbor-offline-css header { background: #ffffff; border-bottom: 1px solid #d4d8d5; padding: 10px 14px; }
     html.arbor-offline-css button { border: 1px solid #d4d8d5; border-radius: 6px; padding: 6px 10px; background: #ffffff; color: #191e1a; font-size: 0.85rem; }
     html.arbor-offline-css button.bg-fern, html.arbor-offline-css #btnStampArmedShelf, html.arbor-offline-css #btnConfirmStampAndReview { background: #3a7d44; color: #ffffff; border-color: #205438; font-weight: 700; }
+    html.arbor-offline-css button.bg-emerald-600, html.arbor-offline-css button.bg-emerald-700 { background: #059669; color: #ffffff; border-color: #047857; font-weight: 700; }
     html.arbor-offline-css button.bg-amber-600 { background: #d97706; color: #ffffff; border-color: #b45309; font-weight: 700; }
+    html.arbor-offline-css button.bg-amber-500 { background: #f59e0b; color: #ffffff; border-color: #d97706; font-weight: 700; }
+    html.arbor-offline-css button.bg-ember { background: #d95c14; color: #ffffff; border-color: #b84a0c; font-weight: 700; }
+    html.arbor-offline-css button.bg-brick { background: #c93a40; color: #ffffff; border-color: #991b1b; font-weight: 700; }
+    html.arbor-offline-css button.bg-stone-900 { background: #1c1917; color: #ffffff; border-color: #1c1917; font-weight: 700; }
+    html.arbor-offline-css #btnOldNames { background: #f8f9fa; color: #191e1a; border: 1px solid #d4d8d5; min-height: 36px; padding: 4px 10px; font-weight: 600; }
     html.arbor-offline-css input, html.arbor-offline-css select, html.arbor-offline-css textarea { border: 1px solid #c4c9c5; border-radius: 6px; padding: 6px 8px; background: #ffffff; color: #191e1a; font-size: 0.9rem; }
     html.arbor-offline-css #listView, html.arbor-offline-css #detailView, html.arbor-offline-css #batchLocationView { max-width: 540px; margin: 0 auto; min-height: 100vh; background: #f3f3f3; display: flex; flex-direction: column; }
     html.arbor-offline-css #specimenListContainer > * { background: #ffffff; border: 1px solid #d4d8d5; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
     html.arbor-offline-css #auditStationLaunchpad { background: #eaf4ec; border: 1px solid #a4cca9; border-radius: 8px; padding: 10px; margin: 8px 12px; }
     html.arbor-offline-css #armedShelfBanner { background: #eaf4ec; border: 1px solid #a4cca9; border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
-    html.arbor-offline-css .tab-btn { border: none; background: transparent; padding: 8px 6px; font-weight: 600; color: #535d56; }
-    html.arbor-offline-css .tab-btn.text-ink { background: #ffffff; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); color: #191e1a; }
+    html.arbor-offline-css .tab-btn { border: none; background: transparent; padding: 8px 6px; font-weight: 600; color: #535d56; min-height: 40px; }
+    html.arbor-offline-css .tab-btn.text-ink { background: #ffffff; border-radius: 6px; border-bottom: 2px solid #3a7d44; box-shadow: 0 1px 2px rgba(0,0,0,0.08); color: #191e1a; }
     html.arbor-offline-css #tabIndicator { display: none; }
-    html.arbor-offline-css #btnDetailMarkReviewed { width: 100%; min-height: 46px; background: #3a7d44; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.95rem; }
+    html.arbor-offline-css #btnDetailMarkReviewed { width: 100%; min-height: 44px; background: #eaf4ec; color: #205438; border: 1px solid #3a7d44; border-radius: 8px; font-weight: 700; font-size: 0.95rem; }
+    html.arbor-offline-css #btnDetailMarkReviewed.bg-emerald-600 { background: #059669; color: #ffffff; border-color: #047857; }
+    html.arbor-offline-css #btnDetailMarkReviewed.bg-amber-600 { background: #d97706; color: #ffffff; border-color: #b45309; }
     html.arbor-offline-css #offlineBanner { background: #78350f; color: #ffffff; padding: 8px 14px; font-size: 0.8rem; font-weight: 600; }
+    html.arbor-offline-css .left-0 { left: 0; }
+    html.arbor-offline-css .right-0 { right: 0; }
+    html.arbor-offline-css .shrink-0 { flex-shrink: 0; }
+    html.arbor-offline-css .w-5 { width: 1.25rem; }
+    html.arbor-offline-css .h-5 { height: 1.25rem; }
+    html.arbor-offline-css .min-h-\\[36px\\] { min-height: 36px; }
+    html.arbor-offline-css .min-h-\\[40px\\] { min-height: 40px; }
+    html.arbor-offline-css .min-h-\\[44px\\] { min-height: 44px; }
+    html.arbor-offline-css .rounded-t-xl { border-top-left-radius: 12px; border-top-right-radius: 12px; }
+    html.arbor-offline-css .rounded-t-2xl { border-top-left-radius: 16px; border-top-right-radius: 16px; }
+    html.arbor-offline-css .max-h-\\[85vh\\] { max-height: 85vh; }
+    html.arbor-offline-css button.inline-flag-btn { border: none; padding: 0; background: transparent; min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    html.arbor-offline-css button.inline-flag-btn > span { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #c4c9c5; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
     html.arbor-offline-css [id$="Modal"] { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(18, 22, 19, 0.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
     html.arbor-offline-css [id$="Modal"] > div { background: #ffffff; border: 1px solid #d4d8d5; border-radius: 12px; max-width: 440px; width: 100%; padding: 16px; max-height: 88vh; overflow-y: auto; box-shadow: 0 12px 32px rgba(0,0,0,0.28); }
-    html.arbor-offline-css #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #191e1a; color: #ffffff; padding: 10px 16px; border-radius: 9999px; z-index: 60; font-size: 0.85rem; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+    html.arbor-offline-css [id$="Sheet"] { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(18, 22, 19, 0.6); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; z-index: 50; }
+    html.arbor-offline-css [id$="Sheet"] > div { background: #ffffff; border-top: 1px solid #d4d8d5; border-radius: 16px 16px 0 0; max-width: 440px; width: 100%; padding: 16px; max-height: 85vh; overflow-y: auto; box-shadow: 0 -8px 28px rgba(0,0,0,0.24); }
+    html.arbor-offline-css #toast { position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%); background: #191e1a; color: #ffffff; padding: 10px 16px; border-radius: 9999px; z-index: 60; font-size: 0.85rem; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
   </style>
   <script>
     window._arborInitTailwindV2 = function() {
@@ -229,6 +252,12 @@ INDEX_TEMPLATE_V2 = """
     .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
     .tap-active:active { transform: scale(0.985); transition: transform 0.05s ease-out; }
     .touch-target-min { min-height: 44px; min-width: 44px; }
+    select.arbor-compact-select {
+      background-image: none !important;
+      padding-right: 1.5rem !important;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
     .tab-slider { transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
     #tabTrack { transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
     body {
@@ -290,31 +319,24 @@ INDEX_TEMPLATE_V2 = """
           <!-- Top Utility Controls (compact & 360px-safe) -->
           <div class="flex items-center space-x-1 shrink-0">
             <!-- Undo Button (shown when edits exist) -->
-            <button id="btnListUndo" onclick="undoLastEdit()" title="Undo recent edit" class="hidden w-9 h-9 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
+            <button id="btnListUndo" onclick="undoLastEdit()" title="Undo recent edit" class="hidden w-10 h-10 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4M3 10l4-4m-4 4l4 4"/>
               </svg>
             </button>
 
             <!-- Walk Mode (Wake Lock) Toggle -->
-            <button id="btnListWakeLock" onclick="toggleWakeLock()" title="Keep screen awake during audit" class="w-9 h-9 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
+            <button id="btnListWakeLock" onclick="toggleWakeLock()" title="Keep screen awake during audit" class="w-10 h-10 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
               <span id="listWakeLockIcon" class="text-xs">🌙</span>
             </button>
 
-            <!-- Batch Location Registrator Trigger -->
-            <button id="btnOpenBatchLocation" onclick="showBatchLocationView()" title="Open Batch Location Registrator" class="w-9 h-9 rounded-md bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center tap-active transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-              </svg>
-            </button>
-
             <!-- Field Guide ("What the Fields Mean") Trigger -->
-            <button id="btnOpenFieldGuide" onclick="openFieldGuideModal()" title="What the fields & badges mean" class="w-9 h-9 rounded-md bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center font-mono font-bold text-xs tap-active transition-colors">
+            <button id="btnOpenFieldGuide" onclick="openFieldGuideModal()" title="What the fields & badges mean" class="w-10 h-10 rounded-md bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center font-mono font-bold text-xs tap-active transition-colors">
               ?
             </button>
 
             <!-- Settings Trigger -->
-            <button onclick="openSettingsModal()" title="Application Settings" class="w-9 h-9 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
+            <button onclick="openSettingsModal()" title="Application Settings" class="w-10 h-10 rounded-md bg-stone-100 border border-stone-200 text-stone-600 hover:text-ink flex items-center justify-center tap-active transition-colors">
               <span class="text-xs font-mono">⚙️</span>
             </button>
 
@@ -327,7 +349,7 @@ INDEX_TEMPLATE_V2 = """
         </div>
 
         <!-- Search Bar Row -->
-        <div class="px-3.5 pb-2.5 pt-0.5">
+        <div class="px-3.5 pb-2 pt-0.5">
           <div class="relative flex items-center">
             <div class="absolute left-3 text-ink-faint pointer-events-none">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -342,81 +364,41 @@ INDEX_TEMPLATE_V2 = """
               oninput="handleSearchInput()"
               autocomplete="off"
               spellcheck="false"
-              class="w-full pl-9 pr-22 py-2 bg-stone-100/90 hover:bg-stone-100 focus:bg-white text-xs font-mono text-ink placeholder:text-ink-faint placeholder:font-sans rounded-lg border border-stone-200 focus:border-fern focus:ring-1 focus:ring-fern focus:outline-none transition-all shadow-inner"
+              class="w-full min-h-[42px] pl-10 pr-28 py-2 bg-stone-100/90 hover:bg-stone-100 focus:bg-white text-xs font-mono text-ink placeholder:text-ink-faint placeholder:font-sans rounded-lg border border-stone-200 focus:border-fern focus:ring-1 focus:ring-fern focus:outline-none transition-all shadow-inner"
             />
-            <div class="absolute right-2 flex items-center space-x-1">
-              <button id="btnInputModeToggle" type="button" onclick="toggleSearchInputMode()" class="px-1.5 py-0.5 rounded bg-stone-200/60 hover:bg-stone-300 text-[10px] font-mono font-bold text-stone-600 transition-colors" title="Toggle numeric / text keyboard">
+            <div class="absolute right-1 flex items-center space-x-0.5">
+              <button id="btnInputModeToggle" type="button" onclick="toggleSearchInputMode()" class="min-w-[36px] min-h-[36px] px-1.5 rounded-md bg-stone-200/70 hover:bg-stone-300 text-[11px] font-mono font-bold text-stone-700 flex items-center justify-center transition-colors tap-active" title="Toggle numeric / text keyboard">
                 123
               </button>
-              <button id="searchClearBtn" onclick="clearSearch()" class="hidden w-6 h-6 flex items-center justify-center rounded-full bg-stone-200/80 hover:bg-stone-300 text-ink-muted hover:text-ink active:scale-95 text-xs font-bold leading-none transition-all" title="Clear search">
+              <button id="searchClearBtn" onclick="clearSearch()" class="hidden min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md bg-stone-200/80 hover:bg-stone-300 text-ink-muted hover:text-ink active:scale-95 text-xs font-bold leading-none transition-all" title="Clear search">
                 ✕
               </button>
-              <button id="btnFilterModalTrigger" onclick="openFilterModal()" title="Curatorial Filters" class="relative p-1.5 rounded-md hover:bg-stone-200/70 text-ink-muted hover:text-ink transition-colors">
+              <button id="btnFilterModalTrigger" onclick="openFilterModal()" title="Curatorial Filters" class="relative min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md hover:bg-stone-200/70 text-ink-muted hover:text-ink transition-colors tap-active">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
                 </svg>
-                <span id="filterActiveBadge" class="hidden absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-fern ring-2 ring-white"></span>
+                <span id="filterActiveBadge" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-fern ring-2 ring-white"></span>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- 1b. In-Vault Audit Station Launchpad & Armed Station Banner -->
-        <div id="auditStationLaunchpad" class="px-3.5 py-1.5 bg-emerald-50/80 border-t border-b border-fern/20 text-xs">
-          <!-- Active Station Pill (shown when armed) -->
-          <div id="activeStationPill" class="hidden flex items-center justify-between">
-            <div class="flex items-center gap-1.5 min-w-0">
-              <span class="text-xs">🎯</span>
-              <span class="font-mono text-[10px] text-muted">Auditing:</span>
-              <span class="font-mono text-xs font-bold text-fern-dark truncate" id="activeStationPillText">Lid's hus · Cab 21 · Sh 01</span>
+        <!-- 1b. Compact 1-Line Current Shelf Bar (tapping opens #stationSetupSheet bottom sheet) -->
+        <div id="auditStationLaunchpad" class="px-3 py-1.5 bg-emerald-50/80 border-t border-b border-fern/20 text-xs">
+          <div id="activeStationPill" class="flex items-center justify-between gap-1.5">
+            <div class="flex items-center gap-1 min-w-0">
+              <span class="text-xs shrink-0">📍</span>
+              <span class="font-mono text-[10px] text-muted shrink-0">Shelf:</span>
+              <span class="font-mono text-[11px] font-bold text-fern-dark truncate" id="activeStationPillText">Not set</span>
             </div>
-            <button type="button" onclick="openStationSetup()" class="text-[10px] font-mono text-fern-dark hover:underline font-bold px-1.5 py-0.5 rounded hover:bg-emerald-100">
-              [Change Shelf]
+            <button type="button" id="btnStationSheetTrigger" onclick="openStationSetup()" class="text-[11px] font-mono text-fern-dark bg-white/90 hover:bg-emerald-100 border border-fern/30 font-bold px-2.5 py-1 min-h-[36px] rounded shrink-0 whitespace-nowrap tap-active">
+              Set Shelf
             </button>
           </div>
-
-          <!-- Setup Card (shown when unanchored or when editing station) -->
-          <div id="stationSetupCard" class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="font-mono text-[10.5px] font-bold text-fern-dark flex items-center gap-1">
-                <span>📍</span>
-                <span>Active Audit Station</span>
-              </span>
-              <button type="button" onclick="dismissStationSetup()" class="text-[10px] font-mono text-muted hover:text-ink">
-                Skip & Browse
-              </button>
-            </div>
-            <div class="grid grid-cols-5 gap-1.5 text-xs font-mono">
-              <div class="col-span-2 bg-white rounded border border-bordercol px-2 py-0.5">
-                <span class="text-[9px] uppercase font-bold text-muted block">Bldg</span>
-                <select id="launchBldgSelect" class="w-full bg-transparent font-bold text-ink outline-none text-xs">
-                  <option value="Lid's hus">Lid's hus</option>
-                  <option value="Økern">Økern</option>
-                </select>
-              </div>
-              <div class="bg-white rounded border border-bordercol px-1.5 py-0.5">
-                <span class="text-[9px] uppercase font-bold text-muted block">Floor</span>
-                <select id="launchFloorSelect" class="w-full bg-transparent font-bold text-ink outline-none text-xs">
-                  <option value="1" selected>1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="-1">-1</option>
-                  <option value="-2">-2</option>
-                </select>
-              </div>
-              <div class="bg-white rounded border border-bordercol px-2 py-0.5">
-                <span class="text-[9px] uppercase font-bold text-muted block">Cab</span>
-                <input type="text" inputmode="numeric" id="launchCabInput" placeholder="21" class="w-full bg-transparent font-bold text-ink outline-none text-xs" />
-              </div>
-              <div class="bg-white rounded border border-bordercol px-2 py-0.5">
-                <span class="text-[9px] uppercase font-bold text-muted block">Shelf</span>
-                <input type="text" inputmode="numeric" id="launchShelfInput" placeholder="01" class="w-full bg-transparent font-bold text-ink outline-none text-xs" />
-              </div>
-            </div>
-            <button type="button" onclick="applyStationSetup()" class="w-full py-1.5 px-3 bg-fern hover:bg-fern-dark text-white rounded text-xs font-mono font-bold shadow-2xs tap-active flex items-center justify-center gap-1.5">
-              <span>🚀 Arm Station & Audit</span>
-            </button>
+          <!-- Auto-dismissing first-time coach nudge (hides automatically once a shelf is set) -->
+          <div id="listCoachNudge" class="hidden mt-1.5 pt-1.5 border-t border-fern/15 flex items-center justify-between gap-2 text-[11px] text-fern-dark">
+            <span>👆 First step: tap <strong>Set Shelf</strong> where you’re standing, then search an object number.</span>
+            <button type="button" onclick="dismissListCoachNudge()" class="px-1.5 py-0.5 text-muted hover:text-ink font-bold shrink-0" aria-label="Dismiss tip">✕</button>
           </div>
         </div>
 
@@ -434,52 +416,47 @@ INDEX_TEMPLATE_V2 = """
           </div>
         </div>
 
-        <!-- 2. Filter Pills Bar (Hidden by Default, Toggleable in Settings) -->
-        <div id="filterPillsContainer" class="hidden px-3.5 pb-2 overflow-x-auto no-scrollbar flex items-center space-x-1.5 border-t border-stone-100 pt-2">
-          <button onclick="setStatusFilter('all')" id="pill-all" class="filter-pill whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] font-medium font-sans bg-ink text-white shadow-sm tap-active transition-all">
+        <!-- 2. Filter Pills Bar (Hidden by Default, Toggleable in Settings — Desktop Badge Parity) -->
+        <div id="filterPillsContainer" class="hidden px-3.5 pb-2 overflow-x-auto no-scrollbar flex items-center gap-1.5 border-t border-stone-100 pt-2" style="-webkit-mask-image: linear-gradient(to right, black 92%, transparent 100%); mask-image: linear-gradient(to right, black 92%, transparent 100%);">
+          <button onclick="setStatusFilter('all')" id="pill-all" class="filter-pill whitespace-nowrap px-3 py-1.5 min-h-[34px] rounded-full text-[11px] font-medium font-sans bg-ink text-white shadow-sm tap-active transition-all shrink-0">
             All <span class="font-mono text-[10px] ml-0.5 opacity-90" id="pillCountAll">(0)</span>
           </button>
-          <button onclick="setStatusFilter('pending')" id="pill-pending" class="filter-pill whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] font-medium font-sans bg-stone-200/80 text-ink-muted hover:bg-stone-300 tap-active transition-all">
-            🕒 Unreviewed <span class="font-mono text-[10px] ml-0.5" id="pillCountPending">(0)</span>
+          <button onclick="setStatusFilter('pending')" id="pill-pending" class="filter-pill whitespace-nowrap px-3 py-1.5 min-h-[34px] rounded-full text-[11px] font-medium font-sans bg-stone-200/80 text-ink-muted hover:bg-stone-300 tap-active transition-all shrink-0">
+            UNREV <span class="font-mono text-[10px] ml-0.5" id="pillCountPending">(0)</span>
           </button>
-          <button onclick="setStatusFilter('flagged')" id="pill-flagged" class="filter-pill whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] font-medium font-sans bg-brick-light text-brick border border-brick/30 hover:bg-red-100 tap-active transition-all">
+          <button onclick="setStatusFilter('flagged')" id="pill-flagged" class="filter-pill whitespace-nowrap px-3 py-1.5 min-h-[34px] rounded-full text-[11px] font-medium font-sans bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 tap-active transition-all shrink-0">
             ⚠ Flagged <span class="font-mono text-[10px] ml-0.5 font-bold" id="pillCountFlagged">(0)</span>
           </button>
-          <button onclick="setStatusFilter('reviewed')" id="pill-reviewed" class="filter-pill whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] font-medium font-sans bg-emerald-50 text-fern-dark border border-fern/30 hover:bg-emerald-100 tap-active transition-all">
-            ✓ Reviewed <span class="font-mono text-[10px] ml-0.5" id="pillCountReviewed">(0)</span>
+          <button onclick="setStatusFilter('reviewed')" id="pill-reviewed" class="filter-pill whitespace-nowrap px-3 py-1.5 min-h-[34px] rounded-full text-[11px] font-medium font-sans bg-emerald-50 text-fern-dark border border-fern/30 hover:bg-emerald-100 tap-active transition-all shrink-0">
+            ✓ REV <span class="font-mono text-[10px] ml-0.5" id="pillCountReviewed">(0)</span>
           </button>
-          <button onclick="setStatusFilter('conflict')" id="pill-conflict" class="filter-pill whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] font-medium font-sans bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 tap-active transition-all">
-            🔀 Conflicts <span class="font-mono text-[10px] ml-0.5" id="pillCountConflict">(0)</span>
+          <button onclick="setStatusFilter('conflict')" id="pill-conflict" class="filter-pill whitespace-nowrap px-3 py-1.5 min-h-[34px] rounded-full text-[11px] font-medium font-sans bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100 tap-active transition-all shrink-0">
+            CFCT <span class="font-mono text-[10px] ml-0.5" id="pillCountConflict">(0)</span>
           </button>
-          <button onclick="setStatusFilter('unknown')" id="pill-unknown" class="filter-pill whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] font-medium font-sans bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 tap-active transition-all">
+          <button onclick="setStatusFilter('unknown')" id="pill-unknown" class="filter-pill whitespace-nowrap px-3 py-1.5 min-h-[34px] rounded-full text-[11px] font-medium font-sans bg-stone-100 text-stone-700 border border-stone-200 hover:bg-stone-200 tap-active transition-all shrink-0">
             ? Unknown <span class="font-mono text-[10px] ml-0.5" id="pillCountUnknown">(0)</span>
           </button>
-          <button onclick="toggleNoImageFilter()" id="pill-no-image" class="filter-pill whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] font-medium font-sans bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-200 tap-active transition-all">
-            📷 No Image
+          <button onclick="toggleNoImageFilter()" id="pill-no-image" class="filter-pill whitespace-nowrap px-3 py-1.5 min-h-[34px] rounded-full text-[11px] font-medium font-sans bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-200 tap-active transition-all shrink-0">
+            📷 No Photo
           </button>
         </div>
 
         <!-- Metrics & Sort Row -->
-        <div class="px-3.5 py-2 bg-alabaster/70 border-t border-bordercol flex items-center justify-between text-[11px]">
-          <div class="flex items-center gap-2 font-mono text-ink-muted">
-            <span>Showing <span class="font-bold text-ink" id="matchingCount">0</span> matching records</span>
-            <button type="button" id="btnOpenStationSetup" onclick="openStationSetup()" class="hidden text-[10px] font-mono font-bold text-fern-dark hover:underline px-1.5 py-0.5 rounded bg-emerald-50 border border-fern/30">
-              📍 Set Target Shelf
+        <div class="px-3.5 py-1.5 bg-alabaster/70 border-t border-bordercol flex items-center justify-between gap-2 text-[11px]">
+          <div class="flex items-center gap-2 font-mono text-ink-muted min-w-0">
+            <span class="truncate">Showing <span class="font-bold text-ink" id="matchingCount">0</span> records</span>
+            <button type="button" id="btnOpenStationSetup" onclick="openStationSetup()" class="hidden min-h-[36px] text-[10.5px] font-mono font-bold text-fern-dark hover:underline px-2 py-1 rounded bg-emerald-50 border border-fern/30 shrink-0 whitespace-nowrap">
+              📍 My Current Shelf
             </button>
           </div>
-          <div class="flex items-center space-x-1.5">
-            <div class="relative inline-flex items-center">
-              <select id="sortBySelect" onchange="handleSortChange()" class="appearance-none bg-white border border-bordercol rounded-md px-2 py-1 pr-6 text-[10.5px] font-mono text-ink focus:outline-none focus:border-fern shadow-2xs cursor-pointer">
-                <option value="id_asc" selected>Object # (1, 2, 3...)</option>
-                <option value="location">⇅ Sort: Physical Location</option>
-                <option value="name_asc">Scientific Name (A–Z)</option>
-                <option value="name_desc">Scientific Name (Z–A)</option>
-                <option value="flagged_first">Flagged / Problems First</option>
-              </select>
-              <div class="absolute right-1.5 pointer-events-none text-ink-faint">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-              </div>
-            </div>
+          <div class="flex items-center shrink-0">
+            <select id="sortBySelect" onchange="handleSortChange()" class="arbor-compact-select min-h-[40px] bg-white border border-bordercol rounded-md pl-2.5 py-1 text-[11px] font-mono text-ink focus:outline-none focus:border-fern shadow-2xs cursor-pointer">
+              <option value="id_asc" selected>Object # (1, 2, 3...)</option>
+              <option value="location">⇅ Sort: Physical Location</option>
+              <option value="name_asc">Scientific Name (A–Z)</option>
+              <option value="name_desc">Scientific Name (Z–A)</option>
+              <option value="flagged_first">Flagged / Problems First</option>
+            </select>
           </div>
         </div>
       </header>
@@ -514,24 +491,24 @@ INDEX_TEMPLATE_V2 = """
     <!-- ============================================================= -->
     <div id="detailView" class="hidden flex-1 flex flex-col h-full bg-alabaster overflow-hidden relative font-sans text-ink">
       <!-- 1. Sticky Top Navigation Bar -->
-      <header class="flex-none bg-surface border-b border-bordercol px-3.5 py-2.5 flex items-center justify-between z-30">
+      <header class="flex-none bg-surface border-b border-bordercol px-3 py-2 flex items-center justify-between gap-1 z-30">
         <!-- Back Button -->
-        <button type="button" onclick="showListView()" class="flex items-center gap-1.5 px-2 py-1.5 min-h-[36px] -ml-1 text-xs font-semibold text-muted hover:text-ink active:bg-stone-100 rounded transition-colors tap-highlight-transparent">
+        <button type="button" onclick="showListView()" class="flex items-center gap-1 px-2 py-1.5 min-h-[40px] -ml-1 text-xs font-semibold text-muted hover:text-ink active:bg-stone-100 rounded transition-colors tap-highlight-transparent shrink-0">
           <svg class="w-4 h-4 text-ink stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path d="M15.75 19.5L8.25 12l7.5-7.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span class="font-mono">Vault List</span>
+          <span class="font-mono">List</span>
         </button>
 
         <!-- Steppers & Controls -->
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1">
           <!-- Field Guide ("What the Fields Mean") Trigger -->
-          <button id="btnDetailFieldGuide" type="button" onclick="openFieldGuideModal()" title="What the fields & badges mean" class="w-8 h-8 rounded bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center font-mono font-bold text-xs tap-active transition-colors">
+          <button id="btnDetailFieldGuide" type="button" onclick="openFieldGuideModal()" title="What the fields & badges mean" class="w-10 h-10 rounded bg-emerald-50 border border-fern/30 text-fern-dark hover:bg-emerald-100 flex items-center justify-center font-mono font-bold text-xs tap-active transition-colors">
             ?
           </button>
 
           <!-- Detail Undo Button -->
-          <button id="btnDetailUndo" onclick="undoLastEdit()" title="Undo edit" class="items-center gap-1 px-2 py-1 h-[32px] text-[10.5px] font-mono font-medium text-ember bg-orange-50 border border-orange-200 rounded active:scale-95 transition-all flex">
+          <button id="btnDetailUndo" onclick="undoLastEdit()" title="Undo edit" class="items-center gap-1 px-2.5 py-1 min-h-[40px] text-[11px] font-mono font-medium text-ember bg-orange-50 border border-orange-200 rounded active:scale-95 transition-all flex">
             <svg class="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -539,17 +516,17 @@ INDEX_TEMPLATE_V2 = """
           </button>
 
           <!-- Specimen Index Counter -->
-          <span class="text-[11px] font-mono font-medium text-subdued tracking-tight bg-stone-100 px-2 py-1.5 rounded border border-bordercol/60">
+          <span class="text-[11px] font-mono font-medium text-subdued tracking-tight bg-stone-100 px-1.5 py-1.5 rounded border border-bordercol/60">
             <span class="text-ink font-semibold" id="detailCurrentIdx">1</span><span class="text-stone-400 mx-0.5">/</span><span id="detailTotalCount">1</span>
           </span>
 
-          <!-- Next / Prev Steppers (glove-friendly 36px touch targets) -->
+          <!-- Next / Prev Steppers (glove-friendly 40px touch targets) -->
           <div class="inline-flex rounded border border-bordercol bg-alabaster p-0.5 shadow-2xs">
-            <button type="button" class="w-9 h-9 flex items-center justify-center rounded hover:bg-surface text-ink active:bg-stone-200 transition-colors tap-highlight-transparent" onclick="navSpecimen(-1)" title="Previous Specimen">
+            <button type="button" class="w-10 h-10 flex items-center justify-center rounded hover:bg-surface text-ink active:bg-stone-200 transition-colors tap-highlight-transparent" onclick="navSpecimen(-1)" title="Previous Specimen">
               <svg class="w-4 h-4 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="w-[1px] bg-bordercol my-0.5"></div>
-            <button type="button" class="w-9 h-9 flex items-center justify-center rounded hover:bg-surface text-ink active:bg-stone-200 transition-colors tap-highlight-transparent" onclick="navSpecimen(1)" title="Next Specimen">
+            <button type="button" class="w-10 h-10 flex items-center justify-center rounded hover:bg-surface text-ink active:bg-stone-200 transition-colors tap-highlight-transparent" onclick="navSpecimen(1)" title="Next Specimen">
               <svg class="w-4 h-4 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
@@ -558,14 +535,17 @@ INDEX_TEMPLATE_V2 = """
 
       <!-- 2. Sticky Specimen Identification Header (compact for more form room) -->
       <section class="flex-none bg-surface border-b border-bordercol px-4 pt-2 pb-2 z-20 shadow-2xs">
-        <div class="flex items-center justify-between mb-1.5">
-          <div class="flex items-center gap-2">
-            <span class="font-mono text-xs font-bold text-ink tracking-tight px-1.5 py-0.5 bg-stone-100 border border-bordercol rounded" id="detailAccession">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="font-mono text-xs font-bold text-ink tracking-tight px-1.5 py-0.5 bg-stone-100 border border-bordercol rounded shrink-0" id="detailAccession">
               #2024-BOT-0894
+            </span>
+            <span id="badgeLoanedHeader" class="hidden inline-flex items-center gap-1 text-[10.5px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 shrink-0 whitespace-nowrap">
+              ↗ Loaned Out
             </span>
           </div>
           <!-- Interactive Status Pill -->
-          <button type="button" class="flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-800 border-amber-300" id="badgeStatus" onclick="handleReviewButtonClick()">
+          <button type="button" class="flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-1 min-h-[28px] rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-800 border-amber-300 shrink-0" id="badgeStatus" onclick="handleReviewButtonClick()">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" id="badgeStatusDot"></span>
             <span id="badgeStatusText">UNREVIEWED</span>
           </button>
@@ -575,53 +555,55 @@ INDEX_TEMPLATE_V2 = """
           Betula pendula
         </h1>
 
-        <div class="flex items-center flex-wrap gap-x-2.5 gap-y-0.5 mt-1.5 text-xs text-muted">
-          <div class="flex items-center gap-1">
-            <span class="text-subdued font-medium">Fam:</span>
-            <span class="font-medium text-ink" id="detailFamily">Betulaceae</span>
+        <div class="flex items-center justify-between gap-2 mt-1.5 text-xs text-muted">
+          <div class="min-w-0 flex-1 space-y-0.5">
+            <div class="flex items-center gap-1 truncate">
+              <span class="text-subdued font-medium shrink-0">Fam:</span>
+              <span class="font-medium text-ink truncate" id="detailFamily">Betulaceae</span>
+            </div>
+            <div class="flex items-center gap-1 font-mono text-[11px] truncate">
+              <span class="text-subdued font-sans shrink-0">Loc:</span>
+              <span class="text-ink font-semibold truncate" id="headerLocSummary">Cab 04 · Sh 02 · Fl -1</span>
+            </div>
           </div>
-          <span class="text-bordercol">•</span>
-          <div class="flex items-center gap-1 font-mono text-[11px]">
-            <span class="text-subdued font-sans">Loc:</span>
-            <span class="text-ink font-semibold" id="headerLocSummary">Cab 04 · Sh 02 · Fl -1</span>
-          </div>
-          <button type="button" id="btnOldNames" onclick="openOldNamesSheet()" class="ml-auto px-2.5 py-1 min-h-[28px] rounded-full border border-bordercol bg-tonal hover:bg-stone-200/70 text-[11px] font-semibold text-ink-muted flex items-center gap-1 tap-active" title="View older synonyms and family names for this specimen">
+          <button type="button" id="btnOldNames" onclick="openOldNamesSheet()" class="px-3 py-1.5 min-h-[36px] rounded-full border border-bordercol bg-tonal1 hover:bg-stone-200/70 text-[11px] font-semibold text-ink-muted flex items-center gap-1 tap-active shrink-0" title="View older synonyms and family names for this specimen">
             <span>📜</span><span>Old names</span>
           </button>
         </div>
 
-        <!-- Armed Target Shelf Action Banner -->
-        <div id="armedShelfBanner" class="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between gap-2 text-xs">
-          <div class="flex items-center gap-1.5 min-w-0">
-            <span class="text-xs">🎯</span>
-            <span class="font-mono text-[10px] text-muted truncate">Target Shelf:</span>
-            <span class="font-mono text-[11px] font-bold text-fern-dark truncate" id="armedShelfHeaderLabel">None Armed</span>
+        <!-- Current Shelf Quick-Save Banner -->
+        <div id="armedShelfBanner" class="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between gap-1.5 text-xs">
+          <div class="flex items-center gap-1 min-w-0">
+            <span class="text-xs shrink-0">📍</span>
+            <span class="font-mono text-[10px] text-muted shrink-0">Shelf:</span>
+            <span class="font-mono text-[11px] font-bold text-fern-dark truncate" id="armedShelfHeaderLabel">Not set</span>
           </div>
-          <button type="button" id="btnStampArmedShelf" onclick="stampArmedLocation()" class="hidden min-h-[38px] px-3 py-1.5 rounded bg-fern hover:bg-fern-dark text-white font-mono font-bold text-xs shadow-2xs tap-active flex items-center gap-1.5 shrink-0">
+          <button type="button" id="btnStampArmedShelf" onclick="stampArmedLocation()" class="hidden min-h-[40px] px-2.5 py-1.5 rounded bg-fern hover:bg-fern-dark text-white font-mono font-bold text-[11px] shadow-2xs tap-active flex items-center gap-1 shrink-0 whitespace-nowrap">
             <span>📍</span>
-            <span>Stamp Target</span>
+            <span>Save to Shelf</span>
           </button>
         </div>
       </section>
 
-      <!-- 3. Segmented Tab Controller (Sticky) -->
+      <!-- 3. Segmented Tab Controller (Sticky: Details · Location · History) -->
       <nav class="flex-none bg-alabaster border-b border-bordercol px-3 pt-1.5 pb-1 z-20">
         <div class="relative bg-stone-200/90 p-1 rounded-[4px] flex items-center justify-between text-xs font-medium text-muted shadow-inner">
           <div class="tab-slider absolute top-1 bottom-1 w-[calc((100%-8px)/3)] bg-surface rounded shadow-sm border border-stone-300 pointer-events-none translate-x-0" id="tabIndicator" style="transform: translateX(0%);"></div>
-          <button id="tabBtnDetails" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[36px] flex items-center justify-center gap-1.5 font-semibold text-ink tap-highlight-transparent" data-tab-index="0" onclick="switchDetailTab('details')">
-            <svg class="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <button id="tabBtnDetails" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[40px] flex items-center justify-center gap-1 font-semibold text-ink whitespace-nowrap tap-highlight-transparent" data-tab-index="0" onclick="switchDetailTab('details')">
+            <svg class="w-3.5 h-3.5 stroke-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             <span>Details</span>
-            <span class="font-mono text-[10px] font-bold px-1.5 rounded-full bg-slate-600 text-white shadow-2xs hidden" id="tabFolioBadge">0</span>
+            <span class="font-mono text-[10px] font-bold px-1.5 rounded-full bg-brick text-white shadow-2xs hidden shrink-0" id="tabDetailsFlagsBadge" style="background:#c93a40;color:#ffffff;">0</span>
+            <span class="font-mono text-[10px] font-bold px-1.5 rounded-full bg-slate-600 text-white shadow-2xs hidden shrink-0" id="tabFolioBadge">0</span>
           </button>
-          <button id="tabBtnLocation" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[36px] flex items-center justify-center gap-1.5 text-muted tap-highlight-transparent" data-tab-index="1" onclick="switchDetailTab('location')">
-            <svg class="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+          <button id="tabBtnLocation" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[40px] flex items-center justify-center gap-1 text-muted whitespace-nowrap tap-highlight-transparent" data-tab-index="1" onclick="switchDetailTab('location')">
+            <svg class="w-3.5 h-3.5 stroke-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
             <span>Location</span>
-            <span class="font-mono text-[10px] font-bold px-1.5 rounded-full shadow-2xs hidden" id="tabLocationBadge"></span>
+            <span class="font-mono text-[10px] font-bold px-1.5 rounded-full shadow-2xs hidden whitespace-nowrap shrink-0" id="tabLocationBadge"></span>
           </button>
-          <button id="tabBtnProblems" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[36px] flex items-center justify-center gap-1.5 text-muted tap-highlight-transparent" data-tab-index="2" onclick="switchDetailTab('problems')">
-            <svg class="w-3.5 h-3.5 text-brick stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-            <span>Problems</span>
-            <span class="font-mono text-[10px] font-bold px-1.5 rounded-full bg-brick text-white shadow-2xs hidden" id="tabProblemBadge">0</span>
+          <button id="tabBtnHistory" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[40px] flex items-center justify-center gap-1 text-muted whitespace-nowrap tap-highlight-transparent" data-tab-index="2" onclick="switchDetailTab('history')">
+            <svg class="w-3.5 h-3.5 text-sky-700 stroke-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
+            <span>History</span>
+            <span class="font-mono text-[10px] font-bold px-1.5 rounded-full text-white shadow-2xs hidden shrink-0" id="tabHistoryBadge" style="background:#4a7b9d;color:#ffffff;">0</span>
           </button>
         </div>
       </nav>
@@ -653,7 +635,7 @@ INDEX_TEMPLATE_V2 = """
                 <span class="text-[10px] font-mono text-muted" id="photoCountDisplay">0 Photos</span>
               </div>
               <div id="photoMainBox" class="relative w-full h-48 bg-stone-100 rounded border border-bordercol overflow-hidden flex items-center justify-center cursor-pointer" onclick="openPhotoViewerModal()">
-                <img id="specimenImg" src="" alt="Specimen Scan" class="w-full h-full object-contain hidden" onload="onPhotoLoaded(this)" onerror="onPhotoError(this)"/>
+                <img id="specimenImg" alt="Specimen Scan" class="w-full h-full object-contain hidden" onload="if(window.onPhotoLoaded)onPhotoLoaded(this)" onerror="if(window.onPhotoError)onPhotoError(this)"/>
               </div>
               <div id="photoPlaceholder" class="w-full"></div>
               <div id="photoThumbnailsRow" class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
@@ -661,16 +643,36 @@ INDEX_TEMPLATE_V2 = """
               </div>
             </div>
 
-            <!-- Registration & Observation Metadata Form Fields -->
+            <!-- Compact Flagged-Fields Jump Chip (shown when ≥1 problem checkbox is active) -->
+            <button type="button" id="detailsFlagSummaryChip" onclick="scrollToFirstFlaggedField()" class="hidden w-full text-left px-3 py-2 min-h-[40px] rounded bg-amber-50 border border-amber-300 text-amber-900 text-xs font-sans font-semibold flex items-center justify-between gap-2 tap-active">
+              <span id="detailsFlagSummaryText" class="truncate">⚠ 0 flagged</span>
+              <span class="font-mono text-[10px] text-amber-800 shrink-0">Jump ↓</span>
+            </button>
+
+            <!-- Registration & Observation Metadata Form Fields (with inline problem checkboxes) -->
             <div class="bg-surface border border-bordercol rounded p-3.5 shadow-2xs space-y-3" id="dynamicFormContainer">
               <!-- Form fields injected dynamically from schema -->
+            </div>
+
+            <!-- Physical & Photo Issues Checklist (Non-field flags like Other Issue & Images Issue) -->
+            <div class="bg-surface border border-bordercol rounded p-3.5 shadow-2xs space-y-2.5" id="physicalIssuesCard">
+              <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+                <div>
+                  <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Physical &amp; Other Issues</h3>
+                  <p class="text-[10.5px] font-sans text-subdued">Flag physical damage or photo problems here</p>
+                </div>
+                <span class="text-[10px] font-mono text-muted" id="flaggedTotalBadge">0 Flagged</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2" id="problemFlagsGrid">
+                <!-- Dynamically populated from non-field schema.ui_sections.problems -->
+              </div>
             </div>
           </div>
 
           <!-- ================= TAB 1: LOCATION ================= -->
           <div class="w-1/3 h-full overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-24" id="tabContentLocation">
-            <!-- 1. Copy from Previous Bar -->
-            <div class="bg-surface border border-bordercol rounded p-2.5 shadow-2xs">
+            <!-- 1. Copy from Previous Bar (auto-hidden when My Current Shelf is already set) -->
+            <div id="copyPrevSpecimenCard" class="bg-surface border border-bordercol rounded p-2.5 shadow-2xs">
               <button class="w-full py-2.5 px-3 bg-stone-100 hover:bg-stone-200/80 active:bg-stone-300 border border-stone-300 rounded flex items-center justify-between text-left transition-all tap-highlight-transparent min-h-[44px]" id="btnCopyPrevSpecimen" onclick="handleCopyPreviousSpecimen()" type="button">
                 <div class="flex items-center gap-2 truncate">
                   <span class="text-base leading-none">📋</span>
@@ -683,14 +685,14 @@ INDEX_TEMPLATE_V2 = """
               </button>
             </div>
 
-            <!-- 2. Main Physical Coordinate Audit Card -->
+            <!-- 2. Main Physical Location Card -->
             <section class="bg-stone-50 border border-bordercol rounded-lg p-3 space-y-2.5 shadow-2xs">
               <div class="flex items-center justify-between">
                 <div>
-                  <h2 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Physical Coordinate Audit</h2>
-                  <p class="text-[10px] font-mono text-subdued">Continuous numeric coordinates · Selected Specimen</p>
+                  <h2 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Physical Location</h2>
+                  <p class="text-[10px] font-sans text-subdued">Where this object lives so we can find it again</p>
                 </div>
-                <span class="text-[10px] font-mono text-fern font-semibold flex items-center gap-1" id="locSyncIndicator">
+                <span class="text-[10px] font-mono text-fern font-semibold flex items-center gap-1 shrink-0" id="locSyncIndicator">
                   <svg class="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   Synced
                 </span>
@@ -698,76 +700,77 @@ INDEX_TEMPLATE_V2 = """
 
               <div class="grid grid-cols-2 gap-2">
                 <!-- Building (Default blank: --) -->
-                <div class="bg-white rounded p-1.5 border border-bordercol flex items-center justify-between">
-                  <span class="font-mono text-[9px] uppercase font-bold text-muted">Bldg</span>
-                  <select id="detailBuildingSelect" onchange="handleDetailBuildingChange(this.value)" class="bg-transparent font-mono text-xs font-bold text-ink outline-none text-right">
+                <div class="bg-white rounded p-2 border border-bordercol flex items-center justify-between gap-1">
+                  <span class="font-mono text-[9px] uppercase font-bold text-muted shrink-0">Bldg</span>
+                  <select id="detailBuildingSelect" onchange="handleDetailBuildingChange(this.value)" class="arbor-compact-select bg-transparent border-0 p-0 font-mono text-xs font-bold text-ink outline-none focus:ring-0 text-right min-w-0">
                     <option value="">--</option>
                   </select>
                 </div>
                 <!-- Floor (Continuous signed integer: -2, -1, 0, 1, 2... or — when unrecorded) -->
-                <div class="bg-white rounded p-1.5 border border-bordercol flex items-center justify-between">
-                  <span class="font-mono text-[9px] uppercase font-bold text-muted">Floor</span>
+                <div class="bg-white rounded p-2 border border-bordercol flex items-center justify-between gap-1">
+                  <span class="font-mono text-[9px] uppercase font-bold text-muted shrink-0">Floor</span>
                   <div class="flex items-center gap-1">
-                    <button type="button" class="w-5 h-5 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-xs" onclick="adjustCoordinate('floor', -1)">−</button>
-                    <span class="font-mono text-xs font-bold text-ink px-1 min-w-[20px] text-center" id="detailFloorVal">—</span>
-                    <button type="button" class="w-5 h-5 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-xs" onclick="adjustCoordinate('floor', 1)">+</button>
+                    <button type="button" class="w-9 h-9 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-base shrink-0" onclick="adjustCoordinate('floor', -1)">−</button>
+                    <span class="font-mono text-xs font-bold text-ink px-0.5 min-w-[20px] text-center" id="detailFloorVal">—</span>
+                    <button type="button" class="w-9 h-9 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-base shrink-0" onclick="adjustCoordinate('floor', 1)">+</button>
                   </div>
                 </div>
                 <!-- Cabinet (01, 02... or — when unrecorded) -->
-                <div class="bg-white rounded p-2 border border-bordercol flex items-center justify-between">
-                  <span class="font-mono text-[10px] uppercase font-bold text-muted">Cabinet</span>
-                  <div class="flex items-center gap-1.5">
-                    <button type="button" class="w-6 h-6 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-sm" onclick="adjustCoordinate('cab', -1)">−</button>
+                <div class="bg-white rounded p-2 border border-bordercol space-y-1">
+                  <span class="font-mono text-[10px] uppercase font-bold text-muted block">Cabinet</span>
+                  <div class="flex items-center justify-between gap-1">
+                    <button type="button" class="w-9 h-9 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-base shrink-0" onclick="adjustCoordinate('cab', -1)">−</button>
                     <input type="text" inputmode="numeric" pattern="[0-9]*" id="detailCabVal"
-                      class="font-mono text-sm font-bold text-ink w-9 text-center bg-transparent border-b border-bordercol/30 focus:border-fern focus:bg-stone-50 rounded-xs outline-none transition-colors"
+                      class="font-mono text-base font-bold text-ink w-14 min-w-[48px] text-center bg-transparent border-b border-bordercol/40 focus:border-fern focus:bg-stone-50 rounded-xs outline-none transition-colors px-1"
                       placeholder="—"
                       onclick="this.select()"
                       onfocus="this.select()"
                       onkeydown="if(event.key==='Enter') this.blur();"
                       onchange="handleDirectCoordinateInput('cab', this.value)"
                       onblur="handleDirectCoordinateBlur('cab', this)" />
-                    <button type="button" class="w-6 h-6 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-sm" onclick="adjustCoordinate('cab', 1)">+</button>
+                    <button type="button" class="w-9 h-9 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-base shrink-0" onclick="adjustCoordinate('cab', 1)">+</button>
                   </div>
                 </div>
                 <!-- Shelf (Highlighted Fern Border, 01, 02... or — when unrecorded) -->
-                <div class="bg-white rounded p-2 border-2 border-fern flex items-center justify-between">
-                  <span class="font-mono text-[10px] uppercase font-bold text-fern-dark">Shelf</span>
-                  <div class="flex items-center gap-1.5">
-                    <button type="button" class="w-6 h-6 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-sm" onclick="adjustCoordinate('shelf', -1)">−</button>
+                <div class="bg-white rounded p-2 border-2 border-fern space-y-1">
+                  <span class="font-mono text-[10px] uppercase font-bold text-fern-dark block">Shelf</span>
+                  <div class="flex items-center justify-between gap-1">
+                    <button type="button" class="w-9 h-9 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-base shrink-0" onclick="adjustCoordinate('shelf', -1)">−</button>
                     <input type="text" inputmode="numeric" pattern="[0-9]*" id="detailShelfVal"
-                      class="font-mono text-sm font-bold text-fern-dark w-9 text-center bg-transparent border-b border-fern/40 focus:border-fern focus:bg-emerald-50/50 rounded-xs outline-none transition-colors"
+                      class="font-mono text-base font-bold text-fern-dark w-14 min-w-[48px] text-center bg-transparent border-b border-fern/40 focus:border-fern focus:bg-emerald-50/50 rounded-xs outline-none transition-colors px-1"
                       placeholder="—"
                       onclick="this.select()"
                       onfocus="this.select()"
                       onkeydown="if(event.key==='Enter') this.blur();"
                       onchange="handleDirectCoordinateInput('shelf', this.value)"
                       onblur="handleDirectCoordinateBlur('shelf', this)" />
-                    <button type="button" class="w-6 h-6 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-sm" onclick="adjustCoordinate('shelf', 1)">+</button>
+                    <button type="button" class="w-9 h-9 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-base shrink-0" onclick="adjustCoordinate('shelf', 1)">+</button>
                   </div>
                 </div>
               </div>
 
-              <!-- Stored As Pill Carousel (Config-Driven) -->
+              <!-- Stored As Selector (Opens clean full-width Bottom Sheet) -->
               <div class="pt-1">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="font-mono text-[9px] uppercase text-muted font-bold">Stored As</span>
-                  <span class="font-mono text-[10px] text-ink font-semibold" id="detailStoredAsLabel">Not Selected</span>
-                </div>
-                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 whitespace-nowrap" id="detailStoredAsPills">
-                  <!-- Dynamically populated via renderDetailStoredAsPills -->
-                </div>
+                <button type="button" id="btnOpenDetailStoredAs" onclick="openDetailStoredAsSheet()" class="w-full min-h-[44px] bg-white hover:bg-stone-50 border border-bordercol rounded px-3 py-2 flex items-center justify-between gap-2 text-left tap-active transition-colors">
+                  <div class="min-w-0">
+                    <span class="font-mono text-[9px] uppercase text-muted font-bold block leading-none mb-0.5">Stored As</span>
+                    <span class="font-mono text-xs text-ink font-semibold block truncate" id="detailStoredAsLabel">Not Selected</span>
+                  </div>
+                  <span class="text-xs font-mono text-fern-dark font-bold shrink-0">Choose ▾</span>
+                </button>
+                <div class="hidden" id="detailStoredAsPills"></div>
                 <div id="detailStoredAsCustomContainer" class="hidden mt-1.5">
-                  <input type="text" id="detailStoredAsCustomInput" oninput="onDetailCustomStorageInput(this.value)" placeholder="Enter custom storage..." class="w-full bg-white border border-bordercol rounded px-2 py-1 text-xs font-mono text-ink focus:outline-none focus:border-fern">
+                  <input type="text" id="detailStoredAsCustomInput" oninput="onDetailCustomStorageInput(this.value)" placeholder="Enter custom storage..." class="w-full min-h-[40px] bg-white border border-bordercol rounded px-2.5 py-2 text-xs font-mono text-ink focus:outline-none focus:border-fern">
                 </div>
               </div>
 
               <!-- Live Breadcrumb Trail -->
-              <div class="bg-stone-100 border border-bordercol/60 rounded px-2.5 py-1.5 flex items-center justify-between text-[11px] font-mono mt-1">
-                <div class="flex items-center gap-1 text-ink truncate">
-                  <span class="text-subdued uppercase text-[9px] font-sans font-bold">Live:</span>
-                  <span class="font-semibold truncate" id="liveLocBreadcrumb">Unrecorded location</span>
+              <div class="bg-stone-100 border border-bordercol/60 rounded px-2.5 py-1.5 flex items-center justify-between gap-1.5 text-[11px] font-mono mt-1">
+                <div class="flex items-center gap-1.5 text-ink min-w-0 flex-1 flex-wrap">
+                  <span class="text-subdued uppercase text-[9px] font-sans font-bold shrink-0">Saved:</span>
+                  <span class="font-semibold break-words" id="liveLocBreadcrumb">Unrecorded location</span>
                 </div>
-                <span class="text-[10px] font-mono text-muted whitespace-nowrap ml-1" id="liveLocStatus">Coordinates</span>
+                <span class="hidden" id="liveLocStatus"></span>
               </div>
             </section>
 
@@ -781,11 +784,11 @@ INDEX_TEMPLATE_V2 = """
                 <span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-fern-light text-fern border border-fern/30" id="loanStateTag">In Collection</span>
               </div>
               <div class="grid grid-cols-2 p-1 bg-stone-100 border border-stone-200 rounded gap-1">
-                <button class="py-1.5 px-2 rounded text-xs font-mono font-semibold flex items-center justify-center gap-1.5 transition-all bg-white text-ink border border-stone-300 min-h-[36px]" id="btnStatusAvailable" onclick="setLoanStatus(false)" type="button">
+                <button class="py-2 px-2 rounded text-xs font-mono font-semibold flex items-center justify-center gap-1.5 transition-all bg-white text-ink border border-stone-300 min-h-[42px]" id="btnStatusAvailable" onclick="setLoanStatus(false)" type="button">
                   <svg class="w-3.5 h-3.5 text-fern stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   <span>In Collection</span>
                 </button>
-                <button class="py-1.5 px-2 rounded text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all text-muted hover:text-ink min-h-[36px]" id="btnStatusLoan" onclick="setLoanStatus(true)" type="button">
+                <button class="py-2 px-2 rounded text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all text-muted hover:text-ink min-h-[42px]" id="btnStatusLoan" onclick="setLoanStatus(true)" type="button">
                   <svg class="w-3.5 h-3.5 text-amber-600 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
                   <span>Loaned Out</span>
                 </button>
@@ -793,40 +796,20 @@ INDEX_TEMPLATE_V2 = """
             </div>
           </div>
 
-          <!-- ================= TAB 2: PROBLEMS & CONFLICTS ================= -->
-          <div class="w-1/3 h-full overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-24" id="tabContentProblems">
-            <!-- Quick Flag Button for Physical Damage or Misplacement -->
-            <button type="button" onclick="openAddDiscrepancyModal()" class="w-full py-2.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold text-xs flex items-center justify-center gap-1.5 tap-active shadow-2xs">
-              <span>⚑</span>
-              <span>Flag Specimen Issue (Damaged / Misplaced)</span>
-            </button>
-
-            <!-- 1. Problem Summary Banner -->
+          <!-- ================= TAB 2: HISTORY (HISTORICAL RESOLVER) ================= -->
+          <div class="w-1/3 h-full overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-24" id="tabContentHistory">
+            <!-- 1. Historical Summary Banner -->
             <div id="problemSummaryBar" class="flex items-center justify-between p-3 bg-stone-100 border border-bordercol rounded-[3px] transition-colors duration-200">
               <div class="flex items-center gap-2">
                 <span id="problemSummaryDot" class="w-2.5 h-2.5 rounded-full bg-stone-400"></span>
-                <span id="problemSummaryCountText" class="text-xs font-bold text-ink uppercase font-mono">0 Open Issues</span>
+                <span id="problemSummaryCountText" class="text-xs font-bold text-ink uppercase font-mono">0 Historical Conflicts</span>
               </div>
-              <span id="problemSummaryActionText" class="text-[10px] font-mono text-muted">Checking Data</span>
+              <span id="problemSummaryActionText" class="text-[10px] font-mono text-muted">Checking Books</span>
             </div>
 
-            <!-- 2. Active Discrepancy Conflict Resolver Cards Container -->
+            <!-- 2. Historical Suggestion & Conflict Resolver Cards Container -->
             <div id="activeDiscrepanciesContainer" class="space-y-3">
-              <!-- Dynamically populated per issue field -->
-            </div>
-
-            <!-- 3. Schema Data Integrity Flags Checklist -->
-            <div class="bg-surface border border-bordercol rounded-[3px] p-3.5 shadow-2xs space-y-3">
-              <div class="flex items-center justify-between border-b border-stone-100 pb-2">
-                <div>
-                  <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Issue Checklist</h3>
-                  <p class="text-[10px] font-mono text-subdued">Tap any problem found on this object</p>
-                </div>
-                <span class="text-[10px] font-mono text-muted" id="flaggedTotalBadge">0 Flagged</span>
-              </div>
-              <div class="grid grid-cols-2 gap-2" id="problemFlagsGrid">
-                <!-- Dynamically populated from schema.ui_sections.problems -->
-              </div>
+              <!-- Dynamically populated with older catalog book comparisons -->
             </div>
           </div>
 
@@ -840,7 +823,7 @@ INDEX_TEMPLATE_V2 = """
             type="button"
             id="btnDetailMarkReviewed"
             onclick="handleReviewButtonClick()"
-            class="flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-50 text-fern-dark border-fern hover:bg-emerald-100"
+            class="flex-1 min-h-[42px] py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-50 text-fern-dark border-fern hover:bg-emerald-100"
           >
             <span id="btnDetailReviewedIcon" class="text-sm">✓</span>
             <span id="btnDetailReviewedLabel">Mark Reviewed</span>
@@ -848,7 +831,7 @@ INDEX_TEMPLATE_V2 = """
           <button
             type="button"
             onclick="openAddDiscrepancyModal()"
-            class="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-sans font-semibold text-xs flex items-center justify-center gap-1.5 tap-active"
+            class="min-h-[42px] px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-sans font-semibold text-xs flex items-center justify-center gap-1.5 tap-active"
             title="Flag Physical Issue"
           >
             <span>⚑</span>
@@ -900,51 +883,51 @@ INDEX_TEMPLATE_V2 = """
 
           <div class="grid grid-cols-2 gap-2">
             <!-- Building -->
-            <div class="bg-white rounded p-1.5 border border-bordercol flex items-center justify-between">
-              <span class="font-mono text-[9px] uppercase font-bold text-muted">Bldg</span>
-              <select id="batchBuildingSelect" onchange="handleBatchBuildingChange(this.value)" class="bg-transparent font-mono text-xs font-bold text-ink outline-none text-right">
+            <div class="bg-white rounded p-1.5 border border-bordercol flex items-center justify-between gap-1">
+              <span class="font-mono text-[9px] uppercase font-bold text-muted shrink-0">Bldg</span>
+              <select id="batchBuildingSelect" onchange="handleBatchBuildingChange(this.value)" class="arbor-compact-select bg-transparent border-0 p-0 min-h-[36px] font-mono text-xs font-bold text-ink outline-none focus:ring-0 text-right min-w-0">
                 <option value="">--</option>
               </select>
             </div>
             <!-- Floor (Continuous signed integer) -->
-            <div class="bg-white rounded p-1.5 border border-bordercol flex items-center justify-between">
-              <span class="font-mono text-[9px] uppercase font-bold text-muted">Floor</span>
+            <div class="bg-white rounded p-1.5 border border-bordercol flex items-center justify-between gap-1">
+              <span class="font-mono text-[9px] uppercase font-bold text-muted shrink-0">Floor</span>
               <div class="flex items-center gap-1">
-                <button type="button" class="w-5 h-5 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-xs" onclick="adjustBatchCoord('floor', -1)">−</button>
-                <span class="font-mono text-xs font-bold text-ink px-1 min-w-[20px] text-center" id="batchFloorVal">—</span>
-                <button type="button" class="w-5 h-5 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-xs" onclick="adjustBatchCoord('floor', 1)">+</button>
+                <button type="button" class="min-w-[36px] min-h-[36px] rounded bg-stone-100 hover:bg-stone-200 flex items-center justify-center font-mono font-bold text-sm tap-active" onclick="adjustBatchCoord('floor', -1)">−</button>
+                <span class="font-mono text-xs font-bold text-ink px-0.5 min-w-[20px] text-center" id="batchFloorVal">—</span>
+                <button type="button" class="min-w-[36px] min-h-[36px] rounded bg-stone-100 hover:bg-stone-200 flex items-center justify-center font-mono font-bold text-sm tap-active" onclick="adjustBatchCoord('floor', 1)">+</button>
               </div>
             </div>
             <!-- Cabinet -->
-            <div class="bg-white rounded p-2 border border-bordercol flex items-center justify-between">
-              <span class="font-mono text-[10px] uppercase font-bold text-muted">Cabinet</span>
-              <div class="flex items-center gap-1.5">
-                <button type="button" class="w-6 h-6 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-sm" onclick="adjustBatchCoord('cab', -1)">−</button>
+            <div class="bg-white rounded p-1.5 border border-bordercol flex items-center justify-between gap-1">
+              <span class="font-mono text-[9px] uppercase font-bold text-muted shrink-0">Cab</span>
+              <div class="flex items-center gap-1">
+                <button type="button" class="min-w-[36px] min-h-[36px] rounded bg-stone-100 hover:bg-stone-200 flex items-center justify-center font-mono font-bold text-sm tap-active" onclick="adjustBatchCoord('cab', -1)">−</button>
                 <input type="text" inputmode="numeric" pattern="[0-9]*" id="batchCabVal"
-                  class="font-mono text-sm font-bold text-ink w-9 text-center bg-transparent border-b border-bordercol/30 focus:border-fern focus:bg-stone-50 rounded-xs outline-none transition-colors"
+                  class="font-mono text-sm font-bold text-ink w-8 text-center bg-transparent border-b border-bordercol/30 focus:border-fern focus:bg-stone-50 rounded-xs outline-none transition-colors"
                   placeholder="—"
                   onclick="this.select()"
                   onfocus="this.select()"
                   onkeydown="if(event.key==='Enter') this.blur();"
                   onchange="handleDirectBatchCoordInput('cab', this.value)"
                   onblur="handleDirectBatchCoordBlur('cab', this)" />
-                <button type="button" class="w-6 h-6 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-sm" onclick="adjustBatchCoord('cab', 1)">+</button>
+                <button type="button" class="min-w-[36px] min-h-[36px] rounded bg-stone-100 hover:bg-stone-200 flex items-center justify-center font-mono font-bold text-sm tap-active" onclick="adjustBatchCoord('cab', 1)">+</button>
               </div>
             </div>
             <!-- Shelf -->
-            <div class="bg-white rounded p-2 border-2 border-fern flex items-center justify-between">
-              <span class="font-mono text-[10px] uppercase font-bold text-fern-dark">Shelf</span>
-              <div class="flex items-center gap-1.5">
-                <button type="button" class="w-6 h-6 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-sm" onclick="adjustBatchCoord('shelf', -1)">−</button>
+            <div class="bg-white rounded p-1.5 border-2 border-fern flex items-center justify-between gap-1">
+              <span class="font-mono text-[9px] uppercase font-bold text-fern-dark shrink-0">Shelf</span>
+              <div class="flex items-center gap-1">
+                <button type="button" class="min-w-[36px] min-h-[36px] rounded bg-stone-100 hover:bg-stone-200 flex items-center justify-center font-mono font-bold text-sm tap-active" onclick="adjustBatchCoord('shelf', -1)">−</button>
                 <input type="text" inputmode="numeric" pattern="[0-9]*" id="batchShelfVal"
-                  class="font-mono text-sm font-bold text-fern-dark w-9 text-center bg-transparent border-b border-fern/40 focus:border-fern focus:bg-emerald-50/50 rounded-xs outline-none transition-colors"
+                  class="font-mono text-sm font-bold text-fern-dark w-8 text-center bg-transparent border-b border-fern/40 focus:border-fern focus:bg-emerald-50/50 rounded-xs outline-none transition-colors"
                   placeholder="—"
                   onclick="this.select()"
                   onfocus="this.select()"
                   onkeydown="if(event.key==='Enter') this.blur();"
                   onchange="handleDirectBatchCoordInput('shelf', this.value)"
                   onblur="handleDirectBatchCoordBlur('shelf', this)" />
-                <button type="button" class="w-6 h-6 rounded bg-stone-100 flex items-center justify-center font-mono font-bold text-sm" onclick="adjustBatchCoord('shelf', 1)">+</button>
+                <button type="button" class="min-w-[36px] min-h-[36px] rounded bg-stone-100 hover:bg-stone-200 flex items-center justify-center font-mono font-bold text-sm tap-active" onclick="adjustBatchCoord('shelf', 1)">+</button>
               </div>
             </div>
           </div>
@@ -1042,32 +1025,32 @@ INDEX_TEMPLATE_V2 = """
         <header class="p-3.5 bg-stone-100 border-b border-bordercol flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="text-base">📍</span>
-            <h2 class="font-sans font-bold text-sm text-ink">Apply Armed Location?</h2>
+            <h2 class="font-sans font-bold text-sm text-ink">Save Current Shelf Location?</h2>
           </div>
-          <button type="button" onclick="cancelArmedModal()" class="text-ink-muted hover:text-ink font-bold text-sm">✕</button>
+          <button type="button" onclick="cancelArmedModal()" class="text-ink-muted hover:text-ink font-bold text-sm min-w-[32px] min-h-[32px]">✕</button>
         </header>
         <div class="p-4 space-y-3.5">
           <p class="text-xs text-muted leading-relaxed">
-            This specimen's registered location does not match your active audit target shelf.
+            This specimen's saved location does not match your Current Shelf.
           </p>
           <div class="space-y-2 bg-stone-50 p-3 rounded border border-bordercol/70 text-xs font-mono">
             <div class="flex items-center justify-between">
-              <span class="text-muted">Current Record:</span>
+              <span class="text-muted">Saved Location:</span>
               <span class="font-bold text-ink" id="armedModalCurLoc">Unrecorded</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-fern-dark font-bold">Armed Target:</span>
+              <span class="text-fern-dark font-bold">Current Shelf:</span>
               <span class="font-bold text-fern-dark" id="armedModalTargetLoc">Cabinet 21, Shelf 02</span>
             </div>
           </div>
           <p class="text-[11px] text-muted italic">
-            You can stamp the armed shelf or keep the existing/blank location. Both choices will safely mark the specimen reviewed.
+            You can save your Current Shelf or keep the existing location. Both choices will safely mark the specimen reviewed.
           </p>
           <div class="space-y-2 pt-1">
-            <button type="button" id="btnConfirmStampAndReview" onclick="confirmStampAndReview()" class="w-full py-2.5 px-3 bg-fern hover:bg-fern-dark text-white rounded font-sans font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm tap-active transition-all">
-              <span>✓ Yes, Stamp to Target & Review</span>
+            <button type="button" id="btnConfirmStampAndReview" onclick="confirmStampAndReview()" class="w-full py-2.5 px-3 min-h-[40px] bg-fern hover:bg-fern-dark text-white rounded font-sans font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm tap-active transition-all">
+              <span>✓ Yes, Save Shelf & Review</span>
             </button>
-            <button type="button" id="btnConfirmKeepAndReview" onclick="confirmKeepAndReview()" class="w-full py-2.5 px-3 bg-stone-100 hover:bg-stone-200 text-ink border border-stone-300 rounded font-sans font-bold text-xs flex items-center justify-center gap-1.5 tap-active transition-all">
+            <button type="button" id="btnConfirmKeepAndReview" onclick="confirmKeepAndReview()" class="w-full py-2.5 px-3 min-h-[40px] bg-stone-100 hover:bg-stone-200 text-ink border border-stone-300 rounded font-sans font-bold text-xs flex items-center justify-center gap-1.5 tap-active transition-all">
               <span>✕ No, Keep Location & Review</span>
             </button>
             <button type="button" onclick="cancelArmedModal()" class="w-full py-1.5 text-center text-xs text-muted hover:text-ink font-sans">
@@ -1153,11 +1136,23 @@ INDEX_TEMPLATE_V2 = """
             </div>
           </div>
 
+          <!-- Advanced Tools (Hidden from main top bar to keep hallway view simple) -->
+          <div class="p-2.5 bg-stone-50 border border-bordercol rounded space-y-1.5">
+            <span class="block font-sans text-xs font-bold text-ink">Advanced Tools</span>
+            <button type="button" id="btnOpenBatchLocation" onclick="closeSettingsModal(); showBatchLocationView();" class="w-full min-h-[40px] px-3 py-2 rounded bg-white hover:bg-emerald-50 border border-bordercol hover:border-fern/40 text-left flex items-center justify-between gap-2 tap-active transition-colors">
+              <div>
+                <span class="block font-sans text-xs font-semibold text-ink">Batch Location Registrator</span>
+                <span class="block font-sans text-[10px] text-muted">Queue multiple object numbers for one shelf</span>
+              </div>
+              <span class="text-xs font-mono text-fern-dark font-bold">Open →</span>
+            </button>
+          </div>
+
           <div class="pt-2 border-t border-tonal2 flex items-center justify-between gap-2">
-            <button type="button" onclick="closeSettingsModal(); openWalkthroughModal(0);" class="px-2.5 py-1.5 border border-fern/40 bg-fern-light text-fern hover:bg-fern hover:text-white rounded text-[11px] font-bold transition-colors">🎓 3-Step Guide</button>
+            <button type="button" onclick="closeSettingsModal(); openWalkthroughModal(0);" class="px-3 py-2 min-h-[40px] border border-fern/40 bg-fern-light text-fern hover:bg-fern hover:text-white rounded text-[11px] font-bold transition-colors">🎓 Hallway Quick Guide</button>
             <div class="flex items-center gap-2">
-              <button type="button" onclick="closeSettingsModal()" class="px-3 py-1.5 border border-bordercol text-ink-muted hover:bg-surface rounded text-xs font-medium">Cancel</button>
-              <button type="button" onclick="saveSettings()" class="px-3 py-1.5 bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold">Save</button>
+              <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 min-h-[40px] border border-bordercol text-ink-muted hover:bg-surface rounded text-xs font-medium">Cancel</button>
+              <button type="button" onclick="saveSettings()" class="px-4 py-2 min-h-[40px] bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold">Save</button>
             </div>
           </div>
         </div>
@@ -1167,61 +1162,62 @@ INDEX_TEMPLATE_V2 = """
     <!-- MODAL: What the Fields Mean (Mirrors the Specimen Page) -->
     <div id="fieldGuideModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3">
       <div class="bg-surface border border-bordercol rounded-xl shadow-2xl w-full max-w-md max-h-[88vh] flex flex-col overflow-hidden">
-        <div class="flex-none px-4 py-3 bg-fern text-white flex items-center justify-between">
+        <div class="flex-none px-4 py-2.5 bg-fern text-white flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="text-base">📖</span>
             <span class="font-sans font-bold text-xs tracking-wide uppercase">What the Fields Mean</span>
           </div>
-          <button type="button" onclick="closeFieldGuideModal()" class="text-white/90 hover:text-white text-xs font-bold px-2 py-0.5 rounded">✕ Close</button>
+          <button type="button" onclick="closeFieldGuideModal()" class="min-h-[40px] px-3 py-1.5 text-white/95 hover:text-white hover:bg-white/10 text-xs font-bold rounded tap-active">✕ Close</button>
         </div>
         <div id="fieldGuideBody" class="flex-1 overflow-y-auto p-3.5 space-y-3 text-xs font-sans text-ink bg-canvas">
           <!-- Populated dynamically by openFieldGuideModal() to mirror the specimen page -->
         </div>
         <div class="flex-none px-3.5 py-2.5 bg-surface border-t border-bordercol flex items-center justify-between gap-2">
-          <button type="button" onclick="closeFieldGuideModal(); openWalkthroughModal(0);" class="px-3 py-1.5 rounded bg-fern-light border border-fern/40 text-fern-dark font-bold text-xs tap-active">🎓 3-Step Hallway Guide</button>
-          <button type="button" onclick="closeFieldGuideModal()" class="px-3.5 py-1.5 rounded bg-fern text-white font-bold text-xs tap-active">Got it</button>
+          <button type="button" onclick="closeFieldGuideModal(); openWalkthroughModal(0);" class="min-h-[40px] px-3 py-2 rounded bg-fern-light border border-fern/40 text-fern-dark font-bold text-xs tap-active">🎓 Hallway Quick Guide</button>
+          <button type="button" onclick="closeFieldGuideModal()" class="min-h-[40px] px-4 py-2 rounded bg-fern text-white font-bold text-xs tap-active">Got it</button>
         </div>
       </div>
     </div>
 
-    <!-- MODAL: First-Time 3-Step Hallway Walkthrough -->
+    <!-- MODAL: First-Time 4-Step Hallway Walkthrough -->
     <div id="walkthroughModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
       <div class="bg-surface border border-bordercol rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div class="px-4 py-3 bg-fern text-white flex items-center justify-between">
+        <div class="px-4 py-2.5 bg-fern text-white flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="text-base">🎓</span>
             <span class="font-sans font-bold text-xs tracking-wide uppercase">Hallway Quick Guide</span>
           </div>
-          <button type="button" onclick="closeWalkthroughModal(true)" class="text-white/80 hover:text-white text-xs font-bold px-2 py-0.5 rounded">Skip</button>
+          <button type="button" onclick="closeWalkthroughModal(true)" class="min-h-[40px] px-3 py-1.5 text-white/90 hover:text-white hover:bg-white/10 text-xs font-bold rounded tap-active">Skip</button>
         </div>
         <div class="p-4 space-y-3">
-          <div id="walkthroughStepBadge" class="inline-block px-2 py-0.5 rounded-full bg-fern-light text-fern font-mono text-[10px] font-bold">STEP 1 OF 3</div>
-          <h3 id="walkthroughTitle" class="font-sans font-bold text-base text-ink leading-snug">Search by Accession Number</h3>
+          <div id="walkthroughStepBadge" class="inline-block px-2 py-0.5 rounded-full bg-fern-light text-fern font-mono text-[10px] font-bold">STEP 1 OF 4</div>
+          <h3 id="walkthroughTitle" class="font-sans font-bold text-base text-ink leading-snug">Welcome to Your Phone Companion</h3>
           <p id="walkthroughBody" class="font-sans text-xs text-ink-muted leading-relaxed"></p>
-          <div id="walkthroughCallout" class="p-2.5 rounded-lg bg-tonal border border-bordercol font-mono text-[11px] text-ink"></div>
-          <div class="flex items-center justify-center gap-1.5 pt-1">
-            <span id="wtDot0" class="w-2 h-2 rounded-full bg-fern"></span>
-            <span id="wtDot1" class="w-2 h-2 rounded-full bg-stone-300"></span>
-            <span id="wtDot2" class="w-2 h-2 rounded-full bg-stone-300"></span>
+          <div id="walkthroughCallout" class="p-2.5 rounded-lg bg-tonal1 border border-bordercol font-mono text-[11px] text-ink"></div>
+          <div class="flex items-center justify-center gap-2 pt-1">
+            <button type="button" id="wtDot0" onclick="goToWalkthroughSlide(0)" class="w-2.5 h-2.5 rounded-full bg-fern cursor-pointer" aria-label="Step 1"></button>
+            <button type="button" id="wtDot1" onclick="goToWalkthroughSlide(1)" class="w-2 h-2 rounded-full bg-stone-300 cursor-pointer" aria-label="Step 2"></button>
+            <button type="button" id="wtDot2" onclick="goToWalkthroughSlide(2)" class="w-2 h-2 rounded-full bg-stone-300 cursor-pointer" aria-label="Step 3"></button>
+            <button type="button" id="wtDot3" onclick="goToWalkthroughSlide(3)" class="w-2 h-2 rounded-full bg-stone-300 cursor-pointer" aria-label="Step 4"></button>
           </div>
         </div>
-        <div class="px-4 py-3 bg-tonal border-t border-bordercol flex items-center justify-between gap-2">
-          <button id="wtBackBtn" type="button" onclick="prevWalkthroughSlide()" class="hidden px-3 py-1.5 border border-bordercol bg-surface text-ink-muted rounded text-xs font-semibold">← Back</button>
-          <button id="wtNextBtn" type="button" onclick="nextWalkthroughSlide()" class="ml-auto px-4 py-2 bg-fern hover:bg-fern-dark text-white rounded-lg text-xs font-bold shadow-xs">Next →</button>
+        <div class="px-4 py-3 bg-tonal1 border-t border-bordercol flex items-center justify-between gap-2">
+          <button id="wtBackBtn" type="button" onclick="prevWalkthroughSlide()" class="hidden px-3 py-2 min-h-[40px] border border-bordercol bg-surface text-ink-muted rounded-lg text-xs font-semibold">← Back</button>
+          <button id="wtNextBtn" type="button" onclick="nextWalkthroughSlide()" class="ml-auto px-4 py-2 min-h-[40px] bg-fern hover:bg-fern-dark text-white rounded-lg text-xs font-bold shadow-xs">Next →</button>
         </div>
       </div>
     </div>
 
     <!-- MODAL: Old Names / Synonyms Bottom Sheet (1-tap, read-only) -->
     <div id="oldNamesSheet" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="if(event.target===this)closeOldNamesSheet()">
-      <div id="oldNamesSheetCard" class="bg-surface border-t border-bordercol rounded-t-xl p-4 space-y-3 max-h-[82vh] flex flex-col shadow-2xl">
+      <div id="oldNamesSheetCard" class="w-full max-w-[440px] mx-auto bg-surface border-t border-bordercol rounded-t-xl p-4 space-y-3 max-h-[82vh] flex flex-col shadow-2xl">
         <div class="w-10 h-1 bg-stone-300 rounded-full mx-auto -mt-1 shrink-0"></div>
         <div class="flex items-start justify-between gap-2 pb-2 border-b border-stone-200 shrink-0">
           <div class="min-w-0">
             <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Old Names &amp; Synonyms</h3>
             <p id="oldNamesRegisteredLbl" class="text-sm font-serif italic text-ink-muted truncate mt-0.5">—</p>
           </div>
-          <button type="button" onclick="closeOldNamesSheet()" class="min-w-[36px] min-h-[36px] rounded-md text-muted hover:text-ink flex items-center justify-center text-base font-bold" aria-label="Close">✕</button>
+          <button type="button" onclick="closeOldNamesSheet()" class="min-w-[40px] min-h-[40px] rounded-md text-muted hover:text-ink hover:bg-stone-100 flex items-center justify-center text-base font-bold tap-active" aria-label="Close">✕</button>
         </div>
 
         <div id="oldNamesBody" class="overflow-y-auto space-y-3 flex-1 pr-0.5 text-sm">
@@ -1230,10 +1226,10 @@ INDEX_TEMPLATE_V2 = """
 
         <!-- Optional quiet filter / GBIF fallback box (avoid typing unless needed) -->
         <div class="pt-2 border-t border-stone-200 space-y-2 shrink-0">
-          <input type="text" id="oldNamesFilterInput" oninput="filterOldNamesList()" placeholder="Don't see the label name? Filter or check…" class="w-full px-3 py-2 text-xs rounded-md border border-bordercol bg-alabaster text-ink focus:outline-none focus:border-fern" autocomplete="off" />
+          <input type="text" id="oldNamesFilterInput" oninput="filterOldNamesList()" placeholder="Don't see the label name? Filter or check…" class="w-full min-h-[40px] px-3 py-2 text-xs rounded-md border border-bordercol bg-alabaster text-ink focus:outline-none focus:border-fern" autocomplete="off" />
           <div id="oldNamesGbifFallback" class="hidden flex items-center justify-between gap-2">
             <span class="text-[11px] text-muted">No match in loaded list.</span>
-            <button type="button" id="btnCheckLabelGbif" onclick="checkLabelAgainstGbif()" class="px-3 py-1.5 min-h-[36px] rounded-md text-xs font-semibold text-white shrink-0" style="background:#2d5a3c;color:#ffffff;">Check in GBIF</button>
+            <button type="button" id="btnCheckLabelGbif" onclick="checkLabelAgainstGbif()" class="px-3.5 py-2 min-h-[40px] rounded-md text-xs font-semibold text-white shrink-0 tap-active" style="background:#2d5a3c;color:#ffffff;">Check in GBIF</button>
           </div>
           <div id="oldNamesVerdictBox" class="hidden rounded-md p-2.5 text-xs space-y-2"></div>
         </div>
@@ -1242,12 +1238,12 @@ INDEX_TEMPLATE_V2 = """
 
     <!-- MODAL: Stored As Bottom Sheet -->
     <div id="storedAsBottomSheet" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="if(event.target===this)closeStoredAsBottomSheet()">
-      <div id="storedAsSheetCard" class="bg-surface border-t border-bordercol rounded-t-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto shadow-2xl transition-transform">
+      <div id="storedAsSheetCard" class="w-full max-w-[440px] mx-auto bg-surface border-t border-bordercol rounded-t-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto shadow-2xl transition-transform">
         <div class="w-10 h-1 bg-stone-300 rounded-full mx-auto -mt-1 mb-1"></div>
         <div class="flex items-center justify-between pb-2 border-b border-stone-200">
           <div>
-            <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Additional Storage Vessels</h3>
-            <p class="text-[10px] font-mono text-subdued">Select botanical archival method</p>
+            <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Stored As</h3>
+            <p class="text-[10.5px] font-sans text-subdued">Choose what container holds this object</p>
           </div>
           <button class="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-stone-100 text-muted hover:text-ink font-mono text-sm tap-active" onclick="closeStoredAsBottomSheet()" type="button">✕</button>
         </div>
@@ -1257,26 +1253,50 @@ INDEX_TEMPLATE_V2 = """
       </div>
     </div>
 
-    <!-- MODAL: Presets Configuration -->
-    <div id="presetsConfigModal" class="hidden fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-4" onclick="if(event.target===this)closePresetsModal()">
-      <div class="bg-surface border border-stone-300 rounded-lg max-w-sm w-full p-4 space-y-3.5 shadow-2xl flex flex-col max-h-[88vh]">
-        <div class="flex items-center justify-between pb-2 border-b border-stone-200">
+    <!-- MODAL: My Current Shelf Bottom Sheet (Swipe-down to dismiss) -->
+    <div id="stationSetupSheet" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end" onclick="if(event.target===this)closeStationSetupSheet()">
+      <div id="stationSetupSheetCard" class="w-full max-w-[440px] mx-auto bg-surface border-t border-bordercol rounded-t-xl p-4 space-y-3.5 shadow-2xl" style="background:#ffffff;">
+        <div class="w-10 h-1 bg-stone-300 rounded-full mx-auto -mt-1"></div>
+        <div class="flex items-start justify-between gap-2 pb-2 border-b border-stone-200">
           <div>
-            <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Customize Quick-Select</h3>
-            <p class="text-[10px] font-mono text-subdued">Select 3 presets for the primary 2x2 grid</p>
+            <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">📍 My Current Shelf</h3>
+            <p class="text-[11px] font-sans text-subdued mt-0.5">Standing at a shelf? Set it once, then save it to each box in 1 tap.</p>
           </div>
-          <button class="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-stone-100 text-muted hover:text-ink font-mono text-sm tap-active" onclick="closePresetsModal()" type="button">✕</button>
+          <button type="button" onclick="closeStationSetupSheet()" class="min-w-[40px] min-h-[40px] rounded-md text-muted hover:text-ink hover:bg-stone-100 flex items-center justify-center text-base font-bold tap-active" aria-label="Close">✕</button>
         </div>
-        <div class="flex items-center justify-between text-[11px] font-mono bg-stone-100 px-2.5 py-1.5 rounded border border-stone-200">
-          <span class="text-subdued uppercase text-[9px] font-bold">Selection count:</span>
-          <span class="font-bold text-fern" id="presetSelectionCounter">3 of 3 selected</span>
+        <div class="grid grid-cols-2 gap-2.5 text-xs font-mono">
+          <div class="bg-stone-50 rounded border border-bordercol px-2.5 py-2">
+            <span class="text-[9.5px] uppercase font-bold text-muted block mb-0.5">Building</span>
+            <select id="launchBldgSelect" class="arbor-compact-select w-full min-h-[34px] bg-transparent border-0 p-0 font-bold text-ink outline-none focus:ring-0 text-xs">
+              <option value="Lid's hus">Lid's hus</option>
+              <option value="Økern">Økern</option>
+            </select>
+          </div>
+          <div class="bg-stone-50 rounded border border-bordercol px-2.5 py-2">
+            <span class="text-[9.5px] uppercase font-bold text-muted block mb-0.5">Floor</span>
+            <select id="launchFloorSelect" class="arbor-compact-select w-full min-h-[34px] bg-transparent border-0 p-0 font-bold text-ink outline-none focus:ring-0 text-xs">
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="-1">-1</option>
+              <option value="-2">-2</option>
+            </select>
+          </div>
+          <div class="bg-stone-50 rounded border border-bordercol px-2.5 py-2">
+            <span class="text-[9.5px] uppercase font-bold text-muted block mb-0.5">Cabinet</span>
+            <input type="text" inputmode="numeric" id="launchCabInput" placeholder="21" class="w-full min-h-[34px] bg-transparent border-0 p-0 font-bold text-ink outline-none focus:ring-0 text-sm" />
+          </div>
+          <div class="bg-stone-50 rounded border-2 border-fern px-2.5 py-2">
+            <span class="text-[9.5px] uppercase font-bold text-fern-dark block mb-0.5">Shelf</span>
+            <input type="text" inputmode="numeric" id="launchShelfInput" placeholder="01" class="w-full min-h-[34px] bg-transparent border-0 p-0 font-bold text-fern-dark outline-none focus:ring-0 text-sm" />
+          </div>
         </div>
-        <div class="space-y-1.5 overflow-y-auto no-scrollbar max-h-[50vh] pr-0.5" id="presetsSelectionList">
-          <!-- Checkbox list of storage vessels -->
-        </div>
-        <div class="pt-2 border-t border-stone-200 flex items-center gap-2">
-          <button class="flex-1 py-2 px-3 bg-stone-100 hover:bg-stone-200 text-ink text-xs font-mono font-medium rounded min-h-[38px]" onclick="closePresetsModal()" type="button">Cancel</button>
-          <button class="flex-1 py-2 px-3 bg-fern hover:bg-fern-dark text-white text-xs font-mono font-semibold rounded min-h-[38px]" id="btnSavePresets" onclick="savePresetsFromModal()" type="button">Save Presets</button>
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" onclick="clearStationSetup()" class="min-h-[44px] px-3.5 py-2 rounded border border-bordercol bg-stone-100 hover:bg-stone-200 text-ink-muted font-sans font-semibold text-xs tap-active">Clear</button>
+          <button type="button" onclick="applyStationSetup()" class="flex-1 min-h-[44px] py-2.5 px-4 bg-fern hover:bg-fern-dark text-white rounded font-mono font-bold text-xs shadow-sm tap-active flex items-center justify-center gap-1.5" style="background:#2d5a3c;color:#ffffff;">
+            <span>📍 Set Current Shelf</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1300,8 +1320,8 @@ INDEX_TEMPLATE_V2 = """
           </div>
         </div>
         <footer class="p-3.5 bg-tonal1 border-t border-tonal2 flex gap-2 justify-end shrink-0">
-          <button type="button" onclick="clearAdvancedFilters()" class="px-3 py-1.5 border border-bordercol text-ink-muted hover:text-ink rounded text-xs">Clear</button>
-          <button type="button" onclick="applyAdvancedFilters()" class="px-4 py-1.5 bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold">Apply</button>
+          <button type="button" onclick="clearAdvancedFilters()" class="min-h-[40px] px-4 py-2 border border-bordercol bg-white text-ink-muted hover:text-ink rounded text-xs font-semibold tap-active">Clear</button>
+          <button type="button" onclick="applyAdvancedFilters()" class="min-h-[40px] px-5 py-2 bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold tap-active">Apply</button>
         </footer>
       </div>
     </div>
@@ -1355,15 +1375,17 @@ INDEX_TEMPLATE_V2 = """
 
     <!-- MODAL: Photo Fullscreen Viewer -->
     <div id="photoViewerModal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-4">
-      <div class="flex items-center justify-between text-white">
-        <span class="font-mono text-xs" id="photoViewerTitle">Specimen Photo</span>
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="rotatePhoto()" class="min-h-[38px] px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded text-xs font-mono tap-active">↻ Rotate</button>
+      <div class="flex items-center justify-between text-white gap-2">
+        <span class="font-mono text-xs truncate" id="photoViewerTitle">Specimen Photo</span>
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" onclick="rotatePhoto()" class="min-h-[40px] px-3 py-2 bg-white/20 hover:bg-white/30 rounded text-xs font-mono tap-active">↻ Rotate</button>
           <button type="button" onclick="closePhotoViewerModal()" class="min-w-[40px] min-h-[40px] flex items-center justify-center bg-white/20 hover:bg-white/30 rounded text-sm font-bold tap-active">✕</button>
         </div>
       </div>
-      <div id="photoViewerViewport" class="flex-1 flex items-center justify-center overflow-hidden my-2" style="touch-action: none;">
+      <div id="photoViewerViewport" class="relative flex-1 flex items-center justify-center overflow-hidden my-2" style="touch-action: none;">
+        <button id="btnPhotoPrev" type="button" onclick="stepViewerPhoto(-1)" class="hidden absolute left-1 z-10 min-w-[40px] min-h-[40px] rounded-full bg-black/60 hover:bg-black/80 text-white text-lg font-bold flex items-center justify-center tap-active" title="Previous Photo">‹</button>
         <img id="photoViewerImg" src="" alt="Specimen Inspection" class="max-w-full max-h-full object-contain select-none" draggable="false">
+        <button id="btnPhotoNext" type="button" onclick="stepViewerPhoto(1)" class="hidden absolute right-1 z-10 min-w-[40px] min-h-[40px] rounded-full bg-black/60 hover:bg-black/80 text-white text-lg font-bold flex items-center justify-center tap-active" title="Next Photo">›</button>
       </div>
       <div class="flex items-center justify-center gap-2.5 text-white text-xs font-mono">
         <button type="button" onclick="zoomPhoto(-0.3)" class="min-h-[40px] px-3.5 py-2 bg-white/20 hover:bg-white/30 rounded font-bold tap-active">− Zoom</button>
@@ -1403,9 +1425,9 @@ INDEX_TEMPLATE_V2 = """
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="hidden fixed bottom-20 left-4 right-4 max-w-sm mx-auto bg-stone-900/95 text-white text-xs py-2.5 px-4 rounded-lg shadow-xl flex items-center justify-between z-50 transition-opacity">
-      <span id="toastMsg" class="font-medium truncate mr-2">Edits saved & synchronized</span>
-      <button id="toastActionBtn" class="hidden shrink-0 px-2.5 py-1 rounded bg-fern hover:bg-fern-dark text-white font-mono text-[11px] font-bold uppercase tracking-wider tap-active transition-colors">Undo</button>
+    <div id="toast" class="hidden fixed bottom-24 left-4 right-4 max-w-sm mx-auto bg-stone-900/95 text-white text-xs py-2.5 px-4 rounded-lg shadow-xl flex items-center justify-between gap-2 z-50 transition-opacity">
+      <span id="toastMsg" class="font-medium truncate">Edits saved & synchronized</span>
+      <button id="toastActionBtn" class="hidden shrink-0 min-h-[36px] px-3 py-1.5 rounded bg-fern hover:bg-fern-dark text-white font-mono text-[11px] font-bold uppercase tracking-wider tap-active transition-colors">Undo</button>
     </div>
 
   </div>
@@ -1723,11 +1745,18 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
+    let _toastHasActiveAction = false;
+
     function showToast(msg, options = null) {
       const toast = document.getElementById('toast');
       const msgEl = document.getElementById('toastMsg') || toast;
       const actionBtn = document.getElementById('toastActionBtn');
       if (!toast) return;
+
+      // Never let a passive background auto-save toast clobber an active Undo action toast
+      if (options && options.passive && _toastHasActiveAction) {
+        return;
+      }
 
       if (toastTimer) clearTimeout(toastTimer);
       if (toastHideTimer) clearTimeout(toastHideTimer);
@@ -1736,14 +1765,17 @@ INDEX_TEMPLATE_V2 = """
 
       if (actionBtn) {
         if (options && options.actionText && typeof options.onAction === 'function') {
+          _toastHasActiveAction = true;
           actionBtn.textContent = options.actionText;
           actionBtn.onclick = (e) => {
             e.stopPropagation();
+            _toastHasActiveAction = false;
             hideToast();
             options.onAction();
           };
           actionBtn.classList.remove('hidden');
         } else {
+          _toastHasActiveAction = false;
           actionBtn.classList.add('hidden');
           actionBtn.onclick = null;
         }
@@ -1760,6 +1792,7 @@ INDEX_TEMPLATE_V2 = """
       const toast = document.getElementById('toast');
       if (!toast) return;
       if (toastTimer) clearTimeout(toastTimer);
+      _toastHasActiveAction = false;
       toast.style.opacity = '0';
       toastHideTimer = setTimeout(() => {
         toast.classList.add('hidden');
@@ -1809,17 +1842,12 @@ INDEX_TEMPLATE_V2 = """
         } catch (e) {}
       }
 
-      const launchpad = document.getElementById('auditStationLaunchpad');
-      const activePill = document.getElementById('activeStationPill');
       const pillText = document.getElementById('activeStationPillText');
-      const setupCard = document.getElementById('stationSetupCard');
+      const triggerBtn = document.getElementById('btnStationSheetTrigger');
       const bldgSelect = document.getElementById('launchBldgSelect');
       const floorSelect = document.getElementById('launchFloorSelect');
       const cabInput = document.getElementById('launchCabInput');
       const shelfInput = document.getElementById('launchShelfInput');
-      const reopenBtn = document.getElementById('btnOpenStationSetup');
-
-      if (!launchpad || !activePill || !setupCard) return;
 
       populateLaunchBuildingOptions(armed ? armed.building : null);
       if (floorSelect && armed && armed.floor !== undefined && armed.floor !== null && String(armed.floor).trim() !== '') {
@@ -1827,61 +1855,73 @@ INDEX_TEMPLATE_V2 = """
       }
 
       const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
+      const copyPrevCard = document.getElementById('copyPrevSpecimenCard');
+      if (copyPrevCard) copyPrevCard.classList.toggle('hidden', hasArmed);
 
       if (hasArmed) {
-        launchpad.classList.remove('hidden');
-        if (reopenBtn) reopenBtn.classList.add('hidden');
-        const bldg = armed.building || (bldgSelect ? bldgSelect.value : "Lid's hus");
-        const fl = (armed.floor !== undefined && armed.floor !== null && String(armed.floor).trim() !== '') ? ` · Fl ${armed.floor}` : '';
+        const bldgRaw = String(armed.building || '').trim();
+        const bldgShort = bldgRaw ? (bldgRaw.length > 6 ? bldgRaw.split(' ')[0] : bldgRaw) + ' · ' : '';
+        const fl = (armed.floor !== undefined && armed.floor !== null && String(armed.floor).trim() !== '') ? `Fl ${armed.floor} · ` : '';
         const cab = armed.cabinet ? String(armed.cabinet).padStart(2, '0') : '—';
         const shelf = armed.shelf ? String(armed.shelf).padStart(2, '0') : '—';
-        if (pillText) pillText.textContent = `${bldg}${fl} · Cab ${cab} · Sh ${shelf}`;
-        activePill.classList.remove('hidden');
-        setupCard.classList.add('hidden');
-
+        if (pillText) pillText.textContent = `${bldgShort}${fl}Cab ${cab} · Sh ${shelf}`;
+        if (triggerBtn) triggerBtn.textContent = 'Change';
         if (bldgSelect && armed.building) bldgSelect.value = armed.building;
         if (cabInput && armed.cabinet) cabInput.value = armed.cabinet;
         if (shelfInput && armed.shelf) shelfInput.value = armed.shelf;
       } else {
-        launchpad.classList.remove('hidden');
-        if (reopenBtn) reopenBtn.classList.add('hidden');
-        activePill.classList.add('hidden');
-        setupCard.classList.remove('hidden');
+        if (pillText) pillText.textContent = 'Not set';
+        if (triggerBtn) triggerBtn.textContent = 'Set Shelf';
       }
+
+      // Show the 1-line "Set Shelf" coach nudge only while unset & walkthrough enabled
+      const coachNudge = document.getElementById('listCoachNudge');
+      if (coachNudge) {
+        let dismissed = false;
+        try { dismissed = sessionStorage.getItem('arbor_v2_coach_nudge_dismissed') === 'true'; } catch(e) {}
+        const showNudge = !hasArmed && !dismissed && (typeof ARBOR_SHOW_WALKTHROUGH === 'undefined' || ARBOR_SHOW_WALKTHROUGH);
+        coachNudge.classList.toggle('hidden', !showNudge);
+      }
+    }
+
+    function dismissListCoachNudge() {
+      const el = document.getElementById('listCoachNudge');
+      if (el) el.classList.add('hidden');
+      try { sessionStorage.setItem('arbor_v2_coach_nudge_dismissed', 'true'); } catch(e) {}
     }
 
     function openStationSetup() {
-      const launchpad = document.getElementById('auditStationLaunchpad');
-      const activePill = document.getElementById('activeStationPill');
-      const setupCard = document.getElementById('stationSetupCard');
+      const sheet = document.getElementById('stationSetupSheet');
       const cabInput = document.getElementById('launchCabInput');
-      const reopenBtn = document.getElementById('btnOpenStationSetup');
-      if (launchpad) launchpad.classList.remove('hidden');
-      if (reopenBtn) reopenBtn.classList.add('hidden');
-      if (activePill) activePill.classList.add('hidden');
-      if (setupCard) setupCard.classList.remove('hidden');
+      if (sheet) sheet.classList.remove('hidden');
       if (cabInput) {
-        cabInput.focus();
-        cabInput.select();
+        setTimeout(() => {
+          cabInput.focus();
+          cabInput.select();
+        }, 60);
       }
     }
 
-    function dismissStationSetup() {
-      const launchpad = document.getElementById('auditStationLaunchpad');
-      const setupCard = document.getElementById('stationSetupCard');
-      const activePill = document.getElementById('activeStationPill');
-      const reopenBtn = document.getElementById('btnOpenStationSetup');
-      const armed = state.armedLocation;
-      const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
+    function closeStationSetupSheet() {
+      const sheet = document.getElementById('stationSetupSheet');
+      if (sheet) sheet.classList.add('hidden');
+    }
 
-      if (hasArmed) {
-        if (setupCard) setupCard.classList.add('hidden');
-        if (activePill) activePill.classList.remove('hidden');
-      } else {
-        if (setupCard) setupCard.classList.add('hidden');
-        if (launchpad) launchpad.classList.add('hidden');
-        if (reopenBtn) reopenBtn.classList.remove('hidden');
-      }
+    function dismissStationSetup() {
+      closeStationSetupSheet();
+    }
+
+    function clearStationSetup() {
+      state.armedLocation = null;
+      try { localStorage.removeItem('arbor_armed_location'); } catch (e) {}
+      const cabInput = document.getElementById('launchCabInput');
+      const shelfInput = document.getElementById('launchShelfInput');
+      if (cabInput) cabInput.value = '';
+      if (shelfInput) shelfInput.value = '';
+      initStationLaunchpad();
+      if (state.currentRecord) updateArmedShelfBannerUI(state.currentRecord.observation || {});
+      closeStationSetupSheet();
+      showToast('Current Shelf cleared');
     }
 
     function applyStationSetup() {
@@ -1918,10 +1958,12 @@ INDEX_TEMPLATE_V2 = """
       } catch (e) {}
 
       initStationLaunchpad();
+      if (state.currentRecord) updateArmedShelfBannerUI(state.currentRecord.observation || {});
+      closeStationSetupSheet();
       initTouchGestures();
       initPhotoViewerTouchGestures();
       triggerHaptic('stepper');
-      showToast(`🎯 Station armed: Cab ${cab || '—'} · Sh ${shelf || '—'}`);
+      showToast(`📍 Current Shelf set: Cab ${cab || '—'} · Sh ${shelf || '—'}`);
     }
 
     // -------------------------------------------------------------
@@ -2084,6 +2126,22 @@ INDEX_TEMPLATE_V2 = """
       if (state.activeStatusFilter) params.set('status', state.activeStatusFilter);
       if (state.selectedCabinet) params.set('cabinet', state.selectedCabinet);
       if (state.selectedShelf) params.set('shelf', state.selectedShelf);
+      if (state.activeAdvancedFilters && state.activeAdvancedFilters.locations) {
+        Object.entries(state.activeAdvancedFilters.locations).forEach(([k, v]) => {
+          const val = String(v || '').trim();
+          if (val && k.toLowerCase() !== 'cabinet' && k.toLowerCase() !== 'shelf') {
+            params.set(`loc_${k}`, val);
+          }
+        });
+      }
+      if (state.activeAdvancedFilters && state.activeAdvancedFilters.problems) {
+        const activeProbs = Object.entries(state.activeAdvancedFilters.problems)
+          .filter(([, checked]) => Boolean(checked))
+          .map(([name]) => name);
+        if (activeProbs.length > 0) {
+          params.set('specific_problems', activeProbs.join(','));
+        }
+      }
       if (state.activeSortBy) {
         if (state.activeSortBy === 'location') params.set('sort_by', 'cabinet');
         else if (state.activeSortBy === 'name_asc') { params.set('sort_by', 'genus'); params.set('sort_dir', 'asc'); }
@@ -2151,6 +2209,11 @@ INDEX_TEMPLATE_V2 = """
         const isRev = obj.review_status === 'reviewed';
         const hasFlags = obj.has_flags;
         const loc = obj.location || {};
+        const isLoaned = Boolean(
+          obj.loaned_out === true ||
+          String(loc.loaned_out || '').trim().toLowerCase() === 'true' ||
+          String(loc.loaned_out || '').trim() === '1'
+        );
         
         let locBreadcrumb = [];
         if (loc.building) locBreadcrumb.push(loc.building);
@@ -2161,19 +2224,25 @@ INDEX_TEMPLATE_V2 = """
 
         return `
           <article onclick="openDetailView('${obj.id}')" class="bg-surface border border-bordercol rounded p-3 shadow-2xs hover:border-fern/50 active:bg-stone-50 transition-all cursor-pointer flex flex-col gap-1.5 relative tap-active">
-            <div class="flex items-start justify-between">
+            <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-2 min-w-0">
-                <span class="font-mono text-[11px] font-bold text-ink px-1.5 py-0.5 bg-stone-100 border border-bordercol/80 rounded">
+                <span class="font-mono text-[11px] font-bold text-ink px-1.5 py-0.5 bg-stone-100 border border-bordercol/80 rounded shrink-0">
                   #${obj.accession_number || obj.id}
                 </span>
                 <span class="text-[10px] font-mono text-muted uppercase truncate">${obj.family || 'Taxon'}</span>
               </div>
               
-              <div class="flex items-center gap-1.5 shrink-0">
-                ${hasFlags ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">Taxon Issue ⚠</span>' : ''}
-                ${isRev ? 
-                  '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-fern-dark border border-fern/30">Reviewed ✓</span>' : 
-                  '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300">Pending</span>'
+              <div class="flex items-center gap-1 shrink-0">
+                ${isLoaned ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">↗ Loaned</span>' : ''}
+                ${isRev && hasFlags
+                  ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">[REV+ERR]</span>'
+                  : (isRev
+                    ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-50 text-fern-dark border border-fern/30">[REV]</span>'
+                    : (hasFlags
+                      ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">Flagged ⚠</span>'
+                      : '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300">[UNREV]</span>'
+                    )
+                  )
                 }
               </div>
             </div>
@@ -2182,9 +2251,9 @@ INDEX_TEMPLATE_V2 = """
               ${obj.scientific_name || 'Unidentified Specimen'}
             </div>
 
-            <div class="flex items-center justify-between text-[11px] font-mono pt-1 border-t border-stone-100 text-muted">
+            <div class="flex items-center justify-between gap-2 text-[11px] font-mono pt-1 border-t border-stone-100 text-muted">
               <span class="truncate text-ink-muted">${locStr}</span>
-              ${loc.stored_as ? `<span class="text-[10px] px-1.5 py-0.2 bg-stone-100 rounded border border-bordercol/60 shrink-0">${loc.stored_as}</span>` : ''}
+              ${loc.stored_as ? `<span class="text-[10px] px-1.5 py-0.5 bg-stone-100 rounded border border-bordercol/60 shrink-0 max-w-[46%] truncate">${loc.stored_as}</span>` : ''}
             </div>
           </article>
         `;
@@ -2345,7 +2414,17 @@ INDEX_TEMPLATE_V2 = """
       if (famEl) famEl.textContent = '…';
       setDetailLoadingState('loading');
       showDetailView();
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      document.querySelectorAll('#tabTrack > div').forEach(pane => { pane.scrollTop = 0; });
+      if (typeof switchDetailTab === 'function') switchDetailTab(state.activeDetailTab || 'details');
       await fetchObjectDetail(oid);
+      requestAnimationFrame(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.querySelectorAll('#tabTrack > div').forEach(pane => { pane.scrollTop = 0; });
+      });
     }
 
     function showListView() {
@@ -2520,23 +2599,31 @@ INDEX_TEMPLATE_V2 = """
         html += '</div></div>';
       }
 
+      const _plainSynonymKind = (k) => {
+        const s = String(k || '').trim().toLowerCase();
+        if (s.includes('basionym')) return 'Original name';
+        if (s.includes('homotypic')) return 'Direct rename';
+        if (s.includes('heterotypic')) return 'Older synonym';
+        return k || 'Old name';
+      };
+
       if (primary.length) {
-        html += '<div><div class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Most Likely Old Names (Basionym &amp; Homotypic)</div><div class="space-y-1">';
+        html += '<div><div class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Most Likely Old Names (Direct Renames)</div><div class="space-y-1">';
         primary.forEach(item => {
-          html += '<div class="px-2.5 py-1.5 rounded bg-surface border border-bordercol flex items-baseline justify-between gap-2"><div class="min-w-0"><span class="font-serif italic text-xs font-semibold text-ink">' + _escHtmlOldNames(item.name) + '</span>' + (item.author ? ' <span class="text-[11px] text-muted">' + _escHtmlOldNames(item.author) + '</span>' : '') + '</div><span class="text-[10px] font-mono text-muted shrink-0">' + _escHtmlOldNames(item.kind || 'Synonym') + '</span></div>';
+          html += '<div class="px-2.5 py-1.5 rounded bg-surface border border-bordercol flex items-baseline justify-between gap-2"><div class="min-w-0"><span class="font-serif italic text-xs font-semibold text-ink">' + _escHtmlOldNames(item.name) + '</span>' + (item.author ? ' <span class="text-[11px] text-muted">' + _escHtmlOldNames(item.author) + '</span>' : '') + '</div><span class="text-[10px] font-mono text-muted shrink-0">' + _escHtmlOldNames(_plainSynonymKind(item.kind)) + '</span></div>';
         });
         html += '</div></div>';
       }
 
       if (others.length) {
         if (q || _oldNamesShowMore || primary.length === 0) {
-          html += '<div><div class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Other Known Synonyms (' + others.length + ')</div><div class="space-y-1">';
+          html += '<div><div class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Other Known Old Names (' + others.length + ')</div><div class="space-y-1">';
           others.forEach(item => {
-            html += '<div class="px-2.5 py-1.5 rounded bg-surface border border-stone-200 flex items-baseline justify-between gap-2"><div class="min-w-0"><span class="font-serif italic text-xs text-ink">' + _escHtmlOldNames(item.name) + '</span>' + (item.author ? ' <span class="text-[11px] text-muted">' + _escHtmlOldNames(item.author) + '</span>' : '') + '</div><span class="text-[10px] font-mono text-subdued shrink-0">' + _escHtmlOldNames(item.kind || '') + '</span></div>';
+            html += '<div class="px-2.5 py-1.5 rounded bg-surface border border-stone-200 flex items-baseline justify-between gap-2"><div class="min-w-0"><span class="font-serif italic text-xs text-ink">' + _escHtmlOldNames(item.name) + '</span>' + (item.author ? ' <span class="text-[11px] text-muted">' + _escHtmlOldNames(item.author) + '</span>' : '') + '</div><span class="text-[10px] font-mono text-subdued shrink-0">' + _escHtmlOldNames(item.kind ? _plainSynonymKind(item.kind) : '') + '</span></div>';
           });
           html += '</div></div>';
         } else {
-          html += '<button type="button" onclick="toggleMoreOldNames()" class="w-full py-2 rounded-md border border-bordercol bg-tonal text-xs font-semibold text-ink-muted">Show ' + others.length + ' more synonyms ▾</button>';
+          html += '<button type="button" onclick="toggleMoreOldNames()" class="w-full py-2 min-h-[40px] rounded-md border border-bordercol bg-tonal text-xs font-semibold text-ink-muted">Show ' + others.length + ' more old names ▾</button>';
         }
       }
 
@@ -2606,7 +2693,7 @@ INDEX_TEMPLATE_V2 = """
       const label = (filterEl ? filterEl.value : '').trim();
       closeOldNamesSheet();
       if (typeof switchDetailTab === 'function') switchDetailTab(2);
-      const commentEl = document.getElementById('commentInput') || document.querySelector('[data-field="Comment"]');
+      const commentEl = document.getElementById('commentEditTextarea') || document.querySelector('[data-field="Comment"]');
       if (commentEl && label) {
         const prefix = commentEl.value.trim() ? commentEl.value.trim() + ' | ' : '';
         commentEl.value = prefix + 'Label reads: ' + label;
@@ -2668,18 +2755,19 @@ INDEX_TEMPLATE_V2 = """
       if (state.isReviewed) {
         if (hasFlags) {
           // Tri-State: REVIEWED WITH ISSUES (Amber #F57C00 / bg-amber-50)
+          const issueCount = activeProblemsCount || 1;
           statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-900 border-amber-300';
-          statusText.textContent = `REV + ${activeProblemsCount || 1} ISSUE${activeProblemsCount === 1 ? '' : 'S'}`;
+          statusText.textContent = `[REV+ERR] · ${issueCount}`;
           statusDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
           if (detailRevBtn) {
             detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-amber-600 text-white border-amber-700 shadow-sm';
-            if (detailRevLabel) detailRevLabel.textContent = `Reviewed (${activeProblemsCount || 1} Issues Queued)`;
+            if (detailRevLabel) detailRevLabel.textContent = `Reviewed (${issueCount} Issue${issueCount === 1 ? '' : 's'} Queued)`;
             if (detailRevIcon) detailRevIcon.textContent = '⚠';
           }
         } else {
           // Tri-State: REVIEWED CLEAN (Emerald)
           statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-emerald-50 text-fern-dark border-fern/30';
-          statusText.textContent = 'REVIEWED';
+          statusText.textContent = '[REV]';
           statusDot.className = 'w-1.5 h-1.5 rounded-full bg-fern';
           if (detailRevBtn) {
             detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-600 text-white border-emerald-700 shadow-sm';
@@ -2687,10 +2775,21 @@ INDEX_TEMPLATE_V2 = """
             if (detailRevIcon) detailRevIcon.textContent = '✓';
           }
         }
+      } else if (hasFlags) {
+        // Tri-State: UNREVIEWED WITH ACTIVE FLAGS (Amber/Brick cue matching List View)
+        const issueCount = activeProblemsCount || 1;
+        statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-900 border-amber-300';
+        statusText.textContent = `[UNREV] · ⚠ ${issueCount}`;
+        statusDot.className = 'w-1.5 h-1.5 rounded-full bg-brick';
+        if (detailRevBtn) {
+          detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-50 text-fern-dark border-fern hover:bg-emerald-100 shadow-2xs';
+          if (detailRevLabel) detailRevLabel.textContent = 'Mark Reviewed';
+          if (detailRevIcon) detailRevIcon.textContent = '✓';
+        }
       } else {
         // Tri-State: UNREVIEWED (Stone / Amber pulse)
         statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-stone-100 text-stone-700 border-stone-300';
-        statusText.textContent = 'UNREVIEWED';
+        statusText.textContent = '[UNREV]';
         statusDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse';
         if (detailRevBtn) {
           detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-50 text-fern-dark border-fern hover:bg-emerald-100 shadow-2xs';
@@ -2699,20 +2798,30 @@ INDEX_TEMPLATE_V2 = """
         }
       }
 
-      // Reassurance micro-copy
+      // Reassurance micro-copy (truthful about whether location is actually recorded)
+      const hasLocation = Boolean(
+        String(obs.Building || '').trim() ||
+        String(obs.Floor ?? '').trim() ||
+        String(obs.Cabinet || '').trim() ||
+        String(obs.Shelf || '').trim()
+      );
       const helperEl = document.getElementById('reviewHelperText');
       if (helperEl) {
         if (state.isReviewed) {
           if (hasFlags) {
-            helperEl.textContent = '✓ Location recorded. Issues flagged for desktop curation.';
+            helperEl.textContent = hasLocation
+              ? '✓ Checked & location saved. Flagged issues queued for the desk.'
+              : '✓ Marked reviewed with flagged issues queued for the desk (no location set).';
           } else {
-            helperEl.textContent = '✓ Location recorded & verified. Specimen clean.';
+            helperEl.textContent = hasLocation
+              ? '✓ Physical check & location saved. Specimen clean.'
+              : '✓ Marked reviewed (location not recorded yet).';
           }
         } else {
           if (hasFlags) {
-            helperEl.textContent = 'Physical check needed. Unresolved issues will be preserved on review.';
+            helperEl.textContent = 'Physical check needed. Flagged issues stay saved when you mark reviewed.';
           } else {
-            helperEl.textContent = 'Verify physical label & location, then mark reviewed.';
+            helperEl.textContent = 'Check the real object & save its location, then mark reviewed.';
           }
         }
       }
@@ -2720,7 +2829,7 @@ INDEX_TEMPLATE_V2 = """
       // Specimen index in list
       const curIdx = state.objectList.findIndex(o => String(o.id) === String(rec.id));
       document.getElementById('detailCurrentIdx').textContent = curIdx >= 0 ? curIdx + 1 : 1;
-      document.getElementById('detailTotalCount').textContent = state.objectList.length || state.totalMatching || 1;
+      document.getElementById('detailTotalCount').textContent = state.totalMatching || state.objectList.length || 1;
 
       // Update Armed Target Shelf action banner
       updateArmedShelfBannerUI(obs);
@@ -2900,34 +3009,28 @@ INDEX_TEMPLATE_V2 = """
       triggerAutoSave();
     }
 
-    function renderDetailStoredAsPills(currentStored) {
-      const container = document.getElementById('detailStoredAsPills');
-      if (!container) return;
-      const storedVal = currentStored !== undefined ? currentStored : (state.currentRecord?.observation?.['Stored as'] || '');
+    function _getStoredAsChoicesList() {
       let choices = state.storedAsChoices && state.storedAsChoices.length > 0
-                      ? [...state.storedAsChoices]
-                      : ['Herbarium Sheet', 'Box', 'Envelope', 'Jar', 'Packet', 'Other', 'Custom'];
+        ? [...state.storedAsChoices]
+        : ['Herbarium Sheet', 'Box', 'Envelope', 'Jar', 'Packet', 'Other', 'Custom'];
       ['Other', 'Custom'].forEach(opt => {
         if (!choices.includes(opt)) choices.push(opt);
       });
+      return choices;
+    }
 
-      const isCustomVal = storedVal && !choices.includes(storedVal) && storedVal !== 'Custom' && storedVal !== 'Other';
-
-      container.innerHTML = choices.map(opt => {
-        const isSel = (opt === storedVal) || (opt === 'Custom' && isCustomVal);
-        const className = isSel
-          ? 'detail-storage-pill px-2.5 py-1 rounded-full text-[11px] font-mono border-2 border-fern bg-emerald-50 text-fern-dark font-semibold'
-          : 'detail-storage-pill px-2.5 py-1 rounded-full text-[11px] font-mono border border-bordercol bg-white text-muted';
-        const escapedOpt = opt.replace(/'/g, "\\'");
-        return `
-          <button type="button" onclick="selectDetailStoragePill('${escapedOpt}')" class="${className}">
-            ${opt}
-          </button>
-        `;
-      }).join('');
+    function renderDetailStoredAsPills(currentStored) {
+      const storedVal = currentStored !== undefined ? currentStored : (state.currentRecord?.observation?.['Stored as'] || '');
+      const choices = _getStoredAsChoicesList();
+      const isCustomVal = Boolean(storedVal && !choices.includes(storedVal) && storedVal !== 'Custom' && storedVal !== 'Other');
 
       const labelEl = document.getElementById('detailStoredAsLabel');
-      if (labelEl) labelEl.textContent = storedVal || 'Not Selected';
+      if (labelEl) {
+        labelEl.textContent = storedVal || 'Not Selected';
+        labelEl.className = storedVal
+          ? 'font-mono text-xs text-fern-dark font-bold block truncate'
+          : 'font-mono text-xs text-ink-muted font-medium block truncate';
+      }
 
       const customContainer = document.getElementById('detailStoredAsCustomContainer');
       const customInput = document.getElementById('detailStoredAsCustomInput');
@@ -2943,21 +3046,61 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
-    function selectDetailStoragePill(opt) {
+    function openDetailStoredAsSheet() {
+      const sheet = document.getElementById('storedAsBottomSheet');
+      const optionsEl = document.getElementById('storedAsModalOptions');
+      if (!sheet || !optionsEl) return;
+
+      const current = state.currentRecord?.observation?.['Stored as'] || '';
+      const choices = _getStoredAsChoicesList();
+      const isCustomVal = Boolean(current && !choices.includes(current) && current !== 'Custom' && current !== 'Other');
+
+      let html = `
+        <button type="button" onclick="selectDetailStorageOption('')" class="w-full min-h-[44px] px-3.5 py-2.5 rounded-lg border ${!current ? 'border-fern bg-emerald-50 text-fern-dark font-bold' : 'border-bordercol bg-white text-ink-muted'} flex items-center justify-between text-left tap-active">
+          <span>Not Selected (Clear)</span>
+          ${!current ? '<span class="text-fern-dark font-bold">✓</span>' : ''}
+        </button>
+      `;
+
+      choices.forEach(opt => {
+        const isSel = (opt === current) || (opt === 'Custom' && isCustomVal);
+        const safeArg = JSON.stringify(opt).replace(/"/g, '&quot;');
+        const displayLabel = (opt === 'Custom' && isCustomVal) ? `Custom (${current})` : opt;
+        html += `
+          <button type="button" onclick="selectDetailStorageOption(${safeArg})" class="w-full min-h-[44px] px-3.5 py-2.5 rounded-lg border ${isSel ? 'border-2 border-fern bg-emerald-50 text-fern-dark font-bold' : 'border-bordercol bg-white text-ink'} flex items-center justify-between gap-2 text-left tap-active">
+            <span class="truncate">${displayLabel}</span>
+            ${isSel ? '<span class="text-fern-dark font-bold shrink-0">✓</span>' : ''}
+          </button>
+        `;
+      });
+
+      optionsEl.innerHTML = html;
+      sheet.classList.remove('hidden');
+    }
+
+    function closeStoredAsBottomSheet() {
+      const sheet = document.getElementById('storedAsBottomSheet');
+      if (sheet) sheet.classList.add('hidden');
+    }
+
+    function selectDetailStorageOption(opt) {
+      closeStoredAsBottomSheet();
       if (!state.currentRecord) return;
       state.currentRecord.observation = state.currentRecord.observation || {};
-      const current = state.currentRecord.observation['Stored as'] || '';
-
-      if (current === opt) {
-        state.currentRecord.observation['Stored as'] = '';
-      } else {
-        state.currentRecord.observation['Stored as'] = opt;
-      }
+      state.currentRecord.observation['Stored as'] = opt;
       markDirty('Stored as');
-      renderDetailStoredAsPills(state.currentRecord.observation['Stored as']);
+      renderDetailStoredAsPills(opt);
       updateDetailLocBreadcrumbs(state.currentRecord.observation);
       armActiveTargetLocation(state.currentRecord.observation);
       triggerAutoSave();
+      if (opt === 'Custom') {
+        const customInput = document.getElementById('detailStoredAsCustomInput');
+        if (customInput) setTimeout(() => customInput.focus(), 60);
+      }
+    }
+
+    function selectDetailStoragePill(opt) {
+      selectDetailStorageOption(opt);
     }
 
     function onDetailCustomStorageInput(val) {
@@ -2971,6 +3114,14 @@ INDEX_TEMPLATE_V2 = """
       triggerAutoSave();
     }
 
+    function _formatTodayDDMMYYYY() {
+      const d = new Date();
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}.${mm}.${yyyy}`;
+    }
+
     // Availability / Loan Status
     function setLoanStatus(isLoaned) {
       if (!state.currentRecord) return;
@@ -2978,8 +3129,21 @@ INDEX_TEMPLATE_V2 = """
       state.currentRecord.observation['Loaned out'] = isLoaned;
       markDirty('Loaned out');
 
+      if (isLoaned) {
+        if (!String(state.currentRecord.observation['Loaned out date'] || '').trim()) {
+          state.currentRecord.observation['Loaned out date'] = _formatTodayDDMMYYYY();
+          markDirty('Loaned out date');
+        }
+      } else {
+        if (state.currentRecord.observation['Loaned out date']) {
+          state.currentRecord.observation['Loaned out date'] = '';
+          markDirty('Loaned out date');
+        }
+      }
+
       renderLoanStatus(isLoaned);
       triggerAutoSave();
+      showToast(isLoaned ? '↗ Marked Loaned Out' : '✓ Marked In Collection');
     }
 
     function renderLoanStatus(isLoaned) {
@@ -2995,35 +3159,55 @@ INDEX_TEMPLATE_V2 = """
       const btnLoan = document.getElementById('btnStatusLoan');
       const tag = document.getElementById('loanStateTag');
       const dot = document.getElementById('loanStatusDot');
+      const headerPill = document.getElementById('badgeLoanedHeader');
+      const loanDate = String(state.currentRecord?.observation?.['Loaned out date'] || '').trim();
+
+      if (headerPill) {
+        if (isLoanedBool) {
+          headerPill.textContent = loanDate ? `↗ Loaned · ${loanDate}` : '↗ Loaned Out';
+          headerPill.classList.remove('hidden');
+        } else {
+          headerPill.classList.add('hidden');
+        }
+      }
 
       if (isLoanedBool) {
-        btnLoan.className = 'py-1.5 px-2 rounded text-xs font-mono font-semibold flex items-center justify-center gap-1.5 transition-all bg-white text-ink border border-stone-300 min-h-[36px]';
-        btnAvail.className = 'py-1.5 px-2 rounded text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all text-muted hover:text-ink min-h-[36px]';
-        tag.textContent = 'Loaned Out';
-        tag.className = 'text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300';
-        dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+        if (btnLoan) btnLoan.className = 'py-2 px-2 rounded text-xs font-mono font-semibold flex items-center justify-center gap-1.5 transition-all bg-white text-ink border border-stone-300 min-h-[42px]';
+        if (btnAvail) btnAvail.className = 'py-2 px-2 rounded text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all text-muted hover:text-ink min-h-[42px]';
+        if (tag) {
+          tag.textContent = loanDate ? `Loaned Out · ${loanDate}` : 'Loaned Out';
+          tag.className = 'text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300';
+        }
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500';
       } else {
-        btnAvail.className = 'py-1.5 px-2 rounded text-xs font-mono font-semibold flex items-center justify-center gap-1.5 transition-all bg-white text-ink border border-stone-300 min-h-[36px]';
-        btnLoan.className = 'py-1.5 px-2 rounded text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all text-muted hover:text-ink min-h-[36px]';
-        tag.textContent = 'In Collection';
-        tag.className = 'text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-fern-light text-fern border border-fern/30';
-        dot.className = 'w-2 h-2 rounded-full bg-fern';
+        if (btnAvail) btnAvail.className = 'py-2 px-2 rounded text-xs font-mono font-semibold flex items-center justify-center gap-1.5 transition-all bg-white text-ink border border-stone-300 min-h-[42px]';
+        if (btnLoan) btnLoan.className = 'py-2 px-2 rounded text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all text-muted hover:text-ink min-h-[42px]';
+        if (tag) {
+          tag.textContent = 'In Collection';
+          tag.className = 'text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-fern-light text-fern border border-fern/30';
+        }
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-fern';
       }
     }
 
     function countActiveProblemsOnRecord(rec) {
       if (!rec) return 0;
-      let cnt = 0;
-      if (Array.isArray(rec.flagged_issues)) {
-        cnt = rec.flagged_issues.filter(i => !i.resolved).length;
-      }
+      const activeKeys = new Set();
       const obs = rec.observation || {};
       for (const [k, v] of Object.entries(obs)) {
         if (k.toLowerCase().includes('problem') && (v === true || String(v).toLowerCase() === 'true' || v === 1 || String(v) === '1')) {
-          cnt++;
+          activeKeys.add(k.toLowerCase());
         }
       }
-      return cnt;
+      if (Array.isArray(rec.flagged_issues)) {
+        rec.flagged_issues.forEach(i => {
+          if (i && !i.resolved) {
+            const key = String(i.problem || i.field || i.name || i.id || '').trim().toLowerCase();
+            if (key) activeKeys.add(key);
+          }
+        });
+      }
+      return activeKeys.size;
     }
 
     // Active Armed Shelf & Intentional Location Stamping Engine
@@ -3052,7 +3236,7 @@ INDEX_TEMPLATE_V2 = """
       if (!state.currentRecord) return;
       const armed = state.armedLocation || state.lastSavedLocation;
       if (!armed || (!armed.cabinet && !armed.shelf)) {
-        showToast('No active target shelf armed');
+        showToast('Set My Current Shelf first');
         return;
       }
       state.currentRecord.observation = state.currentRecord.observation || {};
@@ -3079,33 +3263,44 @@ INDEX_TEMPLATE_V2 = """
       renderDetailStoredAsPills(obs['Stored as']);
       updateDetailLocBreadcrumbs(obs);
       updateArmedShelfBannerUI(obs);
+      renderDetailView(false);
       triggerAutoSave();
       triggerHaptic('copy_prev');
 
       const armedCab = String(armed.cabinet || '—').padStart(2, '0');
       const armedShelf = String(armed.shelf || '—').padStart(2, '0');
-      if (wasRelocation) {
-        showToast(`⚠️ Relocated from Cab ${prevLoc.Cabinet || '?'} to Cab ${armedCab}`, {
-          actionText: '↩ Undo',
-          duration: 5000,
-          onAction: () => {
-            if (prevLoc.Building !== undefined) { obs.Building = prevLoc.Building; markDirty('Building'); }
-            if (prevLoc.Floor !== undefined) { obs.Floor = prevLoc.Floor; markDirty('Floor'); }
-            if (prevLoc.Cabinet !== undefined) { obs.Cabinet = prevLoc.Cabinet; markDirty('Cabinet'); }
-            if (prevLoc.Shelf !== undefined) { obs.Shelf = prevLoc.Shelf; markDirty('Shelf'); }
-            if (prevLoc['Stored as'] !== undefined) { obs['Stored as'] = prevLoc['Stored as']; markDirty('Stored as'); }
-            renderCoordinateSteppers(obs);
-            populateDetailBuildingOptions(obs.Building);
-            renderDetailStoredAsPills(obs['Stored as']);
-            updateDetailLocBreadcrumbs(obs);
-            updateArmedShelfBannerUI(obs);
-            triggerAutoSave();
-            showToast('↩ Relocation undone');
-          }
-        });
-      } else {
-        showToast(`📍 Stamped to Cab ${armedCab} · Sh ${armedShelf}`);
-      }
+      const undoStamp = () => {
+        if (!state.currentRecord) return;
+        state.currentRecord.observation = state.currentRecord.observation || {};
+        const liveObs = state.currentRecord.observation;
+        liveObs.Building = prevLoc.Building !== undefined ? prevLoc.Building : '';
+        markDirty('Building');
+        liveObs.Floor = prevLoc.Floor !== undefined ? prevLoc.Floor : '';
+        markDirty('Floor');
+        liveObs.Cabinet = prevLoc.Cabinet !== undefined ? prevLoc.Cabinet : '';
+        markDirty('Cabinet');
+        liveObs.Shelf = prevLoc.Shelf !== undefined ? prevLoc.Shelf : '';
+        markDirty('Shelf');
+        if (prevLoc['Stored as'] !== undefined) { liveObs['Stored as'] = prevLoc['Stored as']; markDirty('Stored as'); }
+        renderCoordinateSteppers(liveObs);
+        populateDetailBuildingOptions(liveObs.Building);
+        renderDetailStoredAsPills(liveObs['Stored as']);
+        updateDetailLocBreadcrumbs(liveObs);
+        updateArmedShelfBannerUI(liveObs);
+        renderDetailView(false);
+        triggerAutoSave();
+        showToast(wasRelocation ? '↩ Move undone' : '↩ Shelf save undone');
+      };
+
+      const toastMsg = wasRelocation
+        ? `⚠️ Moved from Cab ${prevLoc.Cabinet || '?'} to Cab ${armedCab} · Sh ${armedShelf}`
+        : `📍 Saved to Cab ${armedCab} · Sh ${armedShelf}`;
+
+      showToast(toastMsg, {
+        actionText: '↩ Undo',
+        duration: 5000,
+        onAction: undoStamp
+      });
     }
 
     function updateArmedShelfBannerUI(obs = {}) {
@@ -3118,7 +3313,7 @@ INDEX_TEMPLATE_V2 = """
       const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
 
       if (!hasArmed) {
-        label.textContent = 'None Armed (Set below)';
+        label.textContent = 'Not set (optional)';
         if (stampBtn) stampBtn.classList.add('hidden');
         return;
       }
@@ -3152,16 +3347,17 @@ INDEX_TEMPLATE_V2 = """
       if (stampBtn) {
         if (matches) {
           stampBtn.classList.add('hidden');
+          label.textContent = `✓ On Cab ${armedCab} · Sh ${armedShelf}`;
         } else {
           stampBtn.classList.remove('hidden');
           const hasExistingLoc = Boolean(curCabNorm || curShelfNorm || curBldg || curFloor);
           const isRelocating = hasExistingLoc && !matches;
           if (isRelocating) {
-            stampBtn.className = 'px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-mono font-bold text-[10px] shadow-2xs tap-active flex items-center gap-1 transition-all';
-            stampBtn.innerHTML = `<span>⚠️</span><span>Relocate to Cab ${armedCab}</span>`;
+            stampBtn.className = 'min-h-[40px] px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 text-white font-mono font-bold text-[11px] shadow-2xs tap-active flex items-center gap-1 transition-all shrink-0 whitespace-nowrap';
+            stampBtn.innerHTML = `<span>⚠️</span><span>Move to Cab ${armedCab} · Sh ${armedShelf}</span>`;
           } else {
-            stampBtn.className = 'px-2.5 py-1 rounded bg-fern hover:bg-fern-dark text-white font-mono font-bold text-[10px] shadow-2xs tap-active flex items-center gap-1 transition-all';
-            stampBtn.innerHTML = `<span>⚡</span><span>Stamp Target (Cab ${armedCab})</span>`;
+            stampBtn.className = 'min-h-[40px] px-3 py-1.5 rounded bg-fern hover:bg-fern-dark text-white font-mono font-bold text-[11px] shadow-2xs tap-active flex items-center gap-1 transition-all shrink-0 whitespace-nowrap';
+            stampBtn.innerHTML = `<span>📍</span><span>Save to Cab ${armedCab} · Sh ${armedShelf}</span>`;
           }
         }
       }
@@ -3175,7 +3371,7 @@ INDEX_TEMPLATE_V2 = """
     function updateDetailLocBreadcrumbs(obs = {}) {
       let locBreadcrumb = [];
       if (obs.Building && String(obs.Building).trim()) locBreadcrumb.push(obs.Building);
-      if (obs.Floor !== undefined && obs.Floor !== null && String(obs.Floor).trim() !== '' && String(obs.Floor).trim() !== '—') locBreadcrumb.push(`Floor ${obs.Floor}`);
+      if (obs.Floor !== undefined && obs.Floor !== null && String(obs.Floor).trim() !== '' && String(obs.Floor).trim() !== '—') locBreadcrumb.push(`Fl ${obs.Floor}`);
       if (obs.Cabinet && String(obs.Cabinet).trim() && String(obs.Cabinet).trim() !== '—') locBreadcrumb.push(`Cab ${String(obs.Cabinet).trim().padStart(2, '0')}`);
       if (obs.Shelf && String(obs.Shelf).trim() && String(obs.Shelf).trim() !== '—') locBreadcrumb.push(`Sh ${String(obs.Shelf).trim().padStart(2, '0')}`);
       const locStr = locBreadcrumb.length > 0 ? locBreadcrumb.join(' › ') : 'Unrecorded location';
@@ -3201,10 +3397,10 @@ INDEX_TEMPLATE_V2 = """
         locBadge.classList.remove('hidden');
         if (obs.Cabinet && String(obs.Cabinet).trim() && String(obs.Cabinet).trim() !== '—') {
           locBadge.textContent = `Cab ${String(obs.Cabinet).trim().padStart(2, '0')}`;
-          locBadge.className = 'font-mono text-[10px] font-bold px-1.5 rounded-full bg-emerald-600 text-white shadow-2xs';
+          locBadge.className = 'font-mono text-[10px] font-bold px-1.5 rounded-full bg-emerald-600 text-white shadow-2xs whitespace-nowrap shrink-0';
         } else {
-          locBadge.textContent = 'Unset ⚠️';
-          locBadge.className = 'font-mono text-[10px] font-bold px-1.5 rounded-full bg-amber-500 text-white shadow-2xs';
+          locBadge.textContent = 'Unset';
+          locBadge.className = 'font-mono text-[10px] font-bold px-1.5 rounded-full bg-amber-500 text-white shadow-2xs whitespace-nowrap shrink-0';
         }
       }
 
@@ -3321,7 +3517,7 @@ INDEX_TEMPLATE_V2 = """
       if (typeof tab === 'number') idx = tab;
       else if (tab === 'details') idx = 0;
       else if (tab === 'location') idx = 1;
-      else if (tab === 'problems') idx = 2;
+      else if (tab === 'history' || tab === 'problems') idx = 2;
       switchTab(idx);
     }
 
@@ -3397,15 +3593,17 @@ INDEX_TEMPLATE_V2 = """
         }, { passive: true });
       }
 
-      // 2. Swipe-down to dismiss #storedAsBottomSheet
-      const sheetCard = document.getElementById('storedAsSheetCard');
-      if (sheetCard) {
+      // 2. Swipe-down to dismiss bottom sheets (#storedAsBottomSheet & #stationSetupSheet)
+      function _bindSheetSwipeDismiss(cardId, closeFn) {
+        const sheetCard = document.getElementById(cardId);
+        if (!sheetCard) return;
         let sheetStartY = 0;
         let sheetDragY = 0;
         let sheetDragging = false;
 
         sheetCard.addEventListener('touchstart', (e) => {
           if (!e.touches || e.touches.length !== 1) return;
+          if (e.target && e.target.closest && e.target.closest('input, select, textarea')) return;
           if (sheetCard.scrollTop > 2) return;
           sheetStartY = e.touches[0].clientY;
           sheetDragY = 0;
@@ -3431,29 +3629,59 @@ INDEX_TEMPLATE_V2 = """
           sheetCard.style.transition = '';
           if (sheetDragY >= 85) {
             sheetCard.style.transform = '';
-            closeStoredAsBottomSheet();
+            closeFn();
           } else {
             sheetCard.style.transform = '';
           }
           sheetDragY = 0;
         }, { passive: true });
       }
+      _bindSheetSwipeDismiss('storedAsSheetCard', closeStoredAsBottomSheet);
+      _bindSheetSwipeDismiss('stationSetupSheetCard', closeStationSetupSheet);
     }
 
     // -------------------------------------------------------------
-    // DETAILS & PROBLEMS FORM RENDERING
+    // DETAILS & INLINE PROBLEM CHECKBOXES RENDERING
     // -------------------------------------------------------------
+    const INLINE_DETAIL_FIELDS = ['Genus', 'Species', 'Family', 'Author', 'Collector', 'Collection Date', 'Collection place', 'Box label'];
+
+    function _buildFieldToProblemMap(schema) {
+      const map = {};
+      const defs = (schema && schema.ui_sections && Array.isArray(schema.ui_sections.problems))
+        ? schema.ui_sections.problems
+        : [];
+      defs.forEach(p => {
+        if (!p || !p.name) return;
+        const target = String(p.maps_to || state.problemToField[p.name] || '').trim();
+        if (target && target.toLowerCase() !== 'other') {
+          map[target.toLowerCase()] = p.name;
+        }
+      });
+      return map;
+    }
+
+    function scrollToFirstFlaggedField() {
+      const first = document.querySelector('#tabContentDetails [data-flagged-row="true"]');
+      if (first && typeof first.scrollIntoView === 'function') {
+        first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
     function renderDynamicForm(schema, record) {
       const container = document.getElementById('dynamicFormContainer');
       if (!container || !schema) return;
       const reg = record.registration || {};
       const obs = record.observation || {};
+      const fieldToProb = _buildFieldToProblemMap(schema);
 
-      let html = '<h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans mb-2">Botanical Registration</h3>';
-      const fields = ['Genus', 'Species', 'Family', 'Author', 'Collector', 'Collection Date', 'Collection place', 'Box label'];
-      
-      html += '<div class="space-y-2 font-mono text-xs">';
-      fields.forEach(f => {
+      let html = '<div class="flex items-center justify-between gap-2 mb-0.5">';
+      html += '<h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Registration Data</h3>';
+      html += '<span class="text-[10px] font-mono text-subdued">Checkbox = Issue</span>';
+      html += '</div>';
+      html += '<p class="text-[11px] text-muted mb-2 leading-snug">Compare with the real object. Tap the checkbox next to any field to flag or clear an issue.</p>';
+
+      html += '<div class="space-y-1.5 font-mono text-xs">';
+      INLINE_DETAIL_FIELDS.forEach(f => {
         let val = '';
         if (f === 'Collection place') {
           val = (obs['Collection place'] !== undefined && obs['Collection place'] !== '') ? obs['Collection place'] :
@@ -3469,16 +3697,28 @@ INDEX_TEMPLATE_V2 = """
           val = obs[f] !== undefined && obs[f] !== '' ? obs[f] : (reg[f] || '');
         }
 
+        const probName = fieldToProb[f.toLowerCase()] || null;
+        const isFlagged = probName ? isProblemActiveOnRecord(probName, record) : false;
+        const rowBg = isFlagged ? 'bg-red-50/70 border-brick/40 rounded px-2' : 'border-stone-100';
+        const chkHtml = probName ? `
+          <button type="button" data-no-swipe="true" onclick="toggleProblemFlag('${probName}')" title="${isFlagged ? 'Clear issue flag on ' + f : 'Flag issue on ' + f}" aria-pressed="${isFlagged ? 'true' : 'false'}" class="inline-flag-btn min-w-[40px] min-h-[40px] -mr-1.5 flex items-center justify-center shrink-0 tap-active">
+            <span class="w-5 h-5 rounded flex items-center justify-center text-[11px] font-bold border transition-colors ${isFlagged ? 'bg-brick border-brick text-white' : 'bg-white border-stone-300 text-transparent'}" style="${isFlagged ? 'background:#c93a40;border-color:#c93a40;color:#ffffff;' : ''}">✓</span>
+          </button>
+        ` : '';
+
         const isBoxLabel = (f === 'Box label');
         const strVal = String(val || '').trim();
         const isMultiline = isBoxLabel && strVal && (strVal.indexOf('\\n') !== -1 || strVal.indexOf('\\r') !== -1 || strVal.length > 28);
 
         if (isMultiline) {
           html += `
-            <div class="py-1.5 border-b border-stone-100 space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="text-muted text-[11px]">${f}:</span>
-                <span class="text-[9.5px] font-mono text-subdued">(Full label)</span>
+            <div data-flagged-row="${isFlagged ? 'true' : 'false'}" class="py-1.5 border-b ${rowBg} space-y-1">
+              <div class="flex items-center justify-between gap-1">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="text-muted text-[11px] ${isFlagged ? 'text-brick font-bold' : ''}">${f}:</span>
+                  <span class="text-[9.5px] font-mono text-subdued">(Full label)</span>
+                </div>
+                ${chkHtml}
               </div>
               <div class="font-semibold text-ink text-left text-xs whitespace-pre-wrap break-words bg-stone-50 border border-stone-200/60 rounded p-2 leading-relaxed">
                 ${escapeHtml(strVal)}
@@ -3487,9 +3727,12 @@ INDEX_TEMPLATE_V2 = """
           `;
         } else {
           html += `
-            <div class="flex items-center justify-between py-1 border-b border-stone-100">
-              <span class="text-muted text-[11px]">${f}:</span>
-              <span class="font-semibold text-ink text-right break-words max-w-[200px]">${escapeHtml(strVal) || '—'}</span>
+            <div data-flagged-row="${isFlagged ? 'true' : 'false'}" class="flex items-center justify-between gap-1.5 py-0.5 border-b ${rowBg}">
+              <span class="text-muted text-[11px] shrink-0 ${isFlagged ? 'text-brick font-bold' : ''}">${f}:</span>
+              <div class="flex items-center justify-end gap-1.5 min-w-0 flex-1">
+                <span class="font-semibold text-ink text-right break-words max-w-[180px]">${escapeHtml(strVal) || '—'}</span>
+                ${chkHtml}
+              </div>
             </div>
           `;
         }
@@ -3523,9 +3766,7 @@ INDEX_TEMPLATE_V2 = """
             </button>
           </div>
           <div onclick="openCommentEditor()" class="min-h-[72px] p-2.5 bg-stone-50 hover:bg-stone-100/70 border border-stone-200/80 rounded cursor-pointer transition-colors" title="Tap to write or edit comment">
-            <p class="font-mono text-xs text-ink whitespace-pre-wrap break-words leading-relaxed ${hasComment ? '' : 'text-subdued italic'}">
-              ${hasComment ? escapeHtml(commentRaw) : 'No comment recorded. Tap to write a comment...'}
-            </p>
+            <p class="font-mono text-xs text-ink whitespace-pre-wrap break-words leading-relaxed ${hasComment ? '' : 'text-subdued italic'}">${hasComment ? escapeHtml(commentRaw) : 'No comment recorded. Tap to write a comment...'}</p>
           </div>
         </div>
       `;
@@ -3596,13 +3837,13 @@ INDEX_TEMPLATE_V2 = """
       }
 
       const countDisp = document.getElementById('photoCountDisplay');
-      if (countDisp) countDisp.textContent = 'Testing candidate...';
+      if (countDisp) countDisp.textContent = 'Checking for photos...';
       tryLoadPhotoCandidate(0);
     }
 
     function tryLoadPhotoCandidate(idx) {
       if (!currentPhotoCandidates || idx >= currentPhotoCandidates.length) {
-        collapseEmptyPhotoFolio('None verified online');
+        collapseEmptyPhotoFolio('No photos attached');
         return;
       }
       currentPhotoCandidateIdx = idx;
@@ -3640,7 +3881,8 @@ INDEX_TEMPLATE_V2 = """
       if (img) img.classList.remove('hidden');
       if (placeholder) placeholder.classList.add('hidden');
       if (viewerImg) viewerImg.src = verifiedUrl;
-      if (countDisp) countDisp.textContent = '1 Verified Scan';
+      const photoTotal = (currentPhotoCandidates && currentPhotoCandidates.length) ? currentPhotoCandidates.length : 1;
+      if (countDisp) countDisp.textContent = `${photoTotal} Photo${photoTotal === 1 ? '' : 's'}`;
       if (tabBadge) {
         tabBadge.textContent = '📷';
         tabBadge.classList.remove('hidden');
@@ -3655,7 +3897,7 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
-    function collapseEmptyPhotoFolio(reason = 'None verified') {
+    function collapseEmptyPhotoFolio(reason = 'No photos attached') {
       const mainBox = document.getElementById('photoMainBox');
       const img = document.getElementById('specimenImg');
       const placeholder = document.getElementById('photoPlaceholder');
@@ -3671,12 +3913,11 @@ INDEX_TEMPLATE_V2 = """
 
       if (placeholder) {
         placeholder.innerHTML = `
-          <div class="py-1 px-2.5 bg-stone-100 rounded border border-bordercol/70 flex items-center justify-between text-xs font-mono text-muted">
+          <div class="py-1.5 px-2.5 bg-stone-100 rounded border border-bordercol/70 flex items-center justify-between text-xs font-sans text-muted">
             <span class="flex items-center gap-1.5 text-stone-500">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              Scan: ${reason}
+              ${reason}
             </span>
-            <span class="text-[10px] text-stone-400 italic">Viewport reclaimed</span>
           </div>
         `;
         placeholder.classList.remove('hidden');
@@ -3693,7 +3934,40 @@ INDEX_TEMPLATE_V2 = """
     }
 
     function openPhotoViewerModal() {
-      document.getElementById('photoViewerModal')?.classList.remove('hidden');
+      const modal = document.getElementById('photoViewerModal');
+      if (modal) modal.classList.remove('hidden');
+      updatePhotoViewerControls();
+      initPhotoViewerTouchGestures();
+    }
+
+    function updatePhotoViewerControls() {
+      const total = (currentPhotoCandidates && currentPhotoCandidates.length) ? currentPhotoCandidates.length : 0;
+      const titleEl = document.getElementById('photoViewerTitle');
+      const prevBtn = document.getElementById('btnPhotoPrev');
+      const nextBtn = document.getElementById('btnPhotoNext');
+      if (titleEl) {
+        titleEl.textContent = total > 1
+          ? `Specimen Photo (${currentPhotoCandidateIdx + 1} / ${total})`
+          : 'Specimen Photo';
+      }
+      if (prevBtn && nextBtn) {
+        if (total > 1) {
+          prevBtn.classList.remove('hidden');
+          nextBtn.classList.remove('hidden');
+        } else {
+          prevBtn.classList.add('hidden');
+          nextBtn.classList.add('hidden');
+        }
+      }
+    }
+
+    function stepViewerPhoto(delta) {
+      if (!currentPhotoCandidates || currentPhotoCandidates.length <= 1) return;
+      const total = currentPhotoCandidates.length;
+      const nextIdx = (currentPhotoCandidateIdx + delta + total) % total;
+      resetPhotoTransform();
+      selectPhoto(nextIdx, currentPhotoCandidates[nextIdx]);
+      updatePhotoViewerControls();
     }
 
     function closePhotoViewerModal() {
@@ -3814,6 +4088,25 @@ INDEX_TEMPLATE_V2 = """
           isPanning = false;
         }
       }, { passive: true });
+
+      // Mouse-drag panning when zoomed (desktop/tablet preview support)
+      let mousePanning = false;
+      viewport.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || photoZoom <= 1.05 || e.target.closest('button')) return;
+        mousePanning = true;
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        panBaseX = photoPanX;
+        panBaseY = photoPanY;
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!mousePanning || photoZoom <= 1.05) return;
+        const maxOffset = Math.max(120, viewport.clientWidth * (photoZoom - 1) * 0.65);
+        photoPanX = Math.min(Math.max(panBaseX + (e.clientX - panStartX), -maxOffset), maxOffset);
+        photoPanY = Math.min(Math.max(panBaseY + (e.clientY - panStartY), -maxOffset), maxOffset);
+        updatePhotoTransform();
+      });
+      window.addEventListener('mouseup', () => { mousePanning = false; });
     }
 
     function isProblemActiveOnRecord(probName, rec) {
@@ -3879,74 +4172,163 @@ INDEX_TEMPLATE_V2 = """
 
       const count = activeProblems.length;
 
-      // 1. Tab Badge
-      const tabBadge = document.getElementById('tabProblemBadge');
-      if (tabBadge) {
+      // 1. Tab 0 (Details) Red Flag Badge & Jump Chip
+      const detailsFlagBadge = document.getElementById('tabDetailsFlagsBadge');
+      if (detailsFlagBadge) {
         if (count > 0) {
-          tabBadge.textContent = count;
-          tabBadge.classList.remove('hidden');
+          detailsFlagBadge.textContent = count;
+          detailsFlagBadge.classList.remove('hidden');
         } else {
-          tabBadge.classList.add('hidden');
+          detailsFlagBadge.classList.add('hidden');
+        }
+      }
+      const flagChip = document.getElementById('detailsFlagSummaryChip');
+      const flagChipText = document.getElementById('detailsFlagSummaryText');
+      if (flagChip && flagChipText) {
+        if (count > 0) {
+          const names = activeProblems.slice(0, 3).map(p => humanizeProblemName(p.name));
+          const extra = count > 3 ? ` +${count - 3}` : '';
+          flagChipText.textContent = `⚠ ${count} flagged: ${names.join(', ')}${extra}`;
+          flagChip.classList.remove('hidden');
+        } else {
+          flagChip.classList.add('hidden');
         }
       }
 
-      // 2. Summary Banner
+      // 2. Build Historical Resolver cards list (all fields with historical book data + flagged mapped fields)
+      const histObj = state.currentHistoricalData || {};
+      const fieldToProb = _buildFieldToProblemMap(state.activeSchema);
+      const historyCardsMap = new Map();
+
+      // First include every field that actually has historical suggestions differing from the current value
+      const normHistVal = (v) => String(v ?? '').trim().toLowerCase();
+      let histSuggestionFieldCount = 0;
+      Object.entries(histObj).forEach(([fieldName, hMap]) => {
+        if (!hMap || Object.keys(hMap).length === 0) return;
+        const curRaw = (obs[fieldName] !== undefined && String(obs[fieldName]).trim() !== '')
+          ? obs[fieldName]
+          : ((reg[fieldName] !== undefined && String(reg[fieldName]).trim() !== '') ? reg[fieldName] : '');
+        const curNorm = normHistVal(curRaw);
+        const differingEntries = Object.entries(hMap).filter(([hVal]) => normHistVal(hVal) !== curNorm);
+        if (differingEntries.length === 0) return;
+        histSuggestionFieldCount++;
+        const probName = fieldToProb[fieldName.toLowerCase()] || '';
+        historyCardsMap.set(fieldName.toLowerCase(), {
+          targetField: fieldName,
+          probName: probName,
+          isFlagged: probName ? isProblemActiveOnRecord(probName, rec) : false,
+          histEntries: differingEntries,
+        });
+      });
+
+      // Also include flagged data fields so curators can apply manual overrides or ICEDIG codes on History tab
+      activeProblems.forEach(p => {
+        const targetField = p.maps_to;
+        const isGeneralFlag = !targetField || targetField === p.name || p.name.toLowerCase() === 'other_problem';
+        if (isGeneralFlag) return;
+        const key = targetField.toLowerCase();
+        if (!historyCardsMap.has(key)) {
+          const hMap = histObj[targetField] || {};
+          const curRaw = (obs[targetField] !== undefined && String(obs[targetField]).trim() !== '')
+            ? obs[targetField]
+            : ((reg[targetField] !== undefined && String(reg[targetField]).trim() !== '') ? reg[targetField] : '');
+          const curNorm = normHistVal(curRaw);
+          const differingEntries = Object.entries(hMap).filter(([hVal]) => normHistVal(hVal) !== curNorm);
+          historyCardsMap.set(key, {
+            targetField: targetField,
+            probName: p.name,
+            isFlagged: true,
+            histEntries: differingEntries,
+          });
+        } else {
+          const existing = historyCardsMap.get(key);
+          existing.probName = existing.probName || p.name;
+          existing.isFlagged = true;
+        }
+      });
+
+      const historyCards = Array.from(historyCardsMap.values());
+
+      // Tab 2 (History) Slate-Blue Badge
+      const tabHistBadge = document.getElementById('tabHistoryBadge');
+      if (tabHistBadge) {
+        if (histSuggestionFieldCount > 0) {
+          tabHistBadge.textContent = histSuggestionFieldCount;
+          tabHistBadge.classList.remove('hidden');
+        } else {
+          tabHistBadge.classList.add('hidden');
+        }
+      }
+
+      // 3. History Summary Banner
       const summaryBar = document.getElementById('problemSummaryBar');
       const summaryDot = document.getElementById('problemSummaryDot');
       const summaryCountText = document.getElementById('problemSummaryCountText');
       const summaryActionText = document.getElementById('problemSummaryActionText');
       if (summaryBar) {
-        if (count > 0) {
-          summaryBar.className = 'flex items-center justify-between p-3 bg-brick-light/50 border border-brick/30 rounded-[3px] transition-colors duration-200';
-          if (summaryDot) summaryDot.className = 'w-2.5 h-2.5 rounded-full bg-brick animate-pulse';
+        if (histSuggestionFieldCount > 0) {
+          summaryBar.className = 'flex items-center justify-between p-3 bg-sky-50 border border-sky-200 rounded-[3px] transition-colors duration-200';
+          if (summaryDot) summaryDot.className = 'w-2.5 h-2.5 rounded-full bg-sky-700';
           if (summaryCountText) {
-            summaryCountText.className = 'text-xs font-bold text-brick uppercase font-mono';
-            summaryCountText.textContent = `${count} Active Discrepanc${count === 1 ? 'y' : 'ies'}`;
+            summaryCountText.className = 'text-xs font-bold text-sky-900 uppercase font-mono';
+            summaryCountText.textContent = `${histSuggestionFieldCount} Historical Suggestion${histSuggestionFieldCount === 1 ? '' : 's'}`;
           }
           if (summaryActionText) {
-            summaryActionText.className = 'text-[10px] font-mono text-brick font-semibold';
-            summaryActionText.textContent = 'Review & Resolve';
+            summaryActionText.className = 'text-[10px] font-mono text-sky-800 font-semibold';
+            summaryActionText.textContent = 'Compare & Apply';
+          }
+        } else if (historyCards.length > 0) {
+          summaryBar.className = 'flex items-center justify-between p-3 bg-amber-50 border border-amber-300 rounded-[3px] transition-colors duration-200';
+          if (summaryDot) summaryDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-600';
+          if (summaryCountText) {
+            summaryCountText.className = 'text-xs font-bold text-amber-900 uppercase font-mono';
+            summaryCountText.textContent = `${historyCards.length} Flagged Field${historyCards.length === 1 ? '' : 's'}`;
+          }
+          if (summaryActionText) {
+            summaryActionText.className = 'text-[10px] font-mono text-amber-800 font-semibold';
+            summaryActionText.textContent = 'Manual Edit / Codes';
           }
         } else {
           summaryBar.className = 'flex items-center justify-between p-3 bg-emerald-50/70 border border-fern/30 rounded-[3px] transition-colors duration-200';
           if (summaryDot) summaryDot.className = 'w-2.5 h-2.5 rounded-full bg-fern';
           if (summaryCountText) {
             summaryCountText.className = 'text-xs font-bold text-fern-dark uppercase font-mono';
-            summaryCountText.textContent = '0 Discrepancies · Clean Data';
+            summaryCountText.textContent = '0 Historical Conflicts';
           }
           if (summaryActionText) {
             summaryActionText.className = 'text-[10px] font-mono text-fern font-medium';
-            summaryActionText.textContent = 'All Validated';
+            summaryActionText.textContent = 'No Older Books Differ';
           }
         }
       }
 
-      // 3. Discrepancy Cards Container
+      // 4. Historical Resolver Cards Container
       const container = document.getElementById('activeDiscrepanciesContainer');
       if (container) {
-        if (count === 0) {
+        if (historyCards.length === 0) {
           container.innerHTML = `
-            <div class="p-6 bg-surface border border-bordercol rounded-[3px] text-center space-y-2">
+            <div class="p-6 bg-surface border border-bordercol rounded-[3px] text-center space-y-2.5">
               <div class="w-8 h-8 rounded-full bg-emerald-50 text-fern border border-fern/30 flex items-center justify-center mx-auto text-base">✓</div>
-              <div class="text-xs font-mono font-bold text-ink">No Curatorial Discrepancies</div>
-              <p class="text-[11px] text-subdued font-sans max-w-xs mx-auto">This specimen currently has no flagged discrepancies. You can toggle data integrity flags below if curatorial attention is needed.</p>
+              <div class="text-xs font-mono font-bold text-ink">No Older Catalog Book Conflicts</div>
+              <p class="text-[11px] text-subdued font-sans max-w-xs mx-auto">This specimen has no conflicting entries from older catalog books. Swipe back to <strong>Details</strong> to check fields or flag issues.</p>
+              <button type="button" onclick="openOldNamesSheet()" class="mt-1 px-3.5 py-2 min-h-[40px] rounded-full border border-bordercol bg-stone-50 hover:bg-stone-100 text-xs font-semibold text-ink inline-flex items-center gap-1.5 tap-active">
+                <span>📜</span><span>Check Old Names &amp; Synonyms</span>
+              </button>
             </div>
           `;
         } else {
-          container.innerHTML = activeProblems.map(p => {
-            const probName = p.name;
-            const label = p.label;
-            const targetField = p.maps_to;
+          container.innerHTML = historyCards.map(item => {
+            const targetField = item.targetField;
+            const probName = item.probName || '';
+            const safeProbKey = probName || targetField.replace(/[^A-Za-z0-9_]/g, '_');
             const currentVal = (obs[targetField] !== undefined && obs[targetField] !== '') ? obs[targetField] : ((reg[targetField] !== undefined && reg[targetField] !== '') ? reg[targetField] : '—');
-
-            const histMap = state.currentHistoricalData ? (state.currentHistoricalData[targetField] || {}) : {};
-            const histEntries = Object.entries(histMap);
+            const histEntries = item.histEntries || [];
 
             let histHtml = '';
             if (histEntries.length > 0) {
               histHtml = `
                 <div class="space-y-1.5">
-                  <span class="text-[9px] uppercase font-bold text-muted block">Historical Records / Prior Determinations</span>
+                  <span class="text-[9px] uppercase font-bold text-muted block">Historical Suggestions</span>
                   <div class="space-y-1.5">
                     ${histEntries.map(([hVal, sources]) => {
                       const sourcesStr = Array.isArray(sources) ? sources.join(', ') : String(sources);
@@ -3956,10 +4338,10 @@ INDEX_TEMPLATE_V2 = """
                         <div class="p-2 bg-emerald-50/50 border border-fern/30 rounded flex items-center justify-between gap-2">
                           <div class="truncate min-w-0">
                             <span class="font-mono text-xs font-bold text-ink block truncate">${safeVal}</span>
-                            <span class="text-[9px] font-mono text-fern-dark block truncate">Sources: ${escapeHtml(sourcesStr)}</span>
+                            <span class="text-[9px] font-mono text-fern-dark block truncate">Source: ${escapeHtml(sourcesStr)}</span>
                           </div>
-                          <button type="button" onclick="resolveFieldDiscrepancy('${targetField}', '${probName}', '${jsVal}', true)" class="flex-none px-2.5 py-1 bg-fern hover:bg-fern-dark text-white rounded text-[10px] font-mono font-bold shadow-2xs">
-                            Apply Fix
+                          <button type="button" onclick="resolveFieldDiscrepancy('${targetField}', '${probName}', '${jsVal}', true)" class="flex-none min-h-[36px] px-3 py-1 bg-fern hover:bg-fern-dark text-white rounded text-[11px] font-mono font-bold shadow-2xs tap-active" style="background:#2d5a3c;color:#ffffff;">
+                            Apply
                           </button>
                         </div>
                       `;
@@ -3970,22 +4352,28 @@ INDEX_TEMPLATE_V2 = """
             } else {
               histHtml = `
                 <div class="p-2 bg-stone-50 border border-dashed border-stone-200 rounded text-[10.5px] font-mono text-muted text-center">
-                  No earlier historical determinations found for this field.
+                  No older catalog suggestions for this field.
                 </div>
               `;
             }
+
+            const statusChip = item.isFlagged
+              ? '<span class="text-[10px] font-mono text-brick bg-brick-light px-1.5 py-0.5 rounded border border-brick/20 font-medium whitespace-nowrap">Flagged</span>'
+              : '<span class="text-[10px] font-mono text-sky-900 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200 font-medium whitespace-nowrap">CFCT</span>';
+
+            const dismissBtn = (item.isFlagged && probName)
+              ? `<button type="button" onclick="resolveFieldDiscrepancy('${targetField}', '${probName}', undefined, true)" class="flex-none text-[10px] font-mono text-muted hover:text-ink px-2.5 py-1 min-h-[36px] rounded bg-stone-100 hover:bg-stone-200 border border-stone-200">Clear Flag</button>`
+              : '';
 
             return `
               <div class="bg-surface border border-bordercol rounded-[3px] p-3.5 shadow-2xs space-y-3">
                 <div class="flex items-center justify-between border-b border-stone-100 pb-2">
                   <div class="flex items-center gap-1.5 truncate mr-2">
-                    <span class="w-2 h-2 rounded-full bg-brick flex-none"></span>
+                    <span class="w-2 h-2 rounded-full ${item.isFlagged ? 'bg-brick' : 'bg-sky-700'} flex-none"></span>
                     <span class="text-xs font-mono font-bold text-ink truncate">${escapeHtml(targetField)}</span>
-                    <span class="text-[10px] font-mono text-brick bg-brick-light px-1.5 py-0.5 rounded border border-brick/20 font-medium whitespace-nowrap">${escapeHtml(label)}</span>
+                    ${statusChip}
                   </div>
-                  <button type="button" onclick="resolveFieldDiscrepancy('${targetField}', '${probName}', undefined, true)" class="flex-none text-[10px] font-mono text-muted hover:text-ink px-2 py-1 rounded bg-stone-100 hover:bg-stone-200 border border-stone-200">
-                    Dismiss Flag
-                  </button>
+                  ${dismissBtn}
                 </div>
 
                 <div class="bg-stone-50 border border-stone-200 rounded p-2 text-xs font-mono flex items-center justify-between">
@@ -3999,25 +4387,25 @@ INDEX_TEMPLATE_V2 = """
                 ${histHtml}
 
                 <div class="pt-1">
-                  <span class="text-[9px] uppercase font-bold text-muted block mb-1">Manual Override</span>
+                  <span class="text-[9px] uppercase font-bold text-muted block mb-1">Type a Value Manually</span>
                   <div class="flex items-center gap-1.5">
-                    <input type="text" id="manualInput_${probName}" placeholder="Enter new value..." class="flex-1 bg-white border border-bordercol rounded px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none focus:border-fern" />
-                    <button type="button" onclick="applyManualProblemResolution('${targetField}', '${probName}')" class="px-2.5 py-1.5 rounded bg-stone-100 hover:bg-stone-200 active:bg-stone-300 border border-stone-300 text-ink text-xs font-mono font-semibold min-h-[34px] whitespace-nowrap">
-                      Apply Manual
+                    <input type="text" id="manualInput_${safeProbKey}" placeholder="Enter new value..." class="flex-1 min-h-[38px] bg-white border border-bordercol rounded px-2.5 py-1.5 text-xs font-mono text-ink focus:outline-none focus:border-fern" />
+                    <button type="button" onclick="applyManualProblemResolution('${targetField}', '${safeProbKey}', '${probName}')" class="px-3 py-1.5 rounded bg-stone-100 hover:bg-stone-200 active:bg-stone-300 border border-stone-300 text-ink text-xs font-mono font-semibold min-h-[38px] whitespace-nowrap">
+                      Apply
                     </button>
                   </div>
                 </div>
 
                 <div class="pt-1">
-                  <button type="button" onclick="toggleIcedigTray('${probName}')" class="w-full flex items-center justify-between px-2.5 py-1.5 rounded bg-stone-50 hover:bg-stone-100 border border-stone-200 text-ink text-xs font-mono font-medium transition-colors">
+                  <button type="button" onclick="toggleIcedigTray('${safeProbKey}')" class="w-full min-h-[38px] flex items-center justify-between px-2.5 py-1.5 rounded bg-stone-50 hover:bg-stone-100 border border-stone-200 text-ink text-xs font-mono font-medium transition-colors">
                     <span class="flex items-center gap-1.5">
                       <span class="text-fern font-bold">?</span>
                       <span>Mark as Blank or Unreadable...</span>
                     </span>
-                    <span id="icedigArrow_${probName}" class="text-[10px] text-muted">▼</span>
+                    <span id="icedigArrow_${safeProbKey}" class="text-[10px] text-muted">▼</span>
                   </button>
 
-                  <div id="icedigTray_${probName}" class="hidden mt-2 p-2 bg-stone-50 border border-bordercol rounded space-y-1.5">
+                  <div id="icedigTray_${safeProbKey}" class="hidden mt-2 p-2 bg-stone-50 border border-bordercol rounded space-y-1.5">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       ${(() => {
                         const icedigMap = (state.icedigCodes && Object.keys(state.icedigCodes).length > 0)
@@ -4066,14 +4454,17 @@ INDEX_TEMPLATE_V2 = """
         }
       }
 
-      // 4. Schema Data Integrity Flags Checklist Grid
+      // 5. Physical & Other Issues Grid (in Tab 0 Details — non-field flags not already shown inline)
       const flagsGrid = document.getElementById('problemFlagsGrid');
       const flaggedBadge = document.getElementById('flaggedTotalBadge');
+      const inlineProbSet = new Set(Object.values(fieldToProb));
       if (flaggedBadge) {
         flaggedBadge.textContent = `${count} Flagged`;
       }
       if (flagsGrid) {
-        flagsGrid.innerHTML = problemDefs.map(pDef => {
+        const nonFieldDefs = problemDefs.filter(pDef => pDef && !inlineProbSet.has(pDef.name));
+        const renderDefs = nonFieldDefs.length > 0 ? nonFieldDefs : problemDefs;
+        flagsGrid.innerHTML = renderDefs.map(pDef => {
           const probName = pDef.name;
           const isAct = isProblemActiveOnRecord(probName, rec);
           const formatProblemLabel = (raw) => {
@@ -4082,11 +4473,11 @@ INDEX_TEMPLATE_V2 = """
           };
           const label = pDef.label ? formatProblemLabel(pDef.label) : formatProblemLabel(probName);
           return `
-            <button type="button" onclick="toggleProblemFlag('${probName}')" class="p-2.5 rounded border text-left flex items-start justify-between transition-all tap-highlight-transparent min-h-[44px] ${isAct ? 'border-brick bg-brick-light text-brick font-semibold' : 'border-stone-200 bg-white text-muted hover:border-stone-300'}">
+            <button type="button" data-no-swipe="true" data-flagged-row="${isAct ? 'true' : 'false'}" onclick="toggleProblemFlag('${probName}')" class="p-2.5 rounded border text-left flex items-start justify-between transition-all tap-highlight-transparent min-h-[44px] ${isAct ? 'border-brick bg-brick-light text-brick font-semibold' : 'border-stone-200 bg-white text-muted hover:border-stone-300'}">
               <div class="min-w-0 pr-1">
                 <span class="text-xs font-sans font-medium block truncate ${isAct ? 'text-brick font-semibold' : 'text-ink'}">${escapeHtml(label)}</span>
               </div>
-              <span class="w-3.5 h-3.5 rounded-full flex-none mt-0.5 flex items-center justify-center text-[9px] font-bold ${isAct ? 'bg-brick text-white' : 'border border-stone-300'}">
+              <span class="w-4 h-4 rounded flex-none mt-0.5 flex items-center justify-center text-[10px] font-bold ${isAct ? 'bg-brick text-white' : 'border border-stone-300'}" style="${isAct ? 'background:#c93a40;color:#ffffff;' : ''}">
                 ${isAct ? '✓' : ''}
               </span>
             </button>
@@ -4109,15 +4500,15 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
-    function applyManualProblemResolution(targetField, probName) {
-      const inp = document.getElementById(`manualInput_${probName}`);
+    function applyManualProblemResolution(targetField, inputKey, probName) {
+      const inp = document.getElementById(`manualInput_${inputKey}`);
       if (!inp) return;
       const val = inp.value.trim();
       if (!val) {
         showToast('Please enter a value before applying');
         return;
       }
-      resolveFieldDiscrepancy(targetField, probName, val, true);
+      resolveFieldDiscrepancy(targetField, probName !== undefined ? probName : inputKey, val, true);
     }
 
     function resolveFieldDiscrepancy(targetField, probName, newVal, clearFlag = true) {
@@ -4137,9 +4528,24 @@ INDEX_TEMPLATE_V2 = """
       }
 
       triggerAutoSave();
-      renderProblemsAndDiscrepancies(state.currentRecord);
       renderDynamicForm(state.activeSchema, state.currentRecord);
-      showToast(newVal !== undefined ? `✓ Applied resolution for ${targetField}` : `✓ Dismissed flag for ${probName}`);
+      renderProblemsAndDiscrepancies(state.currentRecord);
+      renderDetailView(false);
+      showToast(newVal !== undefined ? `✓ Applied ${targetField}` : `✓ Cleared ${humanizeProblemName(probName)}`);
+    }
+
+    function humanizeProblemName(probName) {
+      if (!probName) return 'Issue';
+      const raw = String(probName).trim();
+      const lower = raw.toLowerCase();
+      if (lower === 'other_problem') return 'Other Issue';
+      if (state.activeSchema && state.activeSchema.ui_sections && Array.isArray(state.activeSchema.ui_sections.problems)) {
+        const found = state.activeSchema.ui_sections.problems.find(p => p && p.name === raw);
+        if (found && (found.label || found.maps_to)) {
+          return String(found.label || found.maps_to).replace(/_/g, ' ').trim();
+        }
+      }
+      return raw.replace(/_?[Pp]roblem$/g, '').replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim() || raw;
     }
 
     function toggleProblemFlag(probName) {
@@ -4151,8 +4557,11 @@ INDEX_TEMPLATE_V2 = """
       markDirty(probName);
       triggerAutoSave();
       triggerHaptic('discrepancy');
+      renderDynamicForm(state.activeSchema, state.currentRecord);
       renderProblemsAndDiscrepancies(state.currentRecord);
-      showToast(nextVal ? `⚠ Flagged ${probName}` : `✓ Cleared flag ${probName}`);
+      renderDetailView(false);
+      const label = humanizeProblemName(probName);
+      showToast(nextVal ? `⚠ Flagged ${label}` : `✓ Cleared ${label}`);
     }
 
     // -------------------------------------------------------------
@@ -4633,7 +5042,7 @@ INDEX_TEMPLATE_V2 = """
         if (res && res.success) {
           dirtyFields.clear();
           triggerHaptic('save_success');
-          showToast('✓ Saved & synchronized');
+          showToast('✓ Saved & synchronized', { passive: true });
         } else if (res && res.error) {
           showToast(`⚠️ Sync failed: ${res.error}`);
         } else {
@@ -4764,19 +5173,88 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
+    function updateFilterActiveDot() {
+      const badge = document.getElementById('filterActiveBadge');
+      if (!badge) return;
+      const hasStatus = Boolean(state.activeStatusFilter && state.activeStatusFilter !== 'all');
+      const hasLoc = Boolean(
+        state.selectedCabinet ||
+        state.selectedShelf ||
+        (state.activeAdvancedFilters && state.activeAdvancedFilters.locations && Object.values(state.activeAdvancedFilters.locations).some(v => String(v || '').trim()))
+      );
+      const hasProb = Boolean(
+        state.activeAdvancedFilters && state.activeAdvancedFilters.problems && Object.values(state.activeAdvancedFilters.problems).some(Boolean)
+      );
+      if (hasStatus || hasLoc || hasProb) badge.classList.remove('hidden');
+      else badge.classList.add('hidden');
+    }
+
     function openFilterModal() {
       const locContainer = document.getElementById('filterModalLocations');
-      if (locContainer && locContainer.children.length === 0) {
-        const locFields = (activeSchema && activeSchema.ui_sections && activeSchema.ui_sections.location) || [
-          { name: 'Cabinet' }, { name: 'Shelf' }, { name: 'Room' }, { name: 'Box' }
-        ];
-        locContainer.innerHTML = locFields.map(f => `
-          <div class="flex items-center justify-between gap-2 text-xs">
-            <label class="font-mono text-muted text-[11px] w-24 shrink-0">${f.name}:</label>
-            <input type="text" id="filterModal_loc_${f.name}" placeholder="Any ${f.name}..." class="flex-1 bg-stone-50 border border-bordercol rounded px-2 py-1 text-xs font-mono text-ink outline-none focus:border-fern" />
-          </div>
-        `).join('');
+      const locFields = (state.activeSchema && state.activeSchema.ui_sections && state.activeSchema.ui_sections.location) || [
+        { name: 'Building' }, { name: 'Floor' }, { name: 'Cabinet' }, { name: 'Shelf' }
+      ];
+      const savedLocs = (state.activeAdvancedFilters && state.activeAdvancedFilters.locations) || {};
+      if (locContainer) {
+        locContainer.innerHTML = locFields.map(f => {
+          const fname = f.name;
+          let curVal = savedLocs[fname] || '';
+          if (!curVal && fname.toLowerCase() === 'cabinet') curVal = state.selectedCabinet || '';
+          if (!curVal && fname.toLowerCase() === 'shelf') curVal = state.selectedShelf || '';
+          const safeId = `filterModal_loc_${fname.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+          return `
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <label for="${safeId}" class="font-mono text-muted text-[11px] w-24 shrink-0 truncate">${fname}:</label>
+              <input type="text" id="${safeId}" data-loc-field="${fname.replace(/"/g, '&quot;')}" value="${String(curVal).replace(/"/g, '&quot;')}" placeholder="Any ${fname}..." class="flex-1 min-h-[40px] bg-stone-50 border border-bordercol rounded px-2.5 py-1.5 text-xs font-mono text-ink outline-none focus:border-fern" />
+            </div>
+          `;
+        }).join('');
       }
+
+      const probContainer = document.getElementById('filterModalProblems');
+      if (probContainer) {
+        const curStatus = state.activeStatusFilter || 'all';
+        const statusOpts = [
+          { val: 'all', label: 'All Objects' },
+          { val: 'pending', label: 'Unreviewed' },
+          { val: 'reviewed', label: 'Reviewed' },
+          { val: 'flagged', label: 'Flagged' },
+          { val: 'conflict', label: 'Conflicts' }
+        ];
+        const savedProbs = (state.activeAdvancedFilters && state.activeAdvancedFilters.problems) || {};
+        const schemaProbs = (state.activeSchema && state.activeSchema.ui_sections && Array.isArray(state.activeSchema.ui_sections.problems))
+          ? state.activeSchema.ui_sections.problems
+          : [{ name: 'Other_problem', label: 'Other Issue' }];
+
+        let html = `
+          <div class="mb-2.5">
+            <div class="text-[11px] font-mono text-muted mb-1.5">Review Status:</div>
+            <div class="flex flex-wrap gap-1.5">
+              ${statusOpts.map(opt => `
+                <label class="inline-flex items-center gap-1.5 min-h-[36px] px-2.5 py-1 rounded-full border ${curStatus === opt.val ? 'border-fern bg-emerald-50 text-fern-dark font-bold' : 'border-bordercol bg-white text-ink-muted'} text-[11px] font-mono cursor-pointer">
+                  <input type="radio" name="filterModalStatus" value="${opt.val}" ${curStatus === opt.val ? 'checked' : ''} class="sr-only" onchange="this.closest('div').querySelectorAll('label').forEach(l => l.className='inline-flex items-center gap-1.5 min-h-[36px] px-2.5 py-1 rounded-full border border-bordercol bg-white text-ink-muted text-[11px] font-mono cursor-pointer'); this.parentElement.className='inline-flex items-center gap-1.5 min-h-[36px] px-2.5 py-1 rounded-full border border-fern bg-emerald-50 text-fern-dark font-bold text-[11px] font-mono cursor-pointer';" />
+                  <span>${opt.label}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+          <div class="text-[11px] font-mono text-muted mb-1.5">Specific Problem Flags:</div>
+          <div class="grid grid-cols-2 gap-1.5">
+            ${schemaProbs.filter(p => p && p.name).map(p => {
+              const checked = Boolean(savedProbs[p.name]);
+              const lbl = humanizeProblemName(p.name);
+              return `
+                <label class="flex items-center gap-2 min-h-[40px] px-2.5 py-1.5 rounded border border-bordercol bg-stone-50 text-xs text-ink cursor-pointer">
+                  <input type="checkbox" class="filter-modal-prob-cb rounded border-stone-400 text-fern focus:ring-fern" data-prob-name="${p.name.replace(/"/g, '&quot;')}" ${checked ? 'checked' : ''} />
+                  <span class="truncate">${lbl}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        `;
+        probContainer.innerHTML = html;
+      }
+
       openModal('filterModal');
     }
 
@@ -4786,27 +5264,44 @@ INDEX_TEMPLATE_V2 = """
 
     function clearAdvancedFilters() {
       state.activeAdvancedFilters = { locations: {}, problems: {} };
+      state.activeStatusFilter = 'all';
       state.selectedCabinet = '';
       state.selectedShelf = '';
       const cabSelect = document.getElementById('quickFilterCabinet');
       const shelfSelect = document.getElementById('quickFilterShelf');
       if (cabSelect) cabSelect.value = '';
       if (shelfSelect) shelfSelect.value = '';
+      updateFilterActiveDot();
       closeFilterModal();
       fetchObjects();
     }
 
     function applyAdvancedFilters() {
-      const locFields = (activeSchema && activeSchema.ui_sections && activeSchema.ui_sections.location) || [
-        { name: 'Cabinet' }, { name: 'Shelf' }, { name: 'Room' }, { name: 'Box' }
-      ];
-      locFields.forEach(f => {
-        const inp = document.getElementById(`filterModal_loc_${f.name}`);
-        if (inp && inp.value.trim()) {
-          if (f.name.toLowerCase() === 'cabinet') state.selectedCabinet = inp.value.trim();
-          if (f.name.toLowerCase() === 'shelf') state.selectedShelf = inp.value.trim();
+      const nextLocs = {};
+      state.selectedCabinet = '';
+      state.selectedShelf = '';
+
+      document.querySelectorAll('#filterModalLocations input[data-loc-field]').forEach(inp => {
+        const fname = inp.getAttribute('data-loc-field');
+        const val = inp.value.trim();
+        if (fname && val) {
+          nextLocs[fname] = val;
+          if (fname.toLowerCase() === 'cabinet') state.selectedCabinet = val;
+          if (fname.toLowerCase() === 'shelf') state.selectedShelf = val;
         }
       });
+
+      const selectedStatusEl = document.querySelector('input[name="filterModalStatus"]:checked');
+      state.activeStatusFilter = selectedStatusEl ? selectedStatusEl.value : 'all';
+
+      const nextProbs = {};
+      document.querySelectorAll('#filterModalProblems .filter-modal-prob-cb').forEach(cb => {
+        const pname = cb.getAttribute('data-prob-name');
+        if (pname && cb.checked) nextProbs[pname] = true;
+      });
+
+      state.activeAdvancedFilters = { locations: nextLocs, problems: nextProbs };
+      updateFilterActiveDot();
       closeFilterModal();
       fetchObjects();
     }
@@ -4820,8 +5315,8 @@ INDEX_TEMPLATE_V2 = """
           { val: 'Taxon_Problem', label: 'Taxon / Identification Issue' },
           { val: 'General_Problem', label: 'General Specimen Issue' }
         ];
-        if (activeSchema && activeSchema.ui_sections && activeSchema.ui_sections.problems) {
-          activeSchema.ui_sections.problems.forEach(p => {
+        if (state.activeSchema && state.activeSchema.ui_sections && state.activeSchema.ui_sections.problems) {
+          state.activeSchema.ui_sections.problems.forEach(p => {
             if (p.name && !options.some(o => o.val === p.name)) {
               options.push({ val: p.name, label: p.name.replace(/_/g, ' ') });
             }
@@ -5004,38 +5499,44 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
-    // 3-Step First-Run Hallway Walkthrough
+    // 4-Step First-Run Hallway Quick Guide (Location first, ≤25 words/slide, visual pill previews)
     const WALKTHROUGH_SLIDES = [
       {
-        badge: 'STEP 1 OF 3 · FAST LOOKUP',
-        title: 'Find an Object and Search Its Listed Number',
-        body: 'Pick up a physical specimen box or sheet and type its number into the search bar — or filter for already-reviewed objects when pulling items for closer inspection. Leading zeros and prefixes are handled automatically.',
-        callout: 'Tip: Typing "001" or "O-V-1" both find #1. Tap [123 / Aa] to switch between number pad and plant names.'
+        badge: 'STEP 1 OF 4 · PHYSICAL LOCATION',
+        title: 'First: Record Where Each Object Lives',
+        bodyHtml: 'Recording <strong>Physical Location</strong> is the #1 hallway job so we can always find objects again. Standing at a shelf? Tap <strong>Set Shelf</strong> at the top of the list once.',
+        calloutHtml: '<div class="flex items-center justify-between gap-2"><span class="text-[11px] font-mono text-fern-dark font-bold">📍 Shelf: Fl 1 · Cab 21 · Sh 01</span><span class="px-2 py-0.5 rounded bg-white border border-fern/30 text-[10px] font-mono font-bold text-fern-dark">Set Shelf</span></div>'
       },
       {
-        badge: 'STEP 2 OF 3 · ARMED SHELF & LOANS',
-        title: 'Stamp Shelves in 1 Tap — Or Mark Loaned Out',
-        body: 'Set the Floor, Cabinet, and Shelf you are standing in front of once, then tap Stamp Target to assign 30+ boxes in 1 tap. Need to lend an object out? Switch to the Location tab and toggle Loaned Out directly from your phone.',
-        callout: '⚡ Armed Target: Fl 1 · Cab 21 · Sh 01  →  Tap [ 📍 Stamp Target ]'
+        badge: 'STEP 2 OF 4 · SEARCH & 1-TAP SAVE',
+        title: 'Open a Box, Save Its Shelf & Check Data',
+        bodyHtml: 'Search an object number to view its <strong>Registration Data</strong> (same as Desktop). Tap the green shelf button inside to save its location in 1 tap.',
+        calloutHtml: '<div class="flex flex-wrap items-center gap-1.5"><span class="px-2 py-1 rounded bg-fern text-white font-mono text-[10px] font-bold">📍 Save to Cab 21 · Sh 01</span><span class="px-2 py-1 rounded bg-surface border border-bordercol font-mono text-[10px] font-bold text-ink">↩ Undo (5s)</span><span class="text-[10px] text-muted">· Use <strong>Location</strong> tab for Loaned Out</span></div>'
       },
       {
-        badge: 'STEP 3 OF 3 · PHYSICAL REVIEW & ISSUES',
-        title: 'Flag Issues & Mark Reviewed After Physical Check',
-        body: 'Only tap ✓ Mark Reviewed once you have physically checked the object. Spot a physical condition issue (like a bent display) or mismatch? Check Other Issue (or a field flag), jot a quick Comment, and still tap ✓ Mark Reviewed — it is completely okay to leave hard issues flagged for later.',
-        callout: '🟠 REV + 1 ISSUE = Physically checked + issue safely queued for the desk. Tap ? anytime for What the Fields Mean!'
+        badge: 'STEP 3 OF 4 · OLD NAMES & BOOKS',
+        title: 'Unfamiliar Name on the Box?',
+        bodyHtml: 'Tap <strong>📜 Old names</strong> to check if the box uses an older plant or family name — if it matches, keep the modern name! If older books are loaded, swipe to <strong>History</strong>.',
+        calloutHtml: '<div class="flex items-center gap-2"><span class="px-2 py-0.5 rounded-full bg-surface border border-bordercol text-[11px] font-semibold text-ink">📜 Old names</span><span class="text-[11px] text-muted">Read-only check · never overwrites data</span></div>'
+      },
+      {
+        badge: 'STEP 4 OF 4 · FLAG & MARK REVIEWED',
+        title: 'Flag Issues & Mark Reviewed',
+        bodyHtml: 'Tap the <strong>checkbox next to any field</strong> on <strong>Details</strong> (or <strong>Other Issue</strong> + <strong>Comment</strong>), then tap <strong>✓ Mark Reviewed</strong>.<br><span class="text-fern-dark font-medium">You can’t break anything</span> — shelf taps have 5s Undo, and nothing saves to disk until <strong>Ctrl+S</strong> on Desktop.',
+        calloutHtml: '<div class="flex flex-wrap items-center gap-2 text-[10px]"><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-fern-dark border border-fern/30">[REV]</span><span class="text-muted">Clean</span><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">[REV+ERR]</span><span class="text-muted">Flagged for desk · Tap <strong>?</strong> anytime</span></div>'
       }
     ];
     let _wtIndex = 0;
 
-    // Plain-English Field Guide (mirrors the exact specimen page layout)
+    // Plain-English Field Guide (mirrors the exact Mobile V2 specimen page layout)
     const FIELD_GUIDE_EXPLANATIONS = {
       'Genus': {
         example: 'e.g. Betula',
-        desc: 'The first word of the plant’s scientific name. Sometimes the name on the box is outdated or an old synonym — that is completely okay! Just type what is written on the physical box label, and it can be updated automatically later using the GBIF Name Check feature on the desktop program.'
+        desc: 'The first word of the plant’s scientific name. If the physical box has an older name or synonym, tap 📜 Old names to check it — or tap the checkbox next to Genus on Details to flag it for Arbor Desktop.'
       },
       'Species': {
         example: 'e.g. pendula',
-        desc: 'The second word of the scientific name. Just like Genus, if the box has an older or synonym name, enter what the box says and let the desktop GBIF Name Check update it later.'
+        desc: 'The second word of the scientific name. Compare with the physical box label; if they disagree, check 📜 Old names or tap the checkbox next to Species on Details.'
       },
       'Author': {
         example: 'e.g. L. or Roth',
@@ -5043,59 +5544,27 @@ INDEX_TEMPLATE_V2 = """
       },
       'Family': {
         example: 'e.g. Betulaceae',
-        desc: 'The broader plant family name, usually ending in "-aceae". Leave as-is if not printed on the box.'
-      },
-      'Higher Classification': {
-        example: 'e.g. Fagales',
-        desc: 'Optional higher botanical group above Family. Usually filled automatically on the desktop.'
+        desc: 'The broader plant family name, usually ending in "-aceae" (older labels may use a classical name like Compositae — check 📜 Old names).'
       },
       'Collector': {
         example: 'e.g. N. Moe',
-        desc: 'The person who physically collected the specimen in the field. If the label is blank or unreadable, use the quick missing-data buttons.'
-      },
-      'Innsammling Nr.': {
-        example: 'e.g. 142 or OB-0042',
-        desc: 'The collector’s own field/notebook number written on the label, if one is listed.'
+        desc: 'The person who physically collected the specimen in the field. If the label disagrees or is unreadable, tap the checkbox next to Collector on Details.'
       },
       'Collection Date': {
-        example: 'e.g. 1954 or 1965-07-15',
-        desc: 'When the specimen was collected (year, month/year, or full date) as written on the label.'
+        example: 'e.g. 1954 or 15.07.1965',
+        desc: 'When the specimen was collected (DAY.MONTH.YEAR using 00 for unknown parts, or just the year) as written on the label.'
       },
-      'Collection Place': {
+      'Collection place': {
         example: 'e.g. Oslo, Tøyen',
         desc: 'Where the specimen was collected (city, region, country, or botanical garden).'
       },
-      '(N) Plant Part': {
-        example: 'e.g. Bark, Kongle, Frø',
-        desc: 'What part of the plant is inside the box (Norwegian term).'
-      },
-      'Plant Part': {
-        example: 'e.g. Bark, Cone, Seed',
-        desc: 'What part of the plant is inside the box (English term).'
-      },
-      'Box Label': {
+      'Box label': {
         example: 'Text on outside of box',
         desc: 'Exact wording or short note printed on the physical storage box label.'
       },
-      'Conservation Status': {
-        example: 'e.g. Good, Fragile label',
-        desc: 'Physical condition of the specimen or box (e.g. damaged, fragile, insect damage).'
-      },
-      'Observation': {
-        example: 'Free notes',
-        desc: 'Any extra observations you notice while holding the physical object.'
-      },
       'Comment': {
         example: 'Curatorial notes',
-        desc: 'General notes or messages for the next curator reviewing this object.'
-      },
-      'ProblemDescription': {
-        example: 'e.g. Faded pencil year',
-        desc: 'Short note explaining what is wrong if you checked a problem flag.'
-      },
-      'UID': {
-        example: 'Read-only ID',
-        desc: 'Permanent museum archive ID. Locked so it cannot be accidentally changed.'
+        desc: 'General notes or messages for the next curator reviewing this object. Tap Write / Edit Comment on Details to add one.'
       }
     };
 
@@ -5105,32 +5574,34 @@ INDEX_TEMPLATE_V2 = """
 
       const sectionsHtml = [];
 
-      // 1. Status Badges (matches top of Specimen Detail View)
+      // 1. Status Badges (matches Desktop & top of Specimen Detail View)
       sectionsHtml.push(`
         <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-2">
-          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">1. Status Badges (Top of Page)</div>
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">1. Status Badges (Same as Arbor Desktop)</div>
           <div class="space-y-1.5 text-[11px]">
-            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">UNREVIEWED</span> — Nobody has checked this physical object yet.</div>
-            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-fern-dark border border-fern/30">REVIEWED</span> — Checked physically and everything looks good.</div>
-            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">REV + ISSUES</span> — Checked physically, with a problem flagged for later. <strong>You don’t have to solve every problem today</strong> — leaving it flagged lets someone else look at it on the office computer later.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">[UNREV]</span> — Nobody has checked this physical object yet.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-fern-dark border border-fern/30">[REV]</span> — Checked physically and everything matches what is on file.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">[REV+ERR]</span> — Checked physically, with a mismatch or physical issue flagged for later. <strong>You don’t have to solve every problem today</strong> — leaving it flagged queues it safely for the office computer.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300">[CFCT]</span> — Older catalog books disagree with the current record. Swipe to the <strong>History</strong> tab to compare them.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">↗ Loaned</span> — Currently loaned out (toggle on the <strong>Location</strong> tab).</div>
           </div>
         </section>
       `);
 
-      // 2. Storage Location (matches Armed Shelf & Location Tab)
+      // 2. Physical Location (matches Current Shelf & Location Tab)
       sectionsHtml.push(`
         <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1.5">
-          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">2. Storage Location (Where the Box Lives)</div>
-          <p class="text-[11px] text-ink-muted"><strong>Building, Floor, Cabinet, Shelf</strong> record the exact physical shelf. Set your shelf once at the top of the list, then tap <strong>📍 Stamp Target</strong> on each box you pull.</p>
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">2. Physical Location (Where the Box Lives)</div>
+          <p class="text-[11px] text-ink-muted"><strong>Building, Floor, Cabinet, Shelf</strong> record where this object lives so we can find it again. Set <strong>My Current Shelf</strong> once at the top of the list, then tap <strong>📍 Save to Shelf</strong> on each box you pull.</p>
           <p class="text-[11px] text-ink-muted"><strong>Stored as:</strong> What kind of container holds it (paper box, plastic box, petridish, etc.).</p>
         </section>
       `);
 
-      // 3. Mirrored Specimen Form Fields (grouped just like the real object page)
+      // 3. Mirrored Specimen Form Fields (grouped just like the Mobile V2 Details tab)
       const groups = [
         { title: '3. Plant Name (Taxonomy)', fields: ['Genus', 'Species', 'Author', 'Family'] },
-        { title: '4. Collection Details', fields: ['Collector', 'Innsammling Nr.', 'Collection Date', 'Collection Place'] },
-        { title: '5. Physical Object & Notes', fields: ['Plant Part', '(N) Plant Part', 'Box Label', 'Conservation Status', 'Comment', 'UID'] },
+        { title: '4. Collection Details', fields: ['Collector', 'Collection Date', 'Collection place'] },
+        { title: '5. Box Label & Notes', fields: ['Box label', 'Comment'] },
       ];
 
       groups.forEach(g => {
@@ -5157,11 +5628,12 @@ INDEX_TEMPLATE_V2 = """
         `);
       });
 
-      // 4. Blank or Unreadable Labels
+      // 4. Blank or Unreadable Labels & Tabs
       sectionsHtml.push(`
-        <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1">
-          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">6. Blank or Unreadable Labels</div>
-          <p class="text-[11px] text-ink-muted">If handwriting is unreadable or a detail is missing from the paper label, tap the quick standard buttons (<strong>Illegible</strong> / <strong>Blank</strong>) instead of guessing — or check a problem flag and move on.</p>
+        <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1.5">
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">6. Flagging Issues &amp; Comparing Older Books</div>
+          <p class="text-[11px] text-ink-muted"><strong>Details tab:</strong> Tap the checkbox next to any field (or Physical &amp; Other Issues at the bottom) to flag or clear a problem — just like on Desktop Arbor.</p>
+          <p class="text-[11px] text-ink-muted"><strong>History tab (swipe right):</strong> Compare older catalog books against the current value and tap <strong>Apply</strong> if one matches the real object, or use the quick <strong>Blank / Unreadable</strong> codes instead of guessing.</p>
         </section>
       `);
 
@@ -5185,21 +5657,47 @@ INDEX_TEMPLATE_V2 = """
       const nextBtn = document.getElementById('wtNextBtn');
       if (badge) badge.textContent = s.badge;
       if (title) title.textContent = s.title;
-      if (body) body.textContent = s.body;
-      if (callout) callout.textContent = s.callout;
+      if (body) body.innerHTML = s.bodyHtml || '';
+      if (callout) callout.innerHTML = s.calloutHtml || '';
       if (backBtn) backBtn.classList.toggle('hidden', _wtIndex === 0);
       if (nextBtn) {
-        nextBtn.textContent = (_wtIndex === WALKTHROUGH_SLIDES.length - 1) ? 'Set My Cabinet & Start →' : 'Next →';
+        nextBtn.textContent = (_wtIndex === WALKTHROUGH_SLIDES.length - 1) ? 'Start Checking Objects →' : 'Next →';
       }
       for (let i = 0; i < WALKTHROUGH_SLIDES.length; i++) {
         const dot = document.getElementById('wtDot' + i);
         if (dot) {
-          dot.className = i === _wtIndex ? 'w-2.5 h-2.5 rounded-full bg-fern' : 'w-2 h-2 rounded-full bg-stone-300';
+          dot.className = i === _wtIndex ? 'w-2.5 h-2.5 rounded-full bg-fern cursor-pointer' : 'w-2 h-2 rounded-full bg-stone-300 cursor-pointer';
         }
       }
     }
 
+    function goToWalkthroughSlide(idx) {
+      if (idx >= 0 && idx < WALKTHROUGH_SLIDES.length) {
+        _wtIndex = idx;
+        renderWalkthroughSlide();
+      }
+    }
+
+    let _wtSwipeBound = false;
+    function _bindWalkthroughSwipe() {
+      if (_wtSwipeBound) return;
+      const modal = document.getElementById('walkthroughModal');
+      if (!modal) return;
+      _wtSwipeBound = true;
+      let startX = 0;
+      modal.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 1) startX = e.touches[0].clientX;
+      }, { passive: true });
+      modal.addEventListener('touchend', (e) => {
+        if (!e.changedTouches || !e.changedTouches.length) return;
+        const dx = e.changedTouches[0].clientX - startX;
+        if (dx < -45) nextWalkthroughSlide();
+        else if (dx > 45) prevWalkthroughSlide();
+      }, { passive: true });
+    }
+
     function openWalkthroughModal(startIdx = 0) {
+      _bindWalkthroughSwipe();
       _wtIndex = startIdx;
       renderWalkthroughSlide();
       const modal = document.getElementById('walkthroughModal');
@@ -5210,7 +5708,7 @@ INDEX_TEMPLATE_V2 = """
       const modal = document.getElementById('walkthroughModal');
       if (modal) modal.classList.add('hidden');
       if (markSeen) {
-        try { localStorage.setItem('arbor_v2_walkthrough_seen', 'true'); } catch(e) {}
+        try { sessionStorage.setItem('arbor_v2_walkthrough_seen', 'true'); } catch(e) {}
       }
     }
 
@@ -5234,9 +5732,14 @@ INDEX_TEMPLATE_V2 = """
     const ARBOR_SHOW_WALKTHROUGH = (_ARBOR_WT_RAW !== 'false');
 
     function maybeShowFirstRunWalkthrough() {
+      const forceParam = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('tutorial') === '1');
+      if (forceParam) {
+        openWalkthroughModal(0);
+        return;
+      }
       if (!ARBOR_SHOW_WALKTHROUGH) return;
       try {
-        if (localStorage.getItem('arbor_v2_walkthrough_seen') !== 'true') {
+        if (sessionStorage.getItem('arbor_v2_walkthrough_seen') !== 'true') {
           openWalkthroughModal(0);
         }
       } catch(e) {}

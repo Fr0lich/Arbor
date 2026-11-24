@@ -1143,7 +1143,7 @@ class UnifiedSettingsWindow:
             self.var_show_search.set(layout.get("show_search", True))
             self.var_show_reg.set(layout.get("show_reg", True))
             self.var_show_images.set(layout.get("show_images", True))
-            self.var_location_center.set(layout.get("location_in_center", False))
+            self.var_location_center.set(layout.get("location_in_center", True))
             self.var_location_2row.set(layout.get("location_2row", False))
             self.var_show_image_tools.set(layout.get("show_image_tools", True))
             self.var_show_bulk_edit.set(layout.get("show_bulk_edit", True))

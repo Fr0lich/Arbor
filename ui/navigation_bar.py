@@ -109,9 +109,9 @@ class NavigationBar:
         app.add_tooltip(btn_settings, "Application preferences & database profiles")
         app.toolbar_buttons["SETTINGS"] = btn_settings
 
-        # HELP — documentation & tutorials
-        btn_help = _nav_btn(nav_links_frame, "HELP ▾", app.show_help_dropdown)
-        app.add_tooltip(btn_help, "User guide, shortcuts HUD, and interactive tutorials")
+        # HELP — Unified Help Center (tutorials, quick guides, manuals, shortcuts)
+        btn_help = _nav_btn(nav_links_frame, "HELP", app.open_help_window)
+        app.add_tooltip(btn_help, "Open Arbor Help Center — interactive tutorials, guides, and shortcuts (F1)")
         app.toolbar_buttons["HELP"] = btn_help
         app.toolbar_buttons["❓ HELP ▾"] = btn_help
 
