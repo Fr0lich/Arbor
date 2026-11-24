@@ -220,6 +220,7 @@ class StartupDialog:
         self.completed = False
         self.mobile_mode = False
         self.win.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.win.bind("<Escape>", lambda e: self.on_close())
 
         # State vars
         self.db_path_var      = tk.StringVar()

@@ -53,7 +53,7 @@ def start_hallway_followup_guide(ui, on_complete=None):
 def start_armed_shelf_guide(ui, on_complete=None):
     """Interactive in-place Desktop-to-Phone Setup & Hallway Walkthrough (Step 3 of Learning Path)."""
     def _is_mobile_dialog_open(u) -> bool:
-        md = getattr(u, "mobile_dialog", None)
+        md = getattr(u, "mobile_dialog", None) or getattr(u, "_mobile_dialog", None)
         if md is not None:
             win = getattr(md, "win", md)
             try:
@@ -61,11 +61,17 @@ def start_armed_shelf_guide(ui, on_complete=None):
                     return True
             except Exception:
                 pass
+        active_hud = getattr(getattr(TutorialRunner, "_active_instance", None), "hud_win", None)
         root = getattr(u, "root", None)
         if root is not None:
             try:
                 for w in root.winfo_children():
-                    if "Mobile" in str(getattr(w, "title", lambda: "")()):
+                    if w is active_hud:
+                        continue
+                    title = str(getattr(w, "title", lambda: "")())
+                    if "Arbor Guide" in title:
+                        continue
+                    if "Phone Connector" in title or "Mobile Companion" in title:
                         return True
             except Exception:
                 pass
@@ -148,7 +154,7 @@ def start_image_controls_guide(ui, on_complete=None):
     steps = [
         ActionStep(
             step_id="mg_img_zoom",
-            title="1. Zoom & Pan High-Resolution Scans",
+            title="Zoom & Pan High-Resolution Scans",
             instruction=(
                 "Scroll the mousewheel over the highlighted scan to zoom in on handwritten labels, and click-drag to pan. "
                 "Press Ctrl+0 anytime to reset the view."
@@ -162,7 +168,7 @@ def start_image_controls_guide(ui, on_complete=None):
         ),
         ActionStep(
             step_id="mg_img_rotate",
-            title="2. Rotate & Pop Out for Side-by-Side Reading",
+            title="Rotate & Pop Out for Side-by-Side Reading",
             instruction=(
                 "Press Alt+R (or click ↻) to rotate sideways labels by 90°. "
                 "Double-click the photo to pop it out onto a second monitor."

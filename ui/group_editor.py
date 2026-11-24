@@ -322,6 +322,7 @@ class GroupEditorWindow:
         dialog.configure(bg="#fbfaf8")
         dialog.transient(self.win)
         dialog.grab_set()
+        dialog.bind("<Escape>", lambda e: dialog.destroy())
 
         import utils
         utils.center_and_fit_toplevel(dialog, sc(420), sc(380))
@@ -489,6 +490,7 @@ class GroupEditorWindow:
         dest_win.title("Move Field")
         dest_win.configure(bg="#fbfaf8")
         dest_win.transient(self.win)
+        dest_win.bind("<Escape>", lambda e: dest_win.destroy())
         
         tk.Label(
             dest_win, text=f"Move field '{field_name}' to tab:",

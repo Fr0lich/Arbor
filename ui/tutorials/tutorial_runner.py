@@ -414,7 +414,7 @@ class TutorialRunner:
         except Exception:
             pass
 
-    def show_step(self):
+    def show_step(self, auto_validate=True):
         self._cleanup_highlight()
         if self._poll_job:
             try:
@@ -505,7 +505,7 @@ class TutorialRunner:
         is_last = (self.current_idx == len(self.steps) - 1)
         if is_last:
             self.next_btn.config(text="Finish ✓")
-        elif step.validator:
+        elif step.validator and auto_validate:
             self.next_btn.config(text="Skip Step →")
         else:
             self.next_btn.config(text="Next →")
@@ -533,8 +533,8 @@ class TutorialRunner:
             except Exception:
                 self.highlight = None
 
-        # Start validator polling if a validator condition is provided
-        if step.validator:
+        # Start validator polling if a validator condition is provided and not stepping backward
+        if step.validator and auto_validate:
             self._poll_validator(step.validator)
 
     def _poll_validator(self, validator_fn):
@@ -598,7 +598,8 @@ class TutorialRunner:
     def prev_step(self):
         if self.current_idx > 0:
             self.current_idx -= 1
-            self.show_step()
+            # Disable immediate validator auto-advance so reviewing a prior step never bounces forward
+            self.show_step(auto_validate=False)
 
     def finish_tutorial(self):
         self._cleanup()

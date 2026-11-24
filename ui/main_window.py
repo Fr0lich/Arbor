@@ -2486,10 +2486,10 @@ class ObjectProgramUI(
             command=lambda: self.start_tutorial_flow("review"),
         )
         popup.add_separator()
-        popup.add_command(label="🏛️ Help Hub & Suggested Learning Path", command=self.open_help_window)
+        popup.add_command(label="🏛️ Help Hub & Suggested Learning Path (F1)", command=self.open_help_window)
         popup.add_command(label="📖 Desktop Work Manual", command=lambda: show_main_help(self, initial_tab="desktop"))
         popup.add_command(label="📱 Mobile Vault Guide", command=lambda: show_main_help(self, initial_tab="mobile"))
-        popup.add_command(label="⌨️ Keyboard Shortcuts (F1)", command=self.show_shortcuts)
+        popup.add_command(label="⌨️ Keyboard Shortcuts", command=self.show_shortcuts)
         popup.add_command(
             label="🛟 \"Don't Panic!\" Troubleshooting",
             command=lambda: show_main_help(self, initial_tab="desktop", initial_chapter="dont-panic"),
@@ -4193,6 +4193,7 @@ class ObjectProgramUI(
         self.split_frame = split
         self.prob_container = split
         self.problem_frame = split
+        self.problem_frame.tutorial_id = "problem_flags_frame"
         self.pop_out_prob_btn = ttk.Button(split, cursor="hand2")  # Dummy to prevent attribute errors
         self.problem_count_label = ttk.Label(split)  # Dummy to prevent attribute errors
 

@@ -634,7 +634,7 @@ INDEX_TEMPLATE_V2 = """
           <div id="detailLoadingError" class="hidden flex flex-col items-center gap-3 max-w-xs">
             <p class="text-sm font-semibold text-red-700" id="detailLoadingErrorMsg">Could not load specimen.</p>
             <div class="flex items-center gap-2">
-              <button type="button" onclick="retryCurrentSpecimen()" class="px-4 py-2 min-h-[40px] rounded-md bg-forest text-white text-xs font-semibold">Retry</button>
+              <button type="button" onclick="retryCurrentSpecimen()" class="px-4 py-2 min-h-[40px] rounded-md bg-emerald-700 text-white text-xs font-semibold shadow-sm" style="background:#2d5a3c;color:#ffffff;">Retry</button>
               <button type="button" onclick="showListView()" class="px-4 py-2 min-h-[40px] rounded-md border border-bordercol bg-surface text-ink text-xs font-semibold">Back to List</button>
             </div>
           </div>

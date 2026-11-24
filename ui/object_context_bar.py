@@ -198,31 +198,31 @@ class ObjectContextBar(ttk.Frame):
             activebackground=btn_active,
             activeforeground=fg_text,
             relief="flat", bd=0, highlightthickness=1, highlightbackground=border_col,
-            padx=sc(8),
+            padx=sc(5),
             pady=sc(2),
             cursor="hand2",
             command=self._on_hist_clicked
         )
-        self.hist_btn.pack(side="left", padx=sc(3))
+        self.hist_btn.pack(side="left", padx=sc(2))
         if self.main_ui and hasattr(self.main_ui, "add_tooltip"):
             self.main_ui.add_tooltip(self.hist_btn, "Open Historical Database Conflict Resolver")
 
         # 3. Contextual Mobile Push
         self.mobile_push_btn = tk.Button(
             self.right_box,
-            text="Send to Phone",
+            text="📱 Phone",
             font=("Inter", sc(9)),
             bg=btn_bg,
             fg=btn_fg,
             activebackground=btn_active,
             activeforeground=fg_text,
             relief="flat", bd=0, highlightthickness=1, highlightbackground=border_col,
-            padx=sc(8),
+            padx=sc(5),
             pady=sc(2),
             cursor="hand2",
             command=self._on_mobile_push_clicked
         )
-        self.mobile_push_btn.pack(side="left", padx=sc(3))
+        self.mobile_push_btn.pack(side="left", padx=sc(2))
         if self.main_ui and hasattr(self.main_ui, "add_tooltip"):
             self.main_ui.add_tooltip(self.mobile_push_btn, "Push this record to active mobile companion session")
 

@@ -13,6 +13,24 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 40: Overnight Smoke-Test Fixes (Tutorial Validator & `← Previous` Bounce Fixes, 6 Dialog `<Escape>` Bindings, Shortcut Parity, Mobile `Retry` Contrast, & High-DPI Toolbar Spacing)
+- **Date**: 2026-11-24
+- **Feature Area**: Tutorials (`ui/tutorials/micro_guides.py`, `ui/tutorials/tutorial_runner.py`, `ui/tutorials/review_tutorial.py`, `ui/tutorials/discrepancy_tutorial.py`), Dialog Ergonomics (`ui/database_ops.py`, `ui/dialogs.py`, `ui/group_editor.py`, `ui/new_database_wizard.py`), Menus & Toolbars (`ui/main_window.py`, `ui/command_palette.py`, `ui/filter_panel.py`, `ui/object_context_bar.py`, `ui/registry_panel.py`, `ui/image_toolbar.py`), & Mobile Companion V2 (`backend/mobile_template_v2.py`)
+- **What Changed**:
+  1. **Fixed Tutorial Auto-Skip & `← Previous` Bounce (`micro_guides.py`, `tutorial_runner.py`, `review_tutorial.py`)**: Excluded `TutorialRunner`'s own HUD window from `_is_mobile_dialog_open()` so Step 2 of the Mobile Companion Hallway Guide no longer self-skips; added `auto_validate=False` on `TutorialRunner.prev_step()` so stepping backward never bounces forward on already-satisfied steps; decoupled `#1003` initial selection in `review_tutorial.py` so `load_object("1003")` always runs cleanly.
+  2. **Fixed Missing Tutorial Highlights & Prefixes (`main_window.py`, `discrepancy_tutorial.py`, `micro_guides.py`)**: Tagged `self.problem_frame.tutorial_id = "problem_flags_frame"` on initial build, ensured `update_history_indicator("1001")` runs on entering `discrepancy` Step 2 so `history_indicator_label` is mapped, and stripped remaining `1.`/`2.` prefixes in `start_image_controls_guide`.
+  3. **Menu & Command Palette Shortcut Truthfulness (`command_palette.py`, `main_window.py`)**: Changed `Open Excel Database...` shortcut label in Command Palette from `Ctrl+O` → `File`, and moved `(F1)` from `Keyboard Shortcuts` to `Help Hub & Suggested Learning Path (F1)` to match `ui/keybindings.py`.
+  4. **Consistent `<Escape>` Close & DPI Scaling (`database_ops.py`, `dialogs.py`, `group_editor.py`, `new_database_wizard.py`, `registry_panel.py`, `image_toolbar.py`, `filter_panel.py`, `object_context_bar.py`)**: Bound `<Escape>` on the 6 remaining modal/popup dialogs (`Excel File In Use`, `StartupDialog`, `Delete Tab`, `Move Field`, `Dropdown Choices`, `Batch Add Multiple Fields`), wrapped 3 remaining unscaled fonts in `sc(...)`, and compacted the directory/context toolbar buttons (`🔍`, `📱`, `📱 Phone`) so nothing clips at 1280×800 under 125–150% DPI.
+  5. **Mobile V2 `Retry` Contrast (`backend/mobile_template_v2.py`)**: Replaced undefined `bg-forest` with `bg-emerald-700 text-white` + inline `#2d5a3c` fallback so the error-recovery `Retry` button is high-contrast both online and offline.
+- **User Impact**: Tutorials never auto-skip or bounce backward when pressing `← Previous`, every dialog closes with `Escape`, menus display accurate shortcuts, high-DPI laptop toolbars don't clip, and the mobile `Retry` button is clearly legible offline.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Full test suite verified: `python -m pytest tests/ -q`
+  - [x] Mobile V2 JS syntax verified via `node --check`
+  - [x] `data/tutorial_images/` untouched
+
+---
+
 ### Entry 39: Responsive Loading States Across Desktop & Mobile (Indeterminate Progress, Async Historical DBs & SQLite Import, Mobile Detail Loading)
 - **Date**: 2026-11-23
 - **Feature Area**: Status Bar Progress (`ui/main_window.py`), Database Exports & Imports (`ui/database_ops.py`), Backup Restore (`ui/autosave_handler.py`), & Mobile Companion V2 (`backend/mobile_template_v2.py`)

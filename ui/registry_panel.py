@@ -897,7 +897,7 @@ class RegistryPanel:
             if hasattr(widget, "fuzzy_label"):
                 widget.fuzzy_label.destroy()
 
-            lbl = ttk.Label(widget.master, text=f"Did you mean '{suggestion}'?", foreground="#4dabf7", font=("Segoe UI", 8, "underline"), cursor="hand2")
+            lbl = ttk.Label(widget.master, text=f"Did you mean '{suggestion}'?", foreground="#4dabf7", font=("Segoe UI", sc(8), "underline"), cursor="hand2")
             lbl.grid(row=1, column=1, sticky="w")
 
             def apply_suggestion(e, s=suggestion, w=widget, n=field_name):

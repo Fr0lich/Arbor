@@ -584,6 +584,25 @@ class TestSandboxTutorials(unittest.TestCase):
         with open(ip_mod.__file__, "r", encoding="utf-8") as f:
             self.assertIn('self.image_container.tutorial_id = "image_container"', f.read())
 
+        # 4. H1/H2/L2 regressions: Mobile guide HUD doesn't self-validate; prev_step disables auto-bounce; no 1./2. in image guide
+        from ui.tutorials import start_armed_shelf_guide, start_image_controls_guide
+        m_runner = start_armed_shelf_guide(self.ui)
+        try:
+            self.assertFalse(m_runner.steps[1].validator(self.ui))
+            m_runner.current_idx = 2
+            m_runner.prev_step()
+            self.assertEqual(m_runner.current_idx, 1)
+            self.assertIsNone(m_runner._poll_job)
+        finally:
+            m_runner.exit_tutorial()
+
+        img_runner = start_image_controls_guide(self.ui)
+        try:
+            for s in img_runner.steps:
+                self.assertFalse(s.title.startswith(("1.", "2.")))
+        finally:
+            img_runner.exit_tutorial()
+
 
 if __name__ == "__main__":
     unittest.main()

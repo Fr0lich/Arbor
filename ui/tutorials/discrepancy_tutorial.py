@@ -48,11 +48,19 @@ def start_discrepancy_tutorial(ui, on_complete=None):
     sm = SandboxManager()
     sm.enter_sandbox(ui, mock_type="discrepancy")
 
+    def _ensure_history_pill(u):
+        try:
+            if hasattr(u, "update_history_indicator"):
+                u.update_history_indicator("1001")
+        except Exception:
+            pass
+
     if hasattr(ui, "load_object"):
         try:
             ui.load_object("1001")
         except Exception:
             pass
+    _ensure_history_pill(ui)
 
     initial_place = ""
     initial_date = ""
@@ -90,6 +98,7 @@ def start_discrepancy_tutorial(ui, on_complete=None):
             target_id="history_indicator_label",
             action_hint="Click the History pill or press Ctrl+H.",
             keycaps=["Ctrl", "H"],
+            on_enter=_ensure_history_pill,
             details=(
                 "Whenever loaded historical ledger books disagree with your currently registered record, "
                 "Arbor shows a blue History pill and a slate-blue [CFCT] badge so you can compare versions side by side."

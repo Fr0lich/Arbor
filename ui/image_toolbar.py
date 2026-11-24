@@ -395,7 +395,7 @@ class ImageToolbar(tk.Frame):
         self.status_badge = tk.Label(
             self.right_container,
             text=self._format_status_text(),
-            font=("Consolas", 9, "bold"),
+            font=("Consolas", sc(9), "bold"),
             bg=self.colors["badge_bg"],
             fg=self.colors["badge_fg"],
             padx=8,
@@ -698,7 +698,7 @@ if __name__ == "__main__":
     )
     dark_btn.pack(side="left")
 
-    log_label = tk.Label(bottom_frame, text="Status: Ready", font=("Consolas", 9), bg="#fbfaf8", fg="#4c4546")
+    log_label = tk.Label(bottom_frame, text="Status: Ready", font=("Consolas", sc(9)), bg="#fbfaf8", fg="#4c4546")
     log_label.pack(side="right", padx=8)
 
     def log_event(msg: str):

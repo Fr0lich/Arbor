@@ -91,8 +91,14 @@ def start_review_tutorial(ui, on_complete=None):
     try:
         ui.current_id = "1003"
         ui.app.current_object_id = "1003"
-        if hasattr(ui, "object_list"):
+    except Exception:
+        pass
+    try:
+        if hasattr(ui, "object_list") and hasattr(ui.object_list, "select_by_id"):
             ui.object_list.select_by_id("1003")
+    except Exception:
+        pass
+    try:
         if hasattr(ui, "load_object"):
             ui.load_object("1003")
     except Exception:

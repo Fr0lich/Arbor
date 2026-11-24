@@ -1245,6 +1245,7 @@ class DatabaseOpsMixin:
         win.resizable(False, False)
         win.transient(self.root)
         win.grab_set()
+        win.bind("<Escape>", lambda e: win.destroy())
 
         from config import sc
         import utils

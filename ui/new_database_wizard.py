@@ -1057,6 +1057,7 @@ class NewDatabaseWizard:
         dlg.configure(bg=self.colors["surface"])
         dlg.transient(self.win)
         dlg.grab_set()
+        dlg.bind("<Escape>", lambda e: dlg.destroy())
 
         import utils
         utils.center_and_fit_toplevel(dlg, sc(420), sc(340))
@@ -1087,6 +1088,7 @@ class NewDatabaseWizard:
         dlg.configure(bg=self.colors["surface"])
         dlg.transient(self.win)
         dlg.grab_set()
+        dlg.bind("<Escape>", lambda e: dlg.destroy())
 
         import utils
         utils.center_and_fit_toplevel(dlg, sc(460), sc(380))
