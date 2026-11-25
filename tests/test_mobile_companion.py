@@ -1987,4 +1987,21 @@ def test_mobile_v2_coach_state_and_armed_shelf_separation():
     assert "state.armedLocation || state.lastSavedLocation" not in stamp_block
 
 
+def test_mobile_v2_skeletons_prefetch_and_predictive_back():
+    """Verify skeleton loaders, adjacent-record prefetch cache, and predictive back contracts."""
+    from backend.mobile_template_v2 import INDEX_TEMPLATE_V2
+
+    for token in (
+        ".arbor-skeleton",
+        "function renderListSkeleton(",
+        "const detailPrefetchCache = new Map();",
+        "function prefetchAdjacentSpecimens(",
+        "window.addEventListener('popstate'",
+        "history.pushState(",
+        "edgeStartX",
+    ):
+        assert token in INDEX_TEMPLATE_V2, f"Missing expected V2 UX token: {token}"
+
+
+
 

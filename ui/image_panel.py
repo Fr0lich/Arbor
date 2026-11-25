@@ -1074,6 +1074,18 @@ class ImagePanel(ttk.Frame):
 
         target_widget.loading_path = path
 
+        # Lightweight static placeholder while an uncached remote or large-TIFF image decodes
+        if large and path not in self.original_pil_cache and self.pre_cacher.get(path) is None:
+            try:
+                if target_widget.winfo_exists() and getattr(target_widget, "image", None) is None:
+                    target_widget.config(
+                        text="Loading specimen image…",
+                        fg="#6b7280",
+                        font=("Segoe UI", 10),
+                    )
+            except Exception:
+                pass
+
         try:
             width = self.image_canvas.winfo_width()
             height = self.image_canvas.winfo_height()

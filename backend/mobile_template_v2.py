@@ -282,6 +282,19 @@ INDEX_TEMPLATE_V2 = """
     }
     .tab-slider { transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
     #tabTrack { transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    @keyframes arborShimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .arbor-skeleton {
+      background: linear-gradient(90deg, #e7e5e4 25%, #f5f5f4 50%, #e7e5e4 75%);
+      background-size: 200% 100%;
+      animation: arborShimmer 1.4s ease-in-out infinite;
+      border-radius: 6px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .arbor-skeleton { animation: none; background: #e7e5e4; }
+    }
     body {
       background-color: #121413;
       touch-action: pan-y;
@@ -2171,14 +2184,30 @@ INDEX_TEMPLATE_V2 = """
     // -------------------------------------------------------------
     // SCREEN 1: VAULT LIST VIEW LOGIC
     // -------------------------------------------------------------
+    function renderListSkeleton(count = 6) {
+      let html = '<div class="divide-y divide-stone-200 bg-white" aria-busy="true" aria-label="Loading specimens">';
+      for (let i = 0; i < count; i++) {
+        html += `
+          <div class="px-4 py-3 flex items-center justify-between gap-3">
+            <div class="flex-1 min-w-0 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="arbor-skeleton h-3.5 w-16"></div>
+                <div class="arbor-skeleton h-3.5 w-20"></div>
+              </div>
+              <div class="arbor-skeleton h-4 w-3/4"></div>
+              <div class="arbor-skeleton h-3 w-1/2"></div>
+            </div>
+            <div class="arbor-skeleton h-6 w-14 shrink-0"></div>
+          </div>`;
+      }
+      html += '</div>';
+      return html;
+    }
+
     async function fetchObjects(showLoading = true) {
       const container = document.getElementById('specimenListContainer');
       if (showLoading && container) {
-        container.innerHTML = `
-          <div class="p-8 text-center text-ink-muted font-mono text-xs animate-pulse">
-            Loading specimens from database...
-          </div>
-        `;
+        container.innerHTML = renderListSkeleton(6);
       }
 
       const params = new URLSearchParams();
@@ -2505,13 +2534,34 @@ INDEX_TEMPLATE_V2 = """
       });
     }
 
-    function showListView() {
+    // Predictive Back (History API) state
+    let _historyDepth = 0;
+
+    function showListView(opts = {}) {
       forceSaveImmediate();
       if (typeof dismissCoachTip === 'function') dismissCoachTip();
       if (typeof coachState !== 'undefined') coachState.pendingTip = null;
-      document.getElementById('listView').classList.remove('hidden');
-      document.getElementById('detailView').classList.add('hidden');
-      document.getElementById('batchLocationView').classList.add('hidden');
+      const listEl = document.getElementById('listView');
+      const detailEl = document.getElementById('detailView');
+      const batchEl = document.getElementById('batchLocationView');
+      if (detailEl) {
+        detailEl.style.transition = '';
+        detailEl.style.transform = '';
+        detailEl.style.boxShadow = '';
+        detailEl.classList.add('hidden');
+      }
+      if (listEl) {
+        listEl.style.transition = '';
+        listEl.style.transform = '';
+        listEl.style.opacity = '';
+        listEl.style.pointerEvents = '';
+        listEl.classList.remove('hidden');
+      }
+      if (batchEl) batchEl.classList.add('hidden');
+      if (!opts.fromPopState && _historyDepth > 0) {
+        _historyDepth = 0;
+        try { history.replaceState({ view: 'list' }, ''); } catch (e) {}
+      }
       initStationLaunchpad();
       initTouchGestures();
       initPhotoViewerTouchGestures();
@@ -2527,14 +2577,32 @@ INDEX_TEMPLATE_V2 = """
 
     function showDetailView() {
       document.getElementById('listView').classList.add('hidden');
-      document.getElementById('detailView').classList.remove('hidden');
+      const detailEl = document.getElementById('detailView');
+      detailEl.style.transition = '';
+      detailEl.style.transform = '';
+      detailEl.style.boxShadow = '';
+      detailEl.classList.remove('hidden');
       document.getElementById('batchLocationView').classList.add('hidden');
+      try {
+        if (_historyDepth === 0) {
+          history.pushState({ view: 'detail', oid: state.currentOid }, '');
+          _historyDepth = 1;
+        } else {
+          history.replaceState({ view: 'detail', oid: state.currentOid }, '');
+        }
+      } catch (e) {}
     }
 
     function showBatchLocationView() {
       document.getElementById('listView').classList.add('hidden');
       document.getElementById('detailView').classList.add('hidden');
       document.getElementById('batchLocationView').classList.remove('hidden');
+      try {
+        if (_historyDepth === 0) {
+          history.pushState({ view: 'batch' }, '');
+          _historyDepth = 1;
+        }
+      } catch (e) {}
       if (typeof populateBatchBuildingOptions === 'function') {
         populateBatchBuildingOptions();
       }
@@ -2782,30 +2850,94 @@ INDEX_TEMPLATE_V2 = """
       if (typeof showToast === 'function') showToast('Added label note — toggle the problem flag if needed.');
     }
 
+    // Adjacent-record prefetch cache (LRU, max 10 entries, 60s TTL)
+    const detailPrefetchCache = new Map();
+    const DETAIL_PREFETCH_MAX = 10;
+    const DETAIL_PREFETCH_TTL_MS = 60000;
+
+    function invalidatePrefetchCache(oid = null) {
+      if (oid === null || oid === undefined) {
+        detailPrefetchCache.clear();
+      } else {
+        detailPrefetchCache.delete(String(oid));
+      }
+    }
+
+    function _putPrefetchCache(oid, data, hist) {
+      const key = String(oid);
+      if (detailPrefetchCache.has(key)) detailPrefetchCache.delete(key);
+      detailPrefetchCache.set(key, { data, hist, fetchedAt: Date.now() });
+      while (detailPrefetchCache.size > DETAIL_PREFETCH_MAX) {
+        const oldestKey = detailPrefetchCache.keys().next().value;
+        detailPrefetchCache.delete(oldestKey);
+      }
+    }
+
+    function prefetchAdjacentSpecimens(currentOid) {
+      if (!navigator.onLine || !Array.isArray(state.objectList) || state.objectList.length < 2) return;
+      const idx = state.objectList.findIndex(o => String(o.id) === String(currentOid));
+      if (idx === -1) return;
+      const neighbors = [];
+      if (idx + 1 < state.objectList.length) neighbors.push(String(state.objectList[idx + 1].id));
+      if (idx - 1 >= 0) neighbors.push(String(state.objectList[idx - 1].id));
+
+      neighbors.forEach((nOid) => {
+        const existing = detailPrefetchCache.get(nOid);
+        if (existing && (Date.now() - existing.fetchedAt) < DETAIL_PREFETCH_TTL_MS) return;
+        Promise.all([
+          apiFetch('/api/object/' + encodeURIComponent(nOid)),
+          apiFetch('/api/object/' + encodeURIComponent(nOid) + '/history').catch(() => null)
+        ]).then(([data, hist]) => {
+          if (!data) return;
+          _putPrefetchCache(nOid, data, hist);
+          const imgs = data.images && Array.isArray(data.images.urls) ? data.images.urls : [];
+          if (imgs.length > 0 && imgs[0]) {
+            const preImg = new Image();
+            preImg.src = imgs[0];
+          }
+        }).catch(() => {});
+      });
+    }
+
     async function fetchObjectDetail(oid, renderFull = true) {
+      const key = String(oid);
+      const cached = detailPrefetchCache.get(key);
+      if (cached && (Date.now() - cached.fetchedAt) < DETAIL_PREFETCH_TTL_MS) {
+        if (state.currentOid !== key) return;
+        state.currentRecord = cached.data;
+        state.isReviewed = cached.data.review_status === 'reviewed';
+        state.currentHistoricalData = (cached.hist && cached.hist.historical_data) ? cached.hist.historical_data : null;
+        renderDetailView(renderFull);
+        setDetailLoadingState('ready');
+        prefetchAdjacentSpecimens(key);
+        return;
+      }
+
       try {
         const [data, hist] = await Promise.all([
           apiFetch('/api/object/' + encodeURIComponent(oid)),
           apiFetch('/api/object/' + encodeURIComponent(oid) + '/history').catch(() => null)
         ]);
         if (data) {
-          if (state.currentOid !== String(oid)) return; // Ignore stale response if user switched specimens
+          if (state.currentOid !== key) return; // Ignore stale response if user switched specimens
+          _putPrefetchCache(key, data, hist);
           state.currentRecord = data;
           state.isReviewed = data.review_status === 'reviewed';
           state.currentHistoricalData = (hist && hist.historical_data) ? hist.historical_data : null;
           renderDetailView(renderFull);
           setDetailLoadingState('ready');
+          prefetchAdjacentSpecimens(key);
         } else {
-          if (state.currentOid !== String(oid)) return;
+          if (state.currentOid !== key) return;
           setDetailLoadingState('error', 'Specimen not found or empty response.');
         }
       } catch(err) {
         console.error('Failed to load specimen detail:', err);
-        if (state.currentOid === String(oid)) {
+        if (state.currentOid === key) {
           const nameEl = document.getElementById('detailScientificName');
           if (nameEl) nameEl.textContent = 'Failed to load specimen';
-          setDetailLoadingState('error', 'Connection error loading #' + String(oid) + '.');
-          if (typeof showToast === 'function') showToast('Could not load #' + String(oid) + ' — tap Retry.', true);
+          setDetailLoadingState('error', 'Connection error loading #' + key + '.');
+          if (typeof showToast === 'function') showToast('Could not load #' + key + ' — tap Retry.', true);
         }
       }
     }
@@ -3723,6 +3855,11 @@ INDEX_TEMPLATE_V2 = """
             return;
           }
           startX = e.touches[0].clientX;
+          if (startX <= 28) {
+            // Yield left-edge touches to predictive back gesture
+            tracking = false;
+            return;
+          }
           startY = e.touches[0].clientY;
           startTime = Date.now();
           tracking = true;
@@ -3747,7 +3884,93 @@ INDEX_TEMPLATE_V2 = """
         }, { passive: true });
       }
 
-      // 2. Swipe-down to dismiss bottom sheets (#storedAsBottomSheet & #stationSetupSheet)
+      // 2. Predictive Back: History API popstate + left-edge interactive drag-to-back on #detailView
+      window.addEventListener('popstate', () => {
+        const openModal = document.querySelector('.fixed.inset-0.z-50:not(.hidden)');
+        if (openModal) {
+          openModal.classList.add('hidden');
+          return;
+        }
+        const detailEl = document.getElementById('detailView');
+        const batchEl = document.getElementById('batchLocationView');
+        if ((detailEl && !detailEl.classList.contains('hidden')) || (batchEl && !batchEl.classList.contains('hidden'))) {
+          _historyDepth = 0;
+          showListView({ fromPopState: true });
+        }
+      });
+
+      const detailViewEl = document.getElementById('detailView');
+      const listViewEl = document.getElementById('listView');
+      if (detailViewEl && listViewEl) {
+        let edgeStartX = 0;
+        let edgeStartY = 0;
+        let edgeDx = 0;
+        let edgeTracking = false;
+        let edgeCommitted = false;
+
+        detailViewEl.addEventListener('touchstart', (e) => {
+          if (!e.touches || e.touches.length !== 1) return;
+          if (e.touches[0].clientX > 28) return;
+          if (document.querySelector('.fixed.inset-0.z-50:not(.hidden)')) return;
+          edgeStartX = e.touches[0].clientX;
+          edgeStartY = e.touches[0].clientY;
+          edgeDx = 0;
+          edgeTracking = true;
+          edgeCommitted = false;
+        }, { passive: true });
+
+        detailViewEl.addEventListener('touchmove', (e) => {
+          if (!edgeTracking || !e.touches || e.touches.length !== 1) return;
+          const dx = e.touches[0].clientX - edgeStartX;
+          const dy = e.touches[0].clientY - edgeStartY;
+          if (!edgeCommitted) {
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+              edgeTracking = false;
+              return;
+            }
+            if (dx > 12) {
+              edgeCommitted = true;
+              listViewEl.classList.remove('hidden');
+              listViewEl.style.pointerEvents = 'none';
+              detailViewEl.style.transition = 'none';
+              detailViewEl.style.boxShadow = '-8px 0 24px rgba(0,0,0,0.18)';
+            } else {
+              return;
+            }
+          }
+          edgeDx = Math.max(0, dx);
+          const progress = Math.min(1, edgeDx / Math.max(1, window.innerWidth));
+          detailViewEl.style.transform = `translateX(${edgeDx}px)`;
+          listViewEl.style.transform = `scale(${0.97 + 0.03 * progress})`;
+          listViewEl.style.opacity = String(0.7 + 0.3 * progress);
+        }, { passive: true });
+
+        detailViewEl.addEventListener('touchend', () => {
+          if (!edgeTracking) return;
+          edgeTracking = false;
+          if (!edgeCommitted) return;
+          const threshold = window.innerWidth * 0.30;
+          detailViewEl.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+          listViewEl.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+          if (edgeDx >= threshold) {
+            detailViewEl.style.transform = `translateX(${window.innerWidth}px)`;
+            listViewEl.style.transform = 'scale(1)';
+            listViewEl.style.opacity = '1';
+            setTimeout(() => showListView(), 190);
+          } else {
+            detailViewEl.style.transform = 'translateX(0)';
+            setTimeout(() => {
+              listViewEl.classList.add('hidden');
+              listViewEl.style.transform = '';
+              listViewEl.style.opacity = '';
+              listViewEl.style.pointerEvents = '';
+              detailViewEl.style.boxShadow = '';
+            }, 200);
+          }
+        }, { passive: true });
+      }
+
+      // 3. Swipe-down to dismiss bottom sheets (#storedAsBottomSheet & #stationSetupSheet)
       function _bindSheetSwipeDismiss(cardId, closeFn) {
         const sheetCard = document.getElementById(cardId);
         if (!sheetCard) return;
