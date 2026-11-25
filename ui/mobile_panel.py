@@ -447,46 +447,55 @@ class MobilePanel:
         )
         self.lbl_pin_tip.pack(fill="x")
 
-        # Phone tutorial mode selector (Ask / Trainee / Helper / Off)
+        # Phone tutorial mode selector (compact dropdown so launcher stays clean and unintimidating)
         self.walkthrough_row = tk.Frame(setup_card, bg="#fbfbf9")
         self.walkthrough_row.pack(fill="x", pady=(10, 0))
+        _tut_hdr = tk.Frame(self.walkthrough_row, bg="#fbfbf9")
+        _tut_hdr.pack(fill="x")
         tk.Label(
-            self.walkthrough_row,
+            _tut_hdr,
             text="Phone tutorial:",
             font=("Inter", sc(9), "bold"),
             bg="#fbfbf9",
             fg="#1b4332",
             anchor="w",
-        ).pack(fill="x", pady=(0, 3))
+        ).pack(side="left", padx=(0, sc(8)))
 
-        self.phone_tutorial_radios = {}
-        for mode_val, mode_lbl in (
+        self._phone_tutorial_options = [
             ("ask", "Ask on the phone (recommended)"),
-            ("trainee", "Trainee (has done the desktop tutorial)"),
+            ("trainee", "Trainee (completed desktop tutorial)"),
             ("helper", "Helper (helping out for a day)"),
             ("off", "Off"),
-        ):
-            rb = tk.Radiobutton(
-                self.walkthrough_row,
-                text=mode_lbl,
-                value=mode_val,
-                variable=self.phone_tutorial_mode_var,
-                command=self._on_phone_tutorial_mode_changed,
-                font=("Inter", sc(8.5)),
-                bg="#fbfbf9",
-                fg="#2c302e",
-                activebackground="#fbfbf9",
-                activeforeground="#1b4332",
-                selectcolor="#ffffff",
-                anchor="w",
-                cursor="hand2",
+        ]
+        self._phone_tutorial_val_to_lbl = dict(self._phone_tutorial_options)
+        self._phone_tutorial_lbl_to_val = {lbl: val for val, lbl in self._phone_tutorial_options}
+        self._phone_tutorial_display_var = tk.StringVar(
+            value=self._phone_tutorial_val_to_lbl.get(
+                self.phone_tutorial_mode_var.get(),
+                self._phone_tutorial_options[0][1],
             )
-            rb.pack(fill="x", padx=(6, 0))
-            self.phone_tutorial_radios[mode_val] = rb
+        )
+
+        def _on_tut_combo_selected(_event=None):
+            lbl = self._phone_tutorial_display_var.get()
+            mode_val = self._phone_tutorial_lbl_to_val.get(lbl, "ask")
+            self.phone_tutorial_mode_var.set(mode_val)
+            self._on_phone_tutorial_mode_changed()
+
+        self.phone_tutorial_combo = ttk.Combobox(
+            _tut_hdr,
+            textvariable=self._phone_tutorial_display_var,
+            values=[lbl for _, lbl in self._phone_tutorial_options],
+            state="readonly",
+            font=("Inter", sc(8.5)),
+            cursor="hand2",
+        )
+        self.phone_tutorial_combo.pack(side="left", fill="x", expand=True)
+        self.phone_tutorial_combo.bind("<<ComboboxSelected>>", _on_tut_combo_selected)
 
         tk.Label(
             self.walkthrough_row,
-            text="Anyone can also start the tutorial later from the phone's Settings.",
+            text="Anyone can also start or change the tutorial later from the phone's Settings.",
             font=("Segoe UI", sc(7.5), "italic"),
             bg="#fbfbf9",
             fg="#5a655e",

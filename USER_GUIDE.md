@@ -9,8 +9,8 @@ Welcome to the team! As a museum assistant, work-placement intern, or collection
 
 This manual was written for you. You do not need any computer science experience or advanced botanical background to use Arbor. Arbor is designed to make auditing physical boxes, paper sheets, and handwritten labels fast, accurate, and comfortable.
 
-> 🎓 **New Here? Start with the 3-Minute Quick Tour & 5-Step Learning Path!**  
-> Click **`HELP`** in the top bar (or press **`F1`**) to open the **Help Center** and launch the **3-Minute Quick Tour** using real sample photos (`#110` & `#198`) in **Practice Mode**, or follow the ordered **5-Step Learning Path** (*Quick Tour → Mobile Companion → Office Triage → Historical Ledgers → New Collections*). Saving is paused while you practice, so nothing you do can affect real museum files.
+> 🎓 **New Here? Start with the 2-Part Core Introduction!**  
+> Click **`HELP`** in the top bar (or press **`F1`**) to open the **Help Center** and launch **Part 1: Desktop Basics** (~3–4 min, using real sample photos `#110` & `#198` in safe **Practice Mode**), followed by **Part 2: Mobile Companion** (~2 min on your phone). When you are ready for more, explore **Optional & Advanced Tutorials** (*Batch Problem Queue*, *Collections & New Specimens*) or open the **Badges & Reference** tab anytime for a quick lookup. Saving is paused in Practice Mode, so nothing you do can affect real museum files.
 
 ---
 
@@ -53,13 +53,14 @@ When you open Arbor, the workspace is arranged into three clean vertical columns
 ```
 ┌─────────────────────────┬─────────────────────────┬─────────────────────────┐
 │     1. LEFT COLUMN      │    2. CENTER COLUMN     │     3. RIGHT COLUMN     │
-│   "Your Task List"      │  "Label Info & Storage" │    "Specimen Photos"    │
+│   "Your Task List"      │   "Photos & Storage"    │  "Registration & Review"│
 │                         │                         │                         │
-│ • Specimen Directory    │ • Plant name & Family   │ • High-resolution scans │
-│ • Accession ID cards    │ • Collector & Date      │ • Zoom, pan, and rotate │
-│ • Status badges (Green, │ • Cabinet & Shelf locs  │ • Multi-photo gallery   │
-│   Red, Amber, Gray)     │ • Problem checkboxes    │                         │
-│ • Fast search bar       │ • [✓ MARK AS REVIEWED]  │                         │
+│ • Specimen Directory    │ • High-resolution scans │ • Plant name & Family   │
+│ • Accession ID cards    │ • Zoom, pan, and rotate │ • Collector, Date, Place│
+│ • Status badges (Green, │ • Multi-photo gallery   │ • Per-field ⋯ ICEDIG    │
+│   Amber, Teal, Gray)    │ • Storage Location      │ • Problem checkboxes &  │
+│ • Fast search bar       │   (Cabinet / Shelf)     │   Needs Specialist      │
+│                         │   directly below photos │ • [✓ MARK AS REVIEWED]  │
 └─────────────────────────┴─────────────────────────┴─────────────────────────┘
 ```
 
@@ -69,16 +70,16 @@ When you open Arbor, the workspace is arranged into three clean vertical columns
 * **Card Information**: Each card displays the Specimen ID in bold, the scientific plant name, and a single colored status badge showing whether the plant is verified or needs attention.
 * **Hiding the Sidebar**: If you need more room on a small laptop screen, press `Ctrl+O` or `F6` to smoothly collapse or expand this list.
 
-### 2. The Center Column: "The Label Information & Storage Location"
-* **Registration Form**: Displays the plant's scientific name (Genus, Species, Author), Family, Collector, Collection Date, and Collection Place.
-* **Storage Location**: Shows where the plant physically lives in the herbarium (Building, Floor, Cabinet, Shelf, and Box Type).
-* **Problem Checkboxes**: A set of checkboxes (e.g. *Genus Problem*, *Label Problem*, *Box Mismatch*) used to report issues.
-* **The Big Green Button**: The prominent **✓ MARK AS REVIEWED** button at the top of this panel stamps your verification into the record.
-
-### 3. The Right Column: "Specimen Photos"
-* **High-Resolution Viewer**: Displays museum scans and photographs of the active specimen.
+### 2. The Center Column: "Specimen Photos & Storage Location"
+* **High-Resolution Viewer**: Displays museum scans and photographs of the active specimen (or a clean Specimen Audit Summary if no photo folder is attached).
 * **Image Toolbar**: Rotate upside-down sheets (`Alt+R`), zoom in to inspect faint pencil handwriting (`Ctrl++` / `Ctrl+-`), or reset the view (`Ctrl+0`).
 * **Multi-Photo Dots**: If a specimen has multiple photos, click the thumbnail dots or press `Shift+Left` / `Shift+Right` to flip between them.
+* **Storage Location (Below Photos)**: Always sits directly beneath the photo pane so you can confirm or edit **Building, Floor, Cabinet, Shelf, Stored as**, and **Loaned Out** (`Ctrl+L` jumps straight here).
+
+### 3. The Right Column: "Registration Data, Problems & Review"
+* **The Big Green Button**: The prominent **✓ MARK AS REVIEWED** button at the top stamps your physical verification into the record.
+* **Registration Form**: Displays the plant's scientific name (`Genus`, `Species`, `Author`), `Family`, `Collector`, `Collection Date`, `Collection Place`, `Box Label`, and `Comment`. Every editable field has a **`⋯`** button on its right edge for standard ICEDIG missing-data codes.
+* **Problem Checkboxes & `Needs Specialist`**: Tick the checkbox next to any field that disagrees with the real object, or check **`Needs Specialist`** right above **`Comment`** for physical damage, pests, or expert botanical questions.
 
 ---
 
@@ -105,14 +106,17 @@ Look at the physical object (or its photograph in the center) and compare it wit
 * **Historical Suggestions (`Ctrl+H`)**: If earlier catalog books are loaded and disagree with the current record, a blue **`History: N suggestion(s) · Ctrl+H`** pill appears above the form. Click it to compare sources — remember that older ledgers can be wrong too, so always check them against the physical object.
 * Does the physical storage box on your desk match the Cabinet and Shelf listed on screen?
 
-### Step 3: Flag if Anything Is Wrong
-Most field-specific flags (like missing dates or conflicting labels) are flagged automatically by Arbor. If you spot a physical condition issue yourself (such as a broken jar, mold/pest, or fragile mounting) or an archival deadlock that desk tools cannot solve, check **`Needs Specialist`** (right above the **`Comment`** box on the Registration tab, or in the **Problems** tab) and jot a short note in **`Comment`**. For blank or genuinely unreadable label fields (when no historical ledger has a conflicting value), use **`Blank / Unreadable ▾`** (ICEDIG) on that specific field instead.
+### Step 3: Handle Missing Info, Mismatches, or Damage (The 3-Way Rule)
+Arbor separates three different situations so every issue reaches the right person:
+1. **Confirmed Blank or Unreadable Label → Use ICEDIG (`⋯` button)**: If the physical label genuinely has no date, collector, or readable ink *(and no older catalog book has a value)*, click the **`⋯`** button on the right edge of that field (or type `?m` / `?i`) to insert `unknown:missing` or `unknown:indecipherable`. Do **not** flag a problem for genuinely missing label info.
+2. **Data or Label Mismatch → Tick the Field's Problem Box**: If the real object disagrees with what is on file (for example, the box says Africa while the record says China), tick that field's problem checkbox, or press **`Ctrl+H`** to compare older books in **Problem Resolution**. *(Note: Typing a new value into a flagged field does **not** automatically untick its problem box by default — untick the box once you are confident the fix is verified.)*
+3. **Physical Damage or Expert Question → `Needs Specialist` + `Comment`**: For torn/moldy/pest-damaged boxes, mixed specimens, or botanical doubts that need a specialist, check **`Needs Specialist`** (right above **`Comment`**) and write a short note.
 > **In the Excel Spreadsheet**: Checking **`Needs Specialist`** writes `TRUE` into `Other_problem` on the `Observation` sheet; field-specific checkboxes write `TRUE` into columns like `Collection_Date_Problem`.
 
 ### Step 4: Mark Done After Physical Inspection
 **Important Rule**: Only click the big green **✓ MARK AS REVIEWED** button (or press `Ctrl + Enter`) once you have **finished physically inspecting the object** — never just because you fixed a typo from a historical ledger at your desk.
 * Clean specimens receive a green **`[ REV ]`** badge; physically checked specimens with an open actionable data error receive an amber **`[ REV+ERR ]`** badge; physically checked specimens with **only `Needs Specialist`** checked receive a calm slate-teal **`[ REV+NOTE ]`** badge.
-* Arbor automatically advances your screen to the very next specimen so you can keep your hands on the keyboard.
+* By default, **`Auto-next` is OFF** so Arbor stays on the current specimen after you mark it reviewed — press `Down` / `Right` when you are ready for the next card (or tick **Auto-next** if you prefer jumping automatically).
 > **In the Excel Spreadsheet**: This writes `TRUE` into the `Reviewed` column on the `Observation` sheet for that specimen's `ObjectID`, timestamps your review time into `ReviewedAt`, and records your username in the `Log` sheet.
 
 ### Step 5: Save Your Work
@@ -131,13 +135,16 @@ To prevent visual confusion, Arbor uses a strict **single-badge discipline**: ea
 | `[ REV+ERR ]` | **Ochre Gold**<br>(`#F57C00`) | **Reviewed with Actionable Error**<br>You checked the sheet, but a data/label error remains for desk triage. | Resolve in Office Triage / Historical Conflict Resolver. | `Reviewed = TRUE`<br>AND at least one actionable problem flag is `TRUE` |
 | `[ REV+NOTE ]` | **Slate Teal**<br>(`#4a6b7c`) | **Reviewed — Needs Specialist**<br>You checked the sheet; ONLY **`Needs Specialist`** is flagged (never triggered by a plain Comment). | Excluded from default trainee queue; specialists filter for it directly. | `Reviewed = TRUE`<br>AND ONLY `Other_problem = TRUE` |
 | `[ NOTE ]` | **Cool Slate**<br>(`#5c6f7e`) | **Pending — Needs Specialist**<br>Unreviewed specimen with ONLY **`Needs Specialist`** checked. | Specialist / conservator follow-up. | `Reviewed = FALSE`<br>AND ONLY `Other_problem = TRUE` |
-| `[ TAX ]` | **Coral Red**<br>(`#c93a40`) | **Plant Name Issue**<br>The scientific name, genus, species, or author citation is misspelled or uncertain. | Check the label spelling or click GBIF Verify in the toolbar. | `Genus_Problem = TRUE`, `Species_Problem = TRUE`, or `Family_Problem = TRUE` |
-| `[ PROV ]` | **Warm Amber**<br>(`#d9a036`) | **Origin / Collector Issue**<br>The collector name, collection date, or locality is missing or questioned. | Check the label handwriting or insert a missing data marker (`?m`). | `Collector_Problem = TRUE`, `Collection_Date_Problem = TRUE`, etc. |
+| `[ TAX ]` | **Coral Red**<br>(`#c93a40`) | **Plant Name Issue**<br>The scientific name, genus, species, or author citation is misspelled or uncertain. | Check the label spelling or open `📜 Old names` (`Ctrl+K → Old Names`). | `Genus_Problem = TRUE`, `Species_Problem = TRUE`, or `Family_Problem = TRUE` |
+| `[ PROV ]` | **Warm Amber**<br>(`#d9a036`) | **Origin / Collector Issue**<br>The collector name, collection date, or locality is missing or questioned. | Check the label handwriting or insert an ICEDIG code (`⋯` button / `?m`). | `Collector_Problem = TRUE`, `Collection_Date_Problem = TRUE`, etc. |
 | `[ BOX ]` | **Earth Brown**<br>(`#795548`) | **Storage Box Issue**<br>The physical box label, folder housing, or storage location is mismatched. | Verify which cabinet/shelf the box sits on and update the location. | `Box_Label_Problem = TRUE` |
 | `[ IMG ]` | **Ocean Blue**<br>(`#0284c7`) | **Photo Issue**<br>The photograph is missing, unlinked, blurry, or belongs to another plant. | Confirm the photo link or notify your supervisor to rescan. | `Images_Problem = TRUE` or `Images_Missing = TRUE` |
-| `[ CFCT ]` | **Slate Blue**<br>(`#4a7b9d`) | **Ledger Conflict**<br>An old historical handwritten ledger book disagrees with modern data. | Press `Ctrl+H` to open the Conflict Resolver and compare sources. | Conflict detected against loaded Historical Books |
+| `[ ERR+HIS ]` | **Slate Blue**<br>(`#4a7b9d`) | **Error + Older Books**<br>An unreviewed specimen has an actionable flag AND older catalog books loaded. | Press `Ctrl+H` to open Problem Resolution and compare older books. | Actionable flag `TRUE` + loaded Historical Books |
+| `[ CFCT ]` | **Slate Blue**<br>(`#4a7b9d`) | **Catalog Book Conflict**<br>An old historical catalog book disagrees with modern data. | Press `Ctrl+H` to open Problem Resolution and compare sources. | Conflict detected against loaded Historical Books |
 | `[ ERR ]` | **Coral Red**<br>(`#c93a40`) | **General Error**<br>An uncategorized actionable error was flagged. | Review the Problems tab for details. | Actionable problem flag is `TRUE` |
 | `[ UNREV ]` | **Cool Gray**<br>(`#757d77`) | **Pending Review**<br>A fresh or untouched record waiting for your inspection. | Inspect the specimen, verify fields, and click Mark Reviewed. | `Reviewed = FALSE` (or empty) |
+
+> 💡 **Card Chips & Quick Reference**: Specimen cards may also show small secondary chips: **`LOAN`** (loaned out — `↗ Loaned` on phone), **`UKN`** (has an ICEDIG `unknown:*`/`withheld` code), **`UNVAL`** (has an `Unvalidated_source` draft note), and **`NO PHOTO`** / **`ONLINE`**. Press **`F1`** → **Badges & Reference** anytime for a visual cheat sheet.
 
 ---
 
@@ -205,7 +212,7 @@ Clicking a mouse thousands of times a day can strain your wrist and fingers. Arb
 
 | Shortcut Key | What It Does | Why You Will Love It |
 | :--- | :--- | :--- |
-| **`[Ctrl] + [Enter]`** | **Mark Reviewed & Advance** | Signs off on the active specimen and jumps immediately to the next card. |
+| **`[Ctrl] + [Enter]`** | **Mark Reviewed** | Signs off on the active specimen (`[REV]` / `[REV+ERR]` / `[REV+NOTE]`; auto-advances if **Auto-next** is enabled). |
 | **`[Space]`** | **Toggle Problem Checkbox** | Checks or un-checks whichever problem box you are currently focused on. |
 | **`[Down]` / `[Up]`** | **Next / Previous Specimen** | Moves down or up your specimen list card by card. |
 | **`[Ctrl] + [Down]` / `[Up]`** | **Jump to Next Problem Card** | Skips clean records and jumps straight to cards with open problem flags. |
@@ -322,11 +329,11 @@ When auditing physical specimens walking down vault corridors or glass cabinet a
 2. **Check PIN & Phone Tutorial Options**: Choose whether to require the 4-digit PIN (`🔒 Require 4-Digit PIN: ON / OFF` — keep **ON** on public tunnels, optional on private offline Wi-Fi) and pick a **Phone tutorial** mode (**Ask on the phone** recommended, **Trainee**, **Helper**, or **Off**), then click **▶ Start Mobile Session**.
 3. **Scan the QR Code**: Point your phone camera at the QR code on screen (or copy the link). Scanning the QR code signs you in automatically and launches the hands-on phone coach tutorial on your first object (anyone can also start the Trainee or Helper tutorial anytime from **⚙ Settings → Phone tutorial**).
 4. **Walk & Audit with Touch Gestures**:
-   * Swipe left/right to glide between **Details ↔ Location ↔ History (Problem Resolution)**.
-   * Tick the **inline checkbox next to any field on Details** to flag it (`[REV+ERR]`), **tap the field value** (or **`ICEDIG ▾`** on **History**) to set an **ICEDIG** code (`unknown:missing`, `unknown:indecipherable`), or tap **`⚑ Needs Specialist`** in the bottom bar + add a short **`Comment`** for physical damage (`[REV+NOTE]`).
+   * Swipe left/right to glide between **Data ↔ Location ↔ Problems (Problem Resolution)**.
+   * Quickly glance at **`Data`** against the physical object: tick the **inline checkbox next to any disagreeing field** (e.g. box says Africa, file says China) to flag it (`[REV+ERR]`), **tap the field value** (or **`ICEDIG ▾`** on **`Problems`**) to set an **ICEDIG** code (`unknown:missing`, `unknown:indecipherable`), or tap **`⚑ Needs Specialist`** in the bottom bar + add a short **`Comment`** for physical damage (`[REV+NOTE]`).
    * Tap **`📜 Old names`** (read-only) to check if an unfamiliar box label is just an older plant or family name.
    * Use **`Set Shelf`** at the top of the list for 1-tap **Storage Location** saving (with a **5-second `↩ Undo`** toast), and use the **Location** tab for **`Stored as`** and **`Loaned Out`** (displays an amber **`↗ Loaned`** badge).
-5. **Tap `?` or `⚙` Anytime on Your Phone**: Open **What the Fields Mean**, restart the Trainee/Helper tutorial, or manage one-time contextual tips right from your phone.
+5. **Tap `?` or `⚙` Anytime on Your Phone**: Open the **Badges, ICEDIG & Field Guide**, restart the Trainee/Helper tutorial, or manage one-time contextual tips right from your phone.
 
 ---
 
@@ -355,14 +362,14 @@ When you open a cabinet, you will usually inspect dozens of consecutive specimen
   `📍 Save to Cab 21 · Sh 01`
 * Simply tap it once to save all coordinates! If a specimen already belongs to a different shelf, the button turns amber **`⚠️ Move to Cab 21 · Sh 01`** so you never relocate an object by accident — and every 1-tap save or move shows a **5-second `↩ Undo`** button in case you tapped by mistake.
 
-#### 3. Checking Old Names (`📜 Old names`) & Older Books (`History` Tab)
+#### 3. Checking Old Names (`📜 Old names`) & Solving Conflicts (`Problems` Tab)
 * **Unfamiliar Latin or family name on the box?** Tap **`📜 Old names`** (read-only) to immediately check past museum names, classical/APG old family names (like *Compositae* for *Asteraceae*), and known GBIF synonyms — if it matches, keep the modern name!
-* **Older catalog books loaded?** Swipe right to the **`History`** tab (`[CFCT]`) to compare older books against the current record and tap **`Apply`** if one matches the real object.
+* **Disagreement between older catalog books?** Swipe right to the **`Problems`** tab (`[CFCT]`) — it works just like Desktop's Problem Resolution. For example, if one source says England and another says Finland, look at the physical object in your hand and tap **`Apply`** on the matching value (or **`✓ Value is Correct`**).
 
 #### 4. Flagging Problems While Marking Reviewed (`[REV+ERR]`)
-What if you pull a specimen and discover physical damage (e.g., a crushed box), an illegible handwritten label, or a conflicting year?
-* **Path A (Fix on the spot)**: If the physical label in your hand resolves a historical contradiction, swipe to **`History`** and tap **`Apply`**.
-* **Path B (Flag for desktop triage)**: Tap the **checkbox right next to the disagreeing field on `Details`** (or toggle **`Needs Specialist`** next to **`Comment`** for physical damage/conservation issues), **AND STILL TAP `✓ Mark Reviewed`**.
+What if you pull a specimen and discover a clear mismatch (e.g. the label says Africa while the record says China), physical damage (a crushed box), or an illegible handwritten label?
+* **Path A (Fix on the spot)**: If the physical label in your hand resolves a conflict or flagged field, swipe to **`Problems`** and tap **`Apply`** (or **`✓ Value is Correct`**).
+* **Path B (Flag for desktop triage)**: Tap the **checkbox right next to the disagreeing field on `Data`** (or tap **`⚑ Needs Specialist`** in the bottom bar + add a short **`Comment`** for physical damage/conservation issues), **AND STILL TAP `✓ Mark Reviewed`**.
 * **Why this is a success**: Marking it reviewed stamps the physical verification and location while displaying **`[REV+ERR]`** for desk data errors or calm **`[REV+NOTE]`** for `Needs Specialist` items.
 
 #### 5. Viewport-Reclaimed Photo Folio
@@ -370,16 +377,16 @@ If an archival photo scan has not yet been uploaded for the specimen, Arbor auto
 
 ---
 
-### Returning to Your Desk: Desktop Hallway Follow-Up
+### Returning to Your Desk: Saving & Exploring Your Results
 
 When you finish your aisle audit and return to your computer:
-1. Click **`💾 Save Workbook Now`** (or press **`Ctrl + S`** / **🔴 End Mobile Session** and confirm **Yes**) to write your changes to the Excel file.
+1. Click **🔴 End Mobile Session** (or click **`💾 Save Workbook Now`** / press **`Ctrl + S`**). Arbor shows a calm wrap-up dialog (**"All Your Phone Work Is Now in Arbor!"**) with one-click shortcuts to **`💾 Save File Now (Ctrl+S)`**, **`🔍 Filter (Ctrl+G)`**, or **`❓ Help & Tutorials`**.
 2. Press **`Ctrl + G`** (or press **`Ctrl + K`** and type `Hallway`) and click **`🎯 Hallway Follow-Up (REV+ERR)`** to isolate every verified specimen with an open flag.
-3. Press **`Ctrl + K`** → **`Triage Problem Queue (Filtered List)`** to work through flagged specimens in one streamlined window:
+3. Want to step through every flagged specimen one by one in a dedicated queue? Press **`Ctrl + K`** → **`Triage Problem Queue (Filtered List)`**:
    * Click **`✓ Value is Correct (Clear Flag)`** if a flagged value turns out to be fine (turns `[REV+ERR]` back to green `[REV]`, with full `Ctrl+Z` Undo support).
    * Press **`Alt + ←` / `Alt + →`** to step between queued specimens.
    * **Can't solve a problem today?** That is completely okay — simply skip it and leave the flag active so a specialist or curator can revisit it later.
-   * *(Tip: You can practice this entire workflow risk-free in **HELP → Interactive Tutorials → Step 3: Office Triage (REV+ERR)**!)*
+   * *(Tip: You can practice this optional desk workflow anytime in **HELP → Interactive Tutorials → Optional & Advanced → Batch Problem Queue**!)*
 
 ---
 

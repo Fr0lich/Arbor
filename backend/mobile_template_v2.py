@@ -562,7 +562,7 @@ INDEX_TEMPLATE_V2 = """
             <span class="font-mono text-xs font-bold text-ink tracking-tight px-1.5 py-0.5 bg-stone-100 border border-bordercol rounded shrink-0" id="detailAccession">
               #2024-BOT-0894
             </span>
-            <span id="badgeLoanedHeader" class="hidden inline-flex items-center gap-1 text-[10.5px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 shrink-0 whitespace-nowrap">
+            <span id="badgeLoanedHeader" onclick="event.stopPropagation(); showBadgeTooltip(this, 'LOAN')" role="button" tabindex="0" class="hidden inline-flex items-center gap-1 text-[10.5px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 shrink-0 whitespace-nowrap cursor-help">
               ↗ Loaned Out
             </span>
           </div>
@@ -607,13 +607,13 @@ INDEX_TEMPLATE_V2 = """
         </div>
       </section>
 
-      <!-- 3. Segmented Tab Controller (Sticky: Details · Location · History) -->
+      <!-- 3. Segmented Tab Controller (Sticky: Data · Location · Problems) -->
       <nav class="flex-none bg-alabaster border-b border-bordercol px-3 pt-1.5 pb-1 z-20">
         <div class="relative bg-stone-200/90 p-1 rounded-[4px] flex items-center justify-between text-xs font-medium text-muted shadow-inner">
           <div class="tab-slider absolute top-1 bottom-1 w-[calc((100%-8px)/3)] bg-surface rounded shadow-sm border border-stone-300 pointer-events-none translate-x-0" id="tabIndicator" style="transform: translateX(0%);"></div>
           <button id="tabBtnDetails" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[40px] flex items-center justify-center gap-1 font-semibold text-ink whitespace-nowrap tap-highlight-transparent" data-tab-index="0" onclick="switchDetailTab('details')">
             <svg class="w-3.5 h-3.5 stroke-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            <span>Details</span>
+            <span>Data</span>
             <span class="font-mono text-[10px] font-bold px-1.5 rounded-full bg-brick text-white shadow-2xs hidden shrink-0" id="tabDetailsFlagsBadge" style="background:#c93a40;color:#ffffff;">0</span>
             <span class="font-mono text-[10px] font-bold px-1.5 rounded-full bg-slate-600 text-white shadow-2xs hidden shrink-0" id="tabFolioBadge">0</span>
           </button>
@@ -624,7 +624,7 @@ INDEX_TEMPLATE_V2 = """
           </button>
           <button id="tabBtnHistory" class="tab-btn relative z-10 flex-1 py-1.5 min-h-[40px] flex items-center justify-center gap-1 text-muted whitespace-nowrap tap-highlight-transparent" data-tab-index="2" onclick="switchDetailTab('history')">
             <svg class="w-3.5 h-3.5 text-sky-700 stroke-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
-            <span>History</span>
+            <span>Problems</span>
             <span class="font-mono text-[10px] font-bold px-1.5 rounded-full text-white shadow-2xs hidden shrink-0" id="tabHistoryBadge" style="background:#4a7b9d;color:#ffffff;">0</span>
           </button>
         </div>
@@ -2299,18 +2299,18 @@ INDEX_TEMPLATE_V2 = """
               </div>
               
               <div class="flex items-center gap-1 shrink-0">
-                ${isLoaned ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">↗ Loaned</span>' : ''}
+                ${isLoaned ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'LOAN\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 cursor-help">↗ Loaned</span>' : ''}
                 ${isRev && hasActionable
-                  ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">[REV+ERR]</span>'
+                  ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'REV+ERR\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300 cursor-help">[REV+ERR]</span>'
                   : (isRev && isSpecNote
-                    ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-300">[REV+NOTE]</span>'
+                    ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'REV+NOTE\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-300 cursor-help">[REV+NOTE]</span>'
                     : (isRev
-                      ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-50 text-fern-dark border border-fern/30">[REV]</span>'
+                      ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'REV\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-50 text-fern-dark border border-fern/30 cursor-help">[REV]</span>'
                       : (hasActionable
-                        ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">Flagged ⚠</span>'
+                        ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'FLAGGED\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 cursor-help">Flagged ⚠</span>'
                         : (isSpecNote
-                          ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-300">[NOTE]</span>'
-                          : '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300">[UNREV]</span>'
+                          ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'NOTE\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-300 cursor-help">[NOTE]</span>'
+                          : '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'UNREV\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300 cursor-help">[UNREV]</span>'
                         )
                       )
                     )
@@ -5760,11 +5760,11 @@ INDEX_TEMPLATE_V2 = """
     const FIELD_GUIDE_EXPLANATIONS = {
       'Genus': {
         example: 'e.g. Betula',
-        desc: 'The first word of the plant’s scientific name. If the physical box has an older name or synonym, tap 📜 Old names to check it — or tap the checkbox next to Genus on Details to flag it for Arbor Desktop.'
+        desc: 'The first word of the plant’s scientific name. If the physical box has an older name or synonym, tap 📜 Old names to check it — or tap the checkbox next to Genus on Data to flag it for Arbor Desktop.'
       },
       'Species': {
         example: 'e.g. pendula',
-        desc: 'The second word of the scientific name. Compare with the physical box label; if they disagree, check 📜 Old names or tap the checkbox next to Species on Details.'
+        desc: 'The second word of the scientific name. Compare with the physical box label; if they disagree, check 📜 Old names or tap the checkbox next to Species on Data.'
       },
       'Author': {
         example: 'e.g. L. or Roth',
@@ -5776,11 +5776,11 @@ INDEX_TEMPLATE_V2 = """
       },
       'Collector': {
         example: 'e.g. N. Moe',
-        desc: 'The person who physically collected the specimen in the field. If the label disagrees or is unreadable, tap the checkbox next to Collector on Details.'
+        desc: 'The person who physically collected the specimen in the field. If the label disagrees or is unreadable, tap the checkbox next to Collector on Data.'
       },
       'Collection Date': {
         example: 'e.g. 1954 or 15.07.1965',
-        desc: 'When the specimen was collected (DAY.MONTH.YEAR using 00 for unknown parts, or just the year) as written on the label.'
+        desc: 'When the specimen was collected (DAY.MONTH.YEAR using 00 for unknown parts, e.g. 00.06.1912, or just the year) as written on the label.'
       },
       'Collection place': {
         example: 'e.g. Oslo, Tøyen',
@@ -5792,7 +5792,7 @@ INDEX_TEMPLATE_V2 = """
       },
       'Comment': {
         example: 'Curatorial notes',
-        desc: 'General notes or messages for the next curator reviewing this object. Tap Write / Edit Comment on Details to add one.'
+        desc: 'General notes or messages for the next curator reviewing this object. Tap Write / Edit Comment on Data to add one.'
       }
     };
 
@@ -5802,34 +5802,46 @@ INDEX_TEMPLATE_V2 = """
 
       const sectionsHtml = [];
 
-      // 1. Status Badges (matches Desktop & top of Specimen Detail View)
+      // 1. Status Badges (aligned 1:1 with Arbor Desktop)
       sectionsHtml.push(`
         <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-2">
-          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">1. Status Badges (Same as Arbor Desktop)</div>
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">1. Status Badges (Phone &amp; Desktop)</div>
           <div class="space-y-1.5 text-[11px]">
             <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">[UNREV]</span> — Nobody has checked this physical object yet.</div>
             <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-fern-dark border border-fern/30">[REV]</span> — Checked physically and everything matches what is on file.</div>
-            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">[REV+ERR]</span> — Checked physically, with a mismatch or physical issue flagged for later. <strong>You don’t have to solve every problem today</strong> — leaving it flagged queues it safely for the office computer.</div>
-            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300">[CFCT]</span> — Older catalog books disagree with the current record. Swipe to the <strong>History</strong> tab to compare them.</div>
-            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">↗ Loaned</span> — Currently loaned out (toggle on the <strong>Location</strong> tab).</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">[REV+ERR]</span> — Checked physically, with an actionable data/label mismatch flagged. <strong>You don’t have to solve every problem today</strong> — leaving it flagged queues it safely for the desk computer.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-900 border border-teal-300">[REV+NOTE]</span> / <span class="font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-900 border border-indigo-200">[NOTE]</span> — <strong>Needs Specialist</strong> only (damage, mold, pest, or expert question). Kept out of the everyday trainee Problem Queue.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300">[CFCT]</span> — Older catalog books disagree with the current record. Swipe to the <strong>Problems</strong> tab to compare them.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">↗ Loaned</span> — Currently loaned out (toggle on the <strong>Location</strong> tab; shown as <code>LOAN</code> on Desktop).</div>
           </div>
+          <p class="text-[10px] text-ink-muted pt-1 border-t border-bordercol/60"><strong>Desktop-only unreviewed badges:</strong> On the desk computer, unreviewed flagged cards also show category badges: <code>[TAX]</code> (plant name), <code>[PROV]</code> (collector/date/place), <code>[BOX]</code> (box label), <code>[IMG]</code> (photo), <code>[ERR+HIS]</code> (error + older books), <code>[ERR]</code> (other error), plus small chips <code>UKN</code> (ICEDIG code) and <code>UNVAL</code> (draft note).</p>
         </section>
       `);
 
-      // 2. Storage Location (matches Current Shelf & Location Tab)
+      // 2. The 3-Way Problem Rule & ICEDIG Codes
       sectionsHtml.push(`
         <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1.5">
-          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">2. Storage Location (Where the Box Lives)</div>
-          <p class="text-[11px] text-ink-muted"><strong>Building, Floor, Cabinet, Shelf</strong> record where this object lives so we can find it again. Set <strong>My Current Shelf</strong> once at the top of the list, then tap <strong>📍 Save to Shelf</strong> on each box you pull.</p>
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">2. The 3-Way Problem Rule &amp; ICEDIG Codes</div>
+          <p class="text-[11px] text-ink-muted"><strong>1. Confirmed blank or unreadable?</strong> Tap the field value on <strong>Data</strong> (or <strong>ICEDIG ▾</strong> on <strong>Problems</strong>) to pick <code>unknown:missing</code> (absent on label — never use if older books have a value!), <code>unknown:indecipherable</code> (illegible), <code>unknown:undigitized</code> (skipped), or <code>withheld</code> (protected).</p>
+          <p class="text-[11px] text-ink-muted"><strong>2. Data or label mismatch?</strong> Tick the checkbox next to the field on <strong>Data</strong> (e.g. box says Africa, file says China) → <code>[REV+ERR]</code>. If older books disagree (e.g. England vs. Finland), swipe to <strong>Problems</strong> to compare and tap <strong>Apply</strong> or <strong>✓ Value is Correct</strong>.</p>
+          <p class="text-[11px] text-ink-muted"><strong>3. Physical damage or specialist question?</strong> Tap <strong>⚑ Needs Specialist</strong> in the bottom bar and add a short <strong>Comment</strong> → calm <code>[REV+NOTE]</code>.</p>
+        </section>
+      `);
+
+      // 3. Storage Location (matches Set Shelf & Location Tab)
+      sectionsHtml.push(`
+        <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1.5">
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">3. Storage Location (Where the Box Lives)</div>
+          <p class="text-[11px] text-ink-muted"><strong>Building, Floor, Cabinet, Shelf</strong> record where this object lives so we can find it again. Tap <strong>Set Shelf</strong> once at the top of the list, then tap <strong>📍 Save to Shelf</strong> on each box you pull (with a 5-second <strong>↩ Undo</strong>).</p>
           <p class="text-[11px] text-ink-muted"><strong>Stored as:</strong> What kind of container holds it (paper box, plastic box, petridish, etc.).</p>
         </section>
       `);
 
-      // 3. Mirrored Specimen Form Fields (grouped just like the Mobile V2 Details tab)
+      // 4. Mirrored Specimen Form Fields (grouped just like the Mobile V2 Data tab)
       const groups = [
-        { title: '3. Plant Name (Taxonomy)', fields: ['Genus', 'Species', 'Author', 'Family'] },
-        { title: '4. Collection Details', fields: ['Collector', 'Collection Date', 'Collection place'] },
-        { title: '5. Box Label & Notes', fields: ['Box label', 'Comment'] },
+        { title: '4. Plant Name (Taxonomy)', fields: ['Genus', 'Species', 'Author', 'Family'] },
+        { title: '5. Collection Details', fields: ['Collector', 'Collection Date', 'Collection place'] },
+        { title: '6. Box Label & Notes', fields: ['Box label', 'Comment'] },
       ];
 
       groups.forEach(g => {
@@ -5856,12 +5868,14 @@ INDEX_TEMPLATE_V2 = """
         `);
       });
 
-      // 4. Flagging Issues & Problem Resolution
+      // 7. Tabs & Everyday Rules
       sectionsHtml.push(`
         <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1.5">
-          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">6. Flagging Issues &amp; Problem Resolution</div>
-          <p class="text-[11px] text-ink-muted"><strong>Details tab:</strong> Tick the box next to a field to flag it; tap the field value to set an ICEDIG code (<code>unknown:missing</code>, <code>unknown:indecipherable</code>, etc.); use <strong>Needs Specialist</strong> + <strong>Comment</strong> for damage, mold/pest, or mixed specimens (also in the bottom bar); <strong>Photo &amp; Media Issues</strong> sits at the bottom.</p>
-          <p class="text-[11px] text-ink-muted"><strong>History tab (Problem Resolution):</strong> Compare older books with the label in your hand — tap <strong>Apply</strong> on a matching older value, type a value manually, pick <strong>ICEDIG ▾</strong>, or tap <strong>✓ Value is Correct</strong>.</p>
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">7. The 3 Tabs &amp; Everyday Rules</div>
+          <p class="text-[11px] text-ink-muted"><strong>Data:</strong> Glance at the registered info against the real object, tick any mismatched field, tap a value for ICEDIG codes, or flag <strong>Photo &amp; Media Issues</strong> at the bottom.</p>
+          <p class="text-[11px] text-ink-muted"><strong>Location:</strong> Check or edit Building, Floor, Cabinet, Shelf, <strong>Stored as</strong>, and <strong>Loaned Out</strong>.</p>
+          <p class="text-[11px] text-ink-muted"><strong>Problems:</strong> Works just like Desktop’s Problem Resolution — compare older books with the real label, tap <strong>Apply</strong>, type a value, pick <strong>ICEDIG ▾</strong>, or tap <strong>✓ Value is Correct</strong>.</p>
+          <p class="text-[11px] text-ink-muted"><strong>Physical-Inspection Rule:</strong> Only tap <strong>✓ Mark Reviewed</strong> after checking the real box in front of you — and still tap it even if you flagged a problem so nobody has to check the same box twice.</p>
         </section>
       `);
 
@@ -5873,6 +5887,64 @@ INDEX_TEMPLATE_V2 = """
     function closeFieldGuideModal() {
       const modal = document.getElementById('fieldGuideModal');
       if (modal) modal.classList.add('hidden');
+    }
+
+    // Compact tap popover for status badges on List cards & Loaned header pill
+    const MOBILE_BADGE_TOOLTIPS = {
+      'REV+ERR': { label: '[REV+ERR]', desc: 'Checked physically, with a data/label mismatch flagged for desk follow-up.' },
+      'REV+NOTE': { label: '[REV+NOTE]', desc: 'Checked physically; only Needs Specialist is ticked (damage, pests, or expert question).' },
+      'REV': { label: '[REV]', desc: 'Checked physically and matches what is on file, with no open flags.' },
+      'FLAGGED': { label: 'Flagged ⚠', desc: 'Not reviewed yet, with an actionable field problem flagged. Open Problems tab to inspect.' },
+      'NOTE': { label: '[NOTE]', desc: 'Not reviewed yet; only Needs Specialist is ticked.' },
+      'UNREV': { label: '[UNREV]', desc: 'Nobody has checked this physical object yet.' },
+      'CFCT': { label: '[CFCT]', desc: 'Older catalog books disagree with the current record. Swipe to Problems to compare.' },
+      'LOAN': { label: '↗ Loaned', desc: 'Currently loaned out. Toggle Loaned Out on the Location tab.' }
+    };
+    let _badgeTipTimer = null;
+
+    function hideBadgeTooltip() {
+      const el = document.getElementById('arborBadgeTooltip');
+      if (el) el.remove();
+      if (_badgeTipTimer) {
+        clearTimeout(_badgeTipTimer);
+        _badgeTipTimer = null;
+      }
+    }
+
+    function showBadgeTooltip(anchorEl, code) {
+      hideBadgeTooltip();
+      const info = MOBILE_BADGE_TOOLTIPS[code];
+      if (!info || !anchorEl) return;
+
+      const tip = document.createElement('div');
+      tip.id = 'arborBadgeTooltip';
+      tip.className = 'fixed z-[80] max-w-[260px] rounded-lg bg-ink text-white text-[11px] leading-snug px-3 py-2 shadow-lg border border-stone-700';
+      tip.innerHTML = `
+        <div class="flex items-center justify-between gap-2 mb-0.5">
+          <span class="font-mono font-bold text-[10px] text-emerald-300">${info.label}</span>
+          <button type="button" onclick="hideBadgeTooltip(); openFieldGuideModal();" class="font-mono text-[10px] text-amber-200 underline">Guide →</button>
+        </div>
+        <div class="text-stone-100">${info.desc}</div>
+      `;
+      tip.addEventListener('click', (e) => e.stopPropagation());
+      document.body.appendChild(tip);
+
+      const rect = anchorEl.getBoundingClientRect();
+      const tipRect = tip.getBoundingClientRect();
+      let left = rect.right - tipRect.width;
+      if (left < 10) left = 10;
+      if (left + tipRect.width > window.innerWidth - 10) left = window.innerWidth - tipRect.width - 10;
+      let top = rect.bottom + 6;
+      if (top + tipRect.height > window.innerHeight - 12) {
+        top = Math.max(10, rect.top - tipRect.height - 6);
+      }
+      tip.style.left = `${Math.round(left)}px`;
+      tip.style.top = `${Math.round(top)}px`;
+
+      _badgeTipTimer = setTimeout(hideBadgeTooltip, 4500);
+      setTimeout(() => {
+        document.addEventListener('click', hideBadgeTooltip, { once: true });
+      }, 0);
     }
 
     // -------------------------------------------------------------
@@ -5939,8 +6011,8 @@ INDEX_TEMPLATE_V2 = """
         {
           id: 't_tour',
           badge: 'TRAINEE · STEP 3 OF 5',
-          title: 'Your phone screen',
-          body: 'These three tabs match Desktop Arbor: Details is your Registration Data, Location is Storage Location, and History is Problem Resolution. Compare the screen with the real object in your hand — a red badge means something is flagged.',
+          title: 'How the 3 tabs fit your check',
+          body: 'Glance at Data against the real object in your hand: if something is wildly off (e.g. the label says Africa but Data says China), tick that field\'s box to flag it. If Problems shows a number (e.g. one source says England and another says Finland), open Problems — it works just like Problem Resolution on Desktop — check the object and tap Apply to fix it on the spot. Location holds the shelf coordinates.',
           target: () => document.querySelector(_COACH_TOUR_TABS[_coachTourCycleIdx % _COACH_TOUR_TABS.length]),
           check: null
         },
@@ -5957,7 +6029,7 @@ INDEX_TEMPLATE_V2 = """
           id: 't_ready',
           badge: 'TRAINEE · STEP 5 OF 5',
           title: "You're ready!",
-          body: 'Your hallway routine is simple: Set Shelf → search → check → Save to Shelf → Mark Reviewed. Go ahead and pick up the next object! The first time you run into a new screen or issue (like History or Needs Specialist), a short one-time tip will guide you — then stay out of your way.',
+          body: 'Your hallway routine: Set Shelf → search → glance at Data (fix or flag mismatches in Problems) → Save to Shelf → Mark Reviewed. Pick up the next object! The first time you open Problems, ICEDIG, or Needs Specialist, a short one-time tip will guide you — then stay out of your way.',
           target: null,
           check: null,
           isFinal: true
@@ -5985,8 +6057,8 @@ INDEX_TEMPLATE_V2 = """
         {
           id: 'h_check_save_review',
           badge: 'HELPER · STEP 3 OF 4',
-          title: 'Check, save, mark reviewed',
-          body: 'Compare the screen with the object in your hand. Spot something wrong? Tick the box next to that field, or tap ⚑ Needs Specialist for physical damage and add a short Comment. Then tap 📍 Save to Shelf and ✓ Mark Reviewed.',
+          title: 'Quick check, save, mark reviewed',
+          body: 'Glance at Data against the object in your hand. Spot a clear mismatch (e.g. label says Africa, file says China)? Tick that field\'s box, or tap ⚑ Needs Specialist for physical damage. If Problems shows a number (conflicting sources like England vs. Finland), check the object and tap Apply on the right one — not sure? Leave it. Then tap 📍 Save to Shelf and ✓ Mark Reviewed.',
           waitingText: 'Waiting for Save to Shelf & ✓ Mark Reviewed…',
           target: _twoStageSaveReviewTarget,
           check: () => Boolean(_isCoachLocationSaved() && state.isReviewed)
@@ -5995,7 +6067,7 @@ INDEX_TEMPLATE_V2 = """
           id: 'h_ready',
           badge: 'HELPER · STEP 4 OF 4',
           title: "You're ready!",
-          body: 'Your routine: Set Shelf → search → check → Save to Shelf → Mark Reviewed. If you are ever unsure about a label, just leave it flagged — the curator will review it at the desk later.',
+          body: 'Your routine: Set Shelf → search → quick check on Data & Problems → Save to Shelf → Mark Reviewed. If you are ever unsure about a label, just leave it flagged — the curator will review it at the desk later.',
           target: null,
           check: null,
           isFinal: true
@@ -6005,19 +6077,19 @@ INDEX_TEMPLATE_V2 = """
 
     const COACH_TIPS = {
       tip_flagged: {
-        label: 'Flagged objects on Details',
+        label: 'Flagged objects on Data',
         title: 'This object has a flagged problem',
         versions: ['trainee', 'helper'],
-        bodyTrainee: "Red-highlighted fields on Details mean something is missing or uncertain. Compare them with the real object in your hand: you can fix a value and uncheck its box, or open the History tab to check older books. Can't solve it in the hallway? Leave it checked and still tap ✓ Mark Reviewed — it's saved safely for your desk ([REV+ERR]).",
-        bodyHelper: 'Red-highlighted fields mean something needs checking. Compare with the label in your hand — if History shows older books, you can tap Apply on the matching value. Not sure? Leave it checked and tap ✓ Mark Reviewed for the main worker.'
+        bodyTrainee: "Red-highlighted fields on Data mean something is missing or uncertain. Compare them with the real object in your hand — you can open the Problems tab to compare older books and tap Apply if the object makes the answer clear. Can't solve it in the hallway? Leave it checked and still tap ✓ Mark Reviewed so it's saved for your desk ([REV+ERR]).",
+        bodyHelper: 'Red-highlighted fields on Data mean something needs checking. Open the Problems tab to compare older records against the object in your hand — tap Apply if it is clearly right, or leave it checked for the main worker.'
       },
       tip_history: {
-        label: 'History tab (Problem Resolution)',
-        title: 'This is the History tab',
+        label: 'Problems tab (Problem Resolution)',
+        title: 'This is the Problems tab',
         versions: ['trainee', 'helper'],
         explicitTool: true,
-        bodyTrainee: "History is the phone version of Problem Resolution from Part 1. It compares the current record against older catalog books so you can check them against the real label in your hand. Tap Apply on the matching value, ✓ Value is Correct if it was a false alarm, or ICEDIG ▾ if confirmed blank or unreadable.",
-        bodyHelper: 'History lets you compare the current record with older catalog books. Check the real label in your hand: if an older value clearly matches, tap Apply. Otherwise, just leave it as is for the desk.'
+        bodyTrainee: "Problems works just like Problem Resolution on Desktop. If older books disagree (e.g. England vs. Finland), check the real object in your hand and tap Apply on the matching value — or tap ✓ Value is Correct if it was a false alarm, or ICEDIG ▾ if confirmed blank or unreadable.",
+        bodyHelper: 'Problems lets you compare the current record with older books. Check the real label in your hand: if one clearly matches, tap Apply to fix it right here. Not sure? Leave it as is for the desk.'
       },
       tip_icedig: {
         label: 'ICEDIG codes (blank/unreadable)',

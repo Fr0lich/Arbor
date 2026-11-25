@@ -192,6 +192,7 @@ class UnifiedHelpWindow:
     def _build_sidebar_nav(self):
         nav_items = [
             ("tutorials", "Interactive Tutorials"),
+            ("reference", "Badges & Reference"),
             ("quick_guides", "Quick Guides (30s)"),
             ("manuals", "User Manuals"),
             ("shortcuts", "Keyboard Shortcuts"),
@@ -305,11 +306,12 @@ class UnifiedHelpWindow:
             fn()
 
     # ------------------------------------------------------------------
-    # Build All 5 Tabs
+    # Build All 6 Tabs
     # ------------------------------------------------------------------
 
     def _build_all_tabs(self):
         self._build_tutorials_tab()
+        self._build_reference_tab()
         self._build_quick_guides_tab()
         self._build_manuals_tab()
         self._build_shortcuts_tab()
@@ -372,7 +374,7 @@ class UnifiedHelpWindow:
                 (
                     "Translate the exact same ideas onto your phone for walking the collection aisles:\n"
                     "• Launch Phone Connector, scan the QR code, and set your shelf once (Set Shelf + 5-sec ↩ Undo)\n"
-                    "• Use inline checkboxes, tap any field value for ICEDIG codes, swipe to History & 📜 Old names, and flag Needs Specialist ([REV+NOTE])"
+                    "• Use inline checkboxes on Data, tap any field value for ICEDIG codes, swipe to Problems & 📜 Old names, and flag Needs Specialist ([REV+NOTE])"
                 ),
                 _start_mobile,
                 None,
@@ -482,6 +484,238 @@ class UnifiedHelpWindow:
             ),
             lambda: _start_flow("database"),
         )
+
+    def _build_reference_tab(self):
+        inner = self._create_scrollable_tab("reference")
+        self._add_section_intro(
+            inner,
+            "Badges, Icons & Quick Reference",
+            "Every status badge, card chip, missing-data code, and everyday rule used across Arbor Desktop and Mobile Companion.",
+        )
+
+        # 1. Status Badges (Single-Badge Priority)
+        badge_card = self._make_card(inner)
+        tk.Label(
+            badge_card,
+            text="1. Status Badges (One Priority Badge Per Card)",
+            font=self.FONT_CARD_TITLE,
+            fg=self.COLORS["primary"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, sc(2)))
+        tk.Label(
+            badge_card,
+            text="Arbor shows at most one status badge per specimen so you immediately see the most important action. Badges marked (Desktop) appear on unreviewed cards at your desk; Mobile Companion uses the reviewed, specialist, and conflict badges.",
+            font=self.FONT_SMALL,
+            fg=self.COLORS["on_surface_variant"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+            justify="left",
+            wraplength=sc(540),
+        ).pack(fill="x", pady=(0, sc(8)))
+
+        badge_rows = [
+            ("REV+ERR", "#F57C00", "#ffffff", "Reviewed with Actionable Error — Physically checked, but a data/label mismatch is flagged. Queued safely for desk follow-up (Ctrl+G → Hallway Follow-Up)."),
+            ("REV+NOTE", "#e3f2ef", "#1b5e55", "Reviewed — Needs Specialist — Physically checked; ONLY Needs Specialist is ticked (damage, mold, pest, or expert question). Kept out of the default trainee queue."),
+            ("REV", "#f2f9f3", "#3a7d44", "Reviewed & Verified — Physically checked and matches what is on file, with no open flags. All done!"),
+            ("TAX", "#fdf2f2", "#c93a40", "Plant Name Issue (Desktop) — Unreviewed card with a Genus, Species, Author, or Family flag. Check the label or 📜 Old names."),
+            ("PROV", "#fef9e7", "#b45309", "Origin / Collector Issue (Desktop) — Unreviewed card with a Collector, Collection Date, or Collection Place flag."),
+            ("BOX", "#f7f5f4", "#757d77", "Box / Housing Issue (Desktop) — Unreviewed card with a Box Label mismatch (Box_Label_Problem)."),
+            ("IMG", "#f0f8ff", "#4a7b9d", "Photo Issue (Desktop) — Unreviewed card with a missing, blurry, or mismatched photo (Images_Problem)."),
+            ("ERR+HIS", "#e9f0f5", "#4a7b9d", "Error + Older Books (Desktop) — Unreviewed card with an actionable flag AND older catalog books loaded. Press Ctrl+H to compare."),
+            ("CFCT", "#e9f0f5", "#4a7b9d", "Catalog Book Conflict — Older digitized catalog books disagree with the current record. Open Problem Resolution (Ctrl+H / Phone Problems tab)."),
+            ("ERR", "#fdf2f2", "#c93a40", "General Actionable Error (Desktop) — Unreviewed card with another actionable problem flag."),
+            ("NOTE", "#eceef6", "#434a6b", "Pending — Needs Specialist — Unreviewed card with ONLY Needs Specialist checked (never triggered by a plain Comment)."),
+            ("UNREV", "#f2f5f1", "#757d77", "Unreviewed — Not checked yet. Inspect the specimen, verify the details, and click Mark Reviewed."),
+        ]
+
+        for label, bg, fg, desc in badge_rows:
+            row = tk.Frame(badge_card, bg=self.COLORS["card_bg"])
+            row.pack(fill="x", pady=sc(2))
+            pill_wrap = tk.Frame(row, bg=self.COLORS["card_bg"], width=sc(92))
+            pill_wrap.pack(side="left", anchor="n")
+            pill_wrap.pack_propagate(False)
+            tk.Label(
+                pill_wrap,
+                text=f" {label} ",
+                font=self.FONT_MONO,
+                bg=bg,
+                fg=fg,
+                padx=sc(4),
+                pady=sc(1),
+            ).pack(side="left")
+            tk.Label(
+                row,
+                text=desc,
+                font=self.FONT_BODY,
+                fg=self.COLORS["on_surface"],
+                bg=self.COLORS["card_bg"],
+                anchor="w",
+                justify="left",
+                wraplength=sc(445),
+            ).pack(side="left", fill="x", expand=True)
+
+        # 2. Card Chips & Visual Markers
+        chip_card = self._make_card(inner)
+        tk.Label(
+            chip_card,
+            text="2. Card Chips & Visual Markers",
+            font=self.FONT_CARD_TITLE,
+            fg=self.COLORS["primary"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, sc(6)))
+
+        chip_rows = [
+            ("LOAN / ↗ Loaned", "#fef3c7", "#92400e", "Specimen is currently loaned out (toggle in Storage Location on Desktop, or the Location tab on Phone)."),
+            ("UKN", "#eef1ee", "#444c47", "At least one field contains a confirmed ICEDIG missing-data code (unknown:* or withheld)."),
+            ("UNVAL", "#eef1ee", "#444c47", "Has a draft note in Unvalidated_source (e.g. uncertain handwriting saved without altering the main field)."),
+            ("NO PHOTO", "#eef1ee", "#444c47", "No photo is linked yet (or Images_Problem is flagged). ONLINE means photos load from an online link."),
+            ("● Unsaved", "#fef3c7", "#92400e", "Amber dot in the top bar: you have edits not yet written to Excel. Press Ctrl+S to save."),
+            ("Yellow Box", "#fef9c3", "#854d0e", "A Registration field glows yellow while its problem checkbox is ticked. Untick the box once you are confident it is fixed."),
+        ]
+        for label, bg, fg, desc in chip_rows:
+            row = tk.Frame(chip_card, bg=self.COLORS["card_bg"])
+            row.pack(fill="x", pady=sc(2))
+            pill_wrap = tk.Frame(row, bg=self.COLORS["card_bg"], width=sc(112))
+            pill_wrap.pack(side="left", anchor="n")
+            pill_wrap.pack_propagate(False)
+            tk.Label(
+                pill_wrap,
+                text=f" {label} ",
+                font=self.FONT_MONO,
+                bg=bg,
+                fg=fg,
+                padx=sc(4),
+                pady=sc(1),
+            ).pack(side="left")
+            tk.Label(
+                row,
+                text=desc,
+                font=self.FONT_BODY,
+                fg=self.COLORS["on_surface"],
+                bg=self.COLORS["card_bg"],
+                anchor="w",
+                justify="left",
+                wraplength=sc(425),
+            ).pack(side="left", fill="x", expand=True)
+
+        # 3. The 3-Way Problem Rule
+        rule_card = self._make_card(inner)
+        tk.Label(
+            rule_card,
+            text="3. The 3-Way Problem Rule (Which Option to Pick)",
+            font=self.FONT_CARD_TITLE,
+            fg=self.COLORS["primary"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, sc(6)))
+
+        rules = [
+            ("1. Confirmed Blank or Illegible → ICEDIG Code", "Click the ⋯ button on the field (Desktop) or tap the field value (Phone) to insert unknown:missing or unknown:indecipherable. Do NOT flag a problem when the label genuinely lacks that detail."),
+            ("2. Data or Label Mismatch → Tick the Field's Problem Box", "Use when the physical object disagrees with what is on file (e.g. label says Africa, file says China) or older catalog books conflict. Resolve in Problem Resolution (Ctrl+H / Phone Problems tab) or leave flagged ([REV+ERR]) for desk follow-up."),
+            ("3. Damage, Pests, or Expert Question → Needs Specialist + Comment", "Use for torn/moldy boxes, mixed specimens, or taxonomic doubts needing a curator. Shows calm [REV+NOTE] or [NOTE] and stays out of the everyday trainee Problem Queue."),
+        ]
+        for heading, body_txt in rules:
+            tk.Label(
+                rule_card,
+                text=heading,
+                font=self.FONT_LABEL,
+                fg=self.COLORS["secondary_dark"],
+                bg=self.COLORS["card_bg"],
+                anchor="w",
+            ).pack(fill="x", pady=(sc(3), sc(1)))
+            tk.Label(
+                rule_card,
+                text=body_txt,
+                font=self.FONT_BODY,
+                fg=self.COLORS["on_surface_variant"],
+                bg=self.COLORS["card_bg"],
+                anchor="w",
+                justify="left",
+                wraplength=sc(540),
+            ).pack(fill="x", pady=(0, sc(4)))
+
+        # 4. ICEDIG Missing-Data Codes
+        icedig_card = self._make_card(inner)
+        tk.Label(
+            icedig_card,
+            text="4. Standard Missing-Data Codes (ICEDIG)",
+            font=self.FONT_CARD_TITLE,
+            fg=self.COLORS["primary"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, sc(4)))
+        tk.Label(
+            icedig_card,
+            text="Insert via the ⋯ button on any field, the ICEDIG ▾ menu in Problem Resolution, or by typing the short code:",
+            font=self.FONT_SMALL,
+            fg=self.COLORS["on_surface_variant"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+            justify="left",
+            wraplength=sc(540),
+        ).pack(fill="x", pady=(0, sc(6)))
+
+        icedig_rows = [
+            ("unknown:missing", "?m", "Confirmed absent on the physical label (e.g. no date was ever written). Never use if older catalog books have a value — check Problem Resolution first!"),
+            ("unknown:indecipherable", "?i", "Faded ink, torn paper, water damage, or handwriting that cannot be read."),
+            ("unknown:undigitized", "?u", "Present on the specimen, but skipped during an earlier digitization pass."),
+            ("withheld", "?w", "Intentionally hidden for conservation or legal reasons (e.g. exact GPS of an endangered species)."),
+        ]
+        for code, short, desc in icedig_rows:
+            row = tk.Frame(icedig_card, bg=self.COLORS["card_bg"])
+            row.pack(fill="x", pady=sc(2))
+            tk.Label(
+                row,
+                text=f" {code} ({short}) ",
+                font=self.FONT_MONO,
+                bg=self.COLORS["keycap_bg"],
+                fg=self.COLORS["primary"],
+                highlightbackground=self.COLORS["keycap_border"],
+                highlightthickness=1,
+                padx=sc(4),
+                pady=sc(1),
+            ).pack(side="left", anchor="n", padx=(0, sc(8)))
+            tk.Label(
+                row,
+                text=desc,
+                font=self.FONT_BODY,
+                fg=self.COLORS["on_surface"],
+                bg=self.COLORS["card_bg"],
+                anchor="w",
+                justify="left",
+                wraplength=sc(350),
+            ).pack(side="left", fill="x", expand=True)
+
+        # 5. Everyday Conventions & Tips
+        conv_card = self._make_card(inner)
+        tk.Label(
+            conv_card,
+            text="5. Everyday Conventions & Field Rules",
+            font=self.FONT_CARD_TITLE,
+            fg=self.COLORS["primary"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, sc(6)))
+
+        conventions = (
+            "• Date format (DD.MM.YYYY): Use 00 for unknown parts — e.g. 15.07.1965, 00.06.1912, or 00.00.1954 (or just 1954).\n"
+            "• Author vs. Collector: Author is the scientist who named the species (e.g. L.); Collector is the person who gathered the plant in the field.\n"
+            "• Physical-Inspection Rule: Only click Mark Reviewed after checking the real specimen (or its full label scan). Flagging an issue and still clicking Mark Reviewed is encouraged — it saves your verification as [REV+ERR] or [REV+NOTE] so nobody checks the box twice.\n"
+            "• Old Plant & Family Names: Unfamiliar names on old boxes (like Compositae for Asteraceae) are often valid older synonyms. Check 📜 Old names before flagging a name mismatch.\n"
+            "• Desktop ↔ Mobile Companion: Phone tabs are Data · Location · Problems (Problems works just like Desktop's Ctrl+H Problem Resolution). Always close Microsoft Excel before saving with Ctrl+S."
+        )
+        tk.Label(
+            conv_card,
+            text=conventions,
+            font=self.FONT_BODY,
+            fg=self.COLORS["on_surface_variant"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+            justify="left",
+            wraplength=sc(540),
+        ).pack(fill="x")
 
     def _build_quick_guides_tab(self):
         inner = self._create_scrollable_tab("quick_guides")

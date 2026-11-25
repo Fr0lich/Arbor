@@ -13,6 +13,22 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 72: Compact Phone Tutorial Dropdown, Mobile Tabs Renamed (`Data · Location · Problems`) & Workflow-Focused Phone Tutorial
+- **Date**: 2026-11-25
+- **Feature Area**: Mobile Session Launcher & Mobile Companion V2 (`ui/mobile_panel.py`, `backend/mobile_template_v2.py`, `ui/unified_help.py`, `USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`, `tests/test_navigation_and_dialogs.py`)
+- **What Changed**:
+  1. **Compact Phone Tutorial Dropdown (`ui/mobile_panel.py`)**: Replaced the 4 stacked radio buttons (`Ask on the phone` / `Trainee` / `Helper` / `Off`) with a single read-only `ttk.Combobox` dropdown so the Mobile Companion launcher stays compact and unintimidating for first-time users.
+  2. **Mobile Tabs Renamed (`Data` · `Location` · `Problems`)**: Renamed the 3 visible Mobile Companion tabs from `Details` / `Location` / `History` to **`Data`** / **`Location`** / **`Problems`** (keeping internal DOM IDs unchanged for compatibility).
+  3. **Workflow-Focused Phone Coach Tutorial (`backend/mobile_template_v2.py`)**: Rewrote Trainee Step 3 (`t_tour`), Helper Step 3 (`h_check_save_review`), and contextual tips (`tip_flagged`, `tip_history`) to teach trainees to quickly glance at **`Data`** against the real object (flagging clear mismatches like Africa vs. China) and use **`Problems`** (just like Desktop Problem Resolution) to resolve conflicting sources (like England vs. Finland) right from the physical object in hand.
+  4. **Synced Manuals & CI Doc-Parity Guard**: Updated `USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`, `ui/unified_help.py`, and `tests/test_navigation_and_dialogs.py` to enforce **`Data ↔ Location ↔ Problems`**.
+- **User Impact**: Cleaner, shorter Mobile Companion launcher, clearer tab names on the phone, and a phone tutorial that actively teaches trainees to spot mismatches on `Data` and solve conflicts on `Problems`.
+- **Documentation Sync Checklist**:
+  - [x] Bundled User Manuals (`USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`)
+  - [x] CI Doc-Parity Guard (`tests/test_navigation_and_dialogs.py`)
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+
+---
+
 ### Entry 71: 2-Part Core Onboarding Intro, Standalone Advanced Batch Problem Queue Tutorial & Post-Mobile Wrap-Up Popup
 - **Date**: 2026-11-25
 - **Feature Area**: Interactive Tutorials & Mobile Handoff (`ui/unified_help.py`, `ui/database_ops.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/review_tutorial.py`, `ui/tutorials/micro_guides.py`, `ui/mobile_dialog.py`, `backend/mobile_template_v2.py`)
@@ -1219,3 +1235,51 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
   - [x] Mobile Companion Guide (`documentation/agent/MOBILE_COMPANION_GUIDE.md`)
   - [x] Verification simulation passed with 100% success in `scratch/simulate_vault_audit.py`
   - [x] Full test suite verified in `tests/test_mobile_companion.py`
+
+
+---
+
+### Entry 73: Desktop & Mobile Quick Reference Sheet + User Manuals Sync
+- **Date**: 2026-11-25
+- **Area**: Help Center (`ui/unified_help.py`), Mobile Companion V2 Field Guide (`backend/mobile_template_v2.py`), User Manuals (`USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`), Tests (`tests/test_navigation_and_dialogs.py`)
+- **Code Delta**:
+  - Added a dedicated **`Badges & Reference`** tab (`reference`) to the Desktop Help Center (`ui/unified_help.py`) explaining all 12 status badges (`REV+ERR`, `REV+NOTE`, `REV`, `TAX`, `PROV`, `BOX`, `IMG`, `ERR+HIS`, `CFCT`, `ERR`, `NOTE`, `UNREV`) with exact color tokens, card chips (`LOAN` / `↗ Loaned`, `UKN`, `UNVAL`, `NO PHOTO`, `● Unsaved`, yellow field highlight), the **3-Way Problem Rule**, all 4 **ICEDIG** codes + guardrails, and everyday conventions (`DD.MM.YYYY` dates, `Author` vs. `Collector`, Physical-Inspection Rule, `📜 Old names`, and Desktop ↔ Mobile tabs).
+  - Updated Mobile Companion V2's `?` Field Guide modal (`openFieldGuideModal()` & `FIELD_GUIDE_EXPLANATIONS` in `backend/mobile_template_v2.py`) to align 1:1 with Desktop: replaced stale `Details`/`History` wording with `Data`/`Problems`, added `[REV+NOTE]`/`[NOTE]` and a Desktop-only unreviewed badge summary (`[TAX]`, `[PROV]`, `[BOX]`, `[IMG]`, `[ERR+HIS]`, `[ERR]`, `UKN`, `UNVAL`), added the **3-Way Problem Rule & ICEDIG Codes** card, and added a **3 Tabs & Everyday Rules** summary.
+  - Audited and updated both `USER_GUIDE.md` and `MOBILE_COMPANION_USER_GUIDE.md`: fixed the swapped Center/Right column diagram in `USER_GUIDE.md` Chapter 2 (Center = Photos + Storage Location below; Right = Registration Data + Problems + `✓ MARK AS REVIEWED`), updated the welcome callout to the 2-Part Core Introduction + Optional & Advanced Tutorials, documented per-field `⋯` ICEDIG buttons, manual problem-flag unchecking, `Auto-next` OFF default, `[ERR+HIS]` and card chips, the `Phone tutorial:` dropdown, `Data ↔ Location ↔ Problems` quick-glance & Problem Resolution workflow, and the Post-Session Wrap-Up dialog.
+  - Updated `test_unified_help_and_old_names_dialogs_smoke` in `tests/test_navigation_and_dialogs.py` to exercise all 6 Help Center tabs including `"reference"`.
+- **Plain-Language Trainee Impact**: Trainees and helpers now have a single, consistent visual reference for every badge, chip, ICEDIG code, and rule both at their desk (`F1 → Badges & Reference`) and on their phone (`?`), and both user manuals accurately match the live screen layout and workflows.
+- **Documentation Sync Checklist**:
+  - [x] `USER_GUIDE.md` updated and verified
+  - [x] `MOBILE_COMPANION_USER_GUIDE.md` updated and verified
+  - [x] In-app Desktop Help Center & Mobile `?` Field Guide synced
+  - [ ] Printable Desk Cheat Sheet (`documentation/curator/KEYBOARD_SHORTCUTS_CHEAT_SHEET.md`) — no shortcut keys changed
+
+
+---
+
+### Entry 74: Hover & Tap Tooltips Directly on Status Badges (Desktop + Mobile V2)
+- **Date**: 2026-11-25
+- **Area**: Specimen Directory Cards (`ui/widgets.py`), Mobile Companion V2 (`backend/mobile_template_v2.py`)
+- **Code Delta**:
+  - Added `STATUS_BADGE_TOOLTIPS` and recycled-card-safe hover tooltip methods (`_schedule_badge_tooltip`, `_show_badge_tooltip`, `_hide_badge_tooltip`) to `SpecimenDirectory` in `ui/widgets.py` with a 220ms hover delay, dark-mode-aware styling, and screen-edge clamping.
+  - Added `MOBILE_BADGE_TOOLTIPS` and `showBadgeTooltip()` / `hideBadgeTooltip()` in `backend/mobile_template_v2.py`, wired to all Specimen List status badge pills (`[REV]`, `[REV+ERR]`, `[REV+NOTE]`, `Flagged ⚠`, `[NOTE]`, `[UNREV]`, `↗ Loaned`) and the Detail View `↗ Loaned` pill (with `event.stopPropagation()` so tapping a badge explains it without opening the specimen, plus a 1-tap `Guide →` link to the full Field Guide modal).
+- **Plain-Language Trainee Impact**: Trainees can hover over any Desktop status badge or tap any Mobile status badge to immediately see a 1-line plain-English explanation without opening Help.
+- **Documentation Sync Checklist**:
+  - [x] Passive UI discoverability enhancement — no shortcut, setting, or workflow change required in manuals
+
+
+---
+
+### Entry 75: 1-Click "Reviewed Today / This Mobile Session" Filter & Batch Problem Solver Handoff
+- **Date**: 2026-11-25
+- **Area**: Mobile Session Tracking (`backend/mobile_server.py`), Filter & Batch Handoff (`ui/main_window.py`, `ui/filter_dialog.py`, `ui/command_palette.py`), Batch Problem Queue (`ui/object_problem_resolver.py`), Post-Mobile Popup (`ui/mobile_dialog.py`)
+- **Code Delta**:
+  - Tracked `session_reviewed_ids` in `MobileServer` (`backend/mobile_server.py`) and synced it to `app_state.last_mobile_session_reviewed_ids` whenever a phone marks or unmarks `Reviewed`.
+  - Added `get_reviewed_today_oids()`, `get_mobile_session_reviewed_oids()`, `apply_reviewed_batch_filter()`, and `send_reviewed_batch_to_problem_queue()` in `ui/main_window.py` using existing `ReviewedAt` ISO timestamps and session IDs (zero new Excel columns).
+  - Added **`📅 Reviewed Today`** (and **`📱 This Mobile Session`** when active) quick buttons to the Filter Dialog (`Ctrl+G`) and 4 matching commands to the Command Palette (`Ctrl+K`).
+  - Added **`📅 Reviewed Today (N)`** and **`📱 Reviewed This Mobile Session (N)`** scopes (plus `initial_scope` parameter) to `ProblemQueueDialog` (`ui/object_problem_resolver.py`).
+  - Upgraded the Post-Mobile Wrap-Up Popup (`ui/mobile_dialog.py`) to show exact session counts (clean, flagged, `Needs Specialist`) with 1-click **`✅ View N Reviewed`** and **`🔧 Batch Problem Solver`** buttons.
+  - Added `test_reviewed_today_and_mobile_session_batch_and_problem_queue` to `tests/test_navigation_and_dialogs.py`.
+- **Plain-Language Trainee Impact**: After a desk shift or vault walk, users can see all objects they reviewed today or during their mobile session in 1 click — and send that exact batch straight into the Batch Problem Solver to finish flagged items at a keyboard.
+- **Documentation Sync Checklist**:
+  - [ ] `USER_GUIDE.md` & `MOBILE_COMPANION_USER_GUIDE.md` — can be synced in the next doc pass if desired

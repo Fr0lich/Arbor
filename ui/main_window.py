@@ -2551,14 +2551,14 @@ class ObjectProgramUI(
     def show_gbif_dropdown(self):
         ObjectProgramUI.show_audit_tools_dropdown(self)
 
-    def open_problem_queue_dialog(self):
+    def open_problem_queue_dialog(self, initial_scope="filtered"):
         """Opens ProblemQueueDialog for batch resolution scoping."""
         if self.app.df_reg is None or self.app.df_reg.empty:
             messagebox.showinfo("No Database", "Please load a database before resolving problems.")
             return
 
         from ui.object_problem_resolver import ProblemQueueDialog
-        ProblemQueueDialog(self.root, self)
+        ProblemQueueDialog(self.root, self, initial_scope=initial_scope)
 
     def open_advanced_search(self):
         """Opens modal Filter Objects dialog focused on Historical & Books tab."""
@@ -7473,6 +7473,114 @@ class ObjectProgramUI(
             self.object_list.see(0)
 
             self.object_list.event_generate("<<ListboxSelect>>")
+
+    def get_reviewed_today_oids(self, date_str=None):
+        """Return all ObjectIDs marked Reviewed whose ReviewedAt timestamp is today (YYYY-MM-DD)."""
+        if not self.app or self.app.df_reg is None or self.app.df_reg.empty:
+            return []
+        from datetime import datetime
+        import utils
+        target_day = str(date_str or datetime.now().strftime("%Y-%m-%d")).strip()
+        obs_dict = self._get_obs_dict() if hasattr(self, "_get_obs_dict") else {}
+        matched = []
+        for oid in self.app.df_reg.index:
+            obs_row = obs_dict.get(oid)
+            if obs_row is None and str(oid).isdigit():
+                obs_row = obs_dict.get(int(oid))
+            if not obs_row:
+                continue
+            if not utils.parse_bool(obs_row.get("Reviewed", False)):
+                continue
+            rev_at = str(obs_row.get("ReviewedAt", "") or "").strip()
+            if rev_at.startswith(target_day):
+                matched.append(oid)
+        return matched
+
+    def get_mobile_session_reviewed_oids(self):
+        """Return all ObjectIDs marked Reviewed during the current/last Mobile Companion session."""
+        if not self.app or self.app.df_reg is None or self.app.df_reg.empty:
+            return []
+        import utils
+        raw_ids = getattr(self.app, "last_mobile_session_reviewed_ids", None) or set()
+        if not raw_ids:
+            return []
+        target_set = {str(x) for x in raw_ids}
+        obs_dict = self._get_obs_dict() if hasattr(self, "_get_obs_dict") else {}
+        matched = []
+        for oid in self.app.df_reg.index:
+            if str(oid) not in target_set:
+                continue
+            obs_row = obs_dict.get(oid)
+            if obs_row is None and str(oid).isdigit():
+                obs_row = obs_dict.get(int(oid))
+            if obs_row and utils.parse_bool(obs_row.get("Reviewed", False)):
+                matched.append(oid)
+        return matched
+
+    def apply_reviewed_batch_filter(self, mode="today", win=None):
+        """Filter the Specimen Directory to objects reviewed today or during this mobile session."""
+        if win is not None:
+            try:
+                if win.winfo_exists():
+                    win.destroy()
+            except Exception:
+                pass
+
+        if mode == "mobile_session":
+            matched = self.get_mobile_session_reviewed_oids()
+            label_title = "This Mobile Session"
+            empty_msg = "No objects have been marked as reviewed during this mobile session yet."
+        else:
+            matched = self.get_reviewed_today_oids()
+            label_title = "Reviewed Today"
+            empty_msg = "No objects have been marked as reviewed today yet."
+
+        if not matched:
+            if hasattr(self, "show_toast"):
+                self.show_toast(empty_msg, "info")
+            return []
+
+        self.app.active_object_ids = list(matched)
+        self._list_dirty = True
+        if hasattr(self, "refresh_list"):
+            self.refresh_list()
+        if hasattr(self, "update_object_count"):
+            self.update_object_count()
+        if hasattr(self, "update_filter_button_text"):
+            self.update_filter_button_text()
+
+        total = len(self.app.df_reg) if self.app.df_reg is not None else len(matched)
+        if hasattr(self, "filter_status_label"):
+            try:
+                self.filter_status_label.config(
+                    text=f"{label_title}: {len(matched)} of {total} objects"
+                )
+            except Exception:
+                pass
+
+        if hasattr(self, "object_list") and self.app.active_object_ids:
+            try:
+                self.object_list.selection_clear(0, tk.END)
+                self.object_list.selection_set(0)
+                self.object_list.see(0)
+                self.object_list.event_generate("<<ListboxSelect>>")
+            except Exception:
+                pass
+
+        if hasattr(self, "show_toast"):
+            self.show_toast(
+                f"Showing {len(matched)} object{'s' if len(matched) != 1 else ''} ({label_title})",
+                "info",
+            )
+        return matched
+
+    def send_reviewed_batch_to_problem_queue(self, mode="today"):
+        """Filter to the reviewed batch and open the Batch Problem Solver scoped to it."""
+        matched = self.apply_reviewed_batch_filter(mode=mode)
+        if not matched:
+            return
+        scope_key = "mobile_session" if mode == "mobile_session" else "today"
+        self.open_problem_queue_dialog(initial_scope=scope_key)
 
 #----
 

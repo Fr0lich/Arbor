@@ -129,6 +129,17 @@ class FilterDialogController:
             FilterDialogController.apply_filter_with_history(ui, win)
 
         make_btn(right_header, "🎯 Hallway Follow-Up (REV+ERR)", apply_hallway_followup)
+        make_btn(
+            right_header,
+            "📅 Reviewed Today",
+            lambda: ui.apply_reviewed_batch_filter("today", win=win) if hasattr(ui, "apply_reviewed_batch_filter") else None,
+        )
+        if hasattr(ui, "get_mobile_session_reviewed_oids") and ui.get_mobile_session_reviewed_oids():
+            make_btn(
+                right_header,
+                "📱 This Mobile Session",
+                lambda: ui.apply_reviewed_batch_filter("mobile_session", win=win),
+            )
         def _open_hallway_guide():
             from ui.tutorials import start_hallway_followup_guide
             start_hallway_followup_guide(ui)

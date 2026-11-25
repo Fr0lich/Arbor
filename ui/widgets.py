@@ -6,6 +6,22 @@ from repository import REVIEWED_COLUMN
 from ui.context_menu import ContextMenuManager
 
 
+STATUS_BADGE_TOOLTIPS = {
+    "REV+ERR": "Reviewed with Actionable Error — Physically checked, with a data/label mismatch still flagged for desk follow-up.",
+    "REV+NOTE": "Reviewed — Needs Specialist — Physically checked; only Needs Specialist is ticked (damage, pests, or expert question).",
+    "REV": "Reviewed & Verified — Physically checked and matches what is on file, with no open flags.",
+    "TAX": "Plant Name Issue — Unreviewed card with a Genus, Species, Author, or Family flag. Check the label or Old names.",
+    "PROV": "Origin / Collector Issue — Unreviewed card with a Collector, Collection Date, or Collection Place flag.",
+    "BOX": "Box / Housing Issue — Unreviewed card with a Box Label or storage housing mismatch.",
+    "IMG": "Photo Issue — Unreviewed card with a missing, blurry, or mismatched photo.",
+    "ERR+HIS": "Error + Older Books — Unreviewed card with an actionable flag and older catalog books loaded (press Ctrl+H to compare).",
+    "CFCT": "Catalog Book Conflict — Older digitized catalog books disagree with the current record (press Ctrl+H to compare).",
+    "ERR": "General Actionable Error — Unreviewed card with an open problem flag. Check the Problems tab for details.",
+    "NOTE": "Pending — Needs Specialist — Unreviewed card with only Needs Specialist ticked.",
+    "UNREV": "Unreviewed — Not checked yet. Inspect the specimen, verify the details, and click Mark Reviewed.",
+}
+
+
 def create_toggle_row(parent, label_text, var, command=None, ui_ref=None, info_text=None):
     from config import sc
     row = ttk.Frame(parent)
@@ -982,6 +998,92 @@ class TreeviewListboxWrapper(ttk.Frame):
             if cb_lbl and cb_lbl.winfo_exists():
                 cb_lbl.configure(text=rev_char, fg=cb_color)
 
+    def _schedule_badge_tooltip(self, widget):
+        """Show a short plain-English explanation when hovering over a status badge."""
+        self._hide_badge_tooltip()
+        try:
+            self._badge_tip_after_id = self.after(220, lambda w=widget: self._show_badge_tooltip(w))
+        except Exception:
+            self._badge_tip_after_id = None
+
+    def _show_badge_tooltip(self, widget):
+        self._badge_tip_after_id = None
+        if not widget or not widget.winfo_exists():
+            return
+        try:
+            code = str(widget.cget("text") or "").strip().upper()
+        except Exception:
+            return
+        tip_text = STATUS_BADGE_TOOLTIPS.get(code)
+        if not tip_text:
+            return
+
+        from config import sc
+        is_dark = getattr(self.main_window, "dark_mode_active", False)
+        bg = "#1e2220" if is_dark else "#2c302e"
+        fg = "#eef1ef" if is_dark else "#ffffff"
+        border = "#3d4540" if is_dark else "#1f2421"
+
+        try:
+            tw = tk.Toplevel(widget)
+            tw.wm_overrideredirect(True)
+            tw.wm_attributes("-topmost", True)
+            frame = tk.Frame(tw, bg=border, padx=1, pady=1)
+            frame.pack(fill="both", expand=True)
+            inner = tk.Frame(frame, bg=bg, padx=sc(8), pady=sc(5))
+            inner.pack(fill="both", expand=True)
+            tk.Label(
+                inner,
+                text=f"[{code}]",
+                font=("JetBrains Mono", sc(8), "bold"),
+                bg=bg,
+                fg="#85e89d" if code in ("REV", "REV+NOTE") else ("#fbbf24" if code in ("REV+ERR", "PROV") else "#cbd5e1"),
+                anchor="w",
+            ).pack(fill="x")
+            tk.Label(
+                inner,
+                text=tip_text,
+                font=("Inter", sc(8.5)),
+                bg=bg,
+                fg=fg,
+                anchor="w",
+                justify="left",
+                wraplength=sc(260),
+            ).pack(fill="x", pady=(sc(2), 0))
+
+            tw.update_idletasks()
+            x = widget.winfo_rootx() + widget.winfo_width() + sc(6)
+            y = widget.winfo_rooty() - sc(2)
+            tw_w = tw.winfo_reqwidth()
+            tw_h = tw.winfo_reqheight()
+            scr_w = tw.winfo_screenwidth()
+            scr_h = tw.winfo_screenheight()
+            if x + tw_w > scr_w - 8:
+                x = max(8, widget.winfo_rootx() - tw_w - sc(6))
+            if y + tw_h > scr_h - 8:
+                y = max(8, scr_h - tw_h - 8)
+            tw.wm_geometry(f"+{int(x)}+{int(y)}")
+            self._badge_tip_win = tw
+        except Exception:
+            self._badge_tip_win = None
+
+    def _hide_badge_tooltip(self):
+        aid = getattr(self, "_badge_tip_after_id", None)
+        if aid is not None:
+            try:
+                self.after_cancel(aid)
+            except Exception:
+                pass
+            self._badge_tip_after_id = None
+        tw = getattr(self, "_badge_tip_win", None)
+        if tw is not None:
+            try:
+                if tw.winfo_exists():
+                    tw.destroy()
+            except Exception:
+                pass
+            self._badge_tip_win = None
+
     def _resolve_card_badge_display(self, active_cats, reviewed, has_problem, problems_have_history, obs_row, is_dark, canvas_bg, ui_prefs):
         """
         Pure UI Formatter: Resolves the single status badge and accent colors based on
@@ -1367,6 +1469,9 @@ class TreeviewListboxWrapper(ttk.Frame):
 
         status_badge = self._create_badge(row1, "UNREV", "#242725" if is_dark else "#f2f5f1", "#9ca3af" if is_dark else "#757d77", "#313244" if is_dark else "#d1d1d1")
         status_badge.pack(side="right", padx=(sc(2), 0))
+        status_badge.bind("<Enter>", lambda e, w=status_badge: self._schedule_badge_tooltip(w), add="+")
+        status_badge.bind("<Leave>", lambda e: self._hide_badge_tooltip(), add="+")
+        status_badge.bind("<Button-1>", lambda e: self._hide_badge_tooltip(), add="+")
 
         row2 = tk.Frame(card_body, bg=card_bg)
         row2.pack(fill="x", anchor="w", pady=row2_pady)

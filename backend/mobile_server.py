@@ -476,7 +476,7 @@ def _apply_unvalidated_updates(app_state, oid, unvalidated_sources, changed_fiel
             app_state.df_unvalidated = pd.concat([app_state.df_unvalidated, new_df], ignore_index=True)
 
 
-def _execute_record_update(app_state, oid, reg_updates, obs_updates, reviewed, allowed_reg_cols=None, allowed_obs_cols=None, recent_edits=None, client_timestamp=None, unvalidated_updates=None, session_id=None):
+def _execute_record_update(app_state, oid, reg_updates, obs_updates, reviewed, allowed_reg_cols=None, allowed_obs_cols=None, recent_edits=None, client_timestamp=None, unvalidated_updates=None, session_id=None, session_reviewed_ids=None):
     """
     Execute single record update core with dtype safety, undo snapshots, audit logging, and change tracking.
 
@@ -693,6 +693,15 @@ def _execute_record_update(app_state, oid, reg_updates, obs_updates, reviewed, a
                 app_state.df_obs.at[resolved_obs_oid, "Reviewed"] = is_reviewed_bool
                 if "ReviewedAt" in app_state.df_obs.columns:
                     app_state.df_obs.at[resolved_obs_oid, "ReviewedAt"] = datetime.now().isoformat(timespec="seconds") if is_reviewed_bool else ""
+                if session_reviewed_ids is not None:
+                    if is_reviewed_bool:
+                        session_reviewed_ids.add(str(oid))
+                    else:
+                        session_reviewed_ids.discard(str(oid))
+                    try:
+                        app_state.last_mobile_session_reviewed_ids = set(session_reviewed_ids)
+                    except Exception:
+                        pass
                 changed_fields.append("Reviewed")
                 changed_values.append(f'Reviewed: "{old_reviewed_bool}" -> "{is_reviewed_bool}"')
 
@@ -845,6 +854,11 @@ class MobileServer:
         self.thread = None
         self._is_running = False
         self.recent_edits = []  # list of dicts: {oid, summary, time, session_id}
+        self.session_reviewed_ids = set()  # set of str OIDs marked Reviewed during this mobile session
+        try:
+            self.app_state.last_mobile_session_reviewed_ids = set()
+        except Exception:
+            pass
         self._auth_attempts = {}
         self.clients = []  # list of dicts: {"queue": q, "session_id": sid, "token": tok}
         self.clients_lock = threading.Lock()
@@ -2681,7 +2695,8 @@ self.addEventListener('fetch', (event) => {
                     recent_edits=self.recent_edits,
                     client_timestamp=client_timestamp,
                     unvalidated_updates=unval_updates,
-                    session_id=client_sid
+                    session_id=client_sid,
+                    session_reviewed_ids=self.session_reviewed_ids
                 )
                 if err:
                     code = 409 if "Conflict" in err else 404
@@ -2782,7 +2797,8 @@ self.addEventListener('fetch', (event) => {
                     recent_edits=self.recent_edits,
                     client_timestamp=client_timestamp,
                     unvalidated_updates=unval_updates,
-                    session_id=client_sid
+                    session_id=client_sid,
+                    session_reviewed_ids=self.session_reviewed_ids
                 )
                 if err:
                     code = 409 if "Conflict" in err else 404
@@ -3149,7 +3165,8 @@ self.addEventListener('fetch', (event) => {
                         recent_edits=self.recent_edits,
                         client_timestamp=client_timestamp,
                         unvalidated_updates=unval_updates,
-                        session_id=client_sid
+                        session_id=client_sid,
+                        session_reviewed_ids=self.session_reviewed_ids
                     )
                     if err:
                         continue

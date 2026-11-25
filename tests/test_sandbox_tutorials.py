@@ -883,7 +883,7 @@ class TestSandboxTutorials(unittest.TestCase):
             hub = open_unified_help(self.root, app_ref=self.ui)
             try:
                 self.assertEqual(hub.win.title(), "Arbor Help Center")
-                self.assertEqual(set(hub.tabs.keys()), {"tutorials", "quick_guides", "manuals", "shortcuts", "about"})
+                self.assertEqual(set(hub.tabs.keys()), {"tutorials", "reference", "quick_guides", "manuals", "shortcuts", "about"})
                 self.assertIn("2 OF 2", hub.progress_footer_lbl.cget("text"))
                 for tid in ("quick_guides", "manuals", "shortcuts", "about", "tutorials"):
                     hub.show_tab(tid)

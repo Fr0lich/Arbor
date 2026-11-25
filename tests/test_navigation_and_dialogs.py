@@ -1223,6 +1223,7 @@ def test_in_app_user_manuals_stay_synced_with_ui():
         "Stamp to This Shelf",
         "Stamp Target",
         "Details ↔ Location ↔ Problems",
+        "Details ↔ Location ↔ History",
         "HELP ▾",
         "Quick Tour (Cabinet 21)",
     )
@@ -1234,7 +1235,7 @@ def test_in_app_user_manuals_stay_synced_with_ui():
             assert retired not in text, f"Stale UI label '{retired}' found in {doc_name}"
 
     # Verify current core workflows are documented in the live bundled manuals
-    for required in ("Set Shelf", "Old names", "Details ↔ Location ↔ History"):
+    for required in ("Set Shelf", "Old names", "Data ↔ Location ↔ Problems"):
         assert required in user_guide, f"Missing '{required}' in USER_GUIDE.md"
         assert required in mobile_guide, f"Missing '{required}' in MOBILE_COMPANION_USER_GUIDE.md"
 
@@ -1266,13 +1267,14 @@ def test_unified_help_and_old_names_dialogs_smoke(tk_root):
         "Family": tk.StringVar(master=tk_root, value="Asteraceae"),
     }
 
-    # 1. UnifiedHelpWindow opens cleanly, binds <Escape>, and renders all 5 tabs
+    # 1. UnifiedHelpWindow opens cleanly, binds <Escape>, and renders all 6 tabs
     help_win = UnifiedHelpWindow(tk_root, mock_ui)
     try:
         assert help_win.win.winfo_exists()
         assert help_win.win.bind("<Escape>")
-        for tab_key in ("tutorials", "guides", "manuals", "shortcuts", "about"):
+        for tab_key in ("tutorials", "reference", "quick_guides", "manuals", "shortcuts", "about"):
             help_win.show_tab(tab_key)
+            assert help_win.active_tab == tab_key
             tk_root.update_idletasks()
     finally:
         if help_win.win.winfo_exists():
@@ -1296,3 +1298,97 @@ def test_unified_help_and_old_names_dialogs_smoke(tk_root):
         finally:
             if old_dlg.win.winfo_exists():
                 old_dlg.win.destroy()
+
+
+
+def test_reviewed_today_and_mobile_session_batch_and_problem_queue(tk_root):
+    """Verify Reviewed Today / This Mobile Session tracking, filtering, and ProblemQueueDialog scoping."""
+    from datetime import datetime
+    from unittest.mock import MagicMock
+    import pandas as pd
+    from backend.mobile_server import _execute_record_update
+    from ui.main_window import ObjectProgramUI
+    from ui.object_problem_resolver import ProblemQueueDialog
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    df_reg = pd.DataFrame([
+        {"ObjectID": "101", "Genus": "Betula", "Species": "pendula"},
+        {"ObjectID": "102", "Genus": "Pinus", "Species": "sylvestris"},
+        {"ObjectID": "103", "Genus": "Picea", "Species": "abies"},
+        {"ObjectID": "104", "Genus": "Quercus", "Species": "robur"},
+    ]).set_index("ObjectID", drop=False)
+    df_obs = pd.DataFrame([
+        {"ObjectID": "101", "Reviewed": True, "ReviewedAt": f"{today_str}T09:15:00", "Genus_Problem": True, "Other_problem": False},
+        {"ObjectID": "102", "Reviewed": True, "ReviewedAt": "2024-01-01T10:00:00", "Genus_Problem": True, "Other_problem": False},
+        {"ObjectID": "103", "Reviewed": False, "ReviewedAt": "", "Genus_Problem": True, "Other_problem": False},
+        {"ObjectID": "104", "Reviewed": True, "ReviewedAt": f"{today_str}T10:20:00", "Genus_Problem": False, "Other_problem": True},
+    ]).set_index("ObjectID", drop=False)
+
+    app_state = MagicMock()
+    app_state.df_reg = df_reg
+    app_state.df_obs = df_obs
+    app_state.df_log = pd.DataFrame()
+    app_state._log_records = []
+    app_state.active_object_ids = list(df_reg.index)
+    app_state.last_mobile_session_reviewed_ids = set()
+    app_state.config = None
+
+    # 1. Mobile server tracks session_reviewed_ids on mark & unmark
+    session_ids = set()
+    _, err = _execute_record_update(app_state, "103", {}, {}, True, session_reviewed_ids=session_ids)
+    assert err is None
+    assert "103" in session_ids
+    assert "103" in app_state.last_mobile_session_reviewed_ids
+
+    # Unmarking removes it cleanly
+    _, err = _execute_record_update(app_state, "103", {}, {}, False, session_reviewed_ids=session_ids)
+    assert err is None
+    assert "103" not in session_ids
+    assert "103" not in app_state.last_mobile_session_reviewed_ids
+
+    # Mark #103 again so we have a mobile-session reviewed item with an actionable problem
+    _, err = _execute_record_update(app_state, "103", {}, {}, True, session_reviewed_ids=session_ids)
+    assert err is None
+
+    # 2. Helper methods on ObjectProgramUI
+    fake_ui = MagicMock()
+    fake_ui.root = tk_root
+    fake_ui.app = app_state
+    fake_ui.dark_mode_active = False
+    fake_ui._get_obs_dict = lambda: df_obs.to_dict(orient="index")
+    fake_ui.object_list = MagicMock()
+    fake_ui.object_list.selection.return_value = ()
+
+    today_oids = ObjectProgramUI.get_reviewed_today_oids(fake_ui, date_str=today_str)
+    assert set(today_oids) == {"101", "103", "104"}
+
+    mob_oids = ObjectProgramUI.get_mobile_session_reviewed_oids(fake_ui)
+    assert mob_oids == ["103"]
+
+    fake_ui.get_reviewed_today_oids = lambda date_str=None: ObjectProgramUI.get_reviewed_today_oids(fake_ui, date_str=date_str or today_str)
+    fake_ui.get_mobile_session_reviewed_oids = lambda: ObjectProgramUI.get_mobile_session_reviewed_oids(fake_ui)
+
+    # 3. apply_reviewed_batch_filter scopes active_object_ids cleanly
+    matched = ObjectProgramUI.apply_reviewed_batch_filter(fake_ui, mode="mobile_session")
+    assert matched == ["103"]
+    assert app_state.active_object_ids == ["103"]
+
+    # 4. ProblemQueueDialog supports initial_scope="today" and "mobile_session"
+    dlg_today = ProblemQueueDialog(tk_root, fake_ui, initial_scope="today")
+    try:
+        assert dlg_today.scope_var.get() == "today"
+        # #104 has ONLY Other_problem (opt-in), so default actionable match is #101 and #103
+        assert set(dlg_today._get_matching_oids()) == {"101", "103"}
+        dlg_today.cat_notes_var.set(True)
+        assert set(dlg_today._get_matching_oids()) == {"101", "103", "104"}
+    finally:
+        if dlg_today.winfo_exists():
+            dlg_today.destroy()
+
+    dlg_mob = ProblemQueueDialog(tk_root, fake_ui, initial_scope="mobile_session")
+    try:
+        assert dlg_mob.scope_var.get() == "mobile_session"
+        assert dlg_mob._get_matching_oids() == ["103"]
+    finally:
+        if dlg_mob.winfo_exists():
+            dlg_mob.destroy()

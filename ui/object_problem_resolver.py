@@ -1146,7 +1146,7 @@ class ProblemQueueDialog(tk.Toplevel):
     Scope selector shown before opening ObjectProblemResolver in queue mode.
     Used by the 'Process Objects with Problems' menu action.
     """
-    def __init__(self, parent, main_app):
+    def __init__(self, parent, main_app, initial_scope="filtered"):
         super().__init__(parent)
         init_fonts()
         is_dark = getattr(main_app, "dark_mode_active", getattr(main_app, "dark_mode", False))
@@ -1155,15 +1155,16 @@ class ProblemQueueDialog(tk.Toplevel):
         self.title("Process Objects with Problems")
         self.configure(bg=COLORS["bg"])
         self.resizable(True, True)
-        self.minsize(sc(440), sc(400))
+        self.minsize(sc(440), sc(440))
         self.transient(parent)
         self.grab_set()
         self.bind("<Escape>", lambda e: self.destroy())
 
         import utils
-        utils.center_and_fit_toplevel(self, sc(520), sc(490))
+        utils.center_and_fit_toplevel(self, sc(520), sc(535))
 
-        self.scope_var = tk.StringVar(value="filtered")
+        valid_scopes = {"filtered", "selected", "today", "mobile_session"}
+        self.scope_var = tk.StringVar(value=initial_scope if initial_scope in valid_scopes else "filtered")
         self.cat_taxonomy_var = tk.BooleanVar(value=True)
         self.cat_collection_var = tk.BooleanVar(value=True)
         self.cat_physical_var = tk.BooleanVar(value=True)
@@ -1224,6 +1225,34 @@ class ProblemQueueDialog(tk.Toplevel):
         rb_sel = tk.Radiobutton(scope_box, text="Selected objects only", variable=self.scope_var, value="selected", state="normal" if has_selection else "disabled", command=self._update_matching_count, **chk_opts)
         rb_sel.pack(anchor="w", pady=sc(2))
 
+        today_count = len(self.main_app.get_reviewed_today_oids()) if hasattr(self.main_app, "get_reviewed_today_oids") else 0
+        mobile_count = len(self.main_app.get_mobile_session_reviewed_oids()) if hasattr(self.main_app, "get_mobile_session_reviewed_oids") else 0
+
+        if self.scope_var.get() == "today" and today_count == 0:
+            self.scope_var.set("filtered")
+        if self.scope_var.get() == "mobile_session" and mobile_count == 0:
+            self.scope_var.set("filtered")
+
+        tk.Radiobutton(
+            scope_box,
+            text=f"📅 Reviewed Today ({today_count})",
+            variable=self.scope_var,
+            value="today",
+            state="normal" if today_count > 0 else "disabled",
+            command=self._update_matching_count,
+            **chk_opts,
+        ).pack(anchor="w", pady=sc(2))
+
+        tk.Radiobutton(
+            scope_box,
+            text=f"📱 Reviewed This Mobile Session ({mobile_count})",
+            variable=self.scope_var,
+            value="mobile_session",
+            state="normal" if mobile_count > 0 else "disabled",
+            command=self._update_matching_count,
+            **chk_opts,
+        ).pack(anchor="w", pady=sc(2))
+
         # 2. Problem Categories
         tk.Label(content, text="PROBLEM CATEGORIES TO INCLUDE", font=FONT_MONO_SM, fg=COLORS["text_muted"], bg=COLORS["bg"]).pack(anchor="w", pady=(0, sc(4)))
         cat_box = tk.Frame(content, bg=COLORS["surface"], highlightbackground=COLORS["border"], highlightthickness=1, padx=sc(12), pady=sc(8))
@@ -1262,8 +1291,13 @@ class ProblemQueueDialog(tk.Toplevel):
             return []
 
         # 1. Determine target candidate OIDs
-        if self.scope_var.get() == "selected" and hasattr(self.main_app, "object_list"):
+        scope = self.scope_var.get()
+        if scope == "selected" and hasattr(self.main_app, "object_list"):
             candidate_oids = [str(x) for x in self.main_app.object_list.selection()]
+        elif scope == "today" and hasattr(self.main_app, "get_reviewed_today_oids"):
+            candidate_oids = [str(x) for x in self.main_app.get_reviewed_today_oids()]
+        elif scope == "mobile_session" and hasattr(self.main_app, "get_mobile_session_reviewed_oids"):
+            candidate_oids = [str(x) for x in self.main_app.get_mobile_session_reviewed_oids()]
         else:
             candidate_oids = [str(x) for x in getattr(app_obj, "active_object_ids", list(app_obj.df_reg.index))]
 

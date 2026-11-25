@@ -176,12 +176,30 @@ class MobileDialog:
         try:
             df_obs = getattr(self.app_state, "df_obs", None)
             rev_err_count = 0
+            session_ids = set(getattr(self.app_state, "last_mobile_session_reviewed_ids", None) or set())
+            if not session_ids and self.server and getattr(self.server, "session_reviewed_ids", None):
+                session_ids = set(self.server.session_reviewed_ids)
+                try:
+                    self.app_state.last_mobile_session_reviewed_ids = set(session_ids)
+                except Exception:
+                    pass
+
+            session_reviewed_count = 0
+            session_flagged_count = 0
+            session_specialist_count = 0
             if df_obs is not None and not df_obs.empty and "Reviewed" in df_obs.columns:
                 rev_mask = df_obs["Reviewed"].fillna(False).astype(bool)
                 prob_cols = [c for c in df_obs.columns if c.endswith("_Problem") and c != "Other_problem"]
-                if prob_cols:
-                    prob_mask = df_obs[prob_cols].fillna(False).astype(bool).any(axis=1)
-                    rev_err_count = int((rev_mask & prob_mask).sum())
+                prob_mask = df_obs[prob_cols].fillna(False).astype(bool).any(axis=1) if prob_cols else (rev_mask & False)
+                spec_mask = df_obs["Other_problem"].fillna(False).astype(bool) if "Other_problem" in df_obs.columns else (rev_mask & False)
+                rev_err_count = int((rev_mask & prob_mask).sum())
+
+                if session_ids:
+                    idx_strs = df_obs.index.astype(str)
+                    in_sess = idx_strs.isin(session_ids) & rev_mask
+                    session_reviewed_count = int(in_sess.sum())
+                    session_flagged_count = int((in_sess & prob_mask).sum())
+                    session_specialist_count = int((in_sess & (~prob_mask) & spec_mask).sum())
 
             import config
             prefs = config.load_prefs() if hasattr(config, "load_prefs") else {}
@@ -192,13 +210,25 @@ class MobileDialog:
                         "info",
                     )
             else:
-                self._show_post_mobile_followup_popup(rev_err_count)
+                self._show_post_mobile_followup_popup(
+                    rev_err_count,
+                    session_reviewed_count=session_reviewed_count,
+                    session_flagged_count=session_flagged_count,
+                    session_specialist_count=session_specialist_count,
+                )
         except Exception:
             pass
 
-    def _show_post_mobile_followup_popup(self, rev_err_count: int):
+    def _show_post_mobile_followup_popup(
+        self,
+        rev_err_count: int,
+        session_reviewed_count: int = 0,
+        session_flagged_count: int = 0,
+        session_specialist_count: int = 0,
+    ):
         """Show a calm post-session wrap-up popup confirming mobile edits are synced in Arbor,
-        reminding the user to save (Ctrl+S), and pointing to Filter (Ctrl+G) and Help tutorials."""
+        offering 1-click access to the session's reviewed objects & Batch Problem Solver,
+        and reminding the user to save (Ctrl+S)."""
         import config
         import utils
         from config import sc
@@ -242,14 +272,29 @@ class MobileDialog:
             bg=bg, fg=fg, anchor="w", justify="left", wraplength=sc(430),
         ).pack(fill="x", pady=(0, sc(6)))
 
-        flagged_note = (
-            f" ({rev_err_count} reviewed object{'s' if rev_err_count != 1 else ''} currently have open flags you can review whenever you're ready.)"
-            if rev_err_count > 0
-            else ""
-        )
+        if session_reviewed_count > 0:
+            clean_cnt = max(0, session_reviewed_count - session_flagged_count - session_specialist_count)
+            parts = [f"{clean_cnt} clean"]
+            if session_flagged_count > 0:
+                parts.append(f"{session_flagged_count} flagged")
+            if session_specialist_count > 0:
+                parts.append(f"{session_specialist_count} Needs Specialist")
+            session_line = (
+                f"You marked {session_reviewed_count} object{'s' if session_reviewed_count != 1 else ''} as reviewed "
+                f"during this mobile session ({', '.join(parts)})."
+            )
+        else:
+            flagged_note = (
+                f" ({rev_err_count} reviewed object{'s' if rev_err_count != 1 else ''} currently have open flags you can review whenever you're ready.)"
+                if rev_err_count > 0
+                else ""
+            )
+            session_line = (
+                "Every location, edit, and flag you recorded on Mobile Companion is already synced into your open Arbor workspace."
+                f"{flagged_note}"
+            )
         body_txt = (
-            "Every location, edit, and flag you recorded on Mobile Companion is already synced into your open Arbor workspace."
-            f"{flagged_note}\n\n"
+            f"{session_line}\n\n"
             "Remember to save your Excel file (Ctrl+S) so your changes are written safely to disk."
         )
         tk.Label(
@@ -319,6 +364,22 @@ class MobileDialog:
                     fn()
                     break
 
+        def _view_session_reviewed():
+            _persist_opt()
+            if pop.winfo_exists():
+                pop.destroy()
+            fn = getattr(self.parent_ui, "apply_reviewed_batch_filter", None)
+            if callable(fn):
+                fn("mobile_session")
+
+        def _send_session_to_solver():
+            _persist_opt()
+            if pop.winfo_exists():
+                pop.destroy()
+            fn = getattr(self.parent_ui, "send_reviewed_batch_to_problem_queue", None)
+            if callable(fn):
+                fn("mobile_session")
+
         tk.Checkbutton(
             outer,
             text="Don't show this popup again when stopping Mobile Companion",
@@ -338,6 +399,32 @@ class MobileDialog:
             bg=accent, fg="#ffffff", activebackground="#2f6638", activeforeground="#ffffff",
             relief="flat", padx=sc(12), pady=sc(7), cursor="hand2", command=_save_now,
         ).pack(fill="x", pady=(0, sc(6)))
+
+        if session_reviewed_count > 0:
+            sess_row = tk.Frame(btn_row, bg=bg)
+            sess_row.pack(fill="x", pady=(0, sc(6)))
+            tk.Button(
+                sess_row,
+                text=f"✅ View {session_reviewed_count} Reviewed",
+                font=("Inter", sc(9), "bold"), bg=card_bg, fg=fg,
+                relief="flat", highlightbackground=border, highlightthickness=1,
+                padx=sc(10), pady=sc(6), cursor="hand2", command=_view_session_reviewed,
+            ).pack(side="left", expand=True, fill="x", padx=(0, sc(6)))
+
+            solver_label = (
+                f"🔧 Batch Problem Solver ({session_flagged_count} flagged)"
+                if session_flagged_count > 0
+                else "🔧 Send to Batch Problem Solver"
+            )
+            tk.Button(
+                sess_row,
+                text=solver_label,
+                font=("Inter", sc(9), "bold"),
+                bg="#fef3c7" if (not dark and session_flagged_count > 0) else card_bg,
+                fg="#92400e" if (not dark and session_flagged_count > 0) else fg,
+                relief="flat", highlightbackground=border, highlightthickness=1,
+                padx=sc(10), pady=sc(6), cursor="hand2", command=_send_session_to_solver,
+            ).pack(side="left", expand=True, fill="x")
 
         sec_row = tk.Frame(btn_row, bg=bg)
         sec_row.pack(fill="x")
@@ -368,7 +455,7 @@ class MobileDialog:
         pop.protocol("WM_DELETE_WINDOW", _close)
         pop.bind("<Escape>", lambda e: _close())
         pop.update_idletasks()
-        utils.center_and_fit_toplevel(pop, sc(490), sc(410))
+        utils.center_and_fit_toplevel(pop, sc(500), sc(465 if session_reviewed_count > 0 else 410))
 
     # ------------------------------------------------------------------
     # Edit callback — notify desktop UI of each incoming mobile edit
