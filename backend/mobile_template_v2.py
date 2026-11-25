@@ -1507,6 +1507,7 @@ INDEX_TEMPLATE_V2 = """
       showFilterPills: false,
       hapticsEnabled: localStorage.getItem('arbor_haptics_enabled') !== 'false',
       hapticsIntensity: localStorage.getItem('arbor_haptics_intensity') || 'medium',
+      armedLocation: null,
       lastSavedLocation: {
         building: '',
         floor: '',
@@ -2507,7 +2508,7 @@ INDEX_TEMPLATE_V2 = """
     function showListView() {
       forceSaveImmediate();
       if (typeof dismissCoachTip === 'function') dismissCoachTip();
-      if (typeof _pendingCoachTip !== 'undefined') _pendingCoachTip = null;
+      if (typeof coachState !== 'undefined') coachState.pendingTip = null;
       document.getElementById('listView').classList.remove('hidden');
       document.getElementById('detailView').classList.add('hidden');
       document.getElementById('batchLocationView').classList.add('hidden');
@@ -2550,7 +2551,7 @@ INDEX_TEMPLATE_V2 = """
     function updateBatchArmedButton() {
       const btn = document.getElementById('btnBatchCopyArmed');
       if (!btn) return;
-      const armed = state.armedLocation || state.lastSavedLocation;
+      const armed = state.armedLocation;
       const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
       if (hasArmed) {
         const cab = String(armed.cabinet || '—').padStart(2, '0');
@@ -2563,7 +2564,7 @@ INDEX_TEMPLATE_V2 = """
     }
 
     function copyArmedShelfToBatch() {
-      const armed = state.armedLocation || state.lastSavedLocation;
+      const armed = state.armedLocation;
       if (!armed || (!armed.cabinet && !armed.shelf)) {
         showToast('No target shelf armed yet');
         return;
@@ -3360,7 +3361,7 @@ INDEX_TEMPLATE_V2 = """
 
     function stampArmedLocation() {
       if (!state.currentRecord) return;
-      const armed = state.armedLocation || state.lastSavedLocation;
+      const armed = state.armedLocation;
       if (!armed || (!armed.cabinet && !armed.shelf)) {
         showToast('Set My Current Shelf first');
         return;
@@ -3436,7 +3437,7 @@ INDEX_TEMPLATE_V2 = """
       const stampBtn = document.getElementById('btnStampArmedShelf');
       if (!banner || !label) return;
 
-      const armed = state.armedLocation || state.lastSavedLocation;
+      const armed = state.armedLocation;
       const hasArmed = Boolean(armed && (armed.cabinet || armed.shelf));
 
       if (!hasArmed) {
@@ -6115,16 +6116,24 @@ INDEX_TEMPLATE_V2 = """
       }
     };
 
-    let _coachActive = false;
-    let _coachShowingChooser = false;
-    let _coachShowingTipId = null;
-    let _pendingCoachTip = null;
-    let _lastCoachTipDismissedAt = 0;
-    let _coachInterval = null;
-    let _coachTourInterval = null;
-    let _coachAdvanceTimer = null;
-    let _coachHighlightedEl = null;
-    let _coachScrolledKey = null;
+    const coachState = {
+      phase: 'off', // 'off' | 'chooser' | 'active' | 'tip' | 'finished'
+      tipId: null,
+      pendingTip: null,
+      lastTipDismissedAt: 0,
+      highlightedEl: null,
+      scrolledKey: null,
+      timers: { poll: null, tour: null, advance: null }
+    };
+
+    function setCoachPhase(nextPhase, tipId = null) {
+      if (nextPhase !== 'active') {
+        _stopCoachTimers();
+        _clearCoachHighlight();
+      }
+      coachState.phase = nextPhase;
+      coachState.tipId = (nextPhase === 'tip') ? tipId : null;
+    }
 
     function _loadCoachState() {
       const def = { mode: null, stepIdx: 0, finished: false, dismissed: false, tipsSeen: {}, tipsDisabled: false };
@@ -6153,16 +6162,16 @@ INDEX_TEMPLATE_V2 = """
     }
 
     function _clearCoachHighlight() {
-      if (_coachHighlightedEl) {
-        try { _coachHighlightedEl.classList.remove('coach-target'); } catch (e) {}
-        _coachHighlightedEl = null;
+      if (coachState.highlightedEl) {
+        try { coachState.highlightedEl.classList.remove('coach-target'); } catch (e) {}
+        coachState.highlightedEl = null;
       }
     }
 
     function _stopCoachTimers() {
-      if (_coachInterval) { clearInterval(_coachInterval); _coachInterval = null; }
-      if (_coachTourInterval) { clearInterval(_coachTourInterval); _coachTourInterval = null; }
-      if (_coachAdvanceTimer) { clearTimeout(_coachAdvanceTimer); _coachAdvanceTimer = null; }
+      if (coachState.timers.poll) { clearInterval(coachState.timers.poll); coachState.timers.poll = null; }
+      if (coachState.timers.tour) { clearInterval(coachState.timers.tour); coachState.timers.tour = null; }
+      if (coachState.timers.advance) { clearTimeout(coachState.timers.advance); coachState.timers.advance = null; }
     }
 
     function _positionCoachCard() {
@@ -6190,16 +6199,14 @@ INDEX_TEMPLATE_V2 = """
       if (!card) return;
       const st = _loadCoachState();
       const steps = PHONE_TUTORIALS[st.mode];
-      if (!_coachActive || !steps || st.stepIdx < 0 || st.stepIdx >= steps.length) {
+      if (coachState.phase !== 'active' || !steps || st.stepIdx < 0 || st.stepIdx >= steps.length) {
         card.classList.add('hidden');
-        _clearCoachHighlight();
-        _stopCoachTimers();
+        setCoachPhase('off');
         return;
       }
 
       const step = steps[st.stepIdx];
-      _coachShowingChooser = false;
-      _coachShowingTipId = null;
+      coachState.tipId = null;
       card.classList.remove('z-[60]');
       card.classList.add('z-40');
       _positionCoachCard();
@@ -6248,10 +6255,10 @@ INDEX_TEMPLATE_V2 = """
 
       card.classList.remove('hidden');
 
-      if (_coachTourInterval) { clearInterval(_coachTourInterval); _coachTourInterval = null; }
+      if (coachState.timers.tour) { clearInterval(coachState.timers.tour); coachState.timers.tour = null; }
       if (step.id === 't_tour') {
         _coachTourCycleIdx = 0;
-        _coachTourInterval = setInterval(() => {
+        coachState.timers.tour = setInterval(() => {
           _coachTourCycleIdx = (_coachTourCycleIdx + 1) % _COACH_TOUR_TABS.length;
           coachTick();
         }, 1500);
@@ -6265,7 +6272,7 @@ INDEX_TEMPLATE_V2 = """
     }
 
     function coachTick() {
-      if (!_coachActive) return;
+      if (coachState.phase !== 'active') return;
       _positionCoachCard();
       const st = _loadCoachState();
       const steps = PHONE_TUTORIALS[st.mode];
@@ -6282,20 +6289,20 @@ INDEX_TEMPLATE_V2 = """
         }
       } catch (e) {}
 
-      if (targetEl !== _coachHighlightedEl) {
+      if (targetEl !== coachState.highlightedEl) {
         _clearCoachHighlight();
         if (targetEl) {
-          _coachHighlightedEl = targetEl;
+          coachState.highlightedEl = targetEl;
           targetEl.classList.add('coach-target');
           const scrollKey = `${step.id}:${targetEl.id || ''}`;
-          if (_coachScrolledKey !== scrollKey && step.id !== 't_tour') {
-            _coachScrolledKey = scrollKey;
+          if (coachState.scrolledKey !== scrollKey && step.id !== 't_tour') {
+            coachState.scrolledKey = scrollKey;
             try { targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
           }
         }
       }
 
-      if (typeof step.check === 'function' && !_coachAdvanceTimer) {
+      if (typeof step.check === 'function' && !coachState.timers.advance) {
         let passed = false;
         try { passed = Boolean(step.check()); } catch (e) {}
         if (passed) {
@@ -6309,8 +6316,8 @@ INDEX_TEMPLATE_V2 = """
             nextBtn.textContent = 'Next →';
             nextBtn.classList.remove('hidden');
           }
-          _coachAdvanceTimer = setTimeout(() => {
-            _coachAdvanceTimer = null;
+          coachState.timers.advance = setTimeout(() => {
+            coachState.timers.advance = null;
             coachNextStep();
           }, 600);
         }
@@ -6321,63 +6328,55 @@ INDEX_TEMPLATE_V2 = """
       if (!PHONE_TUTORIALS[mode]) return;
       _stopCoachTimers();
       _clearCoachHighlight();
-      _coachScrolledKey = null;
-      _coachShowingChooser = false;
-      _coachShowingTipId = null;
+      coachState.scrolledKey = null;
       const st = _loadCoachState();
       st.mode = mode;
       st.stepIdx = 0;
       st.finished = false;
       st.dismissed = false;
       _saveCoachState(st);
-      _coachActive = true;
+      setCoachPhase('active');
       _renderCoachCard();
-      _coachInterval = setInterval(coachTick, 500);
+      coachState.timers.poll = setInterval(coachTick, 500);
     }
 
     function coachNextStep() {
-      if (_coachAdvanceTimer) { clearTimeout(_coachAdvanceTimer); _coachAdvanceTimer = null; }
+      if (coachState.timers.advance) { clearTimeout(coachState.timers.advance); coachState.timers.advance = null; }
       const st = _loadCoachState();
       const steps = PHONE_TUTORIALS[st.mode];
       if (!steps) return;
       if (st.stepIdx < steps.length - 1) {
         st.stepIdx += 1;
         _saveCoachState(st);
-        _coachScrolledKey = null;
+        coachState.scrolledKey = null;
         _renderCoachCard();
       } else {
         st.finished = true;
         _saveCoachState(st);
-        _coachActive = false;
-        _stopCoachTimers();
-        _clearCoachHighlight();
+        setCoachPhase('finished');
         const card = document.getElementById('coachCard');
         if (card) card.classList.add('hidden');
       }
     }
 
     function coachPrevStep() {
-      if (_coachAdvanceTimer) { clearTimeout(_coachAdvanceTimer); _coachAdvanceTimer = null; }
+      if (coachState.timers.advance) { clearTimeout(coachState.timers.advance); coachState.timers.advance = null; }
       const st = _loadCoachState();
       if (st.stepIdx > 0) {
         st.stepIdx -= 1;
         _saveCoachState(st);
-        _coachScrolledKey = null;
+        coachState.scrolledKey = null;
         _renderCoachCard();
       }
     }
 
     function exitPhoneTutorial() {
-      _stopCoachTimers();
-      _clearCoachHighlight();
       const st = _loadCoachState();
-      if (_coachActive || _coachShowingChooser) {
+      if (coachState.phase === 'active' || coachState.phase === 'chooser') {
         st.dismissed = true;
         _saveCoachState(st);
       }
-      _coachActive = false;
-      _coachShowingChooser = false;
-      _coachShowingTipId = null;
+      setCoachPhase('off');
       const card = document.getElementById('coachCard');
       if (card) {
         card.classList.add('hidden');
@@ -6396,11 +6395,7 @@ INDEX_TEMPLATE_V2 = """
     function showPhoneTutorialChooser() {
       const card = document.getElementById('coachCard');
       if (!card) return;
-      _stopCoachTimers();
-      _clearCoachHighlight();
-      _coachActive = false;
-      _coachShowingTipId = null;
-      _coachShowingChooser = true;
+      setCoachPhase('chooser');
       _positionCoachCard();
       const badgeEl = document.getElementById('coachBadge');
       const titleEl = document.getElementById('coachTitle');
@@ -6420,11 +6415,11 @@ INDEX_TEMPLATE_V2 = """
     }
 
     function _flushPendingCoachTip() {
-      if (!_pendingCoachTip) return;
+      if (!coachState.pendingTip) return;
       const detailView = document.getElementById('detailView');
       const onDetail = Boolean(detailView && !detailView.classList.contains('hidden'));
-      const pending = _pendingCoachTip;
-      _pendingCoachTip = null;
+      const pending = coachState.pendingTip;
+      coachState.pendingTip = null;
       if (onDetail) {
         maybeShowTip(pending.tipId, pending.options);
       }
@@ -6433,9 +6428,9 @@ INDEX_TEMPLATE_V2 = """
     function maybeShowTip(tipId, options = null) {
       const tip = COACH_TIPS[tipId];
       if (!tip) return;
-      if (_coachActive || _coachShowingChooser) return;
+      if (coachState.phase === 'active' || coachState.phase === 'chooser') return;
       // Anti-overwhelm: never stack a new tip on top of one the user is already reading
-      if (_coachShowingTipId && !tip.explicitTool) return;
+      if (coachState.phase === 'tip' && !tip.explicitTool) return;
       const allowOverModal = Boolean(options && options.allowOverModal);
       if (!allowOverModal && _isAnyBlockingModalOpen()) return;
 
@@ -6444,12 +6439,12 @@ INDEX_TEMPLATE_V2 = """
       if (st.tipsSeen && st.tipsSeen[tipId]) return;
 
       // Anti-overwhelm: pace passive tips so they don't fire back-to-back within 10s
-      if (!tip.explicitTool && _lastCoachTipDismissedAt && (Date.now() - _lastCoachTipDismissedAt) < 10000) {
+      if (!tip.explicitTool && coachState.lastTipDismissedAt && (Date.now() - coachState.lastTipDismissedAt) < 10000) {
         return;
       }
 
       if (_toastHasActiveAction) {
-        _pendingCoachTip = { tipId, options };
+        coachState.pendingTip = { tipId, options };
         return;
       }
 
@@ -6465,7 +6460,7 @@ INDEX_TEMPLATE_V2 = """
 
       const card = document.getElementById('coachCard');
       if (!card) return;
-      _coachShowingTipId = tipId;
+      setCoachPhase('tip', tipId);
       _positionCoachCard();
       if (allowOverModal) {
         card.classList.remove('z-40');
@@ -6493,10 +6488,10 @@ INDEX_TEMPLATE_V2 = """
     }
 
     function dismissCoachTip() {
-      if (_coachShowingTipId) {
-        _lastCoachTipDismissedAt = Date.now();
+      if (coachState.phase === 'tip') {
+        coachState.lastTipDismissedAt = Date.now();
       }
-      _coachShowingTipId = null;
+      setCoachPhase('off');
       const card = document.getElementById('coachCard');
       if (card) {
         card.classList.add('hidden');

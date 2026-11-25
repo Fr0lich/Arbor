@@ -45,6 +45,17 @@ def ensure_ssh_key():
 _ANSI_ESCAPE_RE = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]')
 
 
+from enum import Enum
+
+
+class TunnelState(Enum):
+    IDLE = "idle"
+    CONNECTING = "connecting"
+    CONNECTED = "connected"
+    RETRYING = "retrying"
+    STOPPED = "stopped"
+
+
 class ResilientSSHTunnel:
     """Resilient SSH reverse tunnel.
 
@@ -60,15 +71,21 @@ class ResilientSSHTunnel:
         self.process = None
         self.thread = None
         self._stop_event = threading.Event()
+        self._lock = threading.Lock()
+        self.state = TunnelState.IDLE
 
     def start(self, url_callback, status_callback=None):
-        self._stop_event.clear()
-        self.thread = threading.Thread(
-            target=self._run,
-            args=(url_callback, status_callback),
-            daemon=True
-        )
-        self.thread.start()
+        with self._lock:
+            if self.state in (TunnelState.CONNECTING, TunnelState.CONNECTED, TunnelState.RETRYING):
+                return
+            self._stop_event.clear()
+            self.state = TunnelState.CONNECTING
+            self.thread = threading.Thread(
+                target=self._run,
+                args=(url_callback, status_callback),
+                daemon=True
+            )
+            self.thread.start()
 
     def _run(self, url_callback, status_callback):
         ensure_ssh_key()
@@ -248,29 +265,36 @@ class ResilientSSHTunnel:
                 backoff = min(backoff * 1.5, 15)
 
         finally:
-            if self.process:
+            with self._lock:
+                proc = self.process
+                self.process = None
+                self.state = TunnelState.STOPPED
+            if proc:
                 try:
-                    self.process.terminate()
-                    self.process.wait(timeout=1.0)
+                    proc.terminate()
+                    proc.wait(timeout=1.0)
                 except Exception:
                     try:
-                        self.process.kill()
+                        proc.kill()
                     except Exception:
                         pass
-                self.process = None
 
     def stop(self):
         self._stop_event.set()
-        if self.process:
+        with self._lock:
+            proc = self.process
+            self.process = None
+            self.public_url = None
+            self.state = TunnelState.STOPPED
+        if proc:
             try:
-                self.process.terminate()
-                self.process.wait(timeout=1.0)
+                proc.terminate()
+                proc.wait(timeout=1.0)
             except Exception:
                 try:
-                    self.process.kill()
+                    proc.kill()
                 except Exception:
                     pass
-        self.process = None
 
 
 def ensure_cloudflared():
@@ -366,15 +390,21 @@ class CloudflareTunnel:
         self.process = None
         self.thread = None
         self._stop_event = threading.Event()
+        self._lock = threading.Lock()
+        self.state = TunnelState.IDLE
 
     def start(self, url_callback, status_callback=None):
-        self._stop_event.clear()
-        self.thread = threading.Thread(
-            target=self._run,
-            args=(url_callback, status_callback),
-            daemon=True
-        )
-        self.thread.start()
+        with self._lock:
+            if self.state in (TunnelState.CONNECTING, TunnelState.CONNECTED, TunnelState.RETRYING):
+                return
+            self._stop_event.clear()
+            self.state = TunnelState.CONNECTING
+            self.thread = threading.Thread(
+                target=self._run,
+                args=(url_callback, status_callback),
+                daemon=True
+            )
+            self.thread.start()
 
     def _run(self, url_callback, status_callback):
         try:
@@ -440,7 +470,9 @@ class CloudflareTunnel:
                 match = url_pattern.search(clean_line)
                 if match and not connected:
                     url = match.group(1)
-                    self.public_url = url
+                    with self._lock:
+                        self.public_url = url
+                        self.state = TunnelState.CONNECTED
                     connected = True
                     if url_callback:
                         url_callback(url)
@@ -467,17 +499,20 @@ class CloudflareTunnel:
 
     def stop(self):
         self._stop_event.set()
-        if self.process:
+        with self._lock:
+            proc = self.process
+            self.process = None
+            self.public_url = None
+            self.state = TunnelState.STOPPED
+        if proc:
             try:
-                self.process.terminate()
-                self.process.wait(timeout=1.0)
+                proc.terminate()
+                proc.wait(timeout=1.0)
             except Exception:
                 try:
-                    self.process.kill()
+                    proc.kill()
                 except Exception:
                     pass
-        self.process = None
-        self.public_url = None
 
 
 # Backwards-compatible aliases — callers import without changes

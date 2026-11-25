@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 from ui.state import app_bus, DATABASE_UPDATED
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -6,16 +7,45 @@ from datetime import datetime
 from config import AUTOSAVE_INTERVAL_MS, AUTOSAVE_SUFFIX, sc
 from utils import debug_error
 
+
+class IoState(Enum):
+    IDLE = "idle"
+    SAVING_AUTOSAVE = "saving_autosave"
+    SAVING_EXCEL = "saving_excel"
+    SAVING_AS = "saving_as"
+    RESTORING = "restoring"
+    IMPORTING_SQLITE = "importing_sqlite"
+
+
 class AutosaveMixin:
     # open_autosave_settings has been replaced by the unified open_settings_window in main_window.py
 
+    def _get_io_state(self) -> IoState:
+        return getattr(self, "_io_state", IoState.IDLE)
+
+    def _try_begin_io(self, target: IoState) -> bool:
+        if self._get_io_state() != IoState.IDLE:
+            return False
+        self._io_state = target
+        return True
+
+    def _end_io(self, expected: IoState | None = None) -> None:
+        if expected is None or self._get_io_state() == expected:
+            self._io_state = IoState.IDLE
+
+    @property
+    def _save_in_progress(self) -> bool:
+        return self._get_io_state() != IoState.IDLE
+
+    @_save_in_progress.setter
+    def _save_in_progress(self, value: bool) -> None:
+        self._io_state = IoState.SAVING_EXCEL if value else IoState.IDLE
 
     def _write_pickle_async(self, path, callback=None):
         """Save the current in-memory state to a pickle file in a background thread."""
-        if getattr(self, '_save_in_progress', False):
+        if not self._try_begin_io(IoState.SAVING_AUTOSAVE):
             return
 
-        self._save_in_progress = True
         self.set_status_badge("autosaved", "⏳ Saving…")
 
         # P1-B: Hold the data lock for the minimum time needed to snapshot
@@ -29,7 +59,7 @@ class AutosaveMixin:
                 df_log_copy   = self.app.df_log.copy()   if getattr(self.app, 'df_log', None) is not None else None
                 df_unval_copy = self.app.df_unvalidated.copy() if getattr(self.app, 'df_unvalidated', None) is not None else None
         except Exception as e:
-            self._save_in_progress = False
+            self._end_io(IoState.SAVING_AUTOSAVE)
             self.set_status_badge("autosaved", "Save Error")
             if callback:
                 callback(False, str(e))
@@ -77,7 +107,10 @@ class AutosaveMixin:
                 err_msg = str(e)
                 self.root.after(0, lambda err=err_msg: callback(False, err) if callback else None)
             finally:
-                self.root.after(0, lambda: setattr(self, '_save_in_progress', False))
+                try:
+                    self.root.after(0, lambda: self._end_io(IoState.SAVING_AUTOSAVE))
+                except Exception:
+                    self._end_io(IoState.SAVING_AUTOSAVE)
 
         import threading
         threading.Thread(target=save_worker, daemon=True).start()
@@ -216,9 +249,8 @@ class AutosaveMixin:
 
     def _restore_autosave(self, autosave_path, original_path):
         """Load data from the autosave file into the current session asynchronously."""
-        if getattr(self, "_restore_in_progress", False):
+        if not self._try_begin_io(IoState.RESTORING):
             return
-        self._restore_in_progress = True
         if hasattr(self, "_show_progress"):
             try:
                 self._show_progress("Restoring autosave backup...", indeterminate=True, task_id="restore_autosave")
@@ -267,7 +299,7 @@ class AutosaveMixin:
                 return ExcelRepository.load_excel(autosave_path, cfg_ref)
 
         def _apply_restored(result):
-            self._restore_in_progress = False
+            self._end_io(IoState.RESTORING)
             try:
                 import pandas as pd
                 df_reg, df_obs, df_photo, df_log, df_unvalidated = result
@@ -316,7 +348,7 @@ class AutosaveMixin:
                 _on_restore_error(e)
 
         def _on_restore_error(err):
-            self._restore_in_progress = False
+            self._end_io(IoState.RESTORING)
             if hasattr(self, "_hide_progress"):
                 try:
                     self._hide_progress("Restore failed", task_id="restore_autosave")

@@ -1935,3 +1935,56 @@ def test_mobile_server_phone_tutorial_prefs_migration(monkeypatch):
     srv_helper = MobileServer(app)
     assert srv_helper._phone_tutorial_mode == "helper"
 
+
+def test_tunnel_state_double_start_guard_and_stop(monkeypatch):
+    """Tunnel.start() ignores double-starts while active, and stop() transitions to STOPPED."""
+    from backend.tunnel import ResilientSSHTunnel, CloudflareTunnel, TunnelState
+
+    started = []
+    for cls in (ResilientSSHTunnel, CloudflareTunnel):
+        t = cls(5055)
+        assert t.state == TunnelState.IDLE
+        monkeypatch.setattr(t, "_run", lambda *a, **kw: started.append(cls.__name__))
+        # Manually set state to CONNECTING to simulate an active tunnel
+        t.state = TunnelState.CONNECTING
+        t.start(lambda u: None)
+        assert len(started) == 0  # guarded against double-start
+        t.stop()
+        assert t.state == TunnelState.STOPPED
+
+
+def test_mobile_server_readds_firewall_rule_after_soft_stop(mock_app_state, monkeypatch):
+    """Calling start() on an already-running MobileServer after stop() re-adds the firewall rule."""
+    server = MobileServer(mock_app_state, port=5175)
+    calls = []
+    monkeypatch.setattr(server, "_add_firewall_rule", lambda: (calls.append("add"), setattr(server, "_firewall_rule_active", True)))
+    monkeypatch.setattr(server, "_remove_firewall_rule", lambda: (calls.append("remove"), setattr(server, "_firewall_rule_active", False)))
+
+    # Simulate already-running server that was soft-stopped
+    server._is_running = True
+    server._firewall_rule_active = True
+    server.stop()
+    assert calls == ["remove"]
+    assert server._firewall_rule_active is False
+
+    # Re-opening calls start() -> must re-add firewall rule
+    server.start()
+    assert calls == ["remove", "add"]
+    assert server._firewall_rule_active is True
+
+
+def test_mobile_v2_coach_state_and_armed_shelf_separation():
+    """Verify Phase 3 JS state machine consolidation: coachState/setCoachPhase and strict armedLocation."""
+    from backend.mobile_template_v2 import INDEX_TEMPLATE_V2
+
+    assert "const coachState = {" in INDEX_TEMPLATE_V2
+    assert "function setCoachPhase(" in INDEX_TEMPLATE_V2
+    assert "let _coachActive" not in INDEX_TEMPLATE_V2
+    assert "armedLocation: null," in INDEX_TEMPLATE_V2
+    # Armed shelf stamp & banner must not silently fall back to lastSavedLocation
+    stamp_idx = INDEX_TEMPLATE_V2.index("function stampArmedLocation()")
+    stamp_block = INDEX_TEMPLATE_V2[stamp_idx:stamp_idx + 200]
+    assert "state.armedLocation || state.lastSavedLocation" not in stamp_block
+
+
+

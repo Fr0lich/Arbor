@@ -475,3 +475,32 @@ def test_user_data_dir_falls_back_to_localappdata_when_exe_folder_read_only(tmp_
     result = utils.get_user_data_dir()
     assert result == os.path.join(str(local), "Arbor")
     assert os.path.isdir(result)
+
+
+def test_io_state_mutual_exclusion_and_reset():
+    from ui.autosave_handler import AutosaveMixin, IoState
+
+    class DummyUI(AutosaveMixin):
+        pass
+
+    ui = DummyUI()
+    assert ui._get_io_state() == IoState.IDLE
+    assert ui._save_in_progress is False
+
+    # Entering SAVING_AS blocks all other I/O states
+    assert ui._try_begin_io(IoState.SAVING_AS) is True
+    assert ui._save_in_progress is True
+    assert ui._try_begin_io(IoState.SAVING_AUTOSAVE) is False
+    assert ui._try_begin_io(IoState.RESTORING) is False
+    assert ui._try_begin_io(IoState.IMPORTING_SQLITE) is False
+
+    # Ending with mismatched expected state is a no-op
+    ui._end_io(IoState.RESTORING)
+    assert ui._get_io_state() == IoState.SAVING_AS
+
+    # Ending with matching state returns to IDLE
+    ui._end_io(IoState.SAVING_AS)
+    assert ui._get_io_state() == IoState.IDLE
+    assert ui._save_in_progress is False
+    assert ui._try_begin_io(IoState.RESTORING) is True
+

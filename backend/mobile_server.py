@@ -853,6 +853,7 @@ class MobileServer:
         self.pin = ''.join(random.choices(string.digits, k=4))
         self.thread = None
         self._is_running = False
+        self._firewall_rule_active = False
         self.recent_edits = []  # list of dicts: {oid, summary, time, session_id}
         self.session_reviewed_ids = set()  # set of str OIDs marked Reviewed during this mobile session
         try:
@@ -860,6 +861,7 @@ class MobileServer:
         except Exception:
             pass
         self._auth_attempts = {}
+        self._auth_lock = threading.Lock()
         self.clients = []  # list of dicts: {"queue": q, "session_id": sid, "token": tok}
         self.clients_lock = threading.Lock()
         self._event_batch = []
@@ -888,11 +890,13 @@ class MobileServer:
                 f'localport={self.port}'
             ], capture_output=True, timeout=5,
                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+            self._firewall_rule_active = True
         except Exception:
             pass  # No admin rights or netsh unavailable — safe to ignore
 
     def _remove_firewall_rule(self):
         """Remove the Windows Firewall inbound rule added by _add_firewall_rule."""
+        self._firewall_rule_active = False
         if not sys.platform.startswith('win'):
             return
         try:
@@ -906,6 +910,8 @@ class MobileServer:
 
     def start(self):
         if self._is_running:
+            if not self._firewall_rule_active:
+                self._add_firewall_rule()
             return
 
         # Test port binding synchronously to prevent zombie conflicts
@@ -1074,53 +1080,56 @@ class MobileServer:
         if ip is None:
             ip = self._get_client_ip()
 
-        if ip not in self._auth_attempts:
-            self._auth_attempts[ip] = {"consecutive": 0, "recent": [], "lockout_until": 0}
+        with self._auth_lock:
+            if ip not in self._auth_attempts:
+                self._auth_attempts[ip] = {"consecutive": 0, "recent": [], "lockout_until": 0}
 
-        state = self._auth_attempts[ip]
-        now = time.time()
+            state = self._auth_attempts[ip]
+            now = time.time()
 
-        if now < state["lockout_until"]:
-            remaining = int(state["lockout_until"] - now)
-            if remaining <= 0:
-                remaining = 1
-            return jsonify({"error": f"Too many failed attempts. Please wait {remaining} seconds.", "retry_after_seconds": remaining}), 429, {'Retry-After': str(remaining)}
+            if now < state["lockout_until"]:
+                remaining = int(state["lockout_until"] - now)
+                if remaining <= 0:
+                    remaining = 1
+                return jsonify({"error": f"Too many failed attempts. Please wait {remaining} seconds.", "retry_after_seconds": remaining}), 429, {'Retry-After': str(remaining)}
 
-        # Clean up old failures
-        state["recent"] = [t for t in state["recent"] if now - t < 60]
+            # Clean up old failures
+            state["recent"] = [t for t in state["recent"] if now - t < 60]
 
-        if len(state["recent"]) >= 5:
-            remaining = 60 - int(now - state["recent"][0])
-            if remaining <= 0:
-                remaining = 60
-            return jsonify({"error": f"Too many failed attempts. Please wait {remaining} seconds.", "retry_after_seconds": remaining}), 429, {'Retry-After': str(remaining)}
+            if len(state["recent"]) >= 5:
+                remaining = 60 - int(now - state["recent"][0])
+                if remaining <= 0:
+                    remaining = 60
+                return jsonify({"error": f"Too many failed attempts. Please wait {remaining} seconds.", "retry_after_seconds": remaining}), 429, {'Retry-After': str(remaining)}
 
-        return None
+            return None
 
     def _record_failure(self, ip=None):
         if ip is None:
             ip = self._get_client_ip()
 
-        if ip not in self._auth_attempts:
-            self._auth_attempts[ip] = {"consecutive": 0, "recent": [], "lockout_until": 0}
-        state = self._auth_attempts[ip]
-        now = time.time()
-        state["recent"].append(now)
-        state["consecutive"] += 1
+        with self._auth_lock:
+            if ip not in self._auth_attempts:
+                self._auth_attempts[ip] = {"consecutive": 0, "recent": [], "lockout_until": 0}
+            state = self._auth_attempts[ip]
+            now = time.time()
+            state["recent"].append(now)
+            state["consecutive"] += 1
 
-        if state["consecutive"] >= 10:
-            state["lockout_until"] = now + 15 * 60
-            remaining = 15 * 60
-            return jsonify({"error": f"Too many failed attempts. Please wait {remaining} seconds.", "retry_after_seconds": remaining}), 429, {'Retry-After': str(remaining)}
+            if state["consecutive"] >= 10:
+                state["lockout_until"] = now + 15 * 60
+                remaining = 15 * 60
+                return jsonify({"error": f"Too many failed attempts. Please wait {remaining} seconds.", "retry_after_seconds": remaining}), 429, {'Retry-After': str(remaining)}
 
-        return None
+            return None
 
     def _record_success(self, ip=None):
         if ip is None:
             ip = self._get_client_ip()
 
-        if ip in self._auth_attempts:
-            self._auth_attempts[ip] = {"consecutive": 0, "recent": [], "lockout_until": 0}
+        with self._auth_lock:
+            if ip in self._auth_attempts:
+                self._auth_attempts[ip] = {"consecutive": 0, "recent": [], "lockout_until": 0}
 
     def _check_auth(self):
         """Verify session token or PIN authentication."""

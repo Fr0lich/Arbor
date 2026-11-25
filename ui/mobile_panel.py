@@ -12,6 +12,17 @@ from backend.mobile_server import MobileServer, get_local_ip
 from backend.tunnel import PinggyTunnel, CloudflareTunnel
 
 
+from enum import Enum
+
+
+class MobileConnectionState(Enum):
+    STOPPED = "stopped"
+    LOCAL_READY = "local_ready"
+    TUNNEL_CONNECTING = "tunnel_connecting"
+    TUNNEL_READY = "tunnel_ready"
+    ERROR = "error"
+
+
 class MobilePanel:
     """Shared mobile companion panel.
 
@@ -66,6 +77,7 @@ class MobilePanel:
 
         self.server = reuse_server
         self.tunnel = None
+        self.connection_state = MobileConnectionState.STOPPED
         self.qr_image_ref = None
         self.local_url_with_token = ""
         self.public_url_with_token = ""
@@ -1070,6 +1082,7 @@ class MobilePanel:
         choice = self.network_choice.get()
         if choice == "public":
             # Render LAN fallback QR immediately so user can scan right away while public tunnel warms up
+            self.connection_state = MobileConnectionState.TUNNEL_CONNECTING
             self.current_qr_mode = "public"
             self.url_var.set("🔄 Connecting public tunnel…")
             self._render_qr(self.local_url_with_token)
@@ -1087,6 +1100,7 @@ class MobilePanel:
             self.tunnel.start(self._on_tunnel_ready, self._on_tunnel_status)
         else:
             # Local only mode
+            self.connection_state = MobileConnectionState.LOCAL_READY
             self.tunnel_lbl.config(
                 text="Tunnel: Disabled (LAN Only)", fg="#5a655e")
             self.status_lbl.config(text="🟢 Local Server Ready", fg="#1b4332")
@@ -1126,10 +1140,14 @@ class MobilePanel:
         if self.tunnel:
             self.tunnel.stop()
             self.tunnel = None
+        self.connection_state = MobileConnectionState.STOPPED
 
     def _copy_pairing_url(self):
         url = self.url_var.get().strip()
-        if url and not url.startswith("🔄") and not url.startswith("Init"):
+        if url and self.connection_state in (
+            MobileConnectionState.LOCAL_READY,
+            MobileConnectionState.TUNNEL_READY,
+        ):
             try:
                 self.root.clipboard_clear()
                 self.root.clipboard_append(url)
@@ -1301,6 +1319,8 @@ class MobilePanel:
             if not self._is_alive():
                 return
             try:
+                if status.startswith("🔴") or status.startswith("🟡"):
+                    self.connection_state = MobileConnectionState.ERROR
                 self.status_lbl.config(text=status, fg="#d95c14")
                 self.status_dot.config(fg="#d95c14")
                 self.tunnel_lbl.config(text="Tunnel: Disconnected", fg="#d95c14")
@@ -1319,6 +1339,7 @@ class MobilePanel:
             if not self._is_alive():
                 return
             try:
+                self.connection_state = MobileConnectionState.TUNNEL_READY
                 ver = self.ui_version_choice.get()
                 v_path = "/v2" if ver == "v2" else "/"
                 clean_url = url.rstrip("/")

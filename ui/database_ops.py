@@ -68,11 +68,10 @@ class DatabaseOpsMixin:
             show_saving_badge: If True, immediately show the "Saving…" badge
                                before the thread starts (zero-latency feedback).
         """
-        if getattr(self, '_save_in_progress', False):
-            # Skip — a background save is already running
+        from ui.autosave_handler import IoState
+        if not self._try_begin_io(IoState.SAVING_EXCEL):
+            # Skip — a background I/O operation is already running
             return
-
-        self._save_in_progress = True
 
         # U2-F: Zero-latency visual feedback — update badge *before* spawning
         # the thread so the user sees an instant response to Ctrl+S.
@@ -94,7 +93,7 @@ class DatabaseOpsMixin:
                 df_log_copy = self.app.df_log.copy() if getattr(self.app, 'df_log', None) is not None else None
                 df_unvalidated_copy = self.app.df_unvalidated.copy() if getattr(self.app, 'df_unvalidated', None) is not None else None
         except Exception as e:
-            self._save_in_progress = False
+            self._end_io(IoState.SAVING_EXCEL)
             self.set_status_badge("error", "Save Error")
             if callback:
                 callback(False, str(e))
@@ -103,7 +102,7 @@ class DatabaseOpsMixin:
         _outer_callback = callback
 
         def _on_done(success, err=None):
-            self._save_in_progress = False
+            self._end_io(IoState.SAVING_EXCEL)
             if _outer_callback:
                 _outer_callback(success, err)
 
@@ -963,7 +962,10 @@ class DatabaseOpsMixin:
 
     def _save_anyway(self, action):
         self._skip_validation_once = True
-        self.save_session(action)
+        try:
+            self.save_session(action)
+        finally:
+            self._skip_validation_once = False
 
     def validate_before_save(self, action="SAVE"):
 
@@ -1020,9 +1022,10 @@ class DatabaseOpsMixin:
 
 
     def save_as(self):
-        if getattr(self, "_save_as_in_progress", False):
+        from ui.autosave_handler import IoState
+        if self._get_io_state() != IoState.IDLE:
             if hasattr(self, "show_toast"):
-                self.show_toast("An export is already in progress…", "info")
+                self.show_toast("An export or save is already in progress…", "info")
             return
         try:
             path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx"), ("SQLite Database", "*.db")], initialdir=__import__("config").get_last_dir("last_db_dir"))
@@ -1032,11 +1035,10 @@ class DatabaseOpsMixin:
 
             # If they choose to save as Excel, perform an export instead of a database move
             if path.endswith(".xlsx"):
-                self._save_as_in_progress = True
-
                 def _start_excel_export(save_ok=True, save_err=None):
                     if not save_ok:
-                        self._save_as_in_progress = False
+                        return
+                    if not self._try_begin_io(IoState.SAVING_AS):
                         return
                     sqlite_path = self.app.excel_path
                     self._show_progress("Exporting to Excel...", indeterminate=True, task_id="save_as")
@@ -1060,7 +1062,7 @@ class DatabaseOpsMixin:
                         return True
 
                     def _on_done(result):
-                        self._save_as_in_progress = False
+                        self._end_io(IoState.SAVING_AS)
                         self.app.excel_path = path
                         self.app.output_path = path
                         self.app.dirty = False
@@ -1070,7 +1072,7 @@ class DatabaseOpsMixin:
                         self.show_banner(f"Exported to: {path}", "success")
 
                     def _on_error(err):
-                        self._save_as_in_progress = False
+                        self._end_io(IoState.SAVING_AS)
                         from utils import debug_error, ExcelFileLockedError
                         import traceback
                         tb = "".join(traceback.format_exception(type(err), err, err.__traceback__)) if hasattr(err, "__traceback__") else str(err)
@@ -1093,7 +1095,7 @@ class DatabaseOpsMixin:
                 self.app.output_path = path
                 self.save_session("SAVE_AS")
         except Exception as e:
-            self._save_as_in_progress = False
+            self._end_io(IoState.SAVING_AS)
             from utils import debug_error
             debug_error("save_as_main_thread", str(e))
             messagebox.showerror("Save As Error", f"An error occurred while preparing to save:\n{e}")
@@ -1107,9 +1109,10 @@ class DatabaseOpsMixin:
 
 
     def import_to_sqlite(self):
-        if getattr(self, "_import_sqlite_in_progress", False):
+        from ui.autosave_handler import IoState
+        if self._get_io_state() != IoState.IDLE:
             if hasattr(self, "show_toast"):
-                self.show_toast("An import is already in progress…", "info")
+                self.show_toast("An import or save is already in progress…", "info")
             return
         excel_path = filedialog.askopenfilename(title="Select Excel File to Import", filetypes=[("Excel files", "*.xlsx")], initialdir=__import__("config").get_last_dir("last_db_dir"))
         if not excel_path: return
@@ -1119,7 +1122,8 @@ class DatabaseOpsMixin:
         if not sqlite_path: return
         __import__("config").set_last_dir("last_db_dir", sqlite_path)
 
-        self._import_sqlite_in_progress = True
+        if not self._try_begin_io(IoState.IMPORTING_SQLITE):
+            return
         self._show_progress("Importing to SQLite...", indeterminate=True, task_id="import_sqlite")
         if hasattr(self, "show_toast"):
             self.show_toast("Importing database to SQLite…", "info")
@@ -1130,7 +1134,7 @@ class DatabaseOpsMixin:
             return SQLiteRepository.import_from_excel(excel_path, sqlite_path, cfg_ref)
 
         def _on_import_done(result):
-            self._import_sqlite_in_progress = False
+            self._end_io(IoState.IMPORTING_SQLITE)
             try:
                 df_reg, df_obs, df_photo, df_log, df_unvalidated = result
                 self.app.excel_path = sqlite_path
@@ -1168,7 +1172,7 @@ class DatabaseOpsMixin:
                 _on_import_error(e)
 
         def _on_import_error(err):
-            self._import_sqlite_in_progress = False
+            self._end_io(IoState.IMPORTING_SQLITE)
             self._hide_progress("Import failed", task_id="import_sqlite")
             debug_error("Import to SQLite Failed", str(err))
             import traceback
