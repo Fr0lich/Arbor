@@ -170,6 +170,28 @@ INDEX_TEMPLATE_V2 = """
     html.arbor-offline-css .max-h-\\[85vh\\] { max-height: 85vh; }
     html.arbor-offline-css button.inline-flag-btn { border: none; padding: 0; background: transparent; min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
     html.arbor-offline-css button.inline-flag-btn > span { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #c4c9c5; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+    @keyframes coachPulse {
+      0%, 100% { outline: 3px solid #3a7d44; outline-offset: 2px; box-shadow: 0 0 0 4px rgba(58, 125, 68, 0.25); }
+      50% { outline: 3px solid #52b765; outline-offset: 3px; box-shadow: 0 0 0 7px rgba(82, 183, 101, 0.35); }
+    }
+    .coach-target {
+      animation: coachPulse 1.4s ease-in-out infinite;
+      border-radius: 6px;
+      position: relative;
+      z-index: 35;
+    }
+    html.arbor-offline-css .coach-target {
+      outline: 3px solid #3a7d44 !important;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 5px rgba(58, 125, 68, 0.28);
+    }
+    html.arbor-offline-css #coachCard {
+      position: fixed; left: 12px; right: 12px; bottom: 92px; max-width: 440px; margin: 0 auto;
+      background: #181c19; color: #f3f6f4; border: 2px solid #3a7d44; border-radius: 12px;
+      padding: 14px; box-shadow: 0 12px 28px rgba(0,0,0,0.45); z-index: 40;
+    }
+    html.arbor-offline-css #coachCard.coach-on-list { bottom: 16px; }
+    html.arbor-offline-css #coachCard button { min-height: 40px; padding: 6px 12px; border-radius: 8px; font-weight: 600; }
     html.arbor-offline-css [id$="Modal"] { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(18, 22, 19, 0.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
     html.arbor-offline-css [id$="Modal"] > div { background: #ffffff; border: 1px solid #d4d8d5; border-radius: 12px; max-width: 440px; width: 100%; padding: 16px; max-height: 88vh; overflow-y: auto; box-shadow: 0 12px 32px rgba(0,0,0,0.28); }
     html.arbor-offline-css [id$="Sheet"] { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(18, 22, 19, 0.6); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; z-index: 50; }
@@ -367,13 +389,13 @@ INDEX_TEMPLATE_V2 = """
               class="w-full min-h-[42px] pl-10 pr-28 py-2 bg-stone-100/90 hover:bg-stone-100 focus:bg-white text-xs font-mono text-ink placeholder:text-ink-faint placeholder:font-sans rounded-lg border border-stone-200 focus:border-fern focus:ring-1 focus:ring-fern focus:outline-none transition-all shadow-inner"
             />
             <div class="absolute right-1 flex items-center space-x-0.5">
-              <button id="btnInputModeToggle" type="button" onclick="toggleSearchInputMode()" class="min-w-[36px] min-h-[36px] px-1.5 rounded-md bg-stone-200/70 hover:bg-stone-300 text-[11px] font-mono font-bold text-stone-700 flex items-center justify-center transition-colors tap-active" title="Toggle numeric / text keyboard">
+              <button id="btnInputModeToggle" type="button" onclick="toggleSearchInputMode()" class="min-w-[40px] min-h-[40px] px-1.5 rounded-md bg-stone-200/70 hover:bg-stone-300 text-[11px] font-mono font-bold text-stone-700 flex items-center justify-center transition-colors tap-active" title="Toggle numeric / text keyboard">
                 123
               </button>
-              <button id="searchClearBtn" onclick="clearSearch()" class="hidden min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md bg-stone-200/80 hover:bg-stone-300 text-ink-muted hover:text-ink active:scale-95 text-xs font-bold leading-none transition-all" title="Clear search">
+              <button id="searchClearBtn" onclick="clearSearch()" class="hidden min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md bg-stone-200/80 hover:bg-stone-300 text-ink-muted hover:text-ink active:scale-95 text-xs font-bold leading-none transition-all" title="Clear search">
                 ✕
               </button>
-              <button id="btnFilterModalTrigger" onclick="openFilterModal()" title="Curatorial Filters" class="relative min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md hover:bg-stone-200/70 text-ink-muted hover:text-ink transition-colors tap-active">
+              <button id="btnFilterModalTrigger" onclick="openFilterModal()" title="Curatorial Filters" class="relative min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md hover:bg-stone-200/70 text-ink-muted hover:text-ink transition-colors tap-active">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
                 </svg>
@@ -391,7 +413,7 @@ INDEX_TEMPLATE_V2 = """
               <span class="font-mono text-[10px] text-muted shrink-0">Shelf:</span>
               <span class="font-mono text-[11px] font-bold text-fern-dark truncate" id="activeStationPillText">Not set</span>
             </div>
-            <button type="button" id="btnStationSheetTrigger" onclick="openStationSetup()" class="text-[11px] font-mono text-fern-dark bg-white/90 hover:bg-emerald-100 border border-fern/30 font-bold px-2.5 py-1 min-h-[36px] rounded shrink-0 whitespace-nowrap tap-active">
+            <button type="button" id="btnStationSheetTrigger" onclick="openStationSetup()" class="text-[11px] font-mono text-fern-dark bg-white/90 hover:bg-emerald-100 border border-fern/30 font-bold px-2.5 py-1 min-h-[40px] rounded shrink-0 whitespace-nowrap tap-active">
               Set Shelf
             </button>
           </div>
@@ -445,14 +467,14 @@ INDEX_TEMPLATE_V2 = """
         <div class="px-3.5 py-1.5 bg-alabaster/70 border-t border-bordercol flex items-center justify-between gap-2 text-[11px]">
           <div class="flex items-center gap-2 font-mono text-ink-muted min-w-0">
             <span class="truncate">Showing <span class="font-bold text-ink" id="matchingCount">0</span> records</span>
-            <button type="button" id="btnOpenStationSetup" onclick="openStationSetup()" class="hidden min-h-[36px] text-[10.5px] font-mono font-bold text-fern-dark hover:underline px-2 py-1 rounded bg-emerald-50 border border-fern/30 shrink-0 whitespace-nowrap">
+            <button type="button" id="btnOpenStationSetup" onclick="openStationSetup()" class="hidden min-h-[40px] text-[10.5px] font-mono font-bold text-fern-dark hover:underline px-2 py-1 rounded bg-emerald-50 border border-fern/30 shrink-0 whitespace-nowrap">
               📍 My Current Shelf
             </button>
           </div>
           <div class="flex items-center shrink-0">
             <select id="sortBySelect" onchange="handleSortChange()" class="arbor-compact-select min-h-[40px] bg-white border border-bordercol rounded-md pl-2.5 py-1 text-[11px] font-mono text-ink focus:outline-none focus:border-fern shadow-2xs cursor-pointer">
               <option value="id_asc" selected>Object # (1, 2, 3...)</option>
-              <option value="location">⇅ Sort: Physical Location</option>
+              <option value="location">⇅ Sort: Storage Location</option>
               <option value="name_asc">Scientific Name (A–Z)</option>
               <option value="name_desc">Scientific Name (Z–A)</option>
               <option value="flagged_first">Flagged / Problems First</option>
@@ -545,7 +567,7 @@ INDEX_TEMPLATE_V2 = """
             </span>
           </div>
           <!-- Interactive Status Pill -->
-          <button type="button" class="flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-1 min-h-[28px] rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-800 border-amber-300 shrink-0" id="badgeStatus" onclick="handleReviewButtonClick()">
+          <button type="button" class="flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2.5 py-1 min-h-[32px] rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-800 border-amber-300 shrink-0" id="badgeStatus" onclick="handleReviewButtonClick()">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" id="badgeStatusDot"></span>
             <span id="badgeStatusText">UNREVIEWED</span>
           </button>
@@ -566,7 +588,7 @@ INDEX_TEMPLATE_V2 = """
               <span class="text-ink font-semibold truncate" id="headerLocSummary">Cab 04 · Sh 02 · Fl -1</span>
             </div>
           </div>
-          <button type="button" id="btnOldNames" onclick="openOldNamesSheet()" class="px-3 py-1.5 min-h-[36px] rounded-full border border-bordercol bg-tonal1 hover:bg-stone-200/70 text-[11px] font-semibold text-ink-muted flex items-center gap-1 tap-active shrink-0" title="View older synonyms and family names for this specimen">
+          <button type="button" id="btnOldNames" onclick="openOldNamesSheet()" class="px-3 py-1.5 min-h-[40px] rounded-full border border-bordercol bg-tonal1 hover:bg-stone-200/70 text-[11px] font-semibold text-ink-muted flex items-center gap-1 tap-active shrink-0" title="View older synonyms and family names for this specimen">
             <span>📜</span><span>Old names</span>
           </button>
         </div>
@@ -654,17 +676,17 @@ INDEX_TEMPLATE_V2 = """
               <!-- Form fields injected dynamically from schema -->
             </div>
 
-            <!-- Physical & Photo Issues Checklist (Non-field flags like Other Issue & Images Issue) -->
+            <!-- Photo & Media Issues Checklist (Non-field flags like Images Issue; Other_problem lives above Comment) -->
             <div class="bg-surface border border-bordercol rounded p-3.5 shadow-2xs space-y-2.5" id="physicalIssuesCard">
               <div class="flex items-center justify-between border-b border-stone-100 pb-2">
                 <div>
-                  <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Physical &amp; Other Issues</h3>
-                  <p class="text-[10.5px] font-sans text-subdued">Flag physical damage or photo problems here</p>
+                  <h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Photo &amp; Media Issues</h3>
+                  <p class="text-[10.5px] font-sans text-subdued">Flag missing or blurry photo problems here</p>
                 </div>
                 <span class="text-[10px] font-mono text-muted" id="flaggedTotalBadge">0 Flagged</span>
               </div>
               <div class="grid grid-cols-2 gap-2" id="problemFlagsGrid">
-                <!-- Dynamically populated from non-field schema.ui_sections.problems -->
+                <!-- Dynamically populated from non-field schema.ui_sections.problems (excluding Other_problem) -->
               </div>
             </div>
           </div>
@@ -685,11 +707,11 @@ INDEX_TEMPLATE_V2 = """
               </button>
             </div>
 
-            <!-- 2. Main Physical Location Card -->
+            <!-- 2. Main Storage Location Card -->
             <section class="bg-stone-50 border border-bordercol rounded-lg p-3 space-y-2.5 shadow-2xs">
               <div class="flex items-center justify-between">
                 <div>
-                  <h2 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Physical Location</h2>
+                  <h2 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Storage Location</h2>
                   <p class="text-[10px] font-sans text-subdued">Where this object lives so we can find it again</p>
                 </div>
                 <span class="text-[10px] font-mono text-fern font-semibold flex items-center gap-1 shrink-0" id="locSyncIndicator">
@@ -700,9 +722,9 @@ INDEX_TEMPLATE_V2 = """
 
               <div class="grid grid-cols-2 gap-2">
                 <!-- Building (Default blank: --) -->
-                <div class="bg-white rounded p-2 border border-bordercol flex items-center justify-between gap-1">
+                <div class="bg-white rounded px-2 py-1 border border-bordercol flex items-center justify-between gap-1">
                   <span class="font-mono text-[9px] uppercase font-bold text-muted shrink-0">Bldg</span>
-                  <select id="detailBuildingSelect" onchange="handleDetailBuildingChange(this.value)" class="arbor-compact-select bg-transparent border-0 p-0 font-mono text-xs font-bold text-ink outline-none focus:ring-0 text-right min-w-0">
+                  <select id="detailBuildingSelect" onchange="handleDetailBuildingChange(this.value)" class="arbor-compact-select bg-transparent border-0 py-1 min-h-[40px] font-mono text-xs font-bold text-ink outline-none focus:ring-0 text-right min-w-0 flex-1">
                     <option value="">--</option>
                   </select>
                 </div>
@@ -796,13 +818,19 @@ INDEX_TEMPLATE_V2 = """
             </div>
           </div>
 
-          <!-- ================= TAB 2: HISTORY (HISTORICAL RESOLVER) ================= -->
+          <!-- ================= TAB 2: HISTORY (PROBLEM RESOLUTION) ================= -->
           <div class="w-1/3 h-full overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-24" id="tabContentHistory">
+            <!-- 0. Problem Resolution Heading -->
+            <div class="space-y-0.5">
+              <h3 class="text-sm font-serif font-bold text-ink">Problem Resolution</h3>
+              <p class="text-[11px] font-sans text-muted">Compare with the label in your hand.</p>
+            </div>
+
             <!-- 1. Historical Summary Banner -->
             <div id="problemSummaryBar" class="flex items-center justify-between p-3 bg-stone-100 border border-bordercol rounded-[3px] transition-colors duration-200">
               <div class="flex items-center gap-2">
                 <span id="problemSummaryDot" class="w-2.5 h-2.5 rounded-full bg-stone-400"></span>
-                <span id="problemSummaryCountText" class="text-xs font-bold text-ink uppercase font-mono">0 Historical Conflicts</span>
+                <span id="problemSummaryCountText" class="text-xs font-bold text-ink uppercase font-mono">Nothing to resolve</span>
               </div>
               <span id="problemSummaryActionText" class="text-[10px] font-mono text-muted">Checking Books</span>
             </div>
@@ -816,7 +844,7 @@ INDEX_TEMPLATE_V2 = """
         </div>
       </div>
 
-      <!-- Sticky Action Bar in Detail View: Mark Reviewed & Flag Issue -->
+      <!-- Sticky Action Bar in Detail View: Mark Reviewed & Needs Specialist -->
       <footer class="flex-none bg-surface border-t border-bordercol px-4 py-2.5 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-30">
         <div class="flex items-center justify-between gap-3">
           <button
@@ -830,12 +858,14 @@ INDEX_TEMPLATE_V2 = """
           </button>
           <button
             type="button"
-            onclick="openAddDiscrepancyModal()"
-            class="min-h-[42px] px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-sans font-semibold text-xs flex items-center justify-center gap-1.5 tap-active"
-            title="Flag Physical Issue"
+            id="btnDetailNeedsSpecialist"
+            onclick="handleBottomNeedsSpecialistClick()"
+            aria-pressed="false"
+            class="min-h-[42px] px-3.5 py-2.5 bg-white hover:bg-stone-50 text-muted border border-stone-300 rounded font-sans font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors tap-active"
+            title="Flag physical damage, mold/pest, or mixed specimen for a specialist"
           >
             <span>⚑</span>
-            <span>Flag Issue</span>
+            <span>Needs Specialist</span>
           </button>
         </div>
         <p id="reviewHelperText" class="text-[10.5px] leading-snug font-sans text-subdued text-center mt-1.5"></p>
@@ -1148,12 +1178,37 @@ INDEX_TEMPLATE_V2 = """
             </button>
           </div>
 
-          <div class="pt-2 border-t border-tonal2 flex items-center justify-between gap-2">
-            <button type="button" onclick="closeSettingsModal(); openWalkthroughModal(0);" class="px-3 py-2 min-h-[40px] border border-fern/40 bg-fern-light text-fern hover:bg-fern hover:text-white rounded text-[11px] font-bold transition-colors">🎓 Hallway Quick Guide</button>
-            <div class="flex items-center gap-2">
-              <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 min-h-[40px] border border-bordercol text-ink-muted hover:bg-surface rounded text-xs font-medium">Cancel</button>
-              <button type="button" onclick="saveSettings()" class="px-4 py-2 min-h-[40px] bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold">Save</button>
+          <!-- Phone Tutorial & Contextual Tips -->
+          <div id="settingsPhoneTutorialSection" class="p-2.5 bg-emerald-50/50 border border-fern/30 rounded space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="block font-sans text-xs font-bold text-ink">🎓 Phone tutorial</span>
+              <label class="flex items-center gap-1.5 text-[11px] font-sans text-ink-muted cursor-pointer">
+                <input type="checkbox" id="settingEnableCoachTips" onchange="toggleCoachTipsEnabled(this.checked)" class="w-4 h-4 accent-fern rounded" />
+                <span>Tips on</span>
+              </label>
             </div>
+            <div class="grid grid-cols-1 gap-1.5">
+              <button type="button" id="btnStartTraineeTutorial" onclick="closeSettingsModal(); startPhoneTutorial('trainee');" class="w-full min-h-[40px] px-3 py-2 rounded bg-fern hover:bg-fern-dark text-white text-xs font-bold text-left flex items-center justify-between tap-active transition-colors" style="background:#3a7d44;color:#ffffff;">
+                <span>Start Trainee tutorial</span>
+                <span class="font-mono text-[10px] opacity-90">5 steps →</span>
+              </button>
+              <button type="button" id="btnStartHelperTutorial" onclick="closeSettingsModal(); startPhoneTutorial('helper');" class="w-full min-h-[40px] px-3 py-2 rounded bg-white hover:bg-emerald-50 border border-fern/40 text-fern-dark text-xs font-bold text-left flex items-center justify-between tap-active transition-colors">
+                <span>Start Helper tutorial</span>
+                <span class="font-mono text-[10px]">4 steps →</span>
+              </button>
+            </div>
+            <div class="pt-1.5 border-t border-fern/20 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10.5px] font-mono font-bold uppercase text-ink-muted">Tips seen</span>
+                <button type="button" id="btnResetCoachTips" onclick="resetCoachTips()" class="text-[11px] font-mono font-semibold text-fern-dark hover:underline px-2 py-1 min-h-[32px]">Reset tips</button>
+              </div>
+              <div id="settingsTipsList" class="space-y-1 text-[11px] font-sans text-ink"></div>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-tonal2 flex items-center justify-end gap-2">
+            <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 min-h-[40px] border border-bordercol text-ink-muted hover:bg-surface rounded text-xs font-medium">Cancel</button>
+            <button type="button" onclick="saveSettings()" class="px-4 py-2 min-h-[40px] bg-fern hover:bg-fern-dark text-white rounded text-xs font-bold">Save</button>
           </div>
         </div>
       </div>
@@ -1173,38 +1228,39 @@ INDEX_TEMPLATE_V2 = """
           <!-- Populated dynamically by openFieldGuideModal() to mirror the specimen page -->
         </div>
         <div class="flex-none px-3.5 py-2.5 bg-surface border-t border-bordercol flex items-center justify-between gap-2">
-          <button type="button" onclick="closeFieldGuideModal(); openWalkthroughModal(0);" class="min-h-[40px] px-3 py-2 rounded bg-fern-light border border-fern/40 text-fern-dark font-bold text-xs tap-active">🎓 Hallway Quick Guide</button>
+          <button type="button" onclick="closeFieldGuideModal(); openSettingsTutorialSection();" class="min-h-[40px] px-3 py-2 rounded bg-fern-light border border-fern/40 text-fern-dark font-bold text-xs tap-active">🎓 Phone tutorial…</button>
           <button type="button" onclick="closeFieldGuideModal()" class="min-h-[40px] px-4 py-2 rounded bg-fern text-white font-bold text-xs tap-active">Got it</button>
         </div>
       </div>
     </div>
 
-    <!-- MODAL: First-Time 4-Step Hallway Walkthrough -->
-    <div id="walkthroughModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div class="bg-surface border border-bordercol rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div class="px-4 py-2.5 bg-fern text-white flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-base">🎓</span>
-            <span class="font-sans font-bold text-xs tracking-wide uppercase">Hallway Quick Guide</span>
-          </div>
-          <button type="button" onclick="closeWalkthroughModal(true)" class="min-h-[40px] px-3 py-1.5 text-white/90 hover:text-white hover:bg-white/10 text-xs font-bold rounded tap-active">Skip</button>
+    <!-- FLOATING COACH CARD: Hands-On Phone Tutorial & Contextual Tips (above sticky bottom bar, below modals) -->
+    <div id="coachCard" class="hidden fixed left-3 right-3 bottom-[92px] max-w-[440px] mx-auto z-40 bg-[#181c19] text-[#f3f6f4] border-2 border-[#3a7d44] rounded-xl shadow-2xl p-3.5 space-y-2.5" role="region" aria-label="Phone tutorial coach">
+      <div class="flex items-center justify-between gap-2">
+        <span id="coachBadge" class="inline-block px-2 py-0.5 rounded-full bg-[#1e3a24] text-[#85e89d] font-mono text-[10px] font-bold tracking-wide uppercase">TRAINEE · STEP 1 OF 5</span>
+        <button type="button" id="coachExitBtn" onclick="exitPhoneTutorial()" class="min-w-[40px] min-h-[40px] -my-1.5 -mr-1.5 rounded-lg text-[#a2aba5] hover:text-white hover:bg-white/10 flex items-center justify-center text-sm font-bold tap-active" aria-label="Exit tutorial" title="Exit tutorial">✕</button>
+      </div>
+      <h3 id="coachTitle" class="font-sans font-bold text-sm text-white leading-snug"></h3>
+      <p id="coachBody" aria-live="polite" class="font-sans text-xs text-[#e8ebe9] leading-relaxed"></p>
+      <div id="coachStatus" class="hidden font-mono text-[11px] font-semibold text-[#85e89d]"></div>
+      <!-- Chooser Mode Actions -->
+      <div id="coachChooserActions" class="hidden space-y-1.5 pt-1">
+        <button type="button" onclick="startPhoneTutorial('trainee')" class="w-full min-h-[42px] px-3 py-2 rounded-lg bg-[#3a7d44] hover:bg-[#4c9a58] text-white text-xs font-bold text-left tap-active">I've done the desktop tutorial</button>
+        <button type="button" onclick="startPhoneTutorial('helper')" class="w-full min-h-[42px] px-3 py-2 rounded-lg bg-[#263128] hover:bg-[#314234] border border-[#52b765]/50 text-[#e8ebe9] text-xs font-bold text-left tap-active">I'm new / helping out today</button>
+        <button type="button" onclick="dismissPhoneTutorialChooser()" class="w-full min-h-[40px] px-3 py-1.5 rounded-lg text-[#a2aba5] hover:text-white text-xs font-medium text-center tap-active">Not now</button>
+      </div>
+      <!-- Step Mode Actions -->
+      <div id="coachStepActions" class="hidden pt-1 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <button type="button" id="coachBackBtn" onclick="coachPrevStep()" class="min-h-[40px] px-3 py-1.5 rounded-lg bg-[#212622] hover:bg-[#2c332e] border border-white/10 text-[#e8ebe9] text-xs font-semibold tap-active">← Back</button>
+          <button type="button" id="coachSkipBtn" onclick="coachNextStep()" class="min-h-[40px] px-3 py-1.5 rounded-lg bg-[#212622] hover:bg-[#2c332e] border border-white/10 text-[#a2aba5] hover:text-white text-xs font-medium tap-active">Skip step</button>
         </div>
-        <div class="p-4 space-y-3">
-          <div id="walkthroughStepBadge" class="inline-block px-2 py-0.5 rounded-full bg-fern-light text-fern font-mono text-[10px] font-bold">STEP 1 OF 4</div>
-          <h3 id="walkthroughTitle" class="font-sans font-bold text-base text-ink leading-snug">Welcome to Your Phone Companion</h3>
-          <p id="walkthroughBody" class="font-sans text-xs text-ink-muted leading-relaxed"></p>
-          <div id="walkthroughCallout" class="p-2.5 rounded-lg bg-tonal1 border border-bordercol font-mono text-[11px] text-ink"></div>
-          <div class="flex items-center justify-center gap-2 pt-1">
-            <button type="button" id="wtDot0" onclick="goToWalkthroughSlide(0)" class="w-2.5 h-2.5 rounded-full bg-fern cursor-pointer" aria-label="Step 1"></button>
-            <button type="button" id="wtDot1" onclick="goToWalkthroughSlide(1)" class="w-2 h-2 rounded-full bg-stone-300 cursor-pointer" aria-label="Step 2"></button>
-            <button type="button" id="wtDot2" onclick="goToWalkthroughSlide(2)" class="w-2 h-2 rounded-full bg-stone-300 cursor-pointer" aria-label="Step 3"></button>
-            <button type="button" id="wtDot3" onclick="goToWalkthroughSlide(3)" class="w-2 h-2 rounded-full bg-stone-300 cursor-pointer" aria-label="Step 4"></button>
-          </div>
-        </div>
-        <div class="px-4 py-3 bg-tonal1 border-t border-bordercol flex items-center justify-between gap-2">
-          <button id="wtBackBtn" type="button" onclick="prevWalkthroughSlide()" class="hidden px-3 py-2 min-h-[40px] border border-bordercol bg-surface text-ink-muted rounded-lg text-xs font-semibold">← Back</button>
-          <button id="wtNextBtn" type="button" onclick="nextWalkthroughSlide()" class="ml-auto px-4 py-2 min-h-[40px] bg-fern hover:bg-fern-dark text-white rounded-lg text-xs font-bold shadow-xs">Next →</button>
-        </div>
+        <button type="button" id="coachNextBtn" onclick="coachNextStep()" class="min-h-[40px] px-4 py-1.5 rounded-lg bg-[#3a7d44] hover:bg-[#4c9a58] text-white text-xs font-bold tap-active">Next →</button>
+      </div>
+      <!-- Tip Mode Actions -->
+      <div id="coachTipActions" class="hidden pt-1 flex items-center justify-between gap-2">
+        <button type="button" onclick="disableCoachTipsFromCard()" class="min-h-[40px] px-3 py-1.5 rounded-lg text-[#a2aba5] hover:text-white text-xs font-medium tap-active">Don't show tips</button>
+        <button type="button" onclick="dismissCoachTip()" class="min-h-[40px] px-4 py-1.5 rounded-lg bg-[#3a7d44] hover:bg-[#4c9a58] text-white text-xs font-bold tap-active">Got it</button>
       </div>
     </div>
 
@@ -1267,14 +1323,14 @@ INDEX_TEMPLATE_V2 = """
         <div class="grid grid-cols-2 gap-2.5 text-xs font-mono">
           <div class="bg-stone-50 rounded border border-bordercol px-2.5 py-2">
             <span class="text-[9.5px] uppercase font-bold text-muted block mb-0.5">Building</span>
-            <select id="launchBldgSelect" class="arbor-compact-select w-full min-h-[34px] bg-transparent border-0 p-0 font-bold text-ink outline-none focus:ring-0 text-xs">
+            <select id="launchBldgSelect" class="arbor-compact-select w-full min-h-[40px] bg-transparent border-0 p-0 font-bold text-ink outline-none focus:ring-0 text-xs">
               <option value="Lid's hus">Lid's hus</option>
               <option value="Økern">Økern</option>
             </select>
           </div>
           <div class="bg-stone-50 rounded border border-bordercol px-2.5 py-2">
             <span class="text-[9.5px] uppercase font-bold text-muted block mb-0.5">Floor</span>
-            <select id="launchFloorSelect" class="arbor-compact-select w-full min-h-[34px] bg-transparent border-0 p-0 font-bold text-ink outline-none focus:ring-0 text-xs">
+            <select id="launchFloorSelect" class="arbor-compact-select w-full min-h-[40px] bg-transparent border-0 p-0 font-bold text-ink outline-none focus:ring-0 text-xs">
               <option value="1" selected>1</option>
               <option value="2">2</option>
               <option value="3">3</option>
@@ -1285,11 +1341,11 @@ INDEX_TEMPLATE_V2 = """
           </div>
           <div class="bg-stone-50 rounded border border-bordercol px-2.5 py-2">
             <span class="text-[9.5px] uppercase font-bold text-muted block mb-0.5">Cabinet</span>
-            <input type="text" inputmode="numeric" id="launchCabInput" placeholder="21" class="w-full min-h-[34px] bg-transparent border-0 p-0 font-bold text-ink outline-none focus:ring-0 text-sm" />
+            <input type="text" inputmode="numeric" id="launchCabInput" placeholder="21" class="w-full min-h-[40px] bg-transparent border-0 p-0 font-bold text-ink outline-none focus:ring-0 text-sm" />
           </div>
           <div class="bg-stone-50 rounded border-2 border-fern px-2.5 py-2">
             <span class="text-[9.5px] uppercase font-bold text-fern-dark block mb-0.5">Shelf</span>
-            <input type="text" inputmode="numeric" id="launchShelfInput" placeholder="01" class="w-full min-h-[34px] bg-transparent border-0 p-0 font-bold text-fern-dark outline-none focus:ring-0 text-sm" />
+            <input type="text" inputmode="numeric" id="launchShelfInput" placeholder="01" class="w-full min-h-[40px] bg-transparent border-0 p-0 font-bold text-fern-dark outline-none focus:ring-0 text-sm" />
           </div>
         </div>
         <div class="flex items-center gap-2 pt-1">
@@ -1326,31 +1382,27 @@ INDEX_TEMPLATE_V2 = """
       </div>
     </div>
 
-    <!-- MODAL: Add Discrepancy Flag -->
-    <div id="addDiscrepancyModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div class="bg-surface border border-bordercol rounded w-full max-w-sm shadow-xl overflow-hidden">
-        <header class="p-3.5 bg-tonal1 border-b border-tonal2 flex items-center justify-between">
-          <h2 class="font-serif font-bold text-sm text-ink">⚑ Flag Specimen Discrepancy</h2>
-          <button type="button" onclick="closeModal('addDiscrepancyModal')" class="text-ink-muted hover:text-ink font-bold text-sm">✕</button>
-        </header>
-        <form onsubmit="submitDiscrepancy(event)" class="p-4 space-y-3">
-          <div>
-            <label class="block font-sans text-xs font-medium text-ink mb-1">Target Field / Problem</label>
-            <select id="discrepancyFieldSelect" class="w-full bg-surface border border-bordercol rounded px-2.5 py-1.5 text-xs text-ink outline-none focus:border-fern"></select>
-          </div>
-          <div>
-            <label class="block font-sans text-xs font-medium text-ink mb-1">Discrepancy Note</label>
-            <textarea id="discrepancyReasonInput" rows="3" required placeholder="Note observed curatorial discrepancy..." class="w-full bg-surface border border-bordercol rounded px-2.5 py-1.5 text-xs text-ink outline-none focus:border-fern"></textarea>
-          </div>
-          <div class="flex justify-end gap-2 pt-2 border-t border-tonal2">
-            <button type="button" onclick="closeModal('addDiscrepancyModal')" class="px-3 py-1.5 border border-bordercol text-ink-muted rounded text-xs">Cancel</button>
-            <button type="submit" class="px-4 py-1.5 bg-ember hover:bg-ember-dark text-white rounded text-xs font-bold">Flag Issue</button>
-          </div>
-        </form>
+    <!-- MODAL: ICEDIG Field Picker Bottom Sheet (Unified for Details & History tabs) -->
+  <div id="icedigFieldSheet" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="if (event.target === this) closeFieldIcedigSheet()">
+    <div class="w-full sm:max-w-md bg-surface rounded-t-xl sm:rounded-xl border border-bordercol shadow-xl p-4 space-y-3">
+      <div class="flex items-center justify-between border-b border-stone-200 pb-2">
+        <div>
+          <h3 class="font-serif font-bold text-sm text-ink" id="icedigSheetTitle">ICEDIG Status</h3>
+          <p class="text-[11px] font-sans text-muted mt-0.5">Only use <code class="font-mono">unknown:missing</code> if no historical ledger has a conflicting value.</p>
+        </div>
+        <button type="button" onclick="closeFieldIcedigSheet()" class="min-w-[40px] min-h-[40px] flex items-center justify-center rounded hover:bg-stone-100 text-ink-muted font-bold text-sm tap-active">✕</button>
+      </div>
+      <div id="icedigSheetConflictWarn" class="hidden p-2.5 rounded bg-amber-50 border border-amber-300 text-[11px] font-sans text-amber-900">
+        <strong>Heads up:</strong> Older catalog books have a value for this field — swipe to <strong>History</strong> to compare before setting <code class="font-mono">unknown:missing</code>.
+      </div>
+      <div id="icedigSheetOptions" class="grid grid-cols-1 gap-1.5"></div>
+      <div class="flex justify-end pt-1">
+        <button type="button" onclick="closeFieldIcedigSheet()" class="min-h-[40px] px-3.5 py-1.5 border border-bordercol text-ink-muted rounded text-xs font-mono tap-active">Cancel</button>
       </div>
     </div>
+  </div>
 
-    <!-- MODAL: Edit Comment -->
+  <!-- MODAL: Edit Comment -->
     <div id="commentEditorModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div class="bg-surface border border-bordercol rounded w-full max-w-sm shadow-xl overflow-hidden">
         <header class="p-3.5 bg-tonal1 border-b border-tonal2 flex items-center justify-between">
@@ -1427,7 +1479,7 @@ INDEX_TEMPLATE_V2 = """
     <!-- Toast Notification -->
     <div id="toast" class="hidden fixed bottom-24 left-4 right-4 max-w-sm mx-auto bg-stone-900/95 text-white text-xs py-2.5 px-4 rounded-lg shadow-xl flex items-center justify-between gap-2 z-50 transition-opacity">
       <span id="toastMsg" class="font-medium truncate">Edits saved & synchronized</span>
-      <button id="toastActionBtn" class="hidden shrink-0 min-h-[36px] px-3 py-1.5 rounded bg-fern hover:bg-fern-dark text-white font-mono text-[11px] font-bold uppercase tracking-wider tap-active transition-colors">Undo</button>
+      <button id="toastActionBtn" class="hidden shrink-0 min-h-[40px] px-3 py-1.5 rounded bg-fern hover:bg-fern-dark text-white font-mono text-[11px] font-bold uppercase tracking-wider tap-active transition-colors">Undo</button>
     </div>
 
   </div>
@@ -1764,14 +1816,16 @@ INDEX_TEMPLATE_V2 = """
       msgEl.textContent = msg;
 
       if (actionBtn) {
-        if (options && options.actionText && typeof options.onAction === 'function') {
+        const actLabel = options && (options.actionText || options.actionLabel);
+        const actFn = options && (typeof options.onAction === 'function' ? options.onAction : (typeof options.action === 'function' ? options.action : null));
+        if (actLabel && actFn) {
           _toastHasActiveAction = true;
-          actionBtn.textContent = options.actionText;
+          actionBtn.textContent = actLabel;
           actionBtn.onclick = (e) => {
             e.stopPropagation();
             _toastHasActiveAction = false;
             hideToast();
-            options.onAction();
+            actFn();
           };
           actionBtn.classList.remove('hidden');
         } else {
@@ -1784,7 +1838,8 @@ INDEX_TEMPLATE_V2 = """
       toast.classList.remove('hidden');
       toast.style.opacity = '1';
 
-      const duration = (options && options.duration) ? options.duration : (options && options.onAction ? 5000 : 2200);
+      const hasAction = Boolean(options && (typeof options.onAction === 'function' || typeof options.action === 'function'));
+      const duration = (options && options.duration) ? options.duration : (hasAction ? 5000 : 2200);
       toastTimer = setTimeout(hideToast, duration);
     }
 
@@ -1798,6 +1853,7 @@ INDEX_TEMPLATE_V2 = """
         toast.classList.add('hidden');
         const actionBtn = document.getElementById('toastActionBtn');
         if (actionBtn) actionBtn.classList.add('hidden');
+        if (typeof _flushPendingCoachTip === 'function') _flushPendingCoachTip();
       }, 200);
     }
 
@@ -1964,6 +2020,7 @@ INDEX_TEMPLATE_V2 = """
       initPhotoViewerTouchGestures();
       triggerHaptic('stepper');
       showToast(`📍 Current Shelf set: Cab ${cab || '—'} · Sh ${shelf || '—'}`);
+      if (typeof coachTick === 'function') coachTick();
     }
 
     // -------------------------------------------------------------
@@ -2078,6 +2135,8 @@ INDEX_TEMPLATE_V2 = """
           state.activeSchema = data;
           state.problemToField = data.problem_to_field || {};
           state.icedigCodes = data.icedig_code_labels || {};
+          state.icedigCodeList = Array.isArray(data.icedig_codes) ? data.icedig_codes : [];
+          state.specialistQuickTags = Array.isArray(data.specialist_quick_tags) ? data.specialist_quick_tags : [];
           document.getElementById('headerDbName').textContent = data.database_name || 'Active Database';
           document.getElementById('connModalDbName').textContent = data.database_name || 'Active Database';
           if (data.stored_as_choices && Array.isArray(data.stored_as_choices)) {
@@ -2216,11 +2275,18 @@ INDEX_TEMPLATE_V2 = """
         );
         
         let locBreadcrumb = [];
-        if (loc.building) locBreadcrumb.push(loc.building);
+        if (loc.building) {
+          const bRaw = String(loc.building).trim();
+          const bShort = bRaw.length > 6 ? bRaw.split(' ')[0] : bRaw;
+          locBreadcrumb.push(bShort);
+        }
         if (loc.floor !== undefined && loc.floor !== null && String(loc.floor).trim() !== '') locBreadcrumb.push(`Fl ${loc.floor}`);
         if (loc.cabinet) locBreadcrumb.push(`Cab ${loc.cabinet}`);
         if (loc.shelf) locBreadcrumb.push(`Sh ${loc.shelf}`);
         const locStr = locBreadcrumb.length > 0 ? locBreadcrumb.join(' › ') : 'Unrecorded location';
+
+        const hasActionable = (obj.has_actionable_problems !== undefined) ? Boolean(obj.has_actionable_problems) : hasFlags;
+        const isSpecNote = Boolean(obj.is_specialist_note);
 
         return `
           <article onclick="openDetailView('${obj.id}')" class="bg-surface border border-bordercol rounded p-3 shadow-2xs hover:border-fern/50 active:bg-stone-50 transition-all cursor-pointer flex flex-col gap-1.5 relative tap-active">
@@ -2234,13 +2300,19 @@ INDEX_TEMPLATE_V2 = """
               
               <div class="flex items-center gap-1 shrink-0">
                 ${isLoaned ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">↗ Loaned</span>' : ''}
-                ${isRev && hasFlags
+                ${isRev && hasActionable
                   ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">[REV+ERR]</span>'
-                  : (isRev
-                    ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-50 text-fern-dark border border-fern/30">[REV]</span>'
-                    : (hasFlags
-                      ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">Flagged ⚠</span>'
-                      : '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300">[UNREV]</span>'
+                  : (isRev && isSpecNote
+                    ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-300">[REV+NOTE]</span>'
+                    : (isRev
+                      ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-50 text-fern-dark border border-fern/30">[REV]</span>'
+                      : (hasActionable
+                        ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">Flagged ⚠</span>'
+                        : (isSpecNote
+                          ? '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-300">[NOTE]</span>'
+                          : '<span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300">[UNREV]</span>'
+                        )
+                      )
                     )
                   )
                 }
@@ -2406,19 +2478,24 @@ INDEX_TEMPLATE_V2 = """
       forceSaveImmediate();
       state.currentOid = String(oid);
       state.currentRecord = null;
+      const listMatch = Array.isArray(state.objectList)
+        ? state.objectList.find(o => String(o.id) === String(oid))
+        : null;
+      const displayAcc = (listMatch && listMatch.accession_number) ? listMatch.accession_number : oid;
       const accEl = document.getElementById('detailAccession');
       const nameEl = document.getElementById('detailScientificName');
       const famEl = document.getElementById('detailFamily');
-      if (accEl) accEl.textContent = '#' + String(oid);
+      if (accEl) accEl.textContent = '#' + String(displayAcc);
       if (nameEl) nameEl.textContent = 'Loading specimen…';
       if (famEl) famEl.textContent = '…';
       setDetailLoadingState('loading');
+      // Always reset synchronously to Details tab so History/Location never flash on specimen switch
+      if (typeof switchTab === 'function') switchTab(0);
       showDetailView();
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
       document.querySelectorAll('#tabTrack > div').forEach(pane => { pane.scrollTop = 0; });
-      if (typeof switchDetailTab === 'function') switchDetailTab(state.activeDetailTab || 'details');
       await fetchObjectDetail(oid);
       requestAnimationFrame(() => {
         window.scrollTo(0, 0);
@@ -2429,6 +2506,8 @@ INDEX_TEMPLATE_V2 = """
 
     function showListView() {
       forceSaveImmediate();
+      if (typeof dismissCoachTip === 'function') dismissCoachTip();
+      if (typeof _pendingCoachTip !== 'undefined') _pendingCoachTip = null;
       document.getElementById('listView').classList.remove('hidden');
       document.getElementById('detailView').classList.add('hidden');
       document.getElementById('batchLocationView').classList.add('hidden');
@@ -2750,12 +2829,22 @@ INDEX_TEMPLATE_V2 = """
       const detailRevIcon = document.getElementById('btnDetailReviewedIcon');
       
       const activeProblemsCount = countActiveProblemsOnRecord(rec);
-      const hasFlags = (activeProblemsCount > 0) || Boolean(rec.has_flags);
+      const isSpecialistNote = isProblemActiveOnRecord('Other_problem', rec);
+      const bottomSpecBtn = document.getElementById('btnDetailNeedsSpecialist');
+      if (bottomSpecBtn) {
+        bottomSpecBtn.setAttribute('aria-pressed', isSpecialistNote ? 'true' : 'false');
+        bottomSpecBtn.className = isSpecialistNote
+          ? 'min-h-[42px] px-3.5 py-2.5 bg-teal-50 text-teal-800 border border-teal-400 rounded font-sans font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors tap-active'
+          : 'min-h-[42px] px-3.5 py-2.5 bg-white hover:bg-stone-50 text-muted border border-stone-300 rounded font-sans font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors tap-active';
+      }
+      const actionableProblemsCount = Math.max(0, activeProblemsCount - (isSpecialistNote ? 1 : 0));
+      const hasActionableFlags = actionableProblemsCount > 0;
+      const hasFlags = hasActionableFlags;
 
       if (state.isReviewed) {
-        if (hasFlags) {
-          // Tri-State: REVIEWED WITH ISSUES (Amber #F57C00 / bg-amber-50)
-          const issueCount = activeProblemsCount || 1;
+        if (hasActionableFlags) {
+          // Tri-State: REVIEWED WITH ACTIONABLE ISSUES (Amber #F57C00 / bg-amber-50)
+          const issueCount = actionableProblemsCount;
           statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-900 border-amber-300';
           statusText.textContent = `[REV+ERR] · ${issueCount}`;
           statusDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
@@ -2763,6 +2852,16 @@ INDEX_TEMPLATE_V2 = """
             detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-amber-600 text-white border-amber-700 shadow-sm';
             if (detailRevLabel) detailRevLabel.textContent = `Reviewed (${issueCount} Issue${issueCount === 1 ? '' : 's'} Queued)`;
             if (detailRevIcon) detailRevIcon.textContent = '⚠';
+          }
+        } else if (isSpecialistNote) {
+          // Tier 2: REVIEWED WITH SPECIALIST NOTE ONLY (Calm Teal — distinct from REV, CFCT, and REV+ERR)
+          statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-teal-50 text-teal-800 border-teal-300';
+          statusText.textContent = '[REV+NOTE]';
+          statusDot.className = 'w-1.5 h-1.5 rounded-full bg-teal-600';
+          if (detailRevBtn) {
+            detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-teal-700 text-white border-teal-800 shadow-sm';
+            if (detailRevLabel) detailRevLabel.textContent = 'Reviewed (Specialist Note)';
+            if (detailRevIcon) detailRevIcon.textContent = '📝';
           }
         } else {
           // Tri-State: REVIEWED CLEAN (Emerald)
@@ -2775,12 +2874,22 @@ INDEX_TEMPLATE_V2 = """
             if (detailRevIcon) detailRevIcon.textContent = '✓';
           }
         }
-      } else if (hasFlags) {
+      } else if (hasActionableFlags) {
         // Tri-State: UNREVIEWED WITH ACTIVE FLAGS (Amber/Brick cue matching List View)
-        const issueCount = activeProblemsCount || 1;
+        const issueCount = actionableProblemsCount;
         statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-amber-50 text-amber-900 border-amber-300';
         statusText.textContent = `[UNREV] · ⚠ ${issueCount}`;
         statusDot.className = 'w-1.5 h-1.5 rounded-full bg-brick';
+        if (detailRevBtn) {
+          detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-50 text-fern-dark border-fern hover:bg-emerald-100 shadow-2xs';
+          if (detailRevLabel) detailRevLabel.textContent = 'Mark Reviewed';
+          if (detailRevIcon) detailRevIcon.textContent = '✓';
+        }
+      } else if (isSpecialistNote) {
+        // Tier 2: UNREVIEWED WITH SPECIALIST NOTE ONLY (Indigo-Slate — distinct from UNREV and CFCT)
+        statusBtn.className = 'flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded border transition-colors tap-highlight-transparent bg-indigo-50 text-indigo-800 border-indigo-300';
+        statusText.textContent = '[NOTE]';
+        statusDot.className = 'w-1.5 h-1.5 rounded-full bg-indigo-500';
         if (detailRevBtn) {
           detailRevBtn.className = 'flex-1 py-2.5 px-4 rounded font-sans font-bold text-xs flex items-center justify-center gap-2 border transition-all tap-active bg-emerald-50 text-fern-dark border-fern hover:bg-emerald-100 shadow-2xs';
           if (detailRevLabel) detailRevLabel.textContent = 'Mark Reviewed';
@@ -2808,18 +2917,24 @@ INDEX_TEMPLATE_V2 = """
       const helperEl = document.getElementById('reviewHelperText');
       if (helperEl) {
         if (state.isReviewed) {
-          if (hasFlags) {
+          if (hasActionableFlags) {
             helperEl.textContent = hasLocation
               ? '✓ Checked & location saved. Flagged issues queued for the desk.'
               : '✓ Marked reviewed with flagged issues queued for the desk (no location set).';
+          } else if (isSpecialistNote) {
+            helperEl.textContent = hasLocation
+              ? '✓ Checked & location saved. Flagged as Needs Specialist [REV+NOTE].'
+              : '✓ Marked reviewed with Needs Specialist note [REV+NOTE].';
           } else {
             helperEl.textContent = hasLocation
               ? '✓ Physical check & location saved. Specimen clean.'
               : '✓ Marked reviewed (location not recorded yet).';
           }
         } else {
-          if (hasFlags) {
+          if (hasActionableFlags) {
             helperEl.textContent = 'Physical check needed. Flagged issues stay saved when you mark reviewed.';
+          } else if (isSpecialistNote) {
+            helperEl.textContent = 'Physical check needed. Needs Specialist note stays saved as [REV+NOTE].';
           } else {
             helperEl.textContent = 'Check the real object & save its location, then mark reviewed.';
           }
@@ -2857,6 +2972,17 @@ INDEX_TEMPLATE_V2 = """
 
       // Breadcrumb
       updateDetailLocBreadcrumbs(obs);
+      if (typeof coachTick === 'function') coachTick();
+      if (typeof maybeShowTip === 'function') {
+        const totalFlagged = countActiveProblemsOnRecord(rec);
+        const hasOnlySpecialist = isProblemActiveOnRecord('Other_problem', rec);
+        const actionableCnt = Math.max(0, totalFlagged - (hasOnlySpecialist ? 1 : 0));
+        const histBadgeEl = document.getElementById('tabHistoryBadge');
+        const histCnt = histBadgeEl && !histBadgeEl.classList.contains('hidden') ? (parseInt(histBadgeEl.textContent, 10) || 0) : 0;
+        if (actionableCnt > 0 || histCnt > 0) {
+          maybeShowTip('tip_flagged');
+        }
+      }
     }
 
     function escapeHtml(str) {
@@ -3295,6 +3421,7 @@ INDEX_TEMPLATE_V2 = """
       const toastMsg = wasRelocation
         ? `⚠️ Moved from Cab ${prevLoc.Cabinet || '?'} to Cab ${armedCab} · Sh ${armedShelf}`
         : `📍 Saved to Cab ${armedCab} · Sh ${armedShelf}`;
+      if (typeof coachTick === 'function') coachTick();
 
       showToast(toastMsg, {
         actionText: '↩ Undo',
@@ -3416,7 +3543,22 @@ INDEX_TEMPLATE_V2 = """
 
       // If already reviewed (unmarking) or no target shelf armed, toggle directly
       if (state.isReviewed || !hasArmed) {
+        const wasReviewed = state.isReviewed;
         toggleReviewed();
+        // Gentle non-blocking reminder if newly marked reviewed with no saved location
+        if (!wasReviewed && state.isReviewed && !_toastHasActiveAction) {
+          const obsNow = (state.currentRecord && state.currentRecord.observation) || {};
+          const cabNow = String(obsNow.Cabinet || '').trim();
+          const shelfNow = String(obsNow.Shelf || '').trim();
+          const noLoc = (!cabNow || cabNow === '—') && (!shelfNow || shelfNow === '—');
+          if (noLoc) {
+            showToast("✓ Reviewed. Tip: save where it's stored first", {
+              actionLabel: '📍 Set Shelf',
+              action: () => (state.armedLocation ? stampArmedLocation() : openStationSetup()),
+              duration: 6000
+            });
+          }
+        }
         return;
       }
 
@@ -3497,6 +3639,13 @@ INDEX_TEMPLATE_V2 = """
         triggerAutoSave();
       }
       renderDetailView(false);
+      if (typeof coachTick === 'function') coachTick();
+      if (state.isReviewed && state.currentRecord && typeof maybeShowTip === 'function') {
+        const actionableCnt = countActiveProblemsOnRecord(state.currentRecord);
+        if (actionableCnt > 0) {
+          maybeShowTip('tip_rev_err');
+        }
+      }
     }
 
     function navSpecimen(delta) {
@@ -3537,6 +3686,10 @@ INDEX_TEMPLATE_V2 = """
           btn.classList.add('text-muted');
         }
       });
+
+      if (idx === 2 && typeof maybeShowTip === 'function') {
+        maybeShowTip('tip_history');
+      }
     }
 
     let _touchGesturesBound = false;
@@ -3678,7 +3831,13 @@ INDEX_TEMPLATE_V2 = """
       html += '<h3 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Registration Data</h3>';
       html += '<span class="text-[10px] font-mono text-subdued">Checkbox = Issue</span>';
       html += '</div>';
-      html += '<p class="text-[11px] text-muted mb-2 leading-snug">Compare with the real object. Tap the checkbox next to any field to flag or clear an issue.</p>';
+      html += '<p class="text-[11px] text-muted mb-2 leading-snug">Compare with the real object. Tap a value to set an ICEDIG code, or tap the checkbox to flag an issue.</p>';
+
+      const _icedigCodeSet = new Set(
+        (Array.isArray(state.icedigCodeList) && state.icedigCodeList.length > 0)
+          ? state.icedigCodeList.map(i => String(i.code || '').toLowerCase())
+          : ['unknown:missing', 'unknown:indecipherable', 'unknown:undigitized', 'withheld']
+      );
 
       html += '<div class="space-y-1.5 font-mono text-xs">';
       INLINE_DETAIL_FIELDS.forEach(f => {
@@ -3700,6 +3859,8 @@ INDEX_TEMPLATE_V2 = """
         const probName = fieldToProb[f.toLowerCase()] || null;
         const isFlagged = probName ? isProblemActiveOnRecord(probName, record) : false;
         const rowBg = isFlagged ? 'bg-red-50/70 border-brick/40 rounded px-2' : 'border-stone-100';
+        const safeFieldEsc = escapeHtml(f).replace(/'/g, "\\'");
+        const safeProbEsc = escapeHtml(probName || '').replace(/'/g, "\\'");
         const chkHtml = probName ? `
           <button type="button" data-no-swipe="true" onclick="toggleProblemFlag('${probName}')" title="${isFlagged ? 'Clear issue flag on ' + f : 'Flag issue on ' + f}" aria-pressed="${isFlagged ? 'true' : 'false'}" class="inline-flag-btn min-w-[40px] min-h-[40px] -mr-1.5 flex items-center justify-center shrink-0 tap-active">
             <span class="w-5 h-5 rounded flex items-center justify-center text-[11px] font-bold border transition-colors ${isFlagged ? 'bg-brick border-brick text-white' : 'bg-white border-stone-300 text-transparent'}" style="${isFlagged ? 'background:#c93a40;border-color:#c93a40;color:#ffffff;' : ''}">✓</span>
@@ -3708,7 +3869,8 @@ INDEX_TEMPLATE_V2 = """
 
         const isBoxLabel = (f === 'Box label');
         const strVal = String(val || '').trim();
-        const isMultiline = isBoxLabel && strVal && (strVal.indexOf('\\n') !== -1 || strVal.indexOf('\\r') !== -1 || strVal.length > 28);
+        const isIcedigVal = _icedigCodeSet.has(strVal.toLowerCase());
+        const isMultiline = isBoxLabel && strVal && !isIcedigVal && (strVal.indexOf('\\n') !== -1 || strVal.indexOf('\\r') !== -1 || strVal.length > 28);
 
         if (isMultiline) {
           html += `
@@ -3720,17 +3882,24 @@ INDEX_TEMPLATE_V2 = """
                 </div>
                 ${chkHtml}
               </div>
-              <div class="font-semibold text-ink text-left text-xs whitespace-pre-wrap break-words bg-stone-50 border border-stone-200/60 rounded p-2 leading-relaxed">
+              <button type="button" data-no-swipe="true" onclick="openFieldIcedigSheet('${safeFieldEsc}', '${safeProbEsc}')" title="Tap to set ICEDIG code for ${escapeHtml(f)}" class="w-full font-semibold text-ink text-left text-xs whitespace-pre-wrap break-words bg-stone-50 hover:bg-stone-100 border border-stone-200/60 rounded p-2 leading-relaxed tap-active">
                 ${escapeHtml(strVal)}
-              </div>
+              </button>
             </div>
           `;
         } else {
+          const valDisplayHtml = isIcedigVal
+            ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300 font-mono text-[11px] font-semibold">${escapeHtml(strVal)}<span class="text-[9px] text-amber-700">▾</span></span>`
+            : (strVal
+                ? `<span class="font-semibold text-ink text-right break-words">${escapeHtml(strVal)}</span>`
+                : `<span class="text-subdued font-mono text-[11px]">— <span class="text-[9px] opacity-70">▾</span></span>`);
           html += `
-            <div data-flagged-row="${isFlagged ? 'true' : 'false'}" class="flex items-center justify-between gap-1.5 py-0.5 border-b ${rowBg}">
+            <div data-flagged-row="${isFlagged ? 'true' : 'false'}" class="flex items-center justify-between gap-2 py-0.5 border-b ${rowBg}">
               <span class="text-muted text-[11px] shrink-0 ${isFlagged ? 'text-brick font-bold' : ''}">${f}:</span>
               <div class="flex items-center justify-end gap-1.5 min-w-0 flex-1">
-                <span class="font-semibold text-ink text-right break-words max-w-[180px]">${escapeHtml(strVal) || '—'}</span>
+                <button type="button" data-no-swipe="true" onclick="openFieldIcedigSheet('${safeFieldEsc}', '${safeProbEsc}')" title="Tap to set ICEDIG code for ${escapeHtml(f)}" class="min-w-[44px] min-h-[40px] px-2 py-1 rounded hover:bg-stone-100/80 flex items-center justify-end text-right max-w-full tap-active">
+                  ${valDisplayHtml}
+                </button>
                 ${chkHtml}
               </div>
             </div>
@@ -3750,21 +3919,46 @@ INDEX_TEMPLATE_V2 = """
               ? String(reg['Comments']).trim()
               : '')));
       const hasComment = Boolean(commentRaw);
+      const isSpecFlagged = isProblemActiveOnRecord('Other_problem', record);
+
+      const quickTags = (Array.isArray(state.specialistQuickTags) && state.specialistQuickTags.length > 0)
+        ? state.specialistQuickTags
+        : [
+            { label: '+ Damaged', text: 'Damaged' },
+            { label: '+ Mold / Pest', text: 'Mold / Pest' },
+            { label: '+ Mixed Specimen', text: 'Mixed specimen' },
+            { label: '+ Needs Specialist ID', text: 'Needs specialist ID' }
+          ];
+      const quickTagsHtml = quickTags.map(t => {
+        const lbl = escapeHtml(t.label || '');
+        const valEsc = escapeHtml(t.text || t.label || '').replace(/'/g, "\\'");
+        return `<button type="button" data-no-swipe="true" onclick="appendMobileSpecialistTag('${valEsc}')" class="min-h-[36px] px-2.5 py-1.5 rounded text-[11px] font-mono bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 tap-active">${lbl}</button>`;
+      }).join('');
 
       html += `
-        <div class="mt-4 pt-3 border-t border-bordercol/60 space-y-2">
-          <div class="flex items-center justify-between">
+        <div id="commentSection" class="mt-4 pt-3 border-t border-bordercol/60 space-y-2">
+          <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 text-fern" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
               </svg>
               <h4 class="text-xs font-bold text-ink uppercase tracking-wider font-sans">Comment</h4>
             </div>
-            <button type="button" onclick="openCommentEditor()" class="px-2.5 py-1 text-[11px] font-mono font-medium text-fern hover:text-fern-dark bg-emerald-50 hover:bg-emerald-100 border border-fern/30 rounded flex items-center gap-1 transition-colors touch-target-min">
-              <svg class="w-3 h-3 text-fern" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-              <span>${hasComment ? 'Edit Comment' : 'Write Comment'}</span>
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-no-swipe="true" onclick="toggleProblemFlag('Other_problem')" aria-pressed="${isSpecFlagged ? 'true' : 'false'}" class="px-2.5 py-1 text-[11px] font-mono font-semibold rounded border flex items-center gap-1 transition-colors min-h-[40px] tap-active ${isSpecFlagged ? 'bg-teal-50 text-teal-800 border-teal-400' : 'bg-white text-muted border-stone-300 hover:border-teal-400'}">
+                <span class="w-3.5 h-3.5 rounded flex items-center justify-center text-[9px] font-bold ${isSpecFlagged ? 'bg-teal-700 text-white' : 'border border-stone-300 text-transparent'}">✓</span>
+                <span>Needs Specialist</span>
+              </button>
+              <button type="button" onclick="openCommentEditor()" class="px-2.5 py-1 text-[11px] font-mono font-medium text-fern hover:text-fern-dark bg-emerald-50 hover:bg-emerald-100 border border-fern/30 rounded flex items-center gap-1 transition-colors touch-target-min">
+                <svg class="w-3 h-3 text-fern" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>${hasComment ? 'Edit' : 'Write'}</span>
+              </button>
+            </div>
           </div>
+          <div id="specialistQuickTagsRow" class="flex flex-wrap gap-1.5 rounded transition-all">
+            ${quickTagsHtml}
+          </div>
+          ${(isSpecFlagged && !hasComment) ? '<p class="text-[11px] font-sans italic text-amber-700">Add a short note for the specialist (for blank/unreadable label fields, tap the field value to set an ICEDIG code).</p>' : ''}
           <div onclick="openCommentEditor()" class="min-h-[72px] p-2.5 bg-stone-50 hover:bg-stone-100/70 border border-stone-200/80 rounded cursor-pointer transition-colors" title="Tap to write or edit comment">
             <p class="font-mono text-xs text-ink whitespace-pre-wrap break-words leading-relaxed ${hasComment ? '' : 'text-subdued italic'}">${hasComment ? escapeHtml(commentRaw) : 'No comment recorded. Tap to write a comment...'}</p>
           </div>
@@ -3772,6 +3966,132 @@ INDEX_TEMPLATE_V2 = """
       `;
 
       container.innerHTML = html;
+    }
+
+    function _resolveCanonicalRegFieldName(fieldName) {
+      if (!fieldName) return fieldName;
+      const lower = String(fieldName).trim().toLowerCase();
+      const regFields = (state.activeSchema && state.activeSchema.ui_sections && Array.isArray(state.activeSchema.ui_sections.registration))
+        ? state.activeSchema.ui_sections.registration
+        : [];
+      for (const f of regFields) {
+        if (f && f.name && String(f.name).trim().toLowerCase() === lower) {
+          return f.name;
+        }
+      }
+      const reg = (state.currentRecord && state.currentRecord.registration) || {};
+      for (const k of Object.keys(reg)) {
+        if (k.trim().toLowerCase() === lower) return k;
+      }
+      return fieldName;
+    }
+
+    function openFieldIcedigSheet(fieldName, probName) {
+      if (!state.currentRecord) return;
+      const canonicalField = _resolveCanonicalRegFieldName(fieldName);
+      const sheet = document.getElementById('icedigFieldSheet');
+      const titleEl = document.getElementById('icedigSheetTitle');
+      const optsEl = document.getElementById('icedigSheetOptions');
+      const warnEl = document.getElementById('icedigSheetConflictWarn');
+      if (!sheet || !optsEl) return;
+      if (titleEl) titleEl.textContent = `ICEDIG Status — ${canonicalField}`;
+      const reg = state.currentRecord.registration || {};
+      const obs = state.currentRecord.observation || {};
+      const rawCur = (obs[canonicalField] !== undefined && String(obs[canonicalField]).trim() !== '')
+        ? obs[canonicalField]
+        : (reg[canonicalField] !== undefined ? reg[canonicalField] : (reg[fieldName] || ''));
+      const currentVal = String(rawCur || '').trim().toLowerCase();
+
+      // Check if historical books have a differing value for this field
+      if (warnEl) {
+        const histObj = state.currentHistoricalData || {};
+        const hKey = Object.keys(histObj).find(k => k.toLowerCase() === canonicalField.toLowerCase());
+        const hMap = hKey ? histObj[hKey] : null;
+        const hasHistConflict = Boolean(hMap && Object.keys(hMap).some(v => String(v || '').trim().toLowerCase() !== currentVal));
+        warnEl.classList.toggle('hidden', !hasHistConflict);
+      }
+
+      const codeList = (Array.isArray(state.icedigCodeList) && state.icedigCodeList.length > 0)
+        ? state.icedigCodeList
+        : Object.entries(
+            (state.icedigCodes && Object.keys(state.icedigCodes).length > 0)
+              ? state.icedigCodes
+              : {
+                  "unknown:missing": "unknown:missing  (blank on original label)",
+                  "unknown:indecipherable": "unknown:indecipherable  (illegible on label)",
+                  "unknown:undigitized": "unknown:undigitized  (skipped during digitisation)",
+                  "withheld": "withheld  (known but intentionally hidden)"
+                }
+          ).map(([code, fullLabel]) => ({
+            code,
+            description: String(fullLabel || '').replace(code, '').replace(/^\\s*\\(/, '').replace(/\\)\\s*$/, '').trim()
+          }));
+
+      const safeField = canonicalField.replace(/'/g, "\\'");
+      const safeProb = String(probName || '').replace(/'/g, "\\'");
+      let optsHtml = codeList.map(item => {
+        const code = item.code;
+        const desc = item.description || '';
+        const isSel = currentVal === code.toLowerCase();
+        const jsCode = code.replace(/'/g, "\\'");
+        return `
+          <button type="button" onclick="applyDetailsFieldIcedig('${safeField}', '${safeProb}', '${jsCode}')" class="w-full min-h-[44px] text-left p-2.5 rounded border transition-all tap-active ${isSel ? 'border-2 border-fern bg-emerald-50 text-fern-dark font-semibold' : 'border-bordercol bg-white text-ink hover:bg-stone-50'}">
+            <div class="font-mono text-xs font-bold">${escapeHtml(code)} ${isSel ? '✓' : ''}</div>
+            <div class="text-[10.5px] font-sans text-muted mt-0.5">${escapeHtml(desc)}</div>
+          </button>
+        `;
+      }).join('');
+
+      if (currentVal) {
+        optsHtml += `
+          <button type="button" onclick="applyDetailsFieldIcedig('${safeField}', '${safeProb}', '')" class="w-full min-h-[40px] text-left px-2.5 py-2 rounded border border-stone-300 bg-stone-50 hover:bg-stone-100 text-ink-muted font-mono text-xs font-semibold tap-active mt-1">
+            ✕ Clear field value
+          </button>
+        `;
+      }
+
+      optsEl.innerHTML = optsHtml;
+      sheet.classList.remove('hidden');
+      if (typeof maybeShowTip === 'function') {
+        maybeShowTip('tip_icedig', { allowOverModal: true });
+      }
+    }
+
+    function closeFieldIcedigSheet() {
+      const sheet = document.getElementById('icedigFieldSheet');
+      if (sheet) sheet.classList.add('hidden');
+    }
+
+    function applyDetailsFieldIcedig(fieldName, probName, code) {
+      closeFieldIcedigSheet();
+      const canonicalField = _resolveCanonicalRegFieldName(fieldName);
+      if (probName) {
+        resolveFieldDiscrepancy(canonicalField, probName, code, Boolean(code));
+      } else if (state.currentRecord) {
+        state.currentRecord.registration = state.currentRecord.registration || {};
+        state.currentRecord.observation = state.currentRecord.observation || {};
+        state.currentRecord.registration[canonicalField] = code;
+        state.currentRecord.observation[canonicalField] = code;
+        markDirty(canonicalField);
+        renderDetailView(false);
+        triggerAutoSave();
+      }
+    }
+
+    function appendMobileSpecialistTag(tagText) {
+      if (!state.currentRecord) return;
+      state.currentRecord.observation = state.currentRecord.observation || {};
+      const obs = state.currentRecord.observation;
+      const existing = String(obs['Comment'] || '').trim();
+      if (existing.toLowerCase().indexOf(tagText.toLowerCase()) === -1) {
+        obs['Comment'] = existing ? (existing + '; ' + tagText) : tagText;
+        markDirty('Comment');
+      }
+      obs['Other_problem'] = true;
+      markDirty('Other_problem');
+      renderDetailView(false);
+      triggerAutoSave();
+      showToast('Added "' + tagText + '" & flagged Needs Specialist', 'info');
     }
 
     function openCommentEditor() {
@@ -4141,7 +4461,7 @@ INDEX_TEMPLATE_V2 = """
           { name: 'County_Problem', label: 'County Discrepancy', maps_to: 'County' },
           { name: 'Country_Problem', label: 'Country Discrepancy', maps_to: 'Country' },
           { name: 'Location_Problem', label: 'Location Discrepancy', maps_to: 'Cabinet' },
-          { name: 'General_Problem', label: 'General Discrepancy', maps_to: 'Notes' }
+          { name: 'Other_problem', label: 'Needs Specialist', maps_to: 'Comment' }
         ];
       }
 
@@ -4170,9 +4490,11 @@ INDEX_TEMPLATE_V2 = """
         });
       }
 
-      const count = activeProblems.length;
+      // Actionable desk/media problems exclude Other_problem (Needs Specialist)
+      const actionableActiveProblems = activeProblems.filter(p => String(p.name || '').toLowerCase() !== 'other_problem');
+      const count = actionableActiveProblems.length;
 
-      // 1. Tab 0 (Details) Red Flag Badge & Jump Chip
+      // 1. Tab 0 (Details) Red Flag Badge & Jump Chip (actionable issues only)
       const detailsFlagBadge = document.getElementById('tabDetailsFlagsBadge');
       if (detailsFlagBadge) {
         if (count > 0) {
@@ -4186,7 +4508,7 @@ INDEX_TEMPLATE_V2 = """
       const flagChipText = document.getElementById('detailsFlagSummaryText');
       if (flagChip && flagChipText) {
         if (count > 0) {
-          const names = activeProblems.slice(0, 3).map(p => humanizeProblemName(p.name));
+          const names = actionableActiveProblems.slice(0, 3).map(p => humanizeProblemName(p.name));
           const extra = count > 3 ? ` +${count - 3}` : '';
           flagChipText.textContent = `⚠ ${count} flagged: ${names.join(', ')}${extra}`;
           flagChip.classList.remove('hidden');
@@ -4271,7 +4593,7 @@ INDEX_TEMPLATE_V2 = """
           if (summaryDot) summaryDot.className = 'w-2.5 h-2.5 rounded-full bg-sky-700';
           if (summaryCountText) {
             summaryCountText.className = 'text-xs font-bold text-sky-900 uppercase font-mono';
-            summaryCountText.textContent = `${histSuggestionFieldCount} Historical Suggestion${histSuggestionFieldCount === 1 ? '' : 's'}`;
+            summaryCountText.textContent = `${historyCards.length} to resolve`;
           }
           if (summaryActionText) {
             summaryActionText.className = 'text-[10px] font-mono text-sky-800 font-semibold';
@@ -4282,22 +4604,22 @@ INDEX_TEMPLATE_V2 = """
           if (summaryDot) summaryDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-600';
           if (summaryCountText) {
             summaryCountText.className = 'text-xs font-bold text-amber-900 uppercase font-mono';
-            summaryCountText.textContent = `${historyCards.length} Flagged Field${historyCards.length === 1 ? '' : 's'}`;
+            summaryCountText.textContent = `${historyCards.length} to resolve`;
           }
           if (summaryActionText) {
             summaryActionText.className = 'text-[10px] font-mono text-amber-800 font-semibold';
-            summaryActionText.textContent = 'Manual Edit / Codes';
+            summaryActionText.textContent = 'Manual Edit / ICEDIG';
           }
         } else {
           summaryBar.className = 'flex items-center justify-between p-3 bg-emerald-50/70 border border-fern/30 rounded-[3px] transition-colors duration-200';
           if (summaryDot) summaryDot.className = 'w-2.5 h-2.5 rounded-full bg-fern';
           if (summaryCountText) {
             summaryCountText.className = 'text-xs font-bold text-fern-dark uppercase font-mono';
-            summaryCountText.textContent = '0 Historical Conflicts';
+            summaryCountText.textContent = 'Nothing to resolve';
           }
           if (summaryActionText) {
             summaryActionText.className = 'text-[10px] font-mono text-fern font-medium';
-            summaryActionText.textContent = 'No Older Books Differ';
+            summaryActionText.textContent = 'All clear';
           }
         }
       }
@@ -4309,8 +4631,8 @@ INDEX_TEMPLATE_V2 = """
           container.innerHTML = `
             <div class="p-6 bg-surface border border-bordercol rounded-[3px] text-center space-y-2.5">
               <div class="w-8 h-8 rounded-full bg-emerald-50 text-fern border border-fern/30 flex items-center justify-center mx-auto text-base">✓</div>
-              <div class="text-xs font-mono font-bold text-ink">No Older Catalog Book Conflicts</div>
-              <p class="text-[11px] text-subdued font-sans max-w-xs mx-auto">This specimen has no conflicting entries from older catalog books. Swipe back to <strong>Details</strong> to check fields or flag issues.</p>
+              <div class="text-xs font-mono font-bold text-ink">No problems to resolve</div>
+              <p class="text-[11px] text-subdued font-sans max-w-xs mx-auto">This specimen has no open field problems or older catalog conflicts. Swipe back to <strong>Details</strong> to inspect fields or add a specialist note.</p>
               <button type="button" onclick="openOldNamesSheet()" class="mt-1 px-3.5 py-2 min-h-[40px] rounded-full border border-bordercol bg-stone-50 hover:bg-stone-100 text-xs font-semibold text-ink inline-flex items-center gap-1.5 tap-active">
                 <span>📜</span><span>Check Old Names &amp; Synonyms</span>
               </button>
@@ -4362,7 +4684,7 @@ INDEX_TEMPLATE_V2 = """
               : '<span class="text-[10px] font-mono text-sky-900 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200 font-medium whitespace-nowrap">CFCT</span>';
 
             const dismissBtn = (item.isFlagged && probName)
-              ? `<button type="button" onclick="resolveFieldDiscrepancy('${targetField}', '${probName}', undefined, true)" class="flex-none text-[10px] font-mono text-muted hover:text-ink px-2.5 py-1 min-h-[36px] rounded bg-stone-100 hover:bg-stone-200 border border-stone-200">Clear Flag</button>`
+              ? `<button type="button" onclick="resolveFieldDiscrepancy('${targetField}', '${probName}', undefined, true)" title="✓ Value is Correct (Clear Flag)" aria-label="✓ Value is Correct (Clear Flag)" class="flex-none text-[10px] font-mono text-muted hover:text-ink px-2.5 py-1 min-h-[36px] rounded bg-stone-100 hover:bg-stone-200 border border-stone-200">✓ Value is Correct</button>`
               : '';
 
             return `
@@ -4397,56 +4719,10 @@ INDEX_TEMPLATE_V2 = """
                 </div>
 
                 <div class="pt-1">
-                  <button type="button" onclick="toggleIcedigTray('${safeProbKey}')" class="w-full min-h-[38px] flex items-center justify-between px-2.5 py-1.5 rounded bg-stone-50 hover:bg-stone-100 border border-stone-200 text-ink text-xs font-mono font-medium transition-colors">
-                    <span class="flex items-center gap-1.5">
-                      <span class="text-fern font-bold">?</span>
-                      <span>Mark as Blank or Unreadable...</span>
-                    </span>
-                    <span id="icedigArrow_${safeProbKey}" class="text-[10px] text-muted">▼</span>
+                  <button type="button" onclick="openFieldIcedigSheet('${escapeHtml(targetField).replace(/'/g, "\\'")}', '${escapeHtml(probName || '').replace(/'/g, "\\'")}')" class="w-full min-h-[40px] flex items-center justify-between px-2.5 py-1.5 rounded bg-stone-50 hover:bg-stone-100 border border-stone-200 text-ink text-xs font-mono font-medium transition-colors tap-active">
+                    <span>ICEDIG ▾</span>
+                    <span class="text-[10px] text-muted"></span>
                   </button>
-
-                  <div id="icedigTray_${safeProbKey}" class="hidden mt-2 p-2 bg-stone-50 border border-bordercol rounded space-y-1.5">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      ${(() => {
-                        const icedigMap = (state.icedigCodes && Object.keys(state.icedigCodes).length > 0)
-                          ? state.icedigCodes
-                          : ((state.activeSchema && state.activeSchema.icedig_code_labels) || {
-                              "unknown:missing": "unknown:missing  (blank on original label)",
-                              "unknown:indecipherable": "unknown:indecipherable  (illegible on label)",
-                              "unknown:undigitized": "unknown:undigitized  (skipped during digitisation)",
-                              "withheld": "withheld  (known but intentionally hidden)"
-                            });
-
-                        return Object.entries(icedigMap).map(([code, fullLabel]) => {
-                          const isSel = (String(currentVal).trim().toLowerCase() === code.toLowerCase());
-                          let subText = '';
-                          const parenMatch = fullLabel.match(/\\((.*?)\\)/);
-                          if (parenMatch) {
-                            subText = parenMatch[1];
-                          } else if (fullLabel.includes('  ')) {
-                            subText = fullLabel.split(/\\s{2,}/)[1] || '';
-                          } else {
-                            subText = fullLabel.replace(code, '').trim();
-                          }
-
-                          const pillClass = isSel
-                            ? 'w-full text-left p-2 rounded border-2 border-fern bg-emerald-50 text-fern-dark font-semibold shadow-2xs transition-all'
-                            : 'w-full text-left p-2 rounded border border-bordercol bg-white text-ink hover:border-fern/50 hover:bg-stone-50 active:scale-[0.99] transition-all';
-
-                          const jsCode = code.replace(/'/g, "\\'");
-                          return `
-                            <button type="button" onclick="resolveFieldDiscrepancy('${targetField}', '${probName}', '${jsCode}', true)" class="${pillClass}">
-                              <div class="flex items-center justify-between gap-1">
-                                <span class="font-mono text-xs font-bold truncate">${escapeHtml(code)}</span>
-                                ${isSel ? '<span class="text-[10px] text-fern font-bold flex-none">✓</span>' : ''}
-                              </div>
-                              ${subText ? `<span class="text-[9.5px] font-sans text-subdued block leading-tight mt-0.5 truncate">${escapeHtml(subText)}</span>` : ''}
-                            </button>
-                          `;
-                        }).join('')
-                      })()}
-                    </div>
-                  </div>
                 </div>
               </div>
             `;
@@ -4454,7 +4730,8 @@ INDEX_TEMPLATE_V2 = """
         }
       }
 
-      // 5. Physical & Other Issues Grid (in Tab 0 Details — non-field flags not already shown inline)
+      // 5. Photo & Media Issues Grid (in Tab 0 Details — non-field flags excluding Other_problem which lives above Comment)
+      const flagsCard = document.getElementById('physicalIssuesCard');
       const flagsGrid = document.getElementById('problemFlagsGrid');
       const flaggedBadge = document.getElementById('flaggedTotalBadge');
       const inlineProbSet = new Set(Object.values(fieldToProb));
@@ -4462,41 +4739,31 @@ INDEX_TEMPLATE_V2 = """
         flaggedBadge.textContent = `${count} Flagged`;
       }
       if (flagsGrid) {
-        const nonFieldDefs = problemDefs.filter(pDef => pDef && !inlineProbSet.has(pDef.name));
-        const renderDefs = nonFieldDefs.length > 0 ? nonFieldDefs : problemDefs;
-        flagsGrid.innerHTML = renderDefs.map(pDef => {
+        const nonFieldDefs = problemDefs.filter(pDef => pDef && !inlineProbSet.has(pDef.name) && String(pDef.name).toLowerCase() !== 'other_problem');
+        if (flagsCard) {
+          flagsCard.classList.toggle('hidden', nonFieldDefs.length === 0);
+        }
+        flagsGrid.innerHTML = nonFieldDefs.map(pDef => {
           const probName = pDef.name;
           const isAct = isProblemActiveOnRecord(probName, rec);
           const formatProblemLabel = (raw) => {
             const clean = String(raw || '').replace(/[_ ]?problem$/i, '').replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
-            return (!clean || clean.toLowerCase() === 'other') ? 'Other Issue' : clean;
+            return (!clean || clean.toLowerCase() === 'other') ? 'Needs Specialist' : clean;
           };
           const label = pDef.label ? formatProblemLabel(pDef.label) : formatProblemLabel(probName);
+          const activeTileClass = 'border-brick bg-brick-light text-brick font-semibold';
+          const activeCheckStyle = 'background:#c93a40;color:#ffffff;';
           return `
-            <button type="button" data-no-swipe="true" data-flagged-row="${isAct ? 'true' : 'false'}" onclick="toggleProblemFlag('${probName}')" class="p-2.5 rounded border text-left flex items-start justify-between transition-all tap-highlight-transparent min-h-[44px] ${isAct ? 'border-brick bg-brick-light text-brick font-semibold' : 'border-stone-200 bg-white text-muted hover:border-stone-300'}">
+            <button type="button" data-no-swipe="true" data-flagged-row="${isAct ? 'true' : 'false'}" onclick="toggleProblemFlag('${probName}')" class="p-2.5 rounded border text-left flex items-start justify-between transition-all tap-highlight-transparent min-h-[44px] ${isAct ? activeTileClass : 'border-stone-200 bg-white text-muted hover:border-stone-300'}">
               <div class="min-w-0 pr-1">
                 <span class="text-xs font-sans font-medium block truncate ${isAct ? 'text-brick font-semibold' : 'text-ink'}">${escapeHtml(label)}</span>
               </div>
-              <span class="w-4 h-4 rounded flex-none mt-0.5 flex items-center justify-center text-[10px] font-bold ${isAct ? 'bg-brick text-white' : 'border border-stone-300'}" style="${isAct ? 'background:#c93a40;color:#ffffff;' : ''}">
+              <span class="w-4 h-4 rounded flex-none mt-0.5 flex items-center justify-center text-[10px] font-bold ${isAct ? 'text-white' : 'border border-stone-300'}" style="${isAct ? activeCheckStyle : ''}">
                 ${isAct ? '✓' : ''}
               </span>
             </button>
           `;
         }).join('');
-      }
-    }
-
-    function toggleIcedigTray(probName) {
-      const tray = document.getElementById(`icedigTray_${probName}`);
-      const arrow = document.getElementById(`icedigArrow_${probName}`);
-      if (!tray) return;
-      const isHidden = tray.classList.contains('hidden');
-      if (isHidden) {
-        tray.classList.remove('hidden');
-        if (arrow) arrow.textContent = '▲';
-      } else {
-        tray.classList.add('hidden');
-        if (arrow) arrow.textContent = '▼';
       }
     }
 
@@ -4538,7 +4805,7 @@ INDEX_TEMPLATE_V2 = """
       if (!probName) return 'Issue';
       const raw = String(probName).trim();
       const lower = raw.toLowerCase();
-      if (lower === 'other_problem') return 'Other Issue';
+      if (lower === 'other_problem') return 'Needs Specialist';
       if (state.activeSchema && state.activeSchema.ui_sections && Array.isArray(state.activeSchema.ui_sections.problems)) {
         const found = state.activeSchema.ui_sections.problems.find(p => p && p.name === raw);
         if (found && (found.label || found.maps_to)) {
@@ -4546,6 +4813,28 @@ INDEX_TEMPLATE_V2 = """
         }
       }
       return raw.replace(/_?[Pp]roblem$/g, '').replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim() || raw;
+    }
+
+    function handleBottomNeedsSpecialistClick() {
+      if (!state.currentRecord) return;
+      toggleProblemFlag('Other_problem');
+      const isNowOn = isProblemActiveOnRecord('Other_problem', state.currentRecord);
+      if (isNowOn) {
+        switchDetailTab('details');
+        setTimeout(() => {
+          const sec = document.getElementById('commentSection');
+          if (sec && typeof sec.scrollIntoView === 'function') {
+            sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          const tagsRow = document.getElementById('specialistQuickTagsRow');
+          if (tagsRow) {
+            tagsRow.classList.add('ring-2', 'ring-teal-400', 'bg-teal-50/50', 'p-1');
+            setTimeout(() => {
+              tagsRow.classList.remove('ring-2', 'ring-teal-400', 'bg-teal-50/50', 'p-1');
+            }, 1400);
+          }
+        }, 120);
+      }
     }
 
     function toggleProblemFlag(probName) {
@@ -4562,6 +4851,9 @@ INDEX_TEMPLATE_V2 = """
       renderDetailView(false);
       const label = humanizeProblemName(probName);
       showToast(nextVal ? `⚠ Flagged ${label}` : `✓ Cleared ${label}`);
+      if (nextVal && String(probName).toLowerCase() === 'other_problem' && typeof maybeShowTip === 'function') {
+        maybeShowTip('tip_specialist');
+      }
     }
 
     // -------------------------------------------------------------
@@ -5090,7 +5382,18 @@ INDEX_TEMPLATE_V2 = """
     function openSettingsModal() {
       document.getElementById('settingShowFilterPills').checked = state.showFilterPills;
       updateHapticsUI();
+      if (typeof renderSettingsTutorialPanel === 'function') renderSettingsTutorialPanel();
       openModal('settingsModal');
+    }
+
+    function openSettingsTutorialSection() {
+      openSettingsModal();
+      setTimeout(() => {
+        const sec = document.getElementById('settingsPhoneTutorialSection');
+        if (sec && typeof sec.scrollIntoView === 'function') {
+          sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 80);
     }
 
     function closeSettingsModal() {
@@ -5224,7 +5527,7 @@ INDEX_TEMPLATE_V2 = """
         const savedProbs = (state.activeAdvancedFilters && state.activeAdvancedFilters.problems) || {};
         const schemaProbs = (state.activeSchema && state.activeSchema.ui_sections && Array.isArray(state.activeSchema.ui_sections.problems))
           ? state.activeSchema.ui_sections.problems
-          : [{ name: 'Other_problem', label: 'Other Issue' }];
+          : [{ name: 'Other_problem', label: 'Needs Specialist' }];
 
         let html = `
           <div class="mb-2.5">
@@ -5304,52 +5607,6 @@ INDEX_TEMPLATE_V2 = """
       updateFilterActiveDot();
       closeFilterModal();
       fetchObjects();
-    }
-
-    function openAddDiscrepancyModal(defaultField = '') {
-      const select = document.getElementById('discrepancyFieldSelect');
-      if (select) {
-        const options = [
-          { val: 'Physical_Damage_Problem', label: 'Physical Specimen Damaged' },
-          { val: 'Location_Problem', label: 'Physical Specimen Misplaced' },
-          { val: 'Taxon_Problem', label: 'Taxon / Identification Issue' },
-          { val: 'General_Problem', label: 'General Specimen Issue' }
-        ];
-        if (state.activeSchema && state.activeSchema.ui_sections && state.activeSchema.ui_sections.problems) {
-          state.activeSchema.ui_sections.problems.forEach(p => {
-            if (p.name && !options.some(o => o.val === p.name)) {
-              options.push({ val: p.name, label: p.name.replace(/_/g, ' ') });
-            }
-          });
-        }
-        select.innerHTML = options.map(o => `<option value="${o.val}" ${o.val === defaultField ? 'selected' : ''}>${o.label}</option>`).join('');
-      }
-      const noteInput = document.getElementById('discrepancyReasonInput');
-      if (noteInput) noteInput.value = '';
-      openModal('addDiscrepancyModal');
-    }
-
-    async function submitDiscrepancy(e) {
-      e.preventDefault();
-      const field = document.getElementById('discrepancyFieldSelect').value;
-      const note = document.getElementById('discrepancyReasonInput').value.trim();
-      if (!field || !note || !state.currentRecord) return;
-
-      state.currentRecord.observation = state.currentRecord.observation || {};
-      const probField = field.endsWith('_Problem') ? field : `${field}_Problem`;
-      const noteField = field.endsWith('_Problem') ? `${field.slice(0, -8)}_Note` : `${field}_Note`;
-      state.currentRecord.observation[probField] = true;
-      state.currentRecord.observation[noteField] = note;
-      state.currentRecord.observation['Notes'] = note;
-      markDirty(probField);
-      markDirty(noteField);
-      markDirty('Notes');
-
-      closeModal('addDiscrepancyModal');
-      triggerAutoSave();
-      triggerHaptic('discrepancy');
-      renderDetailView(false);
-      showToast(`⚑ Issue flagged: ${note}`);
     }
 
     function handleLocationFilterChange() {
@@ -5499,35 +5756,6 @@ INDEX_TEMPLATE_V2 = """
       }
     }
 
-    // 4-Step First-Run Hallway Quick Guide (Location first, ≤25 words/slide, visual pill previews)
-    const WALKTHROUGH_SLIDES = [
-      {
-        badge: 'STEP 1 OF 4 · PHYSICAL LOCATION',
-        title: 'First: Record Where Each Object Lives',
-        bodyHtml: 'Recording <strong>Physical Location</strong> is the #1 hallway job so we can always find objects again. Standing at a shelf? Tap <strong>Set Shelf</strong> at the top of the list once.',
-        calloutHtml: '<div class="flex items-center justify-between gap-2"><span class="text-[11px] font-mono text-fern-dark font-bold">📍 Shelf: Fl 1 · Cab 21 · Sh 01</span><span class="px-2 py-0.5 rounded bg-white border border-fern/30 text-[10px] font-mono font-bold text-fern-dark">Set Shelf</span></div>'
-      },
-      {
-        badge: 'STEP 2 OF 4 · SEARCH & 1-TAP SAVE',
-        title: 'Open a Box, Save Its Shelf & Check Data',
-        bodyHtml: 'Search an object number to view its <strong>Registration Data</strong> (same as Desktop). Tap the green shelf button inside to save its location in 1 tap.',
-        calloutHtml: '<div class="flex flex-wrap items-center gap-1.5"><span class="px-2 py-1 rounded bg-fern text-white font-mono text-[10px] font-bold">📍 Save to Cab 21 · Sh 01</span><span class="px-2 py-1 rounded bg-surface border border-bordercol font-mono text-[10px] font-bold text-ink">↩ Undo (5s)</span><span class="text-[10px] text-muted">· Use <strong>Location</strong> tab for Loaned Out</span></div>'
-      },
-      {
-        badge: 'STEP 3 OF 4 · OLD NAMES & BOOKS',
-        title: 'Unfamiliar Name on the Box?',
-        bodyHtml: 'Tap <strong>📜 Old names</strong> to check if the box uses an older plant or family name — if it matches, keep the modern name! If older books are loaded, swipe to <strong>History</strong>.',
-        calloutHtml: '<div class="flex items-center gap-2"><span class="px-2 py-0.5 rounded-full bg-surface border border-bordercol text-[11px] font-semibold text-ink">📜 Old names</span><span class="text-[11px] text-muted">Read-only check · never overwrites data</span></div>'
-      },
-      {
-        badge: 'STEP 4 OF 4 · FLAG & MARK REVIEWED',
-        title: 'Flag Issues & Mark Reviewed',
-        bodyHtml: 'Tap the <strong>checkbox next to any field</strong> on <strong>Details</strong> (or <strong>Other Issue</strong> + <strong>Comment</strong>), then tap <strong>✓ Mark Reviewed</strong>.<br><span class="text-fern-dark font-medium">You can’t break anything</span> — shelf taps have 5s Undo, and nothing saves to disk until <strong>Ctrl+S</strong> on Desktop.',
-        calloutHtml: '<div class="flex flex-wrap items-center gap-2 text-[10px]"><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-fern-dark border border-fern/30">[REV]</span><span class="text-muted">Clean</span><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">[REV+ERR]</span><span class="text-muted">Flagged for desk · Tap <strong>?</strong> anytime</span></div>'
-      }
-    ];
-    let _wtIndex = 0;
-
     // Plain-English Field Guide (mirrors the exact Mobile V2 specimen page layout)
     const FIELD_GUIDE_EXPLANATIONS = {
       'Genus': {
@@ -5588,10 +5816,10 @@ INDEX_TEMPLATE_V2 = """
         </section>
       `);
 
-      // 2. Physical Location (matches Current Shelf & Location Tab)
+      // 2. Storage Location (matches Current Shelf & Location Tab)
       sectionsHtml.push(`
         <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1.5">
-          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">2. Physical Location (Where the Box Lives)</div>
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">2. Storage Location (Where the Box Lives)</div>
           <p class="text-[11px] text-ink-muted"><strong>Building, Floor, Cabinet, Shelf</strong> record where this object lives so we can find it again. Set <strong>My Current Shelf</strong> once at the top of the list, then tap <strong>📍 Save to Shelf</strong> on each box you pull.</p>
           <p class="text-[11px] text-ink-muted"><strong>Stored as:</strong> What kind of container holds it (paper box, plastic box, petridish, etc.).</p>
         </section>
@@ -5628,12 +5856,12 @@ INDEX_TEMPLATE_V2 = """
         `);
       });
 
-      // 4. Blank or Unreadable Labels & Tabs
+      // 4. Flagging Issues & Problem Resolution
       sectionsHtml.push(`
         <section class="bg-surface border border-bordercol rounded-lg p-3 space-y-1.5">
-          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">6. Flagging Issues &amp; Comparing Older Books</div>
-          <p class="text-[11px] text-ink-muted"><strong>Details tab:</strong> Tap the checkbox next to any field (or Physical &amp; Other Issues at the bottom) to flag or clear a problem — just like on Desktop Arbor.</p>
-          <p class="text-[11px] text-ink-muted"><strong>History tab (swipe right):</strong> Compare older catalog books against the current value and tap <strong>Apply</strong> if one matches the real object, or use the quick <strong>Blank / Unreadable</strong> codes instead of guessing.</p>
+          <div class="font-mono text-[10px] font-bold uppercase text-fern-dark">6. Flagging Issues &amp; Problem Resolution</div>
+          <p class="text-[11px] text-ink-muted"><strong>Details tab:</strong> Tick the box next to a field to flag it; tap the field value to set an ICEDIG code (<code>unknown:missing</code>, <code>unknown:indecipherable</code>, etc.); use <strong>Needs Specialist</strong> + <strong>Comment</strong> for damage, mold/pest, or mixed specimens (also in the bottom bar); <strong>Photo &amp; Media Issues</strong> sits at the bottom.</p>
+          <p class="text-[11px] text-ink-muted"><strong>History tab (Problem Resolution):</strong> Compare older books with the label in your hand — tap <strong>Apply</strong> on a matching older value, type a value manually, pick <strong>ICEDIG ▾</strong>, or tap <strong>✓ Value is Correct</strong>.</p>
         </section>
       `);
 
@@ -5647,102 +5875,622 @@ INDEX_TEMPLATE_V2 = """
       if (modal) modal.classList.add('hidden');
     }
 
-    function renderWalkthroughSlide() {
-      const s = WALKTHROUGH_SLIDES[_wtIndex] || WALKTHROUGH_SLIDES[0];
-      const badge = document.getElementById('walkthroughStepBadge');
-      const title = document.getElementById('walkthroughTitle');
-      const body = document.getElementById('walkthroughBody');
-      const callout = document.getElementById('walkthroughCallout');
-      const backBtn = document.getElementById('wtBackBtn');
-      const nextBtn = document.getElementById('wtNextBtn');
-      if (badge) badge.textContent = s.badge;
-      if (title) title.textContent = s.title;
-      if (body) body.innerHTML = s.bodyHtml || '';
-      if (callout) callout.innerHTML = s.calloutHtml || '';
-      if (backBtn) backBtn.classList.toggle('hidden', _wtIndex === 0);
-      if (nextBtn) {
-        nextBtn.textContent = (_wtIndex === WALKTHROUGH_SLIDES.length - 1) ? 'Start Checking Objects →' : 'Next →';
+    // -------------------------------------------------------------
+    // PHONE COACH TUTORIAL ENGINE & ONE-TIME CONTEXTUAL TIPS
+    // -------------------------------------------------------------
+    const _ARBOR_TUT_MODE_RAW = '{{ phone_tutorial_mode }}';
+    const ARBOR_PHONE_TUTORIAL_MODE = ['ask', 'trainee', 'helper', 'off'].includes(_ARBOR_TUT_MODE_RAW) ? _ARBOR_TUT_MODE_RAW : 'ask';
+    const ARBOR_SHOW_WALKTHROUGH = (ARBOR_PHONE_TUTORIAL_MODE !== 'off');
+    const COACH_STORAGE_KEY = 'arbor_phone_tutorial';
+
+    function _normCoachCoord(v) {
+      const s = String(v ?? '').trim();
+      if (!s || s === '—') return '';
+      if (/^\\d+$/.test(s)) return s.replace(/^0+/, '') || '0';
+      return s.toLowerCase();
+    }
+
+    function _isCoachLocationSaved() {
+      if (!state.currentRecord) return false;
+      const obs = state.currentRecord.observation || {};
+      const curCab = _normCoachCoord(obs.Cabinet);
+      const curShelf = _normCoachCoord(obs.Shelf);
+      if (!curCab && !curShelf) return false;
+      const armed = state.armedLocation;
+      if (armed && (armed.cabinet || armed.shelf)) {
+        const cabOk = !armed.cabinet || curCab === _normCoachCoord(armed.cabinet);
+        const shelfOk = !armed.shelf || curShelf === _normCoachCoord(armed.shelf);
+        return cabOk && shelfOk;
       }
-      for (let i = 0; i < WALKTHROUGH_SLIDES.length; i++) {
-        const dot = document.getElementById('wtDot' + i);
-        if (dot) {
-          dot.className = i === _wtIndex ? 'w-2.5 h-2.5 rounded-full bg-fern cursor-pointer' : 'w-2 h-2 rounded-full bg-stone-300 cursor-pointer';
+      return true;
+    }
+
+    function _twoStageSaveReviewTarget() {
+      if (!_isCoachLocationSaved()) {
+        const stampBtn = document.getElementById('btnStampArmedLocation');
+        if (stampBtn && !stampBtn.classList.contains('hidden')) return stampBtn;
+      }
+      return document.getElementById('btnDetailMarkReviewed');
+    }
+
+    let _coachTourCycleIdx = 0;
+    const _COACH_TOUR_TABS = ['#tabBtnDetails', '#tabBtnLocation', '#tabBtnHistory'];
+
+    const PHONE_TUTORIALS = {
+      trainee: [
+        {
+          id: 't_shelf',
+          badge: 'TRAINEE · STEP 1 OF 5',
+          title: 'Set your shelf',
+          body: "You practiced at your desk — now you'll do the exact same work in the collection. First, tap Set Shelf for the cabinet and shelf you're standing at so Arbor can save it in one tap for every object here.",
+          waitingText: 'Waiting for you to set a shelf…',
+          target: '#btnStationSheetTrigger',
+          check: () => Boolean(state.armedLocation && (state.armedLocation.cabinet || state.armedLocation.shelf))
+        },
+        {
+          id: 't_search',
+          badge: 'TRAINEE · STEP 2 OF 5',
+          title: 'Find the object in your hand',
+          body: "Pick up an object from the shelf, type its number into the search box, and tap it to open its record.",
+          waitingText: 'Waiting for you to open an object…',
+          target: '#searchBox',
+          check: () => Boolean(state.currentRecord)
+        },
+        {
+          id: 't_tour',
+          badge: 'TRAINEE · STEP 3 OF 5',
+          title: 'Your phone screen',
+          body: 'These three tabs match Desktop Arbor: Details is your Registration Data, Location is Storage Location, and History is Problem Resolution. Compare the screen with the real object in your hand — a red badge means something is flagged.',
+          target: () => document.querySelector(_COACH_TOUR_TABS[_coachTourCycleIdx % _COACH_TOUR_TABS.length]),
+          check: null
+        },
+        {
+          id: 't_save_review',
+          badge: 'TRAINEE · STEP 4 OF 5',
+          title: 'Save the location, then Mark Reviewed',
+          body: 'Tap 📍 Save to Shelf to record where this object lives, then tap ✓ Mark Reviewed to confirm you physically checked it. Do both for every object you inspect.',
+          waitingText: 'Waiting for Save to Shelf & ✓ Mark Reviewed…',
+          target: _twoStageSaveReviewTarget,
+          check: () => Boolean(_isCoachLocationSaved() && state.isReviewed)
+        },
+        {
+          id: 't_ready',
+          badge: 'TRAINEE · STEP 5 OF 5',
+          title: "You're ready!",
+          body: 'Your hallway routine is simple: Set Shelf → search → check → Save to Shelf → Mark Reviewed. Go ahead and pick up the next object! The first time you run into a new screen or issue (like History or Needs Specialist), a short one-time tip will guide you — then stay out of your way.',
+          target: null,
+          check: null,
+          isFinal: true
         }
+      ],
+      helper: [
+        {
+          id: 'h_shelf',
+          badge: 'HELPER · STEP 1 OF 4',
+          title: 'Set your shelf',
+          body: "First, tap Set Shelf for the cabinet and shelf you're standing at so you can save each object's location in one tap. Update this whenever you move to a new shelf.",
+          waitingText: 'Waiting for you to set a shelf…',
+          target: '#btnStationSheetTrigger',
+          check: () => Boolean(state.armedLocation && (state.armedLocation.cabinet || state.armedLocation.shelf))
+        },
+        {
+          id: 'h_search',
+          badge: 'HELPER · STEP 2 OF 4',
+          title: 'Find the object in your hand',
+          body: "Pick up an object from the shelf, type its number in the search box, and tap it to open its card.",
+          waitingText: 'Waiting for you to open an object…',
+          target: '#searchBox',
+          check: () => Boolean(state.currentRecord)
+        },
+        {
+          id: 'h_check_save_review',
+          badge: 'HELPER · STEP 3 OF 4',
+          title: 'Check, save, mark reviewed',
+          body: 'Compare the screen with the object in your hand. Spot something wrong? Tick the box next to that field, or tap ⚑ Needs Specialist for physical damage and add a short Comment. Then tap 📍 Save to Shelf and ✓ Mark Reviewed.',
+          waitingText: 'Waiting for Save to Shelf & ✓ Mark Reviewed…',
+          target: _twoStageSaveReviewTarget,
+          check: () => Boolean(_isCoachLocationSaved() && state.isReviewed)
+        },
+        {
+          id: 'h_ready',
+          badge: 'HELPER · STEP 4 OF 4',
+          title: "You're ready!",
+          body: 'Your routine: Set Shelf → search → check → Save to Shelf → Mark Reviewed. If you are ever unsure about a label, just leave it flagged — the curator will review it at the desk later.',
+          target: null,
+          check: null,
+          isFinal: true
+        }
+      ]
+    };
+
+    const COACH_TIPS = {
+      tip_flagged: {
+        label: 'Flagged objects on Details',
+        title: 'This object has a flagged problem',
+        versions: ['trainee', 'helper'],
+        bodyTrainee: "Red-highlighted fields on Details mean something is missing or uncertain. Compare them with the real object in your hand: you can fix a value and uncheck its box, or open the History tab to check older books. Can't solve it in the hallway? Leave it checked and still tap ✓ Mark Reviewed — it's saved safely for your desk ([REV+ERR]).",
+        bodyHelper: 'Red-highlighted fields mean something needs checking. Compare with the label in your hand — if History shows older books, you can tap Apply on the matching value. Not sure? Leave it checked and tap ✓ Mark Reviewed for the main worker.'
+      },
+      tip_history: {
+        label: 'History tab (Problem Resolution)',
+        title: 'This is the History tab',
+        versions: ['trainee', 'helper'],
+        explicitTool: true,
+        bodyTrainee: "History is the phone version of Problem Resolution from Part 1. It compares the current record against older catalog books so you can check them against the real label in your hand. Tap Apply on the matching value, ✓ Value is Correct if it was a false alarm, or ICEDIG ▾ if confirmed blank or unreadable.",
+        bodyHelper: 'History lets you compare the current record with older catalog books. Check the real label in your hand: if an older value clearly matches, tap Apply. Otherwise, just leave it as is for the desk.'
+      },
+      tip_icedig: {
+        label: 'ICEDIG codes (blank/unreadable)',
+        title: 'Using ICEDIG codes',
+        versions: ['trainee'],
+        explicitTool: true,
+        bodyTrainee: "ICEDIG codes mark a field as confirmed blank or unreadable — just like #198's Collector in Part 1. Pick unknown:missing if nothing is written on the label, or unknown:indecipherable if the ink can't be read. If older books still disagree, leave the field flagged for the desk instead."
+      },
+      tip_specialist: {
+        label: 'Needs Specialist ([REV+NOTE])',
+        title: 'Flagged as Needs Specialist',
+        versions: ['trainee', 'helper'],
+        explicitTool: true,
+        bodyTrainee: 'Needs Specialist is for physical damage, mold/pest, mixed specimens, or mysteries desk tools cannot fix. Add a short Comment (or tap a quick tag like + Damaged) so a specialist knows what to check — it marks the object [REV+NOTE] and keeps it out of your regular desk queue.',
+        bodyHelper: 'Needs Specialist is for physical damage, mold/pest, or mixed specimens. Add a short Comment (or tap a quick tag like + Damaged) so a specialist knows what to check.'
+      },
+      tip_rev_err: {
+        label: 'Saved for desk follow-up ([REV+ERR])',
+        title: 'Saved for your desk ([REV+ERR])',
+        versions: ['trainee', 'helper'],
+        bodyTrainee: "Nice work — marking this Reviewed confirms you physically checked the object and saved its shelf, while keeping the open flag safe. When your shift is over, press Stop on the computer — all your phone edits will be in Arbor ready to save, and you can filter for these anytime with Ctrl+G.",
+        bodyHelper: 'Nice work — marking this Reviewed confirms you checked the object and saved its shelf, while leaving the open flag for the main worker at the desk.'
+      }
+    };
+
+    let _coachActive = false;
+    let _coachShowingChooser = false;
+    let _coachShowingTipId = null;
+    let _pendingCoachTip = null;
+    let _lastCoachTipDismissedAt = 0;
+    let _coachInterval = null;
+    let _coachTourInterval = null;
+    let _coachAdvanceTimer = null;
+    let _coachHighlightedEl = null;
+    let _coachScrolledKey = null;
+
+    function _loadCoachState() {
+      const def = { mode: null, stepIdx: 0, finished: false, dismissed: false, tipsSeen: {}, tipsDisabled: false };
+      try {
+        const raw = localStorage.getItem(COACH_STORAGE_KEY);
+        if (!raw) return def;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            mode: parsed.mode || null,
+            stepIdx: Number.isInteger(parsed.stepIdx) ? parsed.stepIdx : 0,
+            finished: Boolean(parsed.finished),
+            dismissed: Boolean(parsed.dismissed),
+            tipsSeen: (parsed.tipsSeen && typeof parsed.tipsSeen === 'object') ? parsed.tipsSeen : {},
+            tipsDisabled: Boolean(parsed.tipsDisabled)
+          };
+        }
+      } catch (e) {}
+      return def;
+    }
+
+    function _saveCoachState(st) {
+      try {
+        localStorage.setItem(COACH_STORAGE_KEY, JSON.stringify(st));
+      } catch (e) {}
+    }
+
+    function _clearCoachHighlight() {
+      if (_coachHighlightedEl) {
+        try { _coachHighlightedEl.classList.remove('coach-target'); } catch (e) {}
+        _coachHighlightedEl = null;
       }
     }
 
-    function goToWalkthroughSlide(idx) {
-      if (idx >= 0 && idx < WALKTHROUGH_SLIDES.length) {
-        _wtIndex = idx;
-        renderWalkthroughSlide();
-      }
+    function _stopCoachTimers() {
+      if (_coachInterval) { clearInterval(_coachInterval); _coachInterval = null; }
+      if (_coachTourInterval) { clearInterval(_coachTourInterval); _coachTourInterval = null; }
+      if (_coachAdvanceTimer) { clearTimeout(_coachAdvanceTimer); _coachAdvanceTimer = null; }
     }
 
-    let _wtSwipeBound = false;
-    function _bindWalkthroughSwipe() {
-      if (_wtSwipeBound) return;
-      const modal = document.getElementById('walkthroughModal');
-      if (!modal) return;
-      _wtSwipeBound = true;
-      let startX = 0;
-      modal.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches.length === 1) startX = e.touches[0].clientX;
-      }, { passive: true });
-      modal.addEventListener('touchend', (e) => {
-        if (!e.changedTouches || !e.changedTouches.length) return;
-        const dx = e.changedTouches[0].clientX - startX;
-        if (dx < -45) nextWalkthroughSlide();
-        else if (dx > 45) prevWalkthroughSlide();
-      }, { passive: true });
-    }
-
-    function openWalkthroughModal(startIdx = 0) {
-      _bindWalkthroughSwipe();
-      _wtIndex = startIdx;
-      renderWalkthroughSlide();
-      const modal = document.getElementById('walkthroughModal');
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeWalkthroughModal(markSeen = true) {
-      const modal = document.getElementById('walkthroughModal');
-      if (modal) modal.classList.add('hidden');
-      if (markSeen) {
-        try { sessionStorage.setItem('arbor_v2_walkthrough_seen', 'true'); } catch(e) {}
-      }
-    }
-
-    function nextWalkthroughSlide() {
-      if (_wtIndex < WALKTHROUGH_SLIDES.length - 1) {
-        _wtIndex += 1;
-        renderWalkthroughSlide();
+    function _positionCoachCard() {
+      const card = document.getElementById('coachCard');
+      if (!card) return;
+      const detailView = document.getElementById('detailView');
+      const onDetail = Boolean(detailView && !detailView.classList.contains('hidden'));
+      card.classList.toggle('coach-on-list', !onDetail);
+      if (onDetail) {
+        card.classList.remove('bottom-4');
+        card.classList.add('bottom-[92px]');
       } else {
-        closeWalkthroughModal(true);
+        card.classList.remove('bottom-[92px]');
+        card.classList.add('bottom-4');
       }
     }
 
-    function prevWalkthroughSlide() {
-      if (_wtIndex > 0) {
-        _wtIndex -= 1;
-        renderWalkthroughSlide();
-      }
+    function _isAnyBlockingModalOpen() {
+      const modals = document.querySelectorAll('.fixed.inset-0.z-50:not(.hidden)');
+      return modals.length > 0;
     }
 
-    const _ARBOR_WT_RAW = '{{ show_walkthrough }}';
-    const ARBOR_SHOW_WALKTHROUGH = (_ARBOR_WT_RAW !== 'false');
-
-    function maybeShowFirstRunWalkthrough() {
-      const forceParam = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('tutorial') === '1');
-      if (forceParam) {
-        openWalkthroughModal(0);
+    function _renderCoachCard() {
+      const card = document.getElementById('coachCard');
+      if (!card) return;
+      const st = _loadCoachState();
+      const steps = PHONE_TUTORIALS[st.mode];
+      if (!_coachActive || !steps || st.stepIdx < 0 || st.stepIdx >= steps.length) {
+        card.classList.add('hidden');
+        _clearCoachHighlight();
+        _stopCoachTimers();
         return;
       }
-      if (!ARBOR_SHOW_WALKTHROUGH) return;
-      try {
-        if (sessionStorage.getItem('arbor_v2_walkthrough_seen') !== 'true') {
-          openWalkthroughModal(0);
+
+      const step = steps[st.stepIdx];
+      _coachShowingChooser = false;
+      _coachShowingTipId = null;
+      card.classList.remove('z-[60]');
+      card.classList.add('z-40');
+      _positionCoachCard();
+
+      const badgeEl = document.getElementById('coachBadge');
+      const titleEl = document.getElementById('coachTitle');
+      const bodyEl = document.getElementById('coachBody');
+      const statusEl = document.getElementById('coachStatus');
+      const chooserRow = document.getElementById('coachChooserActions');
+      const stepRow = document.getElementById('coachStepActions');
+      const tipRow = document.getElementById('coachTipActions');
+      const backBtn = document.getElementById('coachBackBtn');
+      const skipBtn = document.getElementById('coachSkipBtn');
+      const nextBtn = document.getElementById('coachNextBtn');
+
+      if (badgeEl) badgeEl.textContent = step.badge;
+      if (titleEl) titleEl.textContent = step.title;
+      if (bodyEl) bodyEl.textContent = step.body;
+      if (chooserRow) chooserRow.classList.add('hidden');
+      if (tipRow) tipRow.classList.add('hidden');
+      if (stepRow) stepRow.classList.remove('hidden');
+
+      if (backBtn) backBtn.classList.toggle('hidden', st.stepIdx === 0);
+      if (skipBtn) skipBtn.classList.toggle('hidden', Boolean(step.isFinal));
+
+      const hasCheck = (typeof step.check === 'function');
+      if (statusEl) {
+        if (hasCheck && step.waitingText) {
+          statusEl.textContent = step.waitingText;
+          statusEl.classList.remove('hidden');
+        } else {
+          statusEl.classList.add('hidden');
         }
-      } catch(e) {}
+      }
+      if (nextBtn) {
+        if (step.isFinal) {
+          nextBtn.textContent = 'Finish ✓';
+          nextBtn.classList.remove('hidden');
+        } else if (!hasCheck) {
+          nextBtn.textContent = 'Next →';
+          nextBtn.classList.remove('hidden');
+        } else {
+          nextBtn.classList.add('hidden');
+        }
+      }
+
+      card.classList.remove('hidden');
+
+      if (_coachTourInterval) { clearInterval(_coachTourInterval); _coachTourInterval = null; }
+      if (step.id === 't_tour') {
+        _coachTourCycleIdx = 0;
+        _coachTourInterval = setInterval(() => {
+          _coachTourCycleIdx = (_coachTourCycleIdx + 1) % _COACH_TOUR_TABS.length;
+          coachTick();
+        }, 1500);
+      }
+
+      if (typeof step.onEnter === 'function') {
+        try { step.onEnter(); } catch (e) {}
+      }
+
+      coachTick();
+    }
+
+    function coachTick() {
+      if (!_coachActive) return;
+      _positionCoachCard();
+      const st = _loadCoachState();
+      const steps = PHONE_TUTORIALS[st.mode];
+      if (!steps || st.stepIdx < 0 || st.stepIdx >= steps.length) return;
+      const step = steps[st.stepIdx];
+
+      // Resolve target fresh every tick (elements re-render dynamically)
+      let targetEl = null;
+      try {
+        if (typeof step.target === 'function') {
+          targetEl = step.target();
+        } else if (typeof step.target === 'string') {
+          targetEl = document.querySelector(step.target);
+        }
+      } catch (e) {}
+
+      if (targetEl !== _coachHighlightedEl) {
+        _clearCoachHighlight();
+        if (targetEl) {
+          _coachHighlightedEl = targetEl;
+          targetEl.classList.add('coach-target');
+          const scrollKey = `${step.id}:${targetEl.id || ''}`;
+          if (_coachScrolledKey !== scrollKey && step.id !== 't_tour') {
+            _coachScrolledKey = scrollKey;
+            try { targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+          }
+        }
+      }
+
+      if (typeof step.check === 'function' && !_coachAdvanceTimer) {
+        let passed = false;
+        try { passed = Boolean(step.check()); } catch (e) {}
+        if (passed) {
+          const statusEl = document.getElementById('coachStatus');
+          const nextBtn = document.getElementById('coachNextBtn');
+          if (statusEl) {
+            statusEl.textContent = '✓ Done';
+            statusEl.classList.remove('hidden');
+          }
+          if (nextBtn) {
+            nextBtn.textContent = 'Next →';
+            nextBtn.classList.remove('hidden');
+          }
+          _coachAdvanceTimer = setTimeout(() => {
+            _coachAdvanceTimer = null;
+            coachNextStep();
+          }, 600);
+        }
+      }
+    }
+
+    function startPhoneTutorial(mode) {
+      if (!PHONE_TUTORIALS[mode]) return;
+      _stopCoachTimers();
+      _clearCoachHighlight();
+      _coachScrolledKey = null;
+      _coachShowingChooser = false;
+      _coachShowingTipId = null;
+      const st = _loadCoachState();
+      st.mode = mode;
+      st.stepIdx = 0;
+      st.finished = false;
+      st.dismissed = false;
+      _saveCoachState(st);
+      _coachActive = true;
+      _renderCoachCard();
+      _coachInterval = setInterval(coachTick, 500);
+    }
+
+    function coachNextStep() {
+      if (_coachAdvanceTimer) { clearTimeout(_coachAdvanceTimer); _coachAdvanceTimer = null; }
+      const st = _loadCoachState();
+      const steps = PHONE_TUTORIALS[st.mode];
+      if (!steps) return;
+      if (st.stepIdx < steps.length - 1) {
+        st.stepIdx += 1;
+        _saveCoachState(st);
+        _coachScrolledKey = null;
+        _renderCoachCard();
+      } else {
+        st.finished = true;
+        _saveCoachState(st);
+        _coachActive = false;
+        _stopCoachTimers();
+        _clearCoachHighlight();
+        const card = document.getElementById('coachCard');
+        if (card) card.classList.add('hidden');
+      }
+    }
+
+    function coachPrevStep() {
+      if (_coachAdvanceTimer) { clearTimeout(_coachAdvanceTimer); _coachAdvanceTimer = null; }
+      const st = _loadCoachState();
+      if (st.stepIdx > 0) {
+        st.stepIdx -= 1;
+        _saveCoachState(st);
+        _coachScrolledKey = null;
+        _renderCoachCard();
+      }
+    }
+
+    function exitPhoneTutorial() {
+      _stopCoachTimers();
+      _clearCoachHighlight();
+      const st = _loadCoachState();
+      if (_coachActive || _coachShowingChooser) {
+        st.dismissed = true;
+        _saveCoachState(st);
+      }
+      _coachActive = false;
+      _coachShowingChooser = false;
+      _coachShowingTipId = null;
+      const card = document.getElementById('coachCard');
+      if (card) {
+        card.classList.add('hidden');
+        card.classList.remove('z-[60]');
+        card.classList.add('z-40');
+      }
+    }
+
+    function dismissPhoneTutorialChooser() {
+      const st = _loadCoachState();
+      st.dismissed = true;
+      _saveCoachState(st);
+      exitPhoneTutorial();
+    }
+
+    function showPhoneTutorialChooser() {
+      const card = document.getElementById('coachCard');
+      if (!card) return;
+      _stopCoachTimers();
+      _clearCoachHighlight();
+      _coachActive = false;
+      _coachShowingTipId = null;
+      _coachShowingChooser = true;
+      _positionCoachCard();
+      const badgeEl = document.getElementById('coachBadge');
+      const titleEl = document.getElementById('coachTitle');
+      const bodyEl = document.getElementById('coachBody');
+      const statusEl = document.getElementById('coachStatus');
+      const chooserRow = document.getElementById('coachChooserActions');
+      const stepRow = document.getElementById('coachStepActions');
+      const tipRow = document.getElementById('coachTipActions');
+      if (badgeEl) badgeEl.textContent = 'PHONE TUTORIAL';
+      if (titleEl) titleEl.textContent = 'Welcome to Arbor on your phone';
+      if (bodyEl) bodyEl.textContent = 'Pick the quick hands-on guide that fits you best — you can exit anytime.';
+      if (statusEl) statusEl.classList.add('hidden');
+      if (stepRow) stepRow.classList.add('hidden');
+      if (tipRow) tipRow.classList.add('hidden');
+      if (chooserRow) chooserRow.classList.remove('hidden');
+      card.classList.remove('hidden');
+    }
+
+    function _flushPendingCoachTip() {
+      if (!_pendingCoachTip) return;
+      const detailView = document.getElementById('detailView');
+      const onDetail = Boolean(detailView && !detailView.classList.contains('hidden'));
+      const pending = _pendingCoachTip;
+      _pendingCoachTip = null;
+      if (onDetail) {
+        maybeShowTip(pending.tipId, pending.options);
+      }
+    }
+
+    function maybeShowTip(tipId, options = null) {
+      const tip = COACH_TIPS[tipId];
+      if (!tip) return;
+      if (_coachActive || _coachShowingChooser) return;
+      // Anti-overwhelm: never stack a new tip on top of one the user is already reading
+      if (_coachShowingTipId && !tip.explicitTool) return;
+      const allowOverModal = Boolean(options && options.allowOverModal);
+      if (!allowOverModal && _isAnyBlockingModalOpen()) return;
+
+      const st = _loadCoachState();
+      if (st.tipsDisabled) return;
+      if (st.tipsSeen && st.tipsSeen[tipId]) return;
+
+      // Anti-overwhelm: pace passive tips so they don't fire back-to-back within 10s
+      if (!tip.explicitTool && _lastCoachTipDismissedAt && (Date.now() - _lastCoachTipDismissedAt) < 10000) {
+        return;
+      }
+
+      if (_toastHasActiveAction) {
+        _pendingCoachTip = { tipId, options };
+        return;
+      }
+
+      const version = (st.mode === 'helper' || ARBOR_PHONE_TUTORIAL_MODE === 'helper') ? 'helper' : 'trainee';
+      if (!tip.versions.includes(version)) return;
+
+      const bodyText = (version === 'helper' && tip.bodyHelper) ? tip.bodyHelper : tip.bodyTrainee;
+      if (!bodyText) return;
+
+      st.tipsSeen = st.tipsSeen || {};
+      st.tipsSeen[tipId] = true;
+      _saveCoachState(st);
+
+      const card = document.getElementById('coachCard');
+      if (!card) return;
+      _coachShowingTipId = tipId;
+      _positionCoachCard();
+      if (allowOverModal) {
+        card.classList.remove('z-40');
+        card.classList.add('z-[60]');
+      } else {
+        card.classList.remove('z-[60]');
+        card.classList.add('z-40');
+      }
+
+      const badgeEl = document.getElementById('coachBadge');
+      const titleEl = document.getElementById('coachTitle');
+      const bodyEl = document.getElementById('coachBody');
+      const statusEl = document.getElementById('coachStatus');
+      const chooserRow = document.getElementById('coachChooserActions');
+      const stepRow = document.getElementById('coachStepActions');
+      const tipRow = document.getElementById('coachTipActions');
+      if (badgeEl) badgeEl.textContent = 'QUICK TIP · SHOWN ONCE';
+      if (titleEl) titleEl.textContent = tip.title;
+      if (bodyEl) bodyEl.textContent = bodyText;
+      if (statusEl) statusEl.classList.add('hidden');
+      if (chooserRow) chooserRow.classList.add('hidden');
+      if (stepRow) stepRow.classList.add('hidden');
+      if (tipRow) tipRow.classList.remove('hidden');
+      card.classList.remove('hidden');
+    }
+
+    function dismissCoachTip() {
+      if (_coachShowingTipId) {
+        _lastCoachTipDismissedAt = Date.now();
+      }
+      _coachShowingTipId = null;
+      const card = document.getElementById('coachCard');
+      if (card) {
+        card.classList.add('hidden');
+        card.classList.remove('z-[60]');
+        card.classList.add('z-40');
+      }
+    }
+
+    function disableCoachTipsFromCard() {
+      const st = _loadCoachState();
+      st.tipsDisabled = true;
+      _saveCoachState(st);
+      dismissCoachTip();
+      showToast('One-time tips turned off (re-enable in Settings)');
+    }
+
+    function toggleCoachTipsEnabled(enabled) {
+      const st = _loadCoachState();
+      st.tipsDisabled = !Boolean(enabled);
+      _saveCoachState(st);
+      renderSettingsTutorialPanel();
+    }
+
+    function resetCoachTips() {
+      const st = _loadCoachState();
+      st.tipsSeen = {};
+      st.tipsDisabled = false;
+      _saveCoachState(st);
+      renderSettingsTutorialPanel();
+      showToast('✓ One-time tips reset');
+    }
+
+    function renderSettingsTutorialPanel() {
+      const st = _loadCoachState();
+      const cb = document.getElementById('settingEnableCoachTips');
+      if (cb) cb.checked = !st.tipsDisabled;
+      const listEl = document.getElementById('settingsTipsList');
+      if (!listEl) return;
+      const seen = st.tipsSeen || {};
+      listEl.innerHTML = Object.entries(COACH_TIPS).map(([id, t]) => {
+        const isSeen = Boolean(seen[id]);
+        return `<div class="flex items-center justify-between py-0.5"><span class="text-ink">${escapeHtml(t.label)}</span><span class="font-mono text-xs font-bold ${isSeen ? 'text-fern' : 'text-muted'}">${isSeen ? '✓' : '○'}</span></div>`;
+      }).join('');
+    }
+
+    function initPhoneTutorialOnLoad() {
+      const st = _loadCoachState();
+      const forceParam = (typeof window !== 'undefined' && window.location && new URLSearchParams(window.location.search).get('tutorial') === '1');
+      if (forceParam) {
+        showPhoneTutorialChooser();
+        return;
+      }
+      // Resume an in-progress tutorial across phone sleep / page reload
+      if (st.mode && PHONE_TUTORIALS[st.mode] && !st.finished && !st.dismissed) {
+        _coachActive = true;
+        _renderCoachCard();
+        _coachInterval = setInterval(coachTick, 500);
+        return;
+      }
+      if (st.finished || st.dismissed) return;
+      if (ARBOR_PHONE_TUTORIAL_MODE === 'off') return;
+      if (ARBOR_PHONE_TUTORIAL_MODE === 'trainee' || ARBOR_PHONE_TUTORIAL_MODE === 'helper') {
+        startPhoneTutorial(ARBOR_PHONE_TUTORIAL_MODE);
+      } else {
+        showPhoneTutorialChooser();
+      }
     }
 
     // Register Service Worker for offline vault resilience
@@ -5752,10 +6500,10 @@ INDEX_TEMPLATE_V2 = """
 
     // Start App
     if (document.readyState === 'loading') {
-      window.addEventListener('DOMContentLoaded', () => { init(); maybeShowFirstRunWalkthrough(); });
+      window.addEventListener('DOMContentLoaded', () => { init(); initPhoneTutorialOnLoad(); });
     } else {
       init();
-      maybeShowFirstRunWalkthrough();
+      initPhoneTutorialOnLoad();
     }
   </script>
 </body>

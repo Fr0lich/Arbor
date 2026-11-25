@@ -87,68 +87,90 @@ def start_armed_shelf_guide(ui, on_complete=None):
         return False
 
     def _is_mobile_session_running(u) -> bool:
-        srv = getattr(u, "mobile_server", None) or getattr(getattr(u, "mobile_dialog", None), "server", None)
-        if srv is not None and getattr(srv, "running", False):
-            return True
-        md = getattr(u, "mobile_dialog", None) or getattr(u, "_mobile_dialog", None)
-        panel = getattr(md, "panel", md) if md is not None else None
-        if panel is not None and getattr(getattr(panel, "server", None), "running", False):
-            return True
+        candidates = [
+            getattr(u, "_mobile_server_instance", None),
+            getattr(u, "mobile_server", None),
+            getattr(getattr(u, "app", None), "_mobile_server_instance", None),
+        ]
+        for attr in ("_mobile_dialog", "mobile_dialog"):
+            md = getattr(u, attr, None)
+            if md is not None:
+                candidates.append(getattr(md, "server", None))
+                panel = getattr(md, "panel", md)
+                if panel is not None:
+                    candidates.append(getattr(panel, "server", None))
+        for srv in candidates:
+            if srv is not None and (getattr(srv, "is_running", False) or getattr(srv, "running", False)):
+                return True
+        return False
+
+    def _is_mobile_client_connected(u) -> bool:
+        candidates = [
+            getattr(u, "_mobile_server_instance", None),
+            getattr(u, "mobile_server", None),
+            getattr(getattr(u, "app", None), "_mobile_server_instance", None),
+        ]
+        for attr in ("_mobile_dialog", "mobile_dialog"):
+            md = getattr(u, attr, None)
+            if md is not None:
+                candidates.append(getattr(md, "server", None))
+                panel = getattr(md, "panel", md)
+                if panel is not None:
+                    candidates.append(getattr(panel, "server", None))
+        for srv in candidates:
+            if srv is not None:
+                clients = getattr(srv, "clients", None)
+                if clients is not None and len(clients) > 0:
+                    return True
         return False
 
     steps = [
         ActionStep(
             step_id="mg_mobile_intro",
-            title="Take Arbor Into the Hallway (Part 2)",
+            title="Part 2 of 2 — Launch Mobile Companion",
             instruction=(
-                "Mobile Companion brings Arbor onto your phone so you can walk the collection without a laptop:\n"
-                "• Record each object's Physical Location in 1 tap so we can always find it again\n"
-                "• Check real boxes against Registration Data, flag mismatches, and mark Reviewed — using the same badges you just learned on Desktop."
+                "In Part 2, you'll learn how to launch Arbor's Mobile Companion so you can use the exact same "
+                "workflow from Part 1 on your phone while walking the collection — no laptop needed.\n\n"
+                "This guide runs on your normal workspace instead of Practice Mode so your collection is ready to pair. "
+                "Don't worry — nothing is saved to disk until you choose to save, and every mistake can be undone or fixed."
             ),
-            action_hint="Click Next → to open the Phone Connector on your desktop.",
-            details=(
-                "This guide runs directly on your workspace without entering Practice Mode so your real collection stays ready to pair."
-            ),
+            action_hint="Click Next → to open the Mobile Companion window.",
         ),
         ActionStep(
             step_id="mg_mobile_open",
-            title="Open the Phone Connector",
-            instruction="Click the highlighted 'MOBILE' button in the top navigation bar to open the Phone Connector window.",
-            target_id="mobile_nav_btn",
-            action_hint="Click 'MOBILE' in the top bar (or click Skip Step →).",
-            validator=_is_mobile_dialog_open,
-            details=(
-                "No app store download is required — your phone connects through its normal web browser (Safari or Chrome)."
+            title="Open Mobile Companion",
+            instruction=(
+                "Click the highlighted MOBILE button in the top navigation bar to open the Mobile Session Launch window.\n\n"
+                "No app store download is needed — your phone connects through its normal web browser (Safari or Chrome)."
             ),
+            target_id="mobile_nav_btn",
+            action_hint="Click 'MOBILE' in the top bar.",
+            validator=_is_mobile_dialog_open,
         ),
         ActionStep(
             step_id="mg_armed_setup",
-            title="Start the Mobile Session",
+            title="Start Your Mobile Session",
             instruction=(
-                "In the Phone Connector window:\n"
-                "• Keep 'Launch with mobile companion tutorial for first-time users' checked so the Hallway Quick Guide opens automatically on your phone.\n"
-                "• Click '▶ Start Mobile Session' to generate your QR code."
+                "This is the Mobile Session Launch window.\n\n"
+                "Mobile Companion works by starting a small server on this computer, which your phone connects to by scanning a QR code.\n\n"
+                "The default settings are already ready to go! Leave Phone tutorial on Ask on the phone (or pick Trainee), "
+                "then click ▶ Start Mobile Session to generate your QR code."
             ),
-            action_hint="Click '▶ Start Mobile Session' (or click Skip Step →).",
+            target_id="mobile_start_btn",
+            action_hint="Click '▶ Start Mobile Session'.",
             validator=_is_mobile_session_running,
-            details=(
-                "Tip: Keep 'Require 4-Digit PIN' ON whenever using Public (Internet) mode. On private museum Wi-Fi (LAN only), you can toggle PIN off for faster sign-in."
-            ),
         ),
         ActionStep(
             step_id="mg_armed_review",
-            title="Scan the QR Code & Save After Your Shift (Ctrl+S)",
+            title="Scan the QR Code — Continue on Your Phone",
             instruction=(
-                "1. Scan the QR code with your phone's camera — the Hallway Quick Guide will open automatically on your phone.\n"
-                "2. Every edit you make on your phone syncs straight into Arbor on this computer (and queues automatically if you walk into an offline basement vault).\n"
-                "3. When your hallway shift ends, press Ctrl+S (or click '💾 Save Workbook Now') on this computer to save everything to disk."
+                "Point your phone's camera at the QR code. The tutorial continues on your phone and ends with you "
+                "working on real objects.\n\n"
+                "You can leave the computer now. When your shift is over, come back and press Stop — "
+                "Arbor will confirm your phone edits are synced and remind you to save."
             ),
-            action_hint="Scan the QR code, then click Finish ✓ to close this desktop guide.",
-            keycaps=["Ctrl", "S"],
-            details=(
-                "Excel impact: Pressing Ctrl+S writes all phone-synced edits from memory to your Excel workbook and creates a safety backup. "
-                "You can replay the Hallway Quick Guide anytime on your phone from Settings or '?'."
-            ),
+            action_hint="Scan the QR code on your phone (or click Finish ✓).",
+            validator=_is_mobile_client_connected,
         ),
     ]
 
@@ -160,10 +182,10 @@ def start_armed_shelf_guide(ui, on_complete=None):
     return TutorialRunner(
         ui,
         steps,
-        tutorial_name="Mobile Companion Hallway Guide",
+        tutorial_name="Part 2: Mobile Companion",
         on_complete=_finish_armed,
         use_sandbox=False,
-        badge_text="⚡ PHONE QUICK GUIDE",
+        badge_text="⚡ PART 2 · PHONE GUIDE",
     )
 
 

@@ -420,6 +420,60 @@ class TestFilterManager:
         )
         assert res_needs_review == ["4"]
 
+        # 3. Per-code ICEDIG filters: ICEDIG_Missing vs ICEDIG_Indecipherable
+        df_reg_icedig.at["3", "Collection Date"] = "unknown:indecipherable"
+        reg_dict_icedig = df_reg_icedig.to_dict(orient="index")
+
+        res_missing = fm.apply_filter(
+            df_reg=df_reg_icedig,
+            reg_dict=reg_dict_icedig,
+            obs_dict=obs_dict,
+            history_set=history_set,
+            groups={"Unknown": [("ICEDIG_Missing", "HAS")]},
+            global_mode="AND",
+            not_reviewed_only=False,
+            location_filters=("", "", ""),
+            problem_columns=prob_cols,
+            problem_to_field=prob_to_field,
+            unknown_to_field=unk_fields,
+            image_mode="folder"
+        )
+        assert res_missing == ["2"]
+
+        res_indec = fm.apply_filter(
+            df_reg=df_reg_icedig,
+            reg_dict=reg_dict_icedig,
+            obs_dict=obs_dict,
+            history_set=history_set,
+            groups={"Unknown": [("ICEDIG_Indecipherable", "HAS")]},
+            global_mode="AND",
+            not_reviewed_only=False,
+            location_filters=("", "", ""),
+            problem_columns=prob_cols,
+            problem_to_field=prob_to_field,
+            unknown_to_field=unk_fields,
+            image_mode="folder"
+        )
+        assert res_indec == ["3"]
+
+        # NOT state excludes objects with unknown:missing
+        res_not_missing = fm.apply_filter(
+            df_reg=df_reg_icedig,
+            reg_dict=reg_dict_icedig,
+            obs_dict=obs_dict,
+            history_set=history_set,
+            groups={"Unknown": [("ICEDIG_Missing", "NOT")]},
+            global_mode="AND",
+            not_reviewed_only=False,
+            location_filters=("", "", ""),
+            problem_columns=prob_cols,
+            problem_to_field=prob_to_field,
+            unknown_to_field=unk_fields,
+            image_mode="folder"
+        )
+        assert "2" not in res_not_missing and "3" in res_not_missing
+        assert res_needs_review == ["4"]
+
         # 3. Has_ICEDIG_Code should ONLY match precision ICEDIG code ('unknown:missing' on obj 2)
         res_has_icedig = fm.apply_filter(
             df_reg=df_reg_icedig,

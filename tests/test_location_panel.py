@@ -272,12 +272,85 @@ def test_hide_images_docks_location_at_bottom_and_collapses_middle_frame(loc_tog
     assert ui.loc_frame_horizontal.pack_info()["in"] == ui._middle_loc_slot
     assert ui.object_context_bar.pack_info()["in"] == ui.middle_frame
 
-    # 4. Hide images + Location on Left -> middle_frame collapsed AND loc_frame_horizontal unpacked
+    # 4. Offline mode keeps middle_frame open with image_panel (Summary Hub) above Location
+    ui.image_panel.image_mode = "offline"
+    ui.location_in_center_var.set(True)
+    ui.show_images_var.set(True)
+    ui._sync_middle_panes()
+    assert str(ui.middle_frame) in ui.panes.panes()
+    assert ui.middle_panes.panes()[0] == str(ui.image_panel)
+    assert ui.middle_panes.panes()[1] == str(ui._middle_loc_slot)
+    assert ui.loc_frame_horizontal.pack_info()["in"] == ui._middle_loc_slot
+
+    # 5. Hide images (F8) + Location on Left -> middle_frame collapsed AND loc_frame_horizontal unpacked
     ui.location_in_center_var.set(False)
     ui.show_images_var.set(False)
     ui._sync_middle_panes()
     assert str(ui.middle_frame) not in ui.panes.panes()
     assert ui.loc_frame_horizontal.winfo_manager() == ""
+
+
+def test_real_main_window_storage_location_always_below_images():
+    """Regression: on fresh startup and across online/folder/missing/offline modes,
+    Storage Location must sit strictly below the image pane, and F8 must dock it
+    below panes and above the status bar without overlapping other panels."""
+    import config
+    from models import AppState
+    from ui.main_window import ObjectProgramUI
+
+    root = tk.Tk()
+    try:
+        root.geometry("1280x800+50+50")
+        app = AppState()
+        app.config = next(iter(config.DATABASE_CONFIGS.values()))
+        ui = ObjectProgramUI(root, app)
+        ui.apply_config()
+        root.update_idletasks()
+        root.update()
+
+        # 1. Default startup (no image mode yet): image_panel at index 0, Location below it
+        assert ui.location_in_center_var.get() is True
+        assert ui.middle_panes.panes()[0] == str(ui.right_frame)
+        assert ui.middle_panes.panes()[1] == str(ui._middle_loc_slot)
+        assert ui.right_frame.winfo_rooty() < ui.loc_frame_horizontal.winfo_rooty()
+
+        # 2. Online, Folder, and Offline modes all keep Location strictly below image_panel
+        for mode in ("online", "folder", "offline"):
+            ui.image_panel.image_mode = mode
+            ui._sync_middle_panes()
+            root.update_idletasks()
+            root.update()
+            assert str(ui.middle_frame) in ui.panes.panes(), f"middle_frame collapsed in {mode} mode"
+            assert ui.middle_panes.panes()[0] == str(ui.right_frame), f"image_panel not on top in {mode} mode"
+            assert ui.middle_panes.panes()[1] == str(ui._middle_loc_slot), f"location not below images in {mode} mode"
+            assert ui.right_frame.winfo_rooty() < ui.loc_frame_horizontal.winfo_rooty(), f"y-order inverted in {mode} mode"
+
+        # 3. Pressing F8 with Location in default bottom position hides images and docks Location
+        #    cleanly below panes and above the status bar with non-collapsed height
+        ui.show_images_var.set(False)
+        ui._sync_middle_panes()
+        root.update_idletasks()
+        root.update()
+        assert str(ui.middle_frame) not in ui.panes.panes()
+        assert ui.loc_frame_horizontal.winfo_ismapped() == 1
+        assert ui.loc_frame_horizontal.winfo_height() > 20
+        panes_bottom = ui.panes.winfo_rooty() + ui.panes.winfo_height()
+        loc_top = ui.loc_frame_horizontal.winfo_rooty()
+        status_top = ui._status_bar_frame.winfo_rooty()
+        assert panes_bottom <= loc_top + 2, f"Location ({loc_top}) overlaps panes bottom ({panes_bottom})"
+        assert loc_top < status_top, f"Location ({loc_top}) should sit above status bar ({status_top})"
+
+        # 4. Pressing F8 with Location in Left column hides the entire middle column and unpacks horizontal Location
+        ui.location_in_center_var.set(False)
+        ui.toggle_location_panel()
+        root.update_idletasks()
+        assert str(ui.middle_frame) not in ui.panes.panes()
+        assert ui.loc_frame_horizontal.winfo_manager() == ""
+    finally:
+        try:
+            root.destroy()
+        except Exception:
+            pass
 
 
 def test_summary_hub_dark_mode_and_empty_source_actions(loc_toggle_tk_root):

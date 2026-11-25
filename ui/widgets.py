@@ -978,7 +978,7 @@ class TreeviewListboxWrapper(ttk.Frame):
             cb_lbl = self.item_data[oid].get("cb_label")
             is_dark = self.main_window.dark_mode_active if hasattr(self.main_window, "dark_mode_active") else False
             sec_text_color = "#6c757d" if not is_dark else "#a6adc8"
-            cb_color = "#28a745" if reviewed else sec_text_color
+            cb_color = ("#85e89d" if is_dark else "#1f5c2e") if reviewed else sec_text_color
             if cb_lbl and cb_lbl.winfo_exists():
                 cb_lbl.configure(text=rev_char, fg=cb_color)
 
@@ -995,9 +995,17 @@ class TreeviewListboxWrapper(ttk.Frame):
 
         candidates = []
 
+        is_specialist_note = bool(obs_row and obs_row.get("Other_problem", False))
+        actionable_cats = active_cats - {"notes"}
+        has_actionable_problem = bool(actionable_cats) or (bool(has_problem) and not is_specialist_note)
+
         if visible_cats.get("reviewed", True):
-            if reviewed and has_problem:
+            if reviewed and has_actionable_problem:
                 candidates.append((100, "#F57C00", "REV+ERR", "#c46200" if is_dark else "#F57C00", "#ffffff"))
+            elif reviewed and is_specialist_note:
+                note_bg = "#16322f" if is_dark else "#e3f2ef"
+                note_fg = "#7dd3c8" if is_dark else "#1b5e55"
+                candidates.append((95, "#2a7b72", "REV+NOTE", note_bg, note_fg))
             elif reviewed:
                 rev_bg = "#162d1a" if is_dark else "#f2f9f3"
                 rev_fg = "#85e89d" if is_dark else "#3a7d44"
@@ -1028,7 +1036,7 @@ class TreeviewListboxWrapper(ttk.Frame):
             candidates.append((50, "#4a7b9d", "IMG", img_bg, img_fg))
 
         if visible_cats.get("conflicts", True):
-            if has_problem and problems_have_history:
+            if has_actionable_problem and problems_have_history:
                 his_bg = "#1e293b" if is_dark else "#e9f0f5"
                 his_fg = "#93c5fd" if is_dark else "#4a7b9d"
                 candidates.append((45, "#4a7b9d", "ERR+HIS", his_bg, his_fg))
@@ -1037,10 +1045,15 @@ class TreeviewListboxWrapper(ttk.Frame):
                 cfct_fg = "#93c5fd" if is_dark else "#4a7b9d"
                 candidates.append((40, "#4a7b9d", "CFCT", cfct_bg, cfct_fg))
 
-        if visible_cats.get("general_err", True) and has_problem:
+        if visible_cats.get("general_err", True) and has_actionable_problem:
             err_bg = "#3b1c1e" if is_dark else "#fdf2f2"
             err_fg = "#f28b82" if is_dark else "#c93a40"
             candidates.append((30, "#c93a40", "ERR", err_bg, err_fg))
+
+        if is_specialist_note and not has_actionable_problem and not reviewed:
+            note_bg = "#232738" if is_dark else "#eceef6"
+            note_fg = "#b4bce0" if is_dark else "#434a6b"
+            candidates.append((25, "#5c648a", "NOTE", note_bg, note_fg))
 
         if candidates:
             candidates.sort(key=lambda item: item[0], reverse=True)
@@ -1527,7 +1540,7 @@ class TreeviewListboxWrapper(ttk.Frame):
         data["accent_color_normal"] = accent_color
 
         rev_char = "☑" if reviewed else "☐"
-        cb_color = "#28a745" if reviewed else text_secondary
+        cb_color = ("#85e89d" if is_dark else "#1f5c2e") if reviewed else text_secondary
         widgets["cb_lbl"].configure(text=rev_char, fg=cb_color)
         # Clear previous bindings to avoid buildup if recycled
         widgets["cb_lbl"].unbind("<Button-1>")
@@ -1686,7 +1699,7 @@ class TreeviewListboxWrapper(ttk.Frame):
             if oid is None or card_body is None:
                 return
             is_dark = self.main_window.dark_mode_active if hasattr(self.main_window, "dark_mode_active") else False
-            hover_bg = "#30354f" if is_dark else "#e9ece5"
+            hover_bg = "#2c352e" if is_dark else "#e9ece5"
             if oid not in self.selected_iids:
                 self._set_bg_recursive(card_body, hover_bg)
 
@@ -1695,7 +1708,7 @@ class TreeviewListboxWrapper(ttk.Frame):
             if oid is None or card_body is None:
                 return
             is_dark = self.main_window.dark_mode_active if hasattr(self.main_window, "dark_mode_active") else False
-            card_bg = "#24273a" if is_dark else "#f2f5f1"
+            card_bg = "#212622" if is_dark else "#f2f5f1"
             if oid not in self.selected_iids:
                 self._set_bg_recursive(card_body, card_bg)
 
@@ -1756,6 +1769,49 @@ class TreeviewListboxWrapper(ttk.Frame):
 
         _attach_card_context(widget)
 
+    def refresh_theme(self):
+        """Re-theme the virtual card canvas and rebuild active/pooled cards for Light/Dark transitions."""
+        is_dark = self.main_window.dark_mode_active if hasattr(self.main_window, "dark_mode_active") else False
+        canvas_bg = "#181c19" if is_dark else "#fbfaf8"
+        if hasattr(self, "canvas") and self.canvas.winfo_exists():
+            try:
+                self.canvas.configure(bg=canvas_bg)
+            except Exception:
+                pass
+        # Destroy all active and pooled virtual cards so they rebuild cleanly with current theme tokens
+        for win_id, widget_dict in list(getattr(self, "_active_card_windows", {}).values()):
+            try:
+                self.canvas.delete(win_id)
+            except Exception:
+                pass
+            try:
+                if widget_dict.get("outer_frame") and widget_dict["outer_frame"].winfo_exists():
+                    widget_dict["outer_frame"].destroy()
+            except Exception:
+                pass
+        if hasattr(self, "_active_card_windows"):
+            self._active_card_windows.clear()
+        for win_id, widget_dict in list(getattr(self, "_card_pool", [])):
+            try:
+                self.canvas.delete(win_id)
+            except Exception:
+                pass
+            try:
+                if widget_dict.get("outer_frame") and widget_dict["outer_frame"].winfo_exists():
+                    widget_dict["outer_frame"].destroy()
+            except Exception:
+                pass
+        if hasattr(self, "_card_pool"):
+            self._card_pool.clear()
+        for oid in list(getattr(self, "item_data", {}).keys()):
+            for key in ("card_frame", "accent_strip", "card_body", "cb_label", "tax_label", "status_badge", "ukn_badge", "img_badge", "loaned_badge", "unval_badge", "id_label", "globe_label", "row1"):
+                self.item_data[oid].pop(key, None)
+        if hasattr(self, "_last_highlighted_oids"):
+            self._last_highlighted_oids = set()
+        if getattr(self, "active_view", None) == "detailed":
+            self._update_visible_cards()
+            self.redraw_cards_highlights()
+
     def _apply_tags_to_card(self, oid):
         if oid in self.item_data:
             tags = self.item_data[oid].get("tags", [])
@@ -1770,7 +1826,33 @@ class TreeviewListboxWrapper(ttk.Frame):
                     break
 
             is_dark = self.main_window.dark_mode_active if hasattr(self.main_window, "dark_mode_active") else False
-            default_color = "#000000" if not is_dark else "#cad3f5"
+            # Normalize semantic status colors for WCAG AA contrast on light (#f2f5f1) vs dark (#212622) cards
+            _light_map = {
+                "#0bd45b": "#1f5c2e",
+                "#b0f3a9": "#1f5c2e",
+                "#f0ad4e": "#8a5200",
+                "#f6c467": "#8a5200",
+                "#ffb366": "#8a5200",
+                "#d9534f": "#a8242a",
+                "#f28b82": "#a8242a",
+                "#bb6bd9": "#6b2d8a",
+                "#d3a4f7": "#6b2d8a",
+            }
+            _dark_map = {
+                "#1f5c2e": "#b0f3a9",
+                "#0bd45b": "#b0f3a9",
+                "#8a5200": "#f6c467",
+                "#f0ad4e": "#f6c467",
+                "#a8242a": "#f28b82",
+                "#d9534f": "#f28b82",
+                "#6b2d8a": "#d3a4f7",
+                "#bb6bd9": "#d3a4f7",
+            }
+            if fg_color:
+                lc = fg_color.lower()
+                fg_color = (_dark_map if is_dark else _light_map).get(lc, fg_color)
+
+            default_color = "#2c302e" if not is_dark else "#e8ebe9"
             target_color = fg_color if fg_color else default_color
 
             tax_lbl = self.item_data[oid].get("tax_label")
@@ -2478,4 +2560,109 @@ class SchemaFormBuilder:
                 widgets[field_name] = field_widget
 
         return widgets
+
+
+class FlowWrapFrame(tk.Frame):
+    """
+    Responsive horizontal flow container that automatically wraps child widgets
+    (such as quick-tag pills) onto multiple rows whenever the container width changes.
+    Supports any number and length of child widgets cleanly without horizontal clipping.
+    """
+
+    def __init__(self, parent, bg=None, hgap=4, vgap=3, **kwargs):
+        if bg is not None:
+            kwargs["bg"] = bg
+        super().__init__(parent, **kwargs)
+        self._bg = bg
+        self._hgap = hgap
+        self._vgap = vgap
+        self._items = []
+        self._row_frames = []
+        self._last_width = -1
+        self._relayout_job = None
+        self.bind("<Configure>", self._on_configure)
+
+    def add_item(self, widget):
+        """Register a child widget (whose master is this FlowWrapFrame) to be flow-wrapped."""
+        self._items.append(widget)
+        self._schedule_relayout(force=True)
+
+    def set_bg(self, bg_color):
+        """Update background color of the flow container and all active row wrappers."""
+        self._bg = bg_color
+        try:
+            self.configure(bg=bg_color)
+        except Exception:
+            pass
+        for rf in self._row_frames:
+            try:
+                if rf.winfo_exists():
+                    rf.configure(bg=bg_color)
+            except Exception:
+                pass
+
+    def _on_configure(self, event=None):
+        w = event.width if event is not None else self.winfo_width()
+        if w > 1 and abs(w - self._last_width) >= 4:
+            self._schedule_relayout(width=w)
+
+    def _schedule_relayout(self, width=None, force=False):
+        if self._relayout_job is not None:
+            try:
+                self.after_cancel(self._relayout_job)
+            except Exception:
+                pass
+        self._relayout_job = self.after_idle(lambda w=width, f=force: self._relayout(w, f))
+
+    def _relayout(self, width=None, force=False):
+        self._relayout_job = None
+        if not self.winfo_exists():
+            return
+        avail = width if (width and width > 1) else self.winfo_width()
+        if avail <= 1:
+            from config import sc
+            avail = sc(220)
+        if not force and abs(avail - self._last_width) < 4:
+            return
+        self._last_width = avail
+
+        # Detach items from old row frames before destroying row frames
+        for item in self._items:
+            try:
+                if item.winfo_exists():
+                    item.pack_forget()
+            except Exception:
+                pass
+        for rf in self._row_frames:
+            try:
+                if rf.winfo_exists():
+                    rf.destroy()
+            except Exception:
+                pass
+        self._row_frames.clear()
+
+        if not self._items:
+            return
+
+        bg = self._bg if self._bg is not None else self.cget("bg")
+        current_row = tk.Frame(self, bg=bg)
+        current_row.pack(fill="x", anchor="w", pady=(0, self._vgap))
+        self._row_frames.append(current_row)
+        used_w = 0
+
+        for item in self._items:
+            try:
+                if not item.winfo_exists():
+                    continue
+                item_w = item.winfo_reqwidth()
+            except Exception:
+                continue
+            if used_w > 0 and (used_w + item_w) > avail:
+                current_row = tk.Frame(self, bg=bg)
+                current_row.pack(fill="x", anchor="w", pady=(0, self._vgap))
+                self._row_frames.append(current_row)
+                used_w = 0
+            item.pack(in_=current_row, side="left", padx=(0, self._hgap))
+            used_w += item_w + self._hgap
+
 

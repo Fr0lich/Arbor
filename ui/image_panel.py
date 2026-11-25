@@ -496,18 +496,14 @@ class ImagePanel(ttk.Frame):
                 pass
 
         # Standalone fallback when ImagePanel runs without ObjectProgramUI
-        if self.image_mode == "offline":
-            if self.parent and hasattr(self.parent, "panes") and str(self) in self.parent.panes():
-                self.parent.forget(self)
-        else:
-            if self.parent and hasattr(self.parent, "panes") and str(self) not in self.parent.panes():
+        if self.parent and hasattr(self.parent, "panes") and str(self) not in self.parent.panes():
+            try:
+                self.parent.insert(0, self, weight=3)
+            except Exception:
                 try:
-                    self.parent.insert(0, self, weight=3)
+                    self.parent.add(self, weight=3)
                 except Exception:
-                    try:
-                        self.parent.add(self, weight=3)
-                    except Exception:
-                        pass
+                    pass
 
     def toggle_image_tools(self):
         if not hasattr(self, "image_toolbar") or not self.image_toolbar.winfo_exists():
@@ -1868,7 +1864,7 @@ class ImagePanel(ttk.Frame):
         clean = re.sub(r"[_ ]?[Pp]roblem$", "", str(col_name or "")).replace("_", " ").strip()
         clean = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", clean)
         if not clean or clean.lower() == "other":
-            return "Other Issue"
+            return "Needs Specialist"
         return f"{clean} Issue"
 
     def _hide_photo_pane_from_hub(self):

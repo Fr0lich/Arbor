@@ -294,18 +294,38 @@ class FilterManager:
                 # Matches objects where a tracked field has been assigned any ICEDIG precision code
                 from config import ICEDIG_UNKNOWN_CODES as _ICEDIG
                 def check_has_icedig(oid, obs, reg):
-                    if unknown_to_field:
-                        fields_to_check = unknown_to_field.values() if isinstance(unknown_to_field, dict) else unknown_to_field
-                        for field in fields_to_check:
-                            raw_val = reg.get(field, "")
-                            if raw_val is not None and not (isinstance(raw_val, float) and pd.isna(raw_val)):
-                                s = str(raw_val).strip().lower()
-                                if s in _ICEDIG:
-                                    return True
+                    fields_to_check = (
+                        list(unknown_to_field.values()) if isinstance(unknown_to_field, dict)
+                        else list(unknown_to_field) if unknown_to_field
+                        else list(reg.keys())
+                    )
+                    for field in fields_to_check:
+                        raw_val = reg.get(field, "")
+                        if raw_val is not None and not (isinstance(raw_val, float) and pd.isna(raw_val)):
+                            s = str(raw_val).strip().lower()
+                            if s in _ICEDIG:
+                                return True
                     return False
                 if is_not:
                     return lambda oid, obs, reg: not check_has_icedig(oid, obs, reg)
                 return check_has_icedig
+            elif p in ("ICEDIG_Missing", "ICEDIG_Indecipherable", "ICEDIG_Undigitized", "ICEDIG_Withheld"):
+                _code_map = {
+                    "ICEDIG_Missing": "unknown:missing",
+                    "ICEDIG_Indecipherable": "unknown:indecipherable",
+                    "ICEDIG_Undigitized": "unknown:undigitized",
+                    "ICEDIG_Withheld": "withheld",
+                }
+                _target_code = _code_map[p]
+                def check_specific_icedig(oid, obs, reg, _tc=_target_code):
+                    for raw_val in reg.values():
+                        if raw_val is not None and not (isinstance(raw_val, float) and pd.isna(raw_val)):
+                            if str(raw_val).strip().lower() == _tc:
+                                return True
+                    return False
+                if is_not:
+                    return lambda oid, obs, reg, _fn=check_specific_icedig: not _fn(oid, obs, reg)
+                return check_specific_icedig
             elif p == "Has_History":
                 if is_not:
                     return lambda oid, obs, reg: not fast_has_history(oid)

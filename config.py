@@ -24,22 +24,51 @@ from datetime import datetime
 # =====================
 # Legacy ambiguous tokens (still valid but imprecise)
 LEGACY_UNKNOWN_TOKENS: frozenset = frozenset({"unknown", "ukjent", "?", "-"})
-# Precision ICEDIG D4.1 codes
-ICEDIG_UNKNOWN_CODES: frozenset = frozenset({
-    "unknown:missing",
-    "unknown:indecipherable",
-    "unknown:undigitized",
-    "withheld",
-})
+# Single source of truth for precision ICEDIG D4.1 codes (consumed by Desktop & Mobile Companion)
+ICEDIG_CODES: list = [
+    {
+        "code": "unknown:missing",
+        "description": "blank on original label",
+        "shortcut": "Ctrl+Shift+M",
+        "shorthand": "?m",
+    },
+    {
+        "code": "unknown:indecipherable",
+        "description": "illegible on label",
+        "shortcut": "Ctrl+Shift+I",
+        "shorthand": "?i",
+    },
+    {
+        "code": "unknown:undigitized",
+        "description": "skipped during digitisation",
+        "shortcut": "Ctrl+Shift+U",
+        "shorthand": "?u",
+    },
+    {
+        "code": "withheld",
+        "description": "known but intentionally hidden",
+        "shortcut": "Ctrl+Shift+W",
+        "shorthand": "?w",
+    },
+]
+# Precision ICEDIG D4.1 codes (derived from ICEDIG_CODES)
+ICEDIG_UNKNOWN_CODES: frozenset = frozenset(item["code"] for item in ICEDIG_CODES)
 # Combined set: all tokens that mean "this field is intentionally unknown"
 ALL_UNKNOWN_TOKENS: frozenset = LEGACY_UNKNOWN_TOKENS | ICEDIG_UNKNOWN_CODES
-# Human-readable labels for each ICEDIG code (used in context menus and tooltips)
+# Human-readable labels for each ICEDIG code (used in context menus, tooltips, and Mobile Companion)
 ICEDIG_CODE_LABELS: dict = {
-    "unknown:missing":        "unknown:missing  (blank on original label)",
-    "unknown:indecipherable": "unknown:indecipherable  (illegible on label)",
-    "unknown:undigitized":    "unknown:undigitized  (skipped during digitisation)",
-    "withheld":               "withheld  (known but intentionally hidden)",
+    item["code"]: f"{item['code']}  ({item['description']})"
+    for item in ICEDIG_CODES
 }
+
+# Single source of truth for strictly non-ICEDIG physical/specialist quick-tag pills
+# (consumed dynamically by both Desktop Comment bar and Mobile Companion V2)
+SPECIALIST_QUICK_TAGS: list = [
+    {"label": "+ Damaged", "text": "Damaged"},
+    {"label": "+ Mold / Pest", "text": "Mold / Pest"},
+    {"label": "+ Mixed Specimen", "text": "Mixed specimen"},
+    {"label": "+ Needs Specialist ID", "text": "Needs specialist ID"},
+]
 
 def get_system_theme():
     """Detect platform and return system theme name."""

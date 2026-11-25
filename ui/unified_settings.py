@@ -273,10 +273,14 @@ class UnifiedSettingsWindow:
         self.var_archive_limit = tk.StringVar(value=str(p.get("autosave_archive_limit", 10)))
         self.var_mobile_autosave_on_stop = tk.BooleanVar(value=bool(p.get("mobile_autosave_on_stop", False)))
         
-        auto_adv = _get_val("auto_advance_var", p.get("auto_advance_on_review", True))
+        auto_adv = _get_val("auto_advance_var", p.get("auto_advance_on_review", False))
         auto_adv_hist = _get_val("auto_advance_history_var", p.get("auto_advance_history", False))
+        auto_clear_fill = _get_val("auto_clear_problem_on_fill_var", p.get("auto_clear_problem_on_fill", False))
+        show_clear_toasts = _get_val("show_auto_clear_toasts_var", p.get("show_auto_clear_toasts", True))
         self.var_auto_advance = tk.BooleanVar(value=bool(auto_adv))
         self.var_auto_advance_history = tk.BooleanVar(value=bool(auto_adv_hist))
+        self.var_auto_clear_on_fill = tk.BooleanVar(value=bool(auto_clear_fill))
+        self.var_show_auto_clear_toasts = tk.BooleanVar(value=bool(show_clear_toasts))
 
         # Appearance & Visuals
         dark_active = _get_val("dark_mode_active", p.get("dark_mode", False))
@@ -615,6 +619,23 @@ class UnifiedSettingsWindow:
         create_toggle_row(card3, "Auto-advance to next object when marked Reviewed", self.var_auto_advance, ui_ref=self.app or self)
         create_toggle_row(card3, "Auto-advance when resolving with Historical Suggestion", self.var_auto_advance_history,
                           ui_ref=self.app or self, info_text=SETTING_INFO_TEXTS["auto_advance_history"])
+        create_toggle_row(
+            card3,
+            "Auto-clear problem flag when filling a blank field",
+            self.var_auto_clear_on_fill,
+            ui_ref=self.app or self,
+            info_text=(
+                "OFF by default (safer): typing into a blank field leaves its problem checkbox checked until you manually uncheck it. "
+                "Dedicated tools (Historical Resolver, Batch Problem Resolver, GBIF, ICEDIG) always auto-clear resolved flags."
+            ),
+        )
+        create_toggle_row(
+            card3,
+            "Show brief notification when Arbor auto-clears a problem flag",
+            self.var_show_auto_clear_toasts,
+            ui_ref=self.app or self,
+            info_text="Displays a short, non-blocking toast whenever a tool or blank-fill rule automatically unchecks a problem flag.",
+        )
 
     # ── TAB 2: APPEARANCE ────────────────────────────────────────────────────
     def _build_tab_appearance(self):
@@ -1043,6 +1064,10 @@ class UnifiedSettingsWindow:
                 self.app.auto_advance_var.set(self.var_auto_advance.get())
             if hasattr(self.app, "auto_advance_history_var"):
                 self.app.auto_advance_history_var.set(self.var_auto_advance_history.get())
+            if hasattr(self.app, "auto_clear_problem_on_fill_var"):
+                self.app.auto_clear_problem_on_fill_var.set(self.var_auto_clear_on_fill.get())
+            if hasattr(self.app, "show_auto_clear_toasts_var"):
+                self.app.show_auto_clear_toasts_var.set(self.var_show_auto_clear_toasts.get())
             if hasattr(self.app, "auto_resolve_conflicts_var"):
                 self.app.auto_resolve_conflicts_var.set(self.var_auto_resolve.get())
             if hasattr(self.app, "strict_input_validation_var"):
@@ -2023,6 +2048,8 @@ class UnifiedSettingsWindow:
         p["log_verbosity"] = self.var_log_verbosity.get()
         p["auto_advance_on_review"] = self.var_auto_advance.get()
         p["auto_advance_history"] = self.var_auto_advance_history.get()
+        p["auto_clear_problem_on_fill"] = self.var_auto_clear_on_fill.get()
+        p["show_auto_clear_toasts"] = self.var_show_auto_clear_toasts.get()
         try:
             p["autosave_archive_limit"] = int(self.var_archive_limit.get())
         except ValueError:

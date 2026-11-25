@@ -15,7 +15,8 @@ from .sandbox_manager import SandboxManager
 class ActionStep:
     def __init__(self, step_id, title, instruction, target_id=None,
                  action_hint=None, on_enter=None, validator=None, keycaps=None,
-                 details=None, details_label=None, answer=None, action_buttons=None):
+                 details=None, details_label=None, answer=None, action_buttons=None,
+                 hud_avoid_photo=False):
         self.step_id = step_id
         self.title = title
         self.instruction = instruction
@@ -28,6 +29,7 @@ class ActionStep:
         self.details_label = details_label
         self.answer = answer
         self.action_buttons = list(action_buttons) if action_buttons else []
+        self.hud_avoid_photo = bool(hud_avoid_photo)
 
 
 class TutorialHighlight:
@@ -36,12 +38,14 @@ class TutorialHighlight:
         self.target_widget = target_widget
         self.bbox_fn = bbox_fn
         self.win = tk.Toplevel(parent)
+        self.win.withdraw()
         owner = parent
         try:
             if target_widget is not None and target_widget.winfo_exists():
                 owner = target_widget.winfo_toplevel() or parent
         except Exception:
             pass
+        self._owner = owner
         if owner:
             try:
                 self.win.transient(owner)
@@ -61,10 +65,49 @@ class TutorialHighlight:
 
         self._anim_idx = 0
         self._last_geom = None
-        self.win.deiconify()
-        self.win.lift()
+        self._is_topmost = False
+        self._owner_focus_bind_id = None
+        if owner is not None:
+            try:
+                self._owner_focus_bind_id = owner.bind(
+                    "<FocusIn>",
+                    lambda e: self._on_owner_focus_in(e),
+                    add="+",
+                )
+            except Exception:
+                self._owner_focus_bind_id = None
         self.update_position()
         self.animate()
+
+    def _on_owner_focus_in(self, event=None):
+        """Re-stack highlight once when the owner window regains focus (no periodic flicker)."""
+        try:
+            if event is not None and event.widget is not self._owner:
+                return
+            self._lift_above_owner()
+        except Exception:
+            pass
+
+    def _sync_topmost(self, force_lift=False):
+        """Keep the overrideredirect highlight visible above Arbor on Win32 without floating over other OS apps."""
+        try:
+            if not self.win.winfo_exists():
+                return
+            app_active = (self.win.focus_displayof() is not None)
+            if app_active != getattr(self, "_is_topmost", False):
+                self._is_topmost = app_active
+                try:
+                    self.win.attributes("-topmost", app_active)
+                except Exception:
+                    pass
+            if app_active and (force_lift or self.win.winfo_ismapped()):
+                self.win.lift()
+        except Exception:
+            pass
+
+    def _lift_above_owner(self):
+        """Keep the overrideredirect highlight above its owner window without covering other apps."""
+        self._sync_topmost(force_lift=True)
 
     def update_position(self):
         try:
@@ -89,17 +132,33 @@ class TutorialHighlight:
                 w = self.target_widget.winfo_width()
                 h = self.target_widget.winfo_height()
 
+            if w <= 1 or h <= 1:
+                if self.win.winfo_exists():
+                    self.win.withdraw()
+                self._last_geom = None
+                return
+
+            pad = 4
+            target_x, target_y = x - pad, y - pad
             geom_key = (x, y, w, h)
-            if geom_key == self._last_geom:
+            if (
+                geom_key == self._last_geom
+                and self.win.winfo_exists()
+                and self.win.winfo_ismapped()
+                and self.win.winfo_rootx() == target_x
+                and self.win.winfo_rooty() == target_y
+            ):
+                self._sync_topmost(force_lift=False)
                 return
             self._last_geom = geom_key
 
-            pad = 4
             if self.win.winfo_exists():
                 import utils
-                self.win.deiconify()
-                self.win.geometry(utils.format_tk_geometry(x - pad, y - pad, w + pad * 2, h + pad * 2))
+                # Set geometry BEFORE deiconify so Win32/Tk never maps the overrideredirect window at (0, 0)
+                self.win.geometry(utils.format_tk_geometry(target_x, target_y, w + pad * 2, h + pad * 2))
                 self.canvas.coords(self.rect, pad, pad, w + pad, h + pad)
+                self.win.deiconify()
+                self._sync_topmost(force_lift=True)
         except Exception:
             try:
                 if self.win.winfo_exists():
@@ -123,6 +182,13 @@ class TutorialHighlight:
             pass
 
     def destroy(self):
+        if getattr(self, "_owner_focus_bind_id", None) and getattr(self, "_owner", None):
+            try:
+                if self._owner.winfo_exists():
+                    self._owner.unbind("<FocusIn>", self._owner_focus_bind_id)
+            except Exception:
+                pass
+            self._owner_focus_bind_id = None
         if self.win.winfo_exists():
             try:
                 self.win.destroy()
@@ -137,8 +203,9 @@ class TutorialRunner:
     def __init__(self, ui, steps, tutorial_name="Interactive Tutorial", on_complete=None,
                  use_sandbox=True, badge_text=None):
         # Single-runner guard: close any previous active tutorial HUD so two never overlap.
-        # If switching from a sandbox tour to a non-sandbox Quick Guide, exit sandbox cleanly.
+        # Carry over the previous HUD position so Part 1 -> Part 2 transitions stay visually anchored.
         prev = TutorialRunner._active_instance
+        inherited_pos = getattr(prev, "_last_hud_pos", None) if (prev is not None and prev is not self) else None
         if prev is not None and prev is not self:
             try:
                 if prev.use_sandbox and not use_sandbox:
@@ -160,6 +227,7 @@ class TutorialRunner:
         self.highlight = None
         self._poll_job = None
         self._details_expanded = False
+        self._last_hud_pos = inherited_pos
         self.root = ui.root if hasattr(ui, "root") else ui
 
         TutorialRunner._active_instance = self
@@ -472,44 +540,150 @@ class TutorialRunner:
             self.answer_frame.pack_forget()
         self._refocus_main_if_hud_focused()
 
-    def _position_hud(self, target_widget=None):
-        """Position HUD on the same monitor as self.root, auto-dodging target_widget."""
+    def _position_hud(self, target_widget=None, bbox_fn=None):
+        """Position HUD near target_widget without covering it, or keep its previous spot when unhighlighted."""
         try:
+            import utils
+
             self.hud_win.update_idletasks()
             w = self.hud_win.winfo_reqwidth()
             h = self.hud_win.winfo_reqheight()
 
             parent_root = self.ui.root if hasattr(self.ui, "root") else self.root
-            if parent_root and parent_root.winfo_exists():
-                parent_root.update_idletasks()
-                rx = parent_root.winfo_rootx()
-                ry = parent_root.winfo_rooty()
-                rw = parent_root.winfo_width()
-                rh = parent_root.winfo_height()
-                if rw > 100 and rh > 100:
-                    dock_left = False
-                    if target_widget is not None:
-                        try:
-                            if target_widget.winfo_exists() and target_widget.winfo_viewable():
-                                tx_center = target_widget.winfo_rootx() + (target_widget.winfo_width() // 2)
-                                if tx_center > (rx + rw // 2):
-                                    dock_left = True
-                        except Exception:
-                            pass
+            if not (parent_root and parent_root.winfo_exists()):
+                sw = self.hud_win.winfo_screenwidth()
+                x = max(10, sw - w - sc(24))
+                y = sc(56)
+                self._last_hud_pos = (x, y)
+                self.hud_win.geometry(utils.format_tk_geometry(x, y))
+                return
 
-                    import utils
-                    if dock_left:
-                        x = rx + sc(24)
+            parent_root.update_idletasks()
+            rx = parent_root.winfo_rootx()
+            ry = parent_root.winfo_rooty()
+            rw = parent_root.winfo_width()
+            rh = parent_root.winfo_height()
+
+            if rw <= 100 or rh <= 100:
+                sw = self.hud_win.winfo_screenwidth()
+                x = max(10, sw - w - sc(24))
+                y = sc(56)
+                self._last_hud_pos = (x, y)
+                self.hud_win.geometry(utils.format_tk_geometry(x, y))
+                return
+
+            margin_x = sc(14)
+            margin_top = sc(44)
+            margin_bottom = sc(20)
+            gap = sc(16)
+
+            def _clamp_x(val):
+                lo = rx + margin_x
+                hi = max(lo, rx + rw - w - margin_x)
+                return max(lo, min(int(val), hi))
+
+            def _clamp_y(val):
+                lo = ry + margin_top
+                hi = max(lo, ry + rh - h - margin_bottom)
+                return max(lo, min(int(val), hi))
+
+            # 1. No highlight -> preserve previous HUD spot (or calm center on Step 1)
+            has_valid_target = False
+            tx = ty = tw = th = 0
+            if target_widget is not None:
+                try:
+                    if target_widget.winfo_exists() and target_widget.winfo_viewable():
+                        box = bbox_fn() if callable(bbox_fn) else None
+                        if box and len(box) == 4:
+                            tx, ty, tw, th = box
+                        else:
+                            tx = target_widget.winfo_rootx()
+                            ty = target_widget.winfo_rooty()
+                            tw = target_widget.winfo_width()
+                            th = target_widget.winfo_height()
+                        if tw > 1 and th > 1:
+                            has_valid_target = True
+                except Exception:
+                    has_valid_target = False
+
+            if not has_valid_target:
+                prev_pos = getattr(self, "_last_hud_pos", None)
+                if prev_pos and len(prev_pos) == 2:
+                    x = _clamp_x(prev_pos[0])
+                    y = _clamp_y(prev_pos[1])
+                else:
+                    x = _clamp_x(rx + (rw - w) // 2)
+                    y = _clamp_y(ry + max(sc(56), (rh - h) // 3))
+                self._last_hud_pos = (x, y)
+                self.hud_win.geometry(utils.format_tk_geometry(x, y))
+                return
+
+            step = self.steps[self.current_idx] if 0 <= self.current_idx < len(self.steps) else None
+            avoid_photo = bool(getattr(step, "hud_avoid_photo", False))
+
+            target_top = None
+            try:
+                target_top = target_widget.winfo_toplevel()
+            except Exception:
+                target_top = parent_root
+
+            # 2. Target inside a popup dialog (e.g., Problem Resolution, Mobile Session Launch)
+            if target_top is not None and target_top != parent_root and target_top.winfo_exists():
+                try:
+                    target_top.update_idletasks()
+                    dx = target_top.winfo_rootx()
+                    dy = target_top.winfo_rooty()
+                    dw = target_top.winfo_width()
+                    space_right = (rx + rw) - (dx + dw)
+                    space_left = dx - rx
+                    if space_right >= w + gap or space_right >= space_left:
+                        x = _clamp_x(dx + dw + gap)
                     else:
-                        x = max(rx + sc(12), rx + rw - w - sc(24))
-                    y = max(ry + sc(40), ry + sc(56))
+                        x = _clamp_x(dx - w - gap)
+                    y = _clamp_y(ty if (ty >= ry and ty <= ry + rh) else dy)
+                    self._last_hud_pos = (x, y)
                     self.hud_win.geometry(utils.format_tk_geometry(x, y))
                     return
+                except Exception:
+                    pass
 
-            import utils
-            sw = self.hud_win.winfo_screenwidth()
-            x = max(10, sw - w - sc(24))
-            y = sc(56)
+            # 3. Target in top navigation bar -> dock directly below it
+            if (ty - ry) < sc(72) and th < sc(60):
+                x = _clamp_x(tx)
+                y = _clamp_y(ty + th + sc(12))
+                self._last_hud_pos = (x, y)
+                self.hud_win.geometry(utils.format_tk_geometry(x, y))
+                return
+
+            # 4. Step explicitly asks to keep center photo unobstructed (e.g., Step 3 reading #110 photo)
+            if avoid_photo:
+                x = _clamp_x(rx + sc(16))
+                y = _clamp_y(ty)
+                self._last_hud_pos = (x, y)
+                self.hud_win.geometry(utils.format_tk_geometry(x, y))
+                return
+
+            # 5. Main window target -> dock immediately beside it (never covering the target)
+            tx_center = tx + (tw // 2)
+            if tx_center < (rx + rw // 2):
+                # Left half (e.g., Search bar) -> immediately to the RIGHT of target
+                x = _clamp_x(tx + tw + gap)
+            else:
+                # Right half (e.g., Registration pane / fields / Mark Reviewed) -> immediately to the LEFT
+                anchor_left = tx
+                reg_pane = getattr(self.ui, "reg_data_frame", None)
+                if reg_pane is not None:
+                    try:
+                        if reg_pane.winfo_exists() and reg_pane.winfo_viewable():
+                            reg_x = reg_pane.winfo_rootx()
+                            if tx >= reg_x - sc(8):
+                                anchor_left = min(tx, reg_x)
+                    except Exception:
+                        pass
+                x = _clamp_x(anchor_left - w - gap)
+
+            y = _clamp_y(ty)
+            self._last_hud_pos = (x, y)
             self.hud_win.geometry(utils.format_tk_geometry(x, y))
         except Exception:
             pass
@@ -653,10 +827,10 @@ class TutorialRunner:
             except Exception:
                 pass
 
-        # Highlight target widget & auto-dodge HUD away from it
+        # Highlight target widget & position HUD right beside it (or keep prior spot if None)
         self._active_highlight_key = None
         target_widget, bbox_fn = self._resolve_highlight_spec(step.target_id)
-        self._position_hud(target_widget=target_widget)
+        self._position_hud(target_widget=target_widget, bbox_fn=bbox_fn)
         if target_widget:
             try:
                 self.highlight = TutorialHighlight(self.root, target_widget, bbox_fn=bbox_fn)
@@ -669,11 +843,14 @@ class TutorialRunner:
             self._poll_validator(step.validator)
 
     def _sync_dynamic_highlight(self):
-        """If the current step uses a callable target_id, update the highlight when its target changes."""
+        """Update the highlight when a callable target_id changes, or retry a string target_id
+        that wasn't yet mounted when show_step() ran (e.g. a newly opened dialog)."""
         if not (0 <= self.current_idx < len(self.steps)):
             return
         step = self.steps[self.current_idx]
-        if not callable(step.target_id):
+        if not step.target_id:
+            return
+        if not callable(step.target_id) and self.highlight is not None:
             return
         target_widget, bbox_fn = self._resolve_highlight_spec(step.target_id)
         new_key = (target_widget, bbox_fn)
@@ -682,6 +859,7 @@ class TutorialRunner:
         self._cleanup_highlight()
         self._active_highlight_key = new_key
         if target_widget:
+            self._position_hud(target_widget=target_widget, bbox_fn=bbox_fn)
             try:
                 self.highlight = TutorialHighlight(self.root, target_widget, bbox_fn=bbox_fn)
             except Exception:
@@ -763,15 +941,15 @@ class TutorialRunner:
 
     def next_step(self):
         self.current_idx += 1
-        self.show_step()
         self._refocus_main_if_hud_focused()
+        self.show_step()
 
     def prev_step(self):
         if self.current_idx > 0:
             self.current_idx -= 1
+            self._refocus_main_if_hud_focused()
             # Disable immediate validator auto-advance so reviewing a prior step never bounces forward
             self.show_step(auto_validate=False)
-            self._refocus_main_if_hud_focused()
 
     def finish_tutorial(self):
         self._cleanup()

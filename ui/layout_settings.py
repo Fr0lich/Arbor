@@ -1122,6 +1122,29 @@ class LayoutSettingsMixin:
             except Exception:
                 pass
 
+        # Registration Panel & Header custom tk widgets live theme refresh
+        if hasattr(self, "history_btn") and self.history_btn.winfo_exists():
+            try:
+                self.history_btn.configure(
+                    bg="#2a322c" if self.dark_mode_active else "#ffffff",
+                    fg="#e8ebe9" if self.dark_mode_active else "#2c302e",
+                    activebackground="#343e37" if self.dark_mode_active else "#e9ece5",
+                    activeforeground="#e8ebe9" if self.dark_mode_active else "#2c302e",
+                )
+            except Exception:
+                pass
+        try:
+            from ui.registry_panel import RegistryPanel
+            RegistryPanel.apply_theme(self, self.dark_mode_active)
+        except Exception:
+            pass
+
+        if hasattr(self, "object_list") and hasattr(self.object_list, "refresh_theme"):
+            try:
+                self.object_list.refresh_theme()
+            except Exception:
+                pass
+
         # Navigation Bar theme refresh
         nav_bg = "#141715" if self.dark_mode_active else "#e9ece5"
         nav_border = "#313244" if self.dark_mode_active else "#8b948d"

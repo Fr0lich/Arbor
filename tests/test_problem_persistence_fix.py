@@ -115,6 +115,7 @@ def test_manual_edit_clears_auto_problem_and_persists():
 
     app = MockApp(df_reg, df_obs)
     mw = create_mock_ui(root, app)
+    mw.auto_clear_problem_on_fill_var = tk.BooleanVar(value=True)
 
     # Load OBJ1 (has blank Genus -> auto_val = True for Genus_Problem)
     mw.load_object("OBJ1")
@@ -646,9 +647,14 @@ def test_problem_queue_dialog_filtering_and_matching():
 
         dialog = ProblemQueueDialog(root, main_app)
 
-        # All categories selected -> matches 1, 2, 3
-        matching = dialog._get_matching_oids()
-        assert set(matching) == {"1", "2", "3"}
+        # Default categories exclude Needs Specialist (Other_problem) -> matches 1, 2 only
+        matching_default = dialog._get_matching_oids()
+        assert set(matching_default) == {"1", "2"}
+
+        # Opting in to Needs Specialist (cat_notes_var=True) includes 3
+        dialog.cat_notes_var.set(True)
+        matching_all = dialog._get_matching_oids()
+        assert set(matching_all) == {"1", "2", "3"}
 
         # Deselect collection and notes -> only taxonomy matches (1)
         dialog.cat_collection_var.set(False)
@@ -1018,3 +1024,70 @@ def test_resolver_1click_icedig_buttons(tk_root):
     # Execute resolution via res_var set
     resolver.res_vars["Collector"].set("unknown:missing")
     assert mock_main.is_unknown(resolver.res_vars["Collector"].get()) is True
+
+
+def test_manual_uncheck_default_vs_auto_clear_on_fill_and_toasts(tk_root):
+    """Verify safer default: manual typing never silently unchecks problem flags unless
+    auto_clear_problem_on_fill is enabled (and then only on blank -> filled), with
+    coalesced non-blocking toasts that respect show_auto_clear_toasts and batch suppression."""
+    df_reg = pd.DataFrame({
+        "ObjectID": ["1", "2", "3"],
+        "Genus": ["", "Pinus", ""],
+        "Species": ["pendula", "sylvestris", "robur"],
+    }).set_index("ObjectID")
+    df_obs = pd.DataFrame({
+        "ObjectID": ["1", "2", "3"],
+        "Genus_Problem": [True, True, True],
+        "Species_Problem": [False, False, False],
+        "Reviewed": [False, False, False],
+    }).set_index("ObjectID")
+
+    app = MockApp(df_reg, df_obs)
+    mw = create_mock_ui(tk_root, app)
+    mw.auto_clear_problem_on_fill_var = tk.BooleanVar(value=False)
+    mw.show_auto_clear_toasts_var = tk.BooleanVar(value=True)
+    mw._suppress_auto_clear_toasts = 0
+    toasts = []
+    mw.show_toast = lambda msg, t="info", duration_ms=2200: toasts.append((msg, t, duration_ms))
+
+    # 1. Default: auto_clear_problem_on_fill is False -> filling blank field leaves flag checked
+    mw.load_object("1")
+    mw.reg_vars["Genus"].set("Betula")
+    mw.commit_current_object()
+    assert mw.problem_vars["Genus_Problem"].get() is True
+    assert bool(app.df_obs.at["1", "Genus_Problem"]) is True
+    assert len(toasts) == 0
+
+    # 2. Opt-in: auto_clear_problem_on_fill = True -> blank -> filled clears flag AND emits 1 toast
+    mw.load_object("3")
+    mw.auto_clear_problem_on_fill_var.set(True)
+    mw.reg_vars["Genus"].set("Quercus")
+    mw.commit_current_object()
+    assert mw.problem_vars["Genus_Problem"].get() is False
+    assert bool(app.df_obs.at["3", "Genus_Problem"]) is False
+    assert len(toasts) == 1
+    assert "Genus" in toasts[0][0]
+
+    # 3. Even when opted in, editing an ALREADY-populated field must NOT silently wipe a deliberate flag
+    toasts.clear()
+    mw.load_object("2")
+    mw.reg_vars["Genus"].set("Pinus_edited")
+    mw.commit_current_object()
+    assert mw.problem_vars["Genus_Problem"].get() is True
+    assert bool(app.df_obs.at["2", "Genus_Problem"]) is True
+    assert len(toasts) == 0
+
+    # 4. Toast suppression: batch counter and show_auto_clear_toasts=False both suppress toasts cleanly
+    mw._suppress_auto_clear_toasts = 1
+    mw.notify_auto_cleared_flags(["Genus_Problem"])
+    assert len(toasts) == 0
+    mw._suppress_auto_clear_toasts = 0
+
+    mw.show_auto_clear_toasts_var.set(False)
+    mw.notify_auto_cleared_flags(["Genus_Problem"])
+    assert len(toasts) == 0
+
+    mw.show_auto_clear_toasts_var.set(True)
+    mw.notify_auto_cleared_flags(["Genus_Problem", "Species_Problem"], source="GBIF")
+    assert len(toasts) == 1
+    assert "2 flags" in toasts[0][0] and "GBIF" in toasts[0][0]

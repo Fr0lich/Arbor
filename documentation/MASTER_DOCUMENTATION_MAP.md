@@ -71,6 +71,7 @@ To maintain complete clarity across all dialogs, tooltips, manuals, and cheat sh
 | **Telemetry / Status Bar** | **Bottom Progress Bar** | The strip at the bottom showing how many specimens you have finished. |
 | **Focus Mode / Headless Mode** | **Distraction-Free Mode / Focus View** | Collapsing extra panels so you only see the fields that need attention. |
 | **Discrepancy / Taxonomic Conflict** | **Mismatched Information** | When the old handwritten book, modern catalog, or online database disagree. |
+| **Other_problem / Other Issue** | **Needs Specialist** | Escalation flag for physical damage, mold/pest, mixed specimens, or archival deadlocks that standard desk tools cannot solve. Paired with `Comment`; triggers `NOTE` / `REV+NOTE` (never `REV+ERR`). |
 | **Backup / Snapshot** | **Safety Backup** | An automatic copy made before big imports so you never lose work. |
 
 ---
@@ -98,8 +99,14 @@ Arbor enforces a **single-badge discipline**: each card in the Specimen Director
 │ [ CFCT ]  │ Conflict Flag │ Slate Blue│ Old ledger book or online data disagrees.       │
 │           │               │ (#4a7b9d) │ Action: Press Ctrl+H to compare sources.        │
 ├───────────┼───────────────┼───────────┼─────────────────────────────────────────────────┤
-│ [REV+ERR] │ Reviewed Note │ Ochre Gold│ Verified physically, but a known issue remains. │
-│           │               │ (#F57C00) │ Meaning: "Curator checked sheet; flag kept."    │
+│ [REV+ERR] │ Reviewed Error│ Ochre Gold│ Verified physically, but an actionable data issue│
+│           │               │ (#F57C00) │ remains for desk triage / Conflict Resolver.     │
+├───────────┼───────────────┼───────────┼─────────────────────────────────────────────────┤
+│ [REV+NOTE]│ Specialist    │ Slate Teal│ Reviewed physically; ONLY "Needs Specialist" is │
+│           │ Note (Done)   │ (#4a6b7c) │ checked (never triggered by a plain Comment).   │
+├───────────┼───────────────┼───────────┼─────────────────────────────────────────────────┤
+│ [ NOTE ]  │ Specialist    │ Cool Slate│ Unreviewed specimen with ONLY "Needs Specialist"│
+│           │ Note (Pending)│ (#5c6f7e) │ checked. Excluded from default trainee queue.   │
 ├───────────┼───────────────┼───────────┼─────────────────────────────────────────────────┤
 │ [ REV ]   │ Done / Checked│ Herb Green│ Fully reviewed, clean, and verified specimen.   │
 │           │               │ (#3a7d44) │ Action: Done! Move to the next sheet.           │
@@ -142,6 +149,17 @@ When transcribing damaged or historic 100-year-old labels, trainees must never l
 | `Ctrl+Shift+W` | `?w` | **Confidential / Protected** | Endangered plant location kept secret. |
 | `Ctrl+Shift+Backspace` | *(None)* | **Clear Field** | Erases any value in the field. |
 
+### 5. The 3-Way Curatorial Decision Rule (ICEDIG vs. Field Problems vs. `Needs Specialist`)
+
+All tutorials, manuals, and UI hints **MUST** teach this exact boundary so trainees never mix up standardized missing-data codes, fixable desk errors, and specialist escalations:
+
+| Situation | Exact Action | Resulting Badge / Queue |
+| :--- | :--- | :--- |
+| **1. Blank or genuinely unreadable on the label, with NO conflicting historical records** | Set the **ICEDIG** code (`unknown:missing` or `unknown:indecipherable`) directly on **that specific field** (e.g., `Collection Date`) and clear that field's Problem box. | Clears the missing-field warning. Later findable via Filter → **Archival Gaps (ICEDIG)** (`ICEDIG: unknown:missing`, etc.). |
+| **2. Blank physical label, BUT historical ledgers have conflicting dates/values** | **Do NOT set `unknown:missing`** (that would hide a solvable conflict). Leave **that specific field's Problem** flagged (e.g., `Collection_Date_Problem`), optionally add a passive `Comment` (*"No date on physical label"*), stamp Storage Location, and Mark Reviewed. Resolve at the desk via Historical Conflict Resolver. | **`REV+ERR`** (stays in the trainee desk queue / Historical Conflict Resolver). |
+| **3. Physical damage, mold/pest, mixed specimens, or archival deadlock desk tools cannot solve** | Check **`Needs Specialist`** (`Other_problem`) and write a short explanation in **`Comment`**. | **`NOTE`** (unreviewed) or **`REV+NOTE`** (reviewed). **Excluded** from the default trainee Problem Triage Queue (opt-in for specialists). |
+| **4. Recording where a newly found value came from** | Attached Historical Ledger → auto-logged on Apply. Unverified physical book → click **`?` (Unvalidated Source)** next to that field to add an inline source note. Authoritative physical book → write a passive **`Comment`** (does *not* trigger `NOTE` / `REV+NOTE`). | Clean provenance without false specialist flags. |
+
 ---
 
 ## 🗺️ Master Touchpoint Matrix
@@ -160,7 +178,7 @@ Every feature in Arbor must be supported across all four user-assistance touchpo
 | **8. Finding Specimens Quickly** | Step 1 of Review Tutorial: typing in search box | Tooltip: "Instant typo-tolerant search across ID and taxon" | **`Ctrl+F`**: Search Bar<br>**`Ctrl+K`**: Omni-Bar | **Chapter 3 & 6**: Fast searching, ID prefix (`#1042`) | Mobile instant search with numeric keypad & leading-zero normalization |
 | **9. Recording Storage Locations** | Step 4 of Database Tutorial | Tooltip: "Compact 2-row location layout in center view" | **`Ctrl+L` / `F4`**: Jump to Storage<br>**`Ctrl+Alt+K`**: Apply Preset | **Chapter 1 & 10**: Building, Floor, Cabinet, Shelf | Mobile 1-tap Armed Target Shelf banner (`[📍 Cab 21 › Sh 01]`) |
 | **10. Creating New Collections** | Step 1 of Database Tutorial (`open_db_wizard`) | Step-by-step expanders `[?]` in Create Collection dialog | Menu: **File $\rightarrow$ + New Collection** | **Chapter 10**: The 4-Sheet botanical collection architecture | `CreateCollectionDialog` with 1-click template button |
-| **11. Mobile Companion (Vault Audit)** | Mentioned in Help Center options list | Tooltip: "Require PIN authentication for phone companion" | Menu: **📱 Mobile $\rightarrow$ QR Code** | **Chapter 5 & 9**: Phone pairing, search-first audit, Armed Shelf | Search-first audit, non-coercive review, reclaimed photo folio |
+| **11. Mobile Companion (Vault Audit)** | Phone coach tutorial (Trainee/Helper) + one-time tips | Tooltip: "Require PIN authentication for phone companion" | Menu: **📱 Mobile $\rightarrow$ QR Code** | **Chapter 5 & 9**: Phone pairing, search-first audit, Armed Shelf | Search-first audit, non-coercive review, reclaimed photo folio |
 | **12. Changing Card Looks** | Visual layout controls in Settings Appearance | Tooltip: "Density profiles: Compact 64px, Standard 78px" | **`Ctrl+Shift+1..4`**: Card Profiles | **Chapter 1**: Dual view modes and Directory Card Personas | Mobile theme auto-sync (light/dark mode) |
 | **13. Missing Data Codes (ICEDIG)** | Mentioned in Trainee Manual Chapter 8 | Tooltip: "Insert standardized missing data tokens" | **`Ctrl+Shift+M`**: `?m`<br>**`Ctrl+Shift+I`**: `?i` | **Chapter 8**: When and how to record illegible labels | Mobile settings modal ICEDIG quick-reference table |
 | **14. Safety Backups & Recovery** | Handled transparently by `SandboxManager` | Tooltip: "Timestamped backups in backups/ before Excel import" | **`Ctrl+S`**: Save Workbook | **Chapter 10 & 11**: Automatic backups and session recovery | Mobile automatic save-on-disconnect safeguard |

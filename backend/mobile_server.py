@@ -163,6 +163,8 @@ def compute_status_flags(reg_dict, obs_dict, history_set, oid, prob_cols=None, p
 
     # 2. Problem flags and active problem target fields
     has_flags = False
+    has_actionable_problems = False
+    is_specialist_note = False
     active_problem_fields = set()
     problem_to_field = problem_to_field or {}
 
@@ -179,7 +181,7 @@ def compute_status_flags(reg_dict, obs_dict, history_set, oid, prob_cols=None, p
 
             auto_val = False
             target_field = problem_to_field.get(p_col)
-            if target_field and reg_dict is not None and target_field in reg_dict:
+            if p_col != "Other_problem" and target_field and reg_dict is not None and target_field in reg_dict:
                 raw_val = reg_dict.get(target_field)
                 is_missing = (pd.isna(raw_val) or (isinstance(raw_val, str) and raw_val.strip() == ""))
                 is_unk = is_unknown(raw_val)
@@ -187,6 +189,10 @@ def compute_status_flags(reg_dict, obs_dict, history_set, oid, prob_cols=None, p
 
             if obs_val or auto_val:
                 has_flags = True
+                if p_col == "Other_problem":
+                    is_specialist_note = True
+                else:
+                    has_actionable_problems = True
                 if target_field:
                     active_problem_fields.add(target_field)
                 elif p_col.endswith("_Problem"):
@@ -200,11 +206,11 @@ def compute_status_flags(reg_dict, obs_dict, history_set, oid, prob_cols=None, p
         if obs_dict:
             merged.update(obs_dict)
         for k, v in merged.items():
-            if k.endswith("_Problem") or k in ("Images_Problem", "Images_Missing", "MissingLabel"):
+            if k.endswith("_Problem") or k in ("Images_Problem", "Images_Missing", "MissingLabel", "Other_problem"):
                 obs_val = sanitize_value(v).lower() in ("true", "1", "yes", "t", "x")
                 auto_val = False
                 target_field = problem_to_field.get(k)
-                if target_field and reg_dict is not None and target_field in reg_dict:
+                if k != "Other_problem" and target_field and reg_dict is not None and target_field in reg_dict:
                     raw_val = reg_dict.get(target_field)
                     is_missing = (pd.isna(raw_val) or (isinstance(raw_val, str) and raw_val.strip() == ""))
                     is_unk = is_unknown(raw_val)
@@ -212,6 +218,10 @@ def compute_status_flags(reg_dict, obs_dict, history_set, oid, prob_cols=None, p
 
                 if obs_val or auto_val:
                     has_flags = True
+                    if k == "Other_problem":
+                        is_specialist_note = True
+                    else:
+                        has_actionable_problems = True
                     if target_field:
                         active_problem_fields.add(target_field)
                     elif k.endswith("_Problem"):
@@ -246,6 +256,8 @@ def compute_status_flags(reg_dict, obs_dict, history_set, oid, prob_cols=None, p
 
     return {
         "has_flags": bool(has_flags),
+        "has_actionable_problems": bool(has_actionable_problems),
+        "is_specialist_note": bool(is_specialist_note),
         "has_history": bool(has_history),
         "problems_have_history": bool(problems_have_history),
         "has_unknown": bool(has_unknown),
@@ -805,7 +817,13 @@ class MobileServer:
         self.session_id = uuid.uuid4().hex[:12]
         prefs = config.load_prefs()
         self._pin_required = prefs.get("require_mobile_pin", True)
-        self._show_walkthrough = bool(prefs.get("mobile_show_walkthrough", True))
+        raw_mode = prefs.get("mobile_phone_tutorial_mode")
+        if raw_mode in ("ask", "trainee", "helper", "off"):
+            self._phone_tutorial_mode = raw_mode
+        else:
+            # Backwards-compatible migration from legacy boolean mobile_show_walkthrough
+            self._phone_tutorial_mode = "off" if (prefs.get("mobile_show_walkthrough", True) is False) else "ask"
+        self._show_walkthrough = (self._phone_tutorial_mode != "off")
         self._image_url_pattern_override = prefs.get("image_url_pattern_override", "")
         if not self._image_url_pattern_override:
             self._image_url_pattern_override = prefs.get("advanced", {}).get("image_url_pattern_override", "")
@@ -911,9 +929,17 @@ class MobileServer:
         """Update the cached mobile PIN requirement without restarting the server."""
         self._pin_required = bool(is_required)
 
+    def update_phone_tutorial_mode(self, mode: str):
+        """Update the phone coach tutorial mode ('ask' | 'trainee' | 'helper' | 'off') live."""
+        valid_modes = ("ask", "trainee", "helper", "off")
+        if mode not in valid_modes:
+            raise ValueError(f"Invalid phone tutorial mode {mode!r}; expected one of {valid_modes}")
+        self._phone_tutorial_mode = mode
+        self._show_walkthrough = (mode != "off")
+
     def update_walkthrough_setting(self, enabled: bool):
-        """Enable or disable auto-launching the first-time mobile walkthrough."""
-        self._show_walkthrough = bool(enabled)
+        """Backwards-compatible wrapper mapping boolean toggle to phone tutorial mode."""
+        self.update_phone_tutorial_mode("ask" if bool(enabled) else "off")
 
     def _get_client_ip(self):
         """Extract the true client IP from Cloudflare/Proxy headers or remote_addr."""
@@ -1291,7 +1317,7 @@ class MobileServer:
                 INDEX_TEMPLATE_V2
                 .replace('{{ token }}', effective_token)
                 .replace('{{ session_id }}', effective_sid)
-                .replace('{{ show_walkthrough }}', 'true' if getattr(self, '_show_walkthrough', True) else 'false')
+                .replace('{{ phone_tutorial_mode }}', getattr(self, '_phone_tutorial_mode', 'ask'))
             )
             resp = make_response(rendered)
             resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
@@ -1492,7 +1518,9 @@ self.addEventListener('fetch', (event) => {
                 "config_name": self.app_state.config_name or "",
                 "ui_sections": ui_sections,
                 "stored_as_choices": stored_as_choices,
+                "icedig_codes": getattr(config, "ICEDIG_CODES", []),
                 "icedig_code_labels": getattr(config, "ICEDIG_CODE_LABELS", {}),
+                "specialist_quick_tags": getattr(config, "SPECIALIST_QUICK_TAGS", []),
                 "problem_to_field": get_problem_to_field_map(getattr(self.app_state, "config", None)),
                 "problem_category_themes": getattr(config, "PROBLEM_CATEGORY_THEMES", {}),
                 "image_url_pattern": image_url_pattern,
@@ -2154,6 +2182,8 @@ self.addEventListener('fetch', (event) => {
                     "loaned_out_date": loaned_out_date,
                     "review_status": flags["review_status"],
                     "has_flags": flags["has_flags"],
+                    "has_actionable_problems": flags["has_actionable_problems"],
+                    "is_specialist_note": flags["is_specialist_note"],
                     "has_history": flags["has_history"],
                     "problems_have_history": flags["problems_have_history"],
                     "has_unknown": flags["has_unknown"],
@@ -2446,9 +2476,18 @@ self.addEventListener('fetch', (event) => {
             is_auth, current_sid, _ = self._get_current_session()
             other_viewers_count = self._get_other_viewers_count(oid, current_session_id=current_sid)
 
+            acc_num = (
+                sanitize_value(
+                    reg_dict.get("ObjectID")
+                    or reg_dict.get("Accession")
+                    or reg_dict.get("AccessionID")
+                    or reg_dict.get("id")
+                )
+                or str(oid)
+            )
             return jsonify({
                 "id": str(oid),
-                "accession_number": str(oid),
+                "accession_number": acc_num,
                 "scientific_name": sci_name,
                 "registration": reg_dict,
                 "observation": obs_dict,
@@ -3246,6 +3285,5 @@ LOGIN_TEMPLATE = """<!DOCTYPE html>
 
 
 # Mobile frontend template lives in a dedicated pure-Python module (zero-build compliant)
-# and is re-exported here (INDEX_TEMPLATE kept as alias to V2 for backward compatibility).
+# and is re-exported here.
 from .mobile_template_v2 import INDEX_TEMPLATE_V2
-INDEX_TEMPLATE = INDEX_TEMPLATE_V2

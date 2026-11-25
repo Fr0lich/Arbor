@@ -87,7 +87,7 @@ def start_database_tutorial(ui, on_complete=None):
             title="Fill In Specimen Details & Location",
             instruction=(
                 "Click into the highlighted Registration Form on the right and type a Genus or Collection Place for your new specimen. "
-                "When you're ready to record where it sits, press Ctrl+L to jump straight to Storage Location."
+                "When you're ready to record where it sits, press Ctrl+L to jump straight to Storage Location (below the image area in the middle column)."
             ),
             target_id="object_editor_frame",
             action_hint="Type a Genus or Collection Place (or click Skip Step →).",

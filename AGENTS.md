@@ -64,7 +64,7 @@ Whenever any coding agent modifies, adds, or removes:
 
 The agent **MUST ALWAYS**:
 1. **Append an entry to `documentation/CHANGE_JOURNAL.md`**: Record the feature area, code delta, plain-language trainee impact, and fill out the Documentation Sync Checklist.
-2. **Adhere to the Canonical Trainee Lexicon**: Use the standardized terminology established in `documentation/MASTER_DOCUMENTATION_MAP.md` (e.g. always *"Specimen Directory"*, *"Mark Reviewed"*, *"Storage Location"*, and never banned jargon like "schema", "REST API", "daemon", or "relational join").
+2. **Adhere to the Canonical Trainee Lexicon & 3-Way Problem Rule**: Use the standardized terminology established in `documentation/MASTER_DOCUMENTATION_MAP.md` (e.g. always *"Specimen Directory"*, *"Mark Reviewed"*, *"Storage Location"*, *"Needs Specialist"*, and never banned jargon like "schema", "REST API", "daemon", or "relational join"). Strictly preserve the 3-way distinction between **ICEDIG codes** (confirmed blank/illegible fields), **Actionable Field Problems** (`REV+ERR`, in default Problem Triage Queue), and **`Needs Specialist`** (`Other_problem` + `Comment` → `NOTE` / `REV+NOTE`, excluded from default Problem Triage Queue).
 3. **Notify the User / Documentation Agent**: Indicate whether user-facing manuals (`USER_GUIDE.md`), desk cheat sheets, or in-app tutorial steps need synchronization via the **1-Prompt Sync Protocol**.
 
 ---

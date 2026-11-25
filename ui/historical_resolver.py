@@ -201,7 +201,7 @@ class HistoricalConflictResolverWindow:
         self.stats_label = tk.Label(footer, text="", font=FONT_MONO, fg=COLORS["text_muted"], bg=COLORS["surface_dim"])
         self.stats_label.pack(side="left", padx=sc(24), pady=sc(12))
         
-        btn_apply_all = tk.Button(footer, text="Apply All Resolved (Ctrl+A)", font=FONT_UI_BOLD, fg=COLORS["on_success"], bg=COLORS["success"], relief="flat", bd=0, padx=sc(16), pady=sc(8), command=self.apply_all, cursor="hand2")
+        btn_apply_all = tk.Button(footer, text="Save Edits", font=FONT_UI_BOLD, fg=COLORS["on_success"], bg=COLORS["success"], relief="flat", bd=0, padx=sc(16), pady=sc(8), command=self.apply_all, cursor="hand2")
         btn_apply_all.pack(side="right", padx=sc(16), pady=sc(6))
         
         # Cleanup routine
@@ -466,7 +466,13 @@ class HistoricalConflictResolverWindow:
                             self.main_app.loaded_problem_states[pc] = False
                 
                 self.main_app._row_cache_dirty = True
-                self.main_app.commit_current_object(skip_logging=True)
+                _prev_sup = getattr(self.main_app, "_suppress_auto_clear_toasts", 0)
+                _prev_sup = _prev_sup if isinstance(_prev_sup, int) else 0
+                self.main_app._suppress_auto_clear_toasts = _prev_sup + 1
+                try:
+                    self.main_app.commit_current_object(skip_logging=True)
+                finally:
+                    self.main_app._suppress_auto_clear_toasts = _prev_sup
  
                 self.main_app.log_action(
                     "RESOLVE_HISTORICAL_CONFLICT",
@@ -475,6 +481,8 @@ class HistoricalConflictResolverWindow:
                     prob_fields=prob_changed_fields,
                     prob_values=prob_changed_values
                 )
+                if prob_changed_fields and hasattr(self.main_app, "notify_auto_cleared_flags"):
+                    self.main_app.notify_auto_cleared_flags(prob_changed_fields, source="Historical")
  
                 if hasattr(self.main_app, "object_list") and hasattr(self.main_app.object_list, "refresh_object_card"):
                     self.main_app.object_list.refresh_object_card(self.oid)
@@ -594,7 +602,13 @@ class HistoricalConflictResolverWindow:
                         
         if reg_changed_fields or prob_changed_fields:
             self.main_app._row_cache_dirty = True
-            self.main_app.commit_current_object(skip_logging=True)
+            _prev_sup = getattr(self.main_app, "_suppress_auto_clear_toasts", 0)
+            _prev_sup = _prev_sup if isinstance(_prev_sup, int) else 0
+            self.main_app._suppress_auto_clear_toasts = _prev_sup + 1
+            try:
+                self.main_app.commit_current_object(skip_logging=True)
+            finally:
+                self.main_app._suppress_auto_clear_toasts = _prev_sup
             self.main_app.log_action(
                 "RESOLVE_HISTORICAL_CONFLICT",
                 changed_fields=reg_changed_fields,
@@ -602,6 +616,8 @@ class HistoricalConflictResolverWindow:
                 prob_fields=prob_changed_fields,
                 prob_values=prob_changed_values
             )
+            if prob_changed_fields and hasattr(self.main_app, "notify_auto_cleared_flags"):
+                self.main_app.notify_auto_cleared_flags(prob_changed_fields, source="Historical")
 
         if hasattr(self.main_app, "object_list") and hasattr(self.main_app.object_list, "refresh_object_card"):
             self.main_app.object_list.refresh_object_card(self.oid)

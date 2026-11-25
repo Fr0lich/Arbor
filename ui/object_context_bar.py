@@ -51,6 +51,8 @@ class ObjectContextBar(ttk.Frame):
             self.right_box.config(bg=bg_card)
         if hasattr(self, "id_badge") and self.id_badge.winfo_exists():
             self.id_badge.config(bg=badge_bg, fg=fg_text, highlightbackground=badge_border)
+        if hasattr(self, "status_badge") and self.status_badge.winfo_exists():
+            self.status_badge.config(highlightbackground=badge_border)
         if hasattr(self, "index_label") and self.index_label.winfo_exists():
             self.index_label.config(bg=bg_card, fg="#9399b2" if self.is_dark else "#757d77")
         if hasattr(self, "name_label") and self.name_label.winfo_exists():
@@ -165,11 +167,11 @@ class ObjectContextBar(ttk.Frame):
         self.dirty_badge.pack(side="left", padx=(sc(4), 0))
         self.dirty_badge.pack_forget()
 
-        # Right: Clean Contextual Action Buttons (Zero emojis)
+        # Right: Contextual Action Buttons (hidden from main strip to reduce clutter;
+        # widget attributes are kept un-packed for compatibility; features remain in TOOLS ▾ / Ctrl+K)
         self.right_box = tk.Frame(self.bar_frame, bg=bg_card)
-        self.right_box.pack(side="right", fill="y", anchor="center")
 
-        # 1. GBIF Validation Button
+        # 1. GBIF Validation Button (hidden)
         self.gbif_btn = tk.Button(
             self.right_box,
             text="GBIF Verify",
@@ -184,11 +186,8 @@ class ObjectContextBar(ttk.Frame):
             cursor="hand2",
             command=self._on_gbif_clicked
         )
-        self.gbif_btn.pack(side="left", padx=sc(3))
-        if self.main_ui and hasattr(self.main_ui, "add_tooltip"):
-            self.main_ui.add_tooltip(self.gbif_btn, "Check plant name spelling against the GBIF online catalog")
 
-        # 2. Historical Conflicts Button
+        # 2. Historical Conflicts Button (hidden)
         self.hist_btn = tk.Button(
             self.right_box,
             text="Books",
@@ -203,11 +202,8 @@ class ObjectContextBar(ttk.Frame):
             cursor="hand2",
             command=self._on_hist_clicked
         )
-        self.hist_btn.pack(side="left", padx=sc(2))
-        if self.main_ui and hasattr(self.main_ui, "add_tooltip"):
-            self.main_ui.add_tooltip(self.hist_btn, "Open Historical Database Conflict Resolver")
 
-        # 3. Contextual Mobile Push
+        # 3. Contextual Mobile Push (hidden)
         self.mobile_push_btn = tk.Button(
             self.right_box,
             text="📱 Phone",
@@ -222,9 +218,6 @@ class ObjectContextBar(ttk.Frame):
             cursor="hand2",
             command=self._on_mobile_push_clicked
         )
-        self.mobile_push_btn.pack(side="left", padx=sc(2))
-        if self.main_ui and hasattr(self.main_ui, "add_tooltip"):
-            self.main_ui.add_tooltip(self.mobile_push_btn, "Push this record to active mobile companion session")
 
     def update_specimen(self, oid=None):
         """Update specimen display and contextual button states with O(1) cached dictionary lookups."""
@@ -309,16 +302,23 @@ class ObjectContextBar(ttk.Frame):
         active_cats = self.main_ui._get_active_problem_categories(oid) if self.main_ui and hasattr(self.main_ui, "_get_active_problem_categories") else set()
         has_problem = bool(active_cats) or (self.main_ui._get_cached_problem(oid) if self.main_ui and hasattr(self.main_ui, "_get_cached_problem") else getattr(self.main_ui, "_problem_cache", {}).get(oid, False))
         problems_have_history = self.main_ui._problems_have_history(oid) if self.main_ui and hasattr(self.main_ui, "_problems_have_history") else False
+        is_specialist_note = bool(obs_row and obs_row.get("Other_problem", False))
+        actionable_cats = active_cats - {"notes"}
+        has_actionable_problem = bool(actionable_cats) or (bool(has_problem) and not is_specialist_note)
 
         # Soft-pill domain status styling aligning with AI_UI_GUIDE design tokens
-        if is_reviewed and not has_problem:
+        if is_reviewed and not has_actionable_problem and not is_specialist_note:
             badge_text = "✓ REVIEWED"
             badge_bg = "#162d1a" if self.is_dark else "#f2f9f3"
             badge_fg = "#85e89d" if self.is_dark else "#3a7d44"
-        elif is_reviewed and has_problem:
-            badge_text = "REVIEWED NOTE"
+        elif is_reviewed and has_actionable_problem:
+            badge_text = "REV+ERR"
             badge_bg = "#3b2e15" if self.is_dark else "#fef9e7"
             badge_fg = "#fcd34d" if self.is_dark else "#b45309"
+        elif is_reviewed and is_specialist_note:
+            badge_text = "REV+NOTE"
+            badge_bg = "#16322f" if self.is_dark else "#e3f2ef"
+            badge_fg = "#7dd3c8" if self.is_dark else "#1b5e55"
         elif "taxonomy" in active_cats:
             badge_text = "TAXONOMY ISSUE"
             badge_bg = "#3b1c1e" if self.is_dark else "#fdf2f2"
@@ -335,14 +335,18 @@ class ObjectContextBar(ttk.Frame):
             badge_text = "PHOTO FLAG"
             badge_bg = "#1a2c3d" if self.is_dark else "#f0f8ff"
             badge_fg = "#7dd3fc" if self.is_dark else "#0284c7"
-        elif has_problem and problems_have_history:
+        elif has_actionable_problem and problems_have_history:
             badge_text = "ERROR + CONFLICT"
             badge_bg = "#2a1b3d" if self.is_dark else "#f3e8ff"
             badge_fg = "#d8b4fe" if self.is_dark else "#7b1fa2"
-        elif has_problem:
+        elif has_actionable_problem:
             badge_text = "RECORD ERROR"
             badge_bg = "#3b1c1e" if self.is_dark else "#fdf2f2"
             badge_fg = "#f28b82" if self.is_dark else "#c93a40"
+        elif is_specialist_note:
+            badge_text = "NOTE · SPECIALIST"
+            badge_bg = "#232738" if self.is_dark else "#eceef6"
+            badge_fg = "#b4bce0" if self.is_dark else "#434a6b"
         elif problems_have_history:
             badge_text = "BOOK CONFLICT"
             badge_bg = "#1e293b" if self.is_dark else "#e9f0f5"
@@ -356,7 +360,7 @@ class ObjectContextBar(ttk.Frame):
             text=badge_text,
             bg=badge_bg,
             fg=badge_fg,
-            relief="solid"
+            relief="flat"
         )
 
         # Unsaved edits indicator

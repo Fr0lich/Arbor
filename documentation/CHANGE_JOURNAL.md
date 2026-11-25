@@ -13,6 +13,218 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 
 ## [Unreleased / Recent Updates]
 
+### Entry 71: 2-Part Core Onboarding Intro, Standalone Advanced Batch Problem Queue Tutorial & Post-Mobile Wrap-Up Popup
+- **Date**: 2026-11-25
+- **Feature Area**: Interactive Tutorials & Mobile Handoff (`ui/unified_help.py`, `ui/database_ops.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/review_tutorial.py`, `ui/tutorials/micro_guides.py`, `ui/mobile_dialog.py`, `backend/mobile_template_v2.py`)
+- **What Changed**:
+  1. **2-Part Core Introduction (`unified_help.py`, `database_ops.py`, `review_tutorial.py`, `micro_guides.py`)**: Narrowed the Core Introduction (`LEARNING_PATH_IDS = ("review", "mobile")`) to **Part 1: Desktop Basics** and **Part 2: Mobile Companion**, updating Welcome to Arbor, Arbor Help Center (`CORE INTRO: X OF 2 COMPLETED`), and Part 1/Part 2 handoff copy.
+  2. **Independent Advanced Tutorial (`triage_tutorial.py`, `unified_help.py`)**: Moved `triage_tutorial.py` out of the Core Intro into **Optional & Advanced Tutorials** as **Batch Problem Queue (One-by-One Desk Review)** — completely independent of Parts 1 & 2, with honest, clear framing of the queue tool (live by default + 1-click Practice Mode fallback).
+  3. **Updated Post-Mobile Stop Popup (`mobile_dialog.py`, `mobile_template_v2.py`)**: Stopping Mobile Companion now shows a calm wrap-up popup confirming that all phone edits are already synced in Arbor, reminding the user to save (`💾 Save File Now (Ctrl+S)`), and inviting them to explore using **Filter (`Ctrl+G`)** or **Help & Tutorials (`HELP`)**.
+- **User Impact**: New trainees finish the core introduction cleanly after Part 2 with a clear save-and-explore wrap-up, while the Batch Problem Queue remains available as an independent advanced guide whenever they want it.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Automated Tests: `tests/test_sandbox_tutorials.py`, `tests/test_navigation_and_dialogs.py`, `tests/test_mobile_companion.py`
+
+---
+
+### Entry 70: Mobile Companion Phone Coach Tutorial Polish — `tip_history`, Teacher-Voice Copy & Anti-Overwhelm Pacing
+- **Date**: 2026-11-25
+- **Feature Area**: Mobile Companion V2 Phone Coach Tutorial (`backend/mobile_template_v2.py`)
+- **What Changed**:
+  1. **Added `tip_history` on First `History` Tab Visit**: Triggered `maybeShowTip('tip_history')` in `switchTab(2)` so trainees and helpers get a clear, one-time explanation of the History (Problem Resolution) screen the very first time they open it.
+  2. **Fixed Contextual Tip Triggers**: Restricted `tip_flagged` to actionable problem flags (excluding `Needs Specialist`-only `[REV+NOTE]` objects), queued `_pendingCoachTip` during active 5-second Undo toasts so `tip_rev_err` is never silently dropped, and auto-dismissed detail tips when returning to the Search List (`showListView()`).
+  3. **Teacher-Voice Copy & Anti-Overwhelm Pacing**: Rewrote `PHONE_TUTORIALS` and `COACH_TIPS` in an encouraging, natural teacher tone (*"This is the History tab — use it to compare..."*, badge **`QUICK TIP · SHOWN ONCE`**), prevented tips from stacking on top of each other, and added a 10-second passive-tip cooldown so users are never bombarded.
+- **User Impact**: Phone trainees and helpers get warm, well-timed one-time guidance the first time they encounter each screen or tool, without ever feeling nagged or missing tips behind an Undo toast.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Mobile Companion Tests Verified
+
+---
+
+### Entry 69: Proximity-Anchored Tutorial HUD Positioning & Windows Highlight Z-Order Fix
+- **Date**: 2026-11-25
+- **Feature Area**: Interactive Tutorials (`ui/tutorials/tutorial_runner.py`, `ui/tutorials/review_tutorial.py`, `tests/test_sandbox_tutorials.py`)
+- **What Changed**:
+  1. **Proximity-Based HUD Placement (`_position_hud`)**: Replaced the far-corner opposite-edge placement with target-adjacent anchoring so the tutorial card always appears right beside the highlighted element — immediately right of left-column targets (like Step 5's search bar), immediately left of right-column targets (Registration fields, `⋯`, `✓ Mark as Reviewed`), directly below top-bar buttons (`MOBILE`), and outside popup dialogs (`Problem Resolution`, `Mobile Session Launch`) without covering them.
+  2. **Stable Position When Unhighlighted**: Steps without a highlight (such as Step 12 completion or Part 2 Step 4 QR scan) now stay in the exact same position as the previous step (and carry over cleanly from Part 1 → Part 2) instead of jumping to the far top-right. Step 3 (`transcribe_110_date`) sets `hud_avoid_photo=True` so `#110`'s center photo stays completely unobstructed.
+  3. **Reliable Windows Highlight Stacking**: Updated `TutorialHighlight` with focus-aware `-topmost` (active only while Arbor has OS focus, automatically disabled on Alt-Tab) and added deferred string-target retry + HUD repositioning in `_sync_dynamic_highlight()`.
+- **User Impact**: Trainees no longer have to scan across the entire monitor between the tutorial card and the highlighted button, highlights stay crisply visible on Windows without covering other apps, and unhighlighted steps never jump around.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_sandbox_tutorials.py`
+
+---
+
+### Entry 68: Hands-On Phone Coach Tutorial (Trainee & Helper), One-Time Tips, `⚑ Needs Specialist` Bottom Bar & Problem Resolution Parity
+- **Date**: 2026-11-25
+- **Feature Area**: Mobile Companion V2 (`backend/mobile_template_v2.py`, `backend/mobile_server.py`, `backend/mobile_archived_flag_issue.py`), Desktop Launch Selector & Part 2 Handoff (`ui/mobile_panel.py`, `ui/tutorials/micro_guides.py`), User & Agent Docs (`MOBILE_COMPANION_USER_GUIDE.md`, `USER_GUIDE.md`, `documentation/agent/TUTORIAL_GUIDE.md`, `documentation/agent/TUTORIAL_MASTER_PLAN.md`, `documentation/agent/MOBILE_COMPANION_GUIDE.md`, `documentation/MASTER_DOCUMENTATION_MAP.md`)
+- **What Changed**:
+  1. **Removed Buggy `⚑ Flag Issue` & Archived Legacy Code**: Deleted `#addDiscrepancyModal`, `openAddDiscrepancyModal()`, `submitDiscrepancy()`, and non-config fallback `General_Problem` (which created stray Excel columns and flagged damaged specimens as `[REV+ERR]` instead of `[REV+NOTE]`), archiving them in `backend/mobile_archived_flag_issue.py`.
+  2. **Added `⚑ Needs Specialist` to the Phone Bottom Bar**: Replaced Flag Issue with `#btnDetailNeedsSpecialist` synced to `Other_problem`; turning it ON switches to `Details`, scrolls `Comment` into view, and briefly highlights the quick-tag pills while keeping `[REV+NOTE]` helper copy synchronized.
+  3. **Gentle Non-Blocking Storage Location Reminder**: Marking an object Reviewed with blank Cabinet & Shelf now completes immediately and displays a 6-second toast (`✓ Reviewed. Tip: save where it's stored first`) with a **`📍 Set Shelf`** action button (never clobbering an active Undo toast).
+  4. **History Tab Aligned to Desktop Problem Resolution**: Added **Problem Resolution** heading + *"Compare with the label in your hand."*, updated summary bar to **`N to resolve`** / **`Nothing to resolve`**, empty state to **`No problems to resolve`**, card clear button to **`✓ Value is Correct`**, and ICEDIG button to **`ICEDIG ▾`**.
+  5. **Hands-On Phone Coach Tutorial & One-Time Contextual Tips**: Replaced the 4-slide `Hallway Quick Guide` modal with floating `#coachCard` (`z-40`, offline-CSS supported, persisted in `localStorage['arbor_phone_tutorial']`), offering **Trainee (5 steps)** and **Helper (4 steps)** paths on real objects plus 4 one-time contextual tips (`tip_flagged`, `tip_icedig`, `tip_specialist`, `tip_rev_err`) manageable in phone **⚙ Settings → Phone tutorial**.
+  6. **Desktop 4-Option Tutorial Selector & Part 2 Phone Handoff**: Replaced the desktop launch checkbox with 4 radio choices (**Ask on the phone**, **Trainee**, **Helper**, **Off**) persisted in `mobile_phone_tutorial_mode` (migrating legacy `mobile_show_walkthrough`), and updated Desktop Part 2's final step to hand off cleanly to the phone (auto-completing on phone connect, leaving Part 3 to the post-session stop popup).
+  7. **Field Guide & Documentation Sync**: Rewrote Field Guide section 6, cleaned up all `Physical Location` / `Other Issue` strings in V2, and synced `MOBILE_COMPANION_USER_GUIDE.md` (adding §3.10 & §6 *Helping Out for a Day*), `USER_GUIDE.md` Chapter 9, `TUTORIAL_GUIDE.md`, `TUTORIAL_MASTER_PLAN.md`, `MOBILE_COMPANION_GUIDE.md`, and `MASTER_DOCUMENTATION_MAP.md`.
+- **User Impact**: Both full trainees and one-day helpers get a calm, hands-on coach card on their phone that teaches the real hallway routine (`Set Shelf → search → check → Save to Shelf → Mark Reviewed`), explains problems right when they first appear, and makes flagging physical damage (`⚑ Needs Specialist` → `[REV+NOTE]`) one tap away without ever corrupting the Excel sheet.
+- **Documentation Sync Checklist**:
+  - [x] `MOBILE_COMPANION_USER_GUIDE.md` (§3.2–3.4, §3.10, §4, §6)
+  - [x] `USER_GUIDE.md` (Chapter 9)
+  - [x] `documentation/agent/TUTORIAL_GUIDE.md`, `TUTORIAL_MASTER_PLAN.md`, `MOBILE_COMPANION_GUIDE.md`
+  - [x] `documentation/MASTER_DOCUMENTATION_MAP.md` (Row 11)
+  - [x] `documentation/CHANGE_JOURNAL.md` (Entry 68)
+  - [x] Automated tests: `tests/test_mobile_companion.py`, `tests/test_sandbox_tutorials.py`, `tests/test_navigation_and_dialogs.py`
+
+---
+
+### Entry 67: Part 2 Mobile Companion Tutorial Polish, Non-Blocking Modal Focus & Start-Session Auto-Advance Fix
+- **Date**: 2026-11-25
+- **Feature Area**: Interactive Tutorial Part 2 (`ui/tutorials/micro_guides.py`, `ui/mobile_dialog.py`, `ui/mobile_panel.py`)
+- **What Changed**:
+  1. **Beginner-Friendly Part 2 Copy (`micro_guides.py`)**: Shortened and warmed all 4 steps of **Part 2: Mobile Companion**, standardized naming on *"Mobile Companion"* / *"Mobile Session Launch window"*, removed all redundant `More Details` drawers and `"(or click Skip Step →)"` hints, and removed the redundant `Ctrl+S` save step/keycaps from Step 4 (since Arbor prompts to save when closing the mobile server).
+  2. **Fixed Tutorial HUD Click Blocking (`mobile_dialog.py`)**: Skipped `self.win.grab_set()` while an interactive `TutorialRunner` HUD is active so trainees can freely click `Skip Step →`, `← Back`, `Finish ✓`, and `Exit Tutorial` while the Mobile Session Launch window is open.
+  3. **Fixed Step 3 → Step 4 Auto-Advance & Highlight (`micro_guides.py`, `mobile_panel.py`)**: Fixed `_is_mobile_session_running()` to check `server.is_running` across `_mobile_server_instance` and `_mobile_dialog.panel.server` (instead of the nonexistent `.running` attribute) and tagged `▶ Start Mobile Session` with `tutorial_id="mobile_start_btn"` so Step 3 highlights the button and advances automatically to Step 4 when clicked.
+- **User Impact**: Launching Mobile Companion during Part 2 is calm, clear, and responsive — the Start button highlights directly, clicking it immediately moves to the QR-scan step, and the tutorial card stays interactive the entire time.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Minimal Tutorial Tests: `tests/test_sandbox_tutorials.py` (25 passed)
+
+---
+
+### Entry 66: Decluttered Header Buttons (`GBIF Verify`, `Books`, `Phone`, `Old Names`) & `Auto-next` Unchecked by Default
+- **Date**: 2026-11-25
+- **Feature Area**: Workspace Simplification & Review Defaults (`ui/object_context_bar.py`, `ui/main_window.py`, `ui/unified_settings.py`)
+- **What Changed**:
+  1. **Hidden Cluttered Inline Header Buttons**: Un-packed **`GBIF Verify`**, **`Books`**, and **`Phone`** from the Curatorial Command Strip (`ui/object_context_bar.py`) and **`📜 Old Names`** from the Registration header (`ui/main_window.py`). All underlying tools remain accessible via `TOOLS ▾`, `Ctrl+K` Command Palette, `Ctrl+H`, and the Mobile menu.
+  2. **`Auto-next` Off by Default**: Changed `auto_advance_on_review` default from `True` to **`False`** so the **Auto-next** checkbox below **Mark as Reviewed** starts unchecked by default.
+- **User Impact**: Cleaner, less confusing workspace headers with fewer duplicate entry points, and marking a specimen as reviewed keeps the user on the current specimen unless they opt into **Auto-next**.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] UI & Settings Tests Verified
+
+---
+
+### Entry 65: Part 1 Tutorial Polish, Highlight Z-Order Fix, Sandbox Historical Suggestions Fix & "Save Edits" Button Rename
+- **Date**: 2026-11-25
+- **Feature Area**: Interactive Tutorial Part 1 (`ui/tutorials/review_tutorial.py`, `ui/tutorials/tutorial_runner.py`, `ui/tutorials/sandbox_manager.py`, `ui/historical_suggestions.py`, `ui/main_window.py`) & Problem Resolution Footer (`ui/object_problem_resolver.py`, `ui/historical_resolver.py`)
+- **What Changed**:
+  1. **Part 1 Copy & Step Refinement (`review_tutorial.py`)**: Polished all 12 steps of **Part 1: Desktop Basics** based on live `.exe` walkthrough feedback — including explicit manual unchecking of `Collection Date` on `#110` (matching Entry 64), clear physical-inspection reminders on both `#110` and `#198`, removal of the non-working `Ctrl+Shift+M` shortcut reference from Step 9, `"General Data"` tab naming in Step 10, and streamlined Part 2 transition copy in Step 12.
+  2. **Problem Resolution Button Rename (`object_problem_resolver.py`, `historical_resolver.py`)**: Renamed the footer confirmation button from `"APPLY ALL RESOLVED (CTRL+A)"` / `"Apply All Resolved (Ctrl+A)"` to plain-language **`"Save Edits"`**.
+  3. **Bug #1 — Reliable `TutorialHighlight` Z-Order (`tutorial_runner.py`)**: Fixed `TutorialHighlight` so `overrideredirect` highlight frames stay stacked directly above their owner window (`win.lift(owner)` when Arbor is active, without floating over other OS apps), guarded against zero-size geometry, and moved HUD-to-main refocus before `show_step()` so advancing steps no longer buries the green highlight box behind the main window.
+  4. **Bug #2 — No Auto-Jump Past Step 5 (`main_window.py`)**: Suppressed auto-advance on `✓ Mark as Reviewed` while inside the Part 1 (`review`) Practice Mode sandbox so marking `#110` Reviewed keeps focus on `#110` and lets trainees practice searching for `#198` in Step 5.
+  5. **Bug #3 — Restored Sandbox Historical Suggestions (`sandbox_manager.py`, `historical_suggestions.py`)**: Added `"reg_by_id"` alongside `"df"` to all mock historical databases (`review`, `triage`, `discrepancy`) and added a `"df"` + `str`/`int` index fallback in `_get_db_dict_cache()` so `#198`'s Collection Date historical suggestions (`1927` from `Historical Ledger Book 1`, `1912` from `Old Card Catalog (Ledger 2)`) always appear in Problem Resolution.
+- **User Impact**: New trainees walking through Part 1 see crisp green highlight boxes on every step, get to practice searching for `#198` without being auto-jumped past it, see the real conflicting historical years (`1927` vs `1912` vs `1963`) in Problem Resolution, and click a clear **`Save Edits`** button to save and close.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Minimal Tutorial & Dialog Tests: `tests/test_sandbox_tutorials.py`, `tests/test_navigation_and_dialogs.py` (62 passed)
+  - [x] `data/tutorial_images/` untouched
+
+---
+
+### Entry 64: Safer Manual Problem-Flag Clearing Default, Opt-In Blank-Fill Toggle & Batch-Safe Auto-Clear Toasts
+- **Date**: 2026-11-25
+- **Feature Area**: Problem Flag Safety, Settings & Notifications (`ui/main_window.py`, `ui/unified_settings.py`, `ui/historical_resolver.py`, `ui/object_problem_resolver.py`, `ui/registry_panel.py`, `tests/test_problem_persistence_fix.py`, `tests/test_unified_settings.py`)
+- **What Changed**:
+  1. **Manual Uncheck by Default (`auto_clear_problem_on_fill = False`)**: Typing into a Registration text field (`commit_current_object`) no longer silently unchecks its mapped problem checkbox by default — preventing uncertain or partial edits from hiding real issues. Dedicated resolution tools (Historical Conflict Resolver, Batch Problem Resolver, GBIF, ICEDIG) continue to auto-clear resolved flags automatically.
+  2. **Settings Toggles (Settings → General → Workflow & Navigation)**: Added **`Auto-clear problem flag when filling a blank field`** (default `False`; when enabled, clears only on strict `blank → filled` transitions, never wiping deliberate flags on populated fields) and **`Show brief notification when Arbor auto-clears a problem flag`** (default `True`).
+  3. **Efficient, Batch-Safe Auto-Clear Toasts**: Added `ObjectProgramUI.notify_auto_cleared_flags()` showing a single brief, non-blocking, coalesced toast (`2.2 s`) whenever a tool or blank-fill rule auto-clears flag(s), with re-entrant batch suppression (`_suppress_auto_clear_toasts`) so multi-field or batch resolutions never spam toasts.
+- **User Impact**: Trainees will never accidentally wipe a problem flag while typing an uncertain guess; dedicated resolution tools still clear flags automatically with a subtle confirmation toast that can be turned off anytime in Settings.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Unit Tests: `tests/test_problem_persistence_fix.py`, `tests/test_unified_settings.py`
+
+---
+
+### Entry 63: 3-Part Core Onboarding Architecture (Desk → Collection → Back at Desk), Part 1 ICEDIG Step, Live Part 3 & Post-Mobile Batch Follow-Up Popup
+- **Date**: 2026-11-25
+- **Feature Area**: Interactive Tutorials, Onboarding & Mobile Handoff (`ui/tutorials/review_tutorial.py`, `ui/tutorials/micro_guides.py`, `ui/tutorials/triage_tutorial.py`, `ui/tutorials/database_tutorial.py`, `ui/tutorials/sandbox_manager.py`, `ui/registry_panel.py`, `ui/mobile_dialog.py`, `ui/database_ops.py`, `ui/unified_help.py`, `documentation/agent/TUTORIAL_MASTER_PLAN.md`)
+- **What Changed**:
+  1. **Part 1 — Desktop Basics (`review_tutorial.py`, `sandbox_manager.py`, `registry_panel.py`)**: Renamed the former 3-Minute Quick Tour to **Part 1: Desktop Basics** (12 steps), framed the **Desk → Collection → Back at Desk** 3-part rhythm upfront, tagged `Collector`'s `⋯` button (`tutorial_id="icedig_collector_btn"`), and added Step 9 (`mark_198_icedig`) on real specimen `#198` (blank `Collector`, no older books) teaching canonical ICEDIG codes (`unknown:missing`, `unknown:indecipherable`, `unknown:undigitized`, `withheld`) and the 3-way guardrail before trainees ever pick up Mobile Companion.
+  2. **Part 2 — Mobile Companion (`micro_guides.py`)**: Synced to Entries 61–62 (inline checkboxes on `Details`, tap field value for canonical ICEDIG codes, `History` swipe tab + `Set ICEDIG Code…` + `📜 Old names`, `Needs Specialist` `[REV+NOTE]`, `Set Shelf` + 5-sec `↩ Undo`) with a direct launch button to Part 3.
+  3. **Live-by-Default Part 3 — Desk Follow-Up & Batch Tools (`triage_tutorial.py`, `sandbox_manager.py`)**: Converted Part 3 to run **live on the user's real collection by default** (`use_sandbox=False`) so trainees immediately work on their actual hallway shift results, with a 1-click **Practice with Sample Data Instead** fallback (`#2001` `[REV+NOTE]` auto-excluded, `#2002` false-alarm clear, `#2003` blank-date + 2 conflicting older books, `#2004` clean `[REV]`).
+  4. **Post-Shift Batch Follow-Up Popup (`ui/mobile_dialog.py`)**: Stopping the Mobile Companion server on Desktop now displays a calm popup counting actionable `[REV+ERR]` specimens (strictly excluding `Needs Specialist`-only `[REV+NOTE]`), offering 1-click **Open Batch Follow-Up** and **Guided Desk Follow-Up (Part 3)** buttons, self-discovery instructions (`TOOLS ▾`, `Ctrl+K`, `Ctrl+G`), and a persisted **`Don't show this popup again`** checkbox (`user_prefs.json["suppress_mobile_stop_followup_popup"]`).
+  5. **Welcome to Arbor & Help Center (`database_ops.py`, `unified_help.py`)**: Updated both windows to present the **3-Part Core Introduction (`CORE INTRO: X OF 3 COMPLETED`)** and cleanly separated **Collections & New Specimens** under **Optional / On-Demand Guides**.
+- **User Impact**: New trainees follow a natural Desk → Collection → Back at Desk journey, learn all 3 curatorial paths (including per-field `⋯` ICEDIG codes) before walking into the hallway, get a seamless popup handoff when stopping Mobile Companion, and can immediately do real batch follow-up on their own collection.
+- **Documentation Sync Checklist**:
+  - [x] Master Tutorial Blueprint: `documentation/agent/TUTORIAL_MASTER_PLAN.md`
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Automated Tests & Manual Parity Guard: `tests/test_sandbox_tutorials.py`, `tests/test_navigation_and_dialogs.py` (62 passed)
+  - [x] `data/tutorial_images/` untouched
+
+---
+
+### Entry 62: Live Dark Mode, WCAG Card Contrast, Mobile Negative-Floor Undo & 390px Ergonomics Fixes
+- **Date**: 2026-11-25
+- **Feature Area**: Desktop Live Theming & Contrast (`ui/registry_panel.py`, `ui/widgets.py`, `ui/layout_settings.py`, `ui/main_window.py`, `ui/status_bar.py`) & Mobile Companion V2 (`backend/mobile_schemas.py`, `backend/mobile_server.py`, `backend/mobile_template_v2.py`)
+- **What Changed**:
+  1. **Desktop Live Light ↔ Dark Mode Parity**: Registered all Registration Data cards, headers, labels, field rows, focus bars, and canvas in `RegistryPanel.apply_theme()` using Arbor's forest-charcoal dark palette (`#181c19` / `#212622` / `#262c28`, replacing `#1e1e2d`), and added `DetailedObjectList.refresh_theme()` wired into `apply_theme()` so Specimen Directory cards immediately re-theme on live toggle without restarting.
+  2. **Desktop Specimen Directory WCAG AA Contrast & ICEDIG Trigger Comfort**: Replaced low-contrast Light Mode card text colors (`#0bd45b` / `#f0ad4e` on `#f2f5f1`, 1.77:1–1.81:1) with theme-aware WCAG AA colors (`#1f5c2e` / `#8a5200` Light; `#b0f3a9` / `#f6c467` Dark), updated status bar separators (`#8b948d`), and slightly widened per-field `⋯` ICEDIG buttons (`padx=sc(6)`).
+  3. **Mobile Companion Negative Basement Floor Preservation**: Updated `sanitize_string_field()` in `backend/mobile_schemas.py` to preserve plain numeric values (`-1`, `-2`, `+1`) and standalone `-` so basement floors no longer turn into `'-1` after saving or tapping `↩ Undo`.
+  4. **Mobile Companion V2 ID Parity & `390×844` Ergonomics**: Unified `/api/object/<oid>` `accession_number` with `/api/objects` so List and Detail headers always show the same `#`; abbreviated building names on Specimen List cards so `Sh XX` never truncates; reset Detail view synchronously to `Details` on specimen open; and raised key mobile tap targets (`Bldg` select, `Needs Specialist`, `Set Shelf`/`Change`, `📜 Old names`, `↩ Undo`, search bar controls, Shelf modal inputs, short field values `min-w-[44px]`, and quick-tag pills `min-h-[36px]`).
+- **User Impact**: Switching between Light and Dark mode updates every panel and specimen card cleanly without restarting; reviewed specimen names are crisp and readable in both themes; basement floor `-1` / `-2` locations survive saves and Undo intact; and phone controls are easier to tap one-handed on 390px screens.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [ ] Interactive Tutorials (`ui/tutorials/*`) — intentionally untouched per user request (handled by tutorial agent)
+
+---
+
+### Entry 61: Unified Per-Field ICEDIG UX, Future-Proof Quick-Tags, Live Dark Mode & 390px/Laptop Polish
+- **Date**: 2026-11-25
+- **Feature Area**: ICEDIG UX, Dark Mode, Responsive Layout & Mobile V2 Parity (`config.py`, `ui/widgets.py`, `ui/main_window.py`, `ui/registry_panel.py`, `ui/layout_settings.py`, `ui/object_context_bar.py`, `ui/object_problem_resolver.py`, `ui/filter_dialog.py`, `ui/new_database_wizard.py`, `backend/mobile_server.py`, `backend/mobile_template_v2.py`)
+- **What Changed**:
+  1. **Unified, Config-Driven ICEDIG System (Zero `?` Icons, Zero Competing UIs)**:
+     - Added `ICEDIG_CODES` in `config.py` (canonical codes `unknown:missing`, `unknown:indecipherable`, `unknown:undigitized`, `withheld` + descriptions + shortcuts) as the single source of truth for Desktop and Mobile Companion (`/api/schema`).
+     - Removed the `?` Unvalidated Source button from Desktop registration rows (preserving `df_unvalidated` backend safety) and removed the crowded `Blank / Unreadable ▾` header button; replaced them with a quiet per-field **`⋯`** ICEDIG menu trigger in Column 3 of every editable field (amber-highlighted when an ICEDIG code is active, clearing the field's problem flag on apply, with a historical-conflict reminder).
+     - Replaced the competing hardcoded `📄 Blank` / `🔍 Illegible` buttons in `ObjectProblemResolver` with a single `ICEDIG ▾` dropdown menu.
+     - On Mobile Companion V2, removed the `?` field button and the competing `toggleIcedigTray` in `History`; tapping any field value on `Details` (or `Set ICEDIG Code…` on `History`) opens the unified `#icedigFieldSheet` showing canonical codes, a `Clear field value` option, case-insensitive `Collection Place`/`Box Label` key resolution, and a historical-conflict warning banner.
+  2. **Future-Proof Quick-Tag Pills (`SPECIALIST_QUICK_TAGS` + `FlowWrapFrame`)**:
+     - Centralized specialist quick-tag pills in `config.SPECIALIST_QUICK_TAGS` (exposed via `/api/schema` to Mobile V2) and built a reusable `FlowWrapFrame` in `ui/widgets.py` so pills automatically wrap across rows at any right-pane width regardless of tag count or label length.
+  3. **Laptop Layout, Sash & Live Dark Mode Fixes**:
+     - Split Desktop Registration Header into 2 clean rows so controls never clip on 1366×768 screens; added balanced default vertical sash sizing for Storage Location below Images and sash rebalancing on `F8` restore.
+     - Wired `RegistryPanel.apply_theme()` into `ui/layout_settings.py`, fixed Dark Mode `fg`/`selectcolor` in `ProblemQueueDialog`, fixed Dark Mode `HAS`/`NOT` badges in `FilterDialog`, and fixed `status_badge` border updates in `ObjectContextBar.set_dark_mode()`.
+     - Packed Desktop's specialist inline hint **above** `Comment` to match Mobile V2.
+  4. **Badge Distinction & Mobile List/Details Parity**:
+     - Differentiated `[REV+NOTE]` (calm teal) and `[NOTE]` (indigo-slate) from `[CFCT]` and `[UNREV]` across Desktop Directory, Context Bar, and Mobile V2 (including Specimen List cards via `has_actionable_problems` / `is_specialist_note` in `/api/objects`).
+     - Removed duplicate `Needs Specialist` from Mobile's lower `#problemFlagsGrid` (renamed `"Photo & Media Issues"`) and excluded `Other_problem` from actionable flag counts; cleaned up remaining `"Needs Specialist (Other)"` / `"[🚩 Other_problem]"` labels.
+- **User Impact**: Trainees get one clean, consistent ICEDIG workflow on Desktop and Phone with canonical codes, zero clipped buttons on laptops or 390px phones, clean live Dark Mode switching, and visually distinct `[REV+NOTE]` / `[NOTE]` badges everywhere.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Automated Tests & Mobile V2 JS check verified
+
+---
+
+### Entry 60: `Needs Specialist` (`NOTE` / `REV+NOTE`) Redesign, Discoverable ICEDIG UI, Per-Code ICEDIG Filters & Tutorial-Agent Contract
+- **Date**: 2026-11-25
+- **Feature Area**: Problem Philosophy, Status Badges, ICEDIG Usability, Filters & Agent Docs (`ui/widgets.py`, `ui/object_context_bar.py`, `ui/registry_panel.py`, `ui/object_problem_resolver.py`, `ui/main_window.py`, `ui/filter_dialog.py`, `backend/filter.py`, `backend/mobile_template_v2.py`, `ui/tutorials/review_tutorial.py`, `ui/tutorials/triage_tutorial.py`, `documentation/MASTER_DOCUMENTATION_MAP.md`, `documentation/agent/TUTORIAL_GUIDE.md`, `documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`, `AGENTS.md`, `USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`)
+- **What Changed**:
+  1. **Two-Tier Flag Badges (`REV+NOTE` & `NOTE`)**: Separated `Other_problem` (**Needs Specialist**) from actionable desk data errors across Desktop Directory cards, Context Bar, and Mobile Companion V2. Specimens with **only** `Other_problem = True` display calm **`REV+NOTE`** (reviewed) or **`NOTE`** (unreviewed) instead of alarming **`REV+ERR`** / **`ERR`**. Plain `Comment` text alone never triggers `NOTE` / `REV+NOTE`, and actionable errors still take priority when both are active.
+  2. **Renamed `"Other Issue"` → `"Needs Specialist"` & Tight `Comment` Coupling**: Renamed the UI label everywhere (keeping Excel column `Other_problem` unchanged), visually separated `Needs Specialist` in the Problem Flags tab, and added a synced **`Needs Specialist`** checkbox + 4 strictly non-ICEDIG physical/specialist quick-tag pills (`+ Damaged`, `+ Mold / Pest`, `+ Mixed Specimen`, `+ Needs Specialist ID`) + non-blocking inline hint directly above `Comment` on both Desktop and Mobile V2.
+  3. **Batch Desk Triage (`ProblemQueueDialog`)**: Defaulted **`Needs Specialist`** to **unchecked (`False`)** so trainees only triage actionable desk errors by default, and separated `Images_Problem` into its own Media category checkbox.
+  4. **Discoverable ICEDIG UI & Per-Code Filters**: Added a **`Blank / Unreadable ▾`** (`tutorial_id = "icedig_quick_btn"`) header button on Desktop Registration, a 1-tap **`?`** ICEDIG bottom sheet on every field in Mobile V2 `Details`, and per-code tri-state ICEDIG filters (`ICEDIG: unknown:missing`, `ICEDIG: unknown:indecipherable`, `ICEDIG: unknown:undigitized`, `ICEDIG: withheld`) in `backend/filter.py` and `ui/filter_dialog.py`.
+  5. **Permanent Tutorial-Agent Contract**: Codified the 3-way curatorial decision rule (ICEDIG vs. Actionable Field Errors vs. `Needs Specialist`, including the blank-label + conflicting-historical-sources hallway workflow) across `MASTER_DOCUMENTATION_MAP.md`, `TUTORIAL_GUIDE.md`, `MOBILE_AUDIT_WORKFLOW_SPEC.md`, and `AGENTS.md`.
+- **User Impact**: Trainees no longer get false `REV+ERR` alarms or unfixable physical-damage items in their default desk queue; specialists can filter directly for `Needs Specialist` or specific ICEDIG codes like `unknown:missing`; and ICEDIG is now 1-click accessible on both Desktop and Mobile.
+- **Documentation Sync Checklist**:
+  - [x] Master Documentation Map (`documentation/MASTER_DOCUMENTATION_MAP.md`)
+  - [x] Tutorial Guide (`documentation/agent/TUTORIAL_GUIDE.md`) & Mobile Spec (`documentation/agent/MOBILE_AUDIT_WORKFLOW_SPEC.md`)
+  - [x] Bundled User Manuals (`USER_GUIDE.md`, `MOBILE_COMPANION_USER_GUIDE.md`)
+  - [x] Automated Tests (`tests/test_filter.py`, `tests/test_ui_ergonomics.py`)
+
+---
+
+### Entry 59: Storage Location Always Below Images by Default (All Image Modes & Clean F8 Docking)
+- **Date**: 2026-11-25
+- **Feature Area**: Main Workspace Layout (`ui/main_window.py`, `ui/image_panel.py`, `tests/test_location_panel.py`)
+- **What Changed**:
+  1. **Fixed Startup Pane Inversion**: Guarded `_sync_middle_panes()` against running mid-init during `ImagePanel.__init__()` before `self.right_frame` was assigned, and enforced the ordering invariant so `ImagePanel` is always at index 0 (top) and **Storage Location** (`_middle_loc_slot`) is always at index 1 (bottom) of `middle_panes`.
+  2. **Consistent Layout in Offline & Missing-Image Modes**: Stopped collapsing `middle_frame` when `image_mode == "offline"`. Whether images are loaded (`online`/`folder`), missing, or disabled (`offline`), the middle column stays open with the photo viewer / Specimen Summary Hub on top and **Storage Location** directly below it.
+  3. **Predictable `F8` Photo-Pane Toggle**: Pressing `F8` with Storage Location in the Left column hides the entire middle column; pressing `F8` with Storage Location in the default bottom position hides only the images and docks **Storage Location** cleanly at full height below the main panes and above the status bar.
+- **User Impact**: Storage Location now consistently appears below the specimen images (or summary panel when offline/missing images) on every startup, and toggling `F8` never overlaps other panels.
+- **Documentation Sync Checklist**:
+  - [x] Change Journal: `documentation/CHANGE_JOURNAL.md`
+  - [x] Regression Test: `tests/test_location_panel.py` (`test_real_main_window_storage_location_always_below_images`)
+
+---
+
 ### Entry 58: Full Clean Removal of Legacy PySide6 / Qt Experiment (~46,600 Lines)
 - **Date**: 2026-11-24
 - **Feature Area**: Repository Cleanup & Single-Stack Focus (`main.py`, `main.spec`, `requirements-dev.txt`, `tests/test_gbif.py`, `AGENTS.md`, `MAINTAINER_HANDOFF.md`)

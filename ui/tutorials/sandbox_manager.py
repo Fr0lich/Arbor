@@ -124,6 +124,14 @@ class SandboxManager:
 
             self.is_sandboxed = True
 
+            # Inject mock historical discrepancy data BEFORE _finish_open_excel() so its
+            # background _prescan_suggestions_worker scans mock_hist (never the user's real books!).
+            app.historical_dbs = mock_hist if mock_hist else []
+            if hasattr(ui, "invalidate_history_cache"):
+                ui.invalidate_history_cache()
+            elif hasattr(ui, "_history_cache") and ui._history_cache is not None:
+                ui._history_cache.clear()
+
             # 3. Apply mock dataset in UI
             ui._precompute_startup_caches(mock_reg, mock_obs, mock_photo)
             ui._finish_open_excel(
@@ -135,11 +143,6 @@ class SandboxManager:
                 mock_log,
                 mock_unval
             )
-
-            # Inject mock historical discrepancy data if needed
-            app.historical_dbs = mock_hist if mock_hist else []
-            if hasattr(ui, "_history_cache"):
-                ui._history_cache.clear()
 
             # Mount bundled real tutorial photos for #110 and #198 in the Quick Tour sandbox
             img_panel = getattr(ui, "image_panel", None)
@@ -388,7 +391,7 @@ class SandboxManager:
                     "Higher Classification": "1886",
                     "(N) Plant Part": "Fruktstander",
                     "Plant Part": "fruitcluster",
-                    "Collector": "F. C. Schübeler",
+                    "Collector": "",  # Intentionally blank for Part 1 ICEDIG step (unknown:missing, no historical collector)
                     "Innsammling Nr.": "",
                     "Collection Date": "1963",  # Intentionally wrong current value (real label: 1927; Ledger 1: 1927; Ledger 2: 1912)
                     "Year": "1963",
@@ -401,7 +404,7 @@ class SandboxManager:
                     "Reviewed": False,
                     "Reviewed_By": "",
                     "Reviewed_At": "",
-                    "Problem_Flags": "Collection_Date_Problem",
+                    "Problem_Flags": "Collection_Date_Problem, Collector_Problem",
                 },
                 {
                     "ObjectID": "1003",
@@ -444,6 +447,7 @@ class SandboxManager:
                     "Stored as": "in plastic box",
                     "Genus_Problem": False,
                     "Species_Problem": False,
+                    "Collector_Problem": False,
                     "Collection_Date_Problem": True,
                     "Box_Label_Problem": False,
                     "Other_problem": False,
@@ -459,6 +463,7 @@ class SandboxManager:
                     "Stored as": "Mounted on wooded platform",
                     "Genus_Problem": False,
                     "Species_Problem": False,
+                    "Collector_Problem": True,
                     "Collection_Date_Problem": True,
                     "Box_Label_Problem": False,
                     "Other_problem": False,
@@ -514,8 +519,8 @@ class SandboxManager:
             ]).set_index("ObjectID", drop=False)
 
             mock_hist = [
-                {"name": "Historical Ledger Book 1", "df": hist_book_1},
-                {"name": "Old Card Catalog (Ledger 2)", "df": hist_book_2},
+                {"name": "Old Card Catalog (Ledger 2)", "df": hist_book_2, "reg_by_id": hist_book_2},
+                {"name": "Historical Ledger Book 1", "df": hist_book_1, "reg_by_id": hist_book_1},
             ]
             return df_reg, df_obs, df_photo, df_log, df_unval, mock_hist
 
@@ -714,7 +719,7 @@ class SandboxManager:
                     "Reviewed": True,
                     "Reviewed_By": "Hallway Intern",
                     "Reviewed_At": "2026-11-20 10:15:00",
-                    "Comment": "Bent display — needs workshop check",
+                    "Comment": "Crushed box lid — needs conservation",
                     "Problem_Flags": "Other_problem",
                 },
                 {
@@ -734,10 +739,31 @@ class SandboxManager:
                     "Reviewed": True,
                     "Reviewed_By": "Hallway Intern",
                     "Reviewed_At": "2026-11-20 10:18:00",
+                    "Comment": "Checked box label in hallway: clearly says 1972",
                     "Problem_Flags": "Collection_Date_Problem",
                 },
                 {
                     "ObjectID": "2003",
+                    "Genus": "Betula",
+                    "Species": "nana",
+                    "Taxon": "Betula nana",
+                    "Family": "Betulaceae",
+                    "Author": "L.",
+                    "Collector": "E. Dahl",
+                    "CollectorNumber": "142",
+                    "Collection Date": "",
+                    "Year": "",
+                    "Collection Place": "Dovrefjell",
+                    "Locality": "Dovrefjell",
+                    "Country": "Norway",
+                    "Reviewed": True,
+                    "Reviewed_By": "Hallway Intern",
+                    "Reviewed_At": "2026-11-20 10:20:00",
+                    "Comment": "No date on physical box label",
+                    "Problem_Flags": "Collection_Date_Problem, Collection_Place_Problem",
+                },
+                {
+                    "ObjectID": "2004",
                     "Genus": "Salix",
                     "Species": "caprea",
                     "Taxon": "Salix caprea",
@@ -752,7 +778,8 @@ class SandboxManager:
                     "Country": "Norway",
                     "Reviewed": True,
                     "Reviewed_By": "Hallway Intern",
-                    "Reviewed_At": "2026-11-20 10:20:00",
+                    "Reviewed_At": "2026-11-20 10:22:00",
+                    "Comment": "",
                     "Problem_Flags": "",
                 },
             ]
@@ -769,6 +796,7 @@ class SandboxManager:
                     "Genus_Problem": False,
                     "Species_Problem": False,
                     "Collection_Date_Problem": False,
+                    "Collection_Place_Problem": False,
                     "Box_Label_Problem": False,
                     "Other_problem": True,
                     "Taxon_Mismatch": False,
@@ -787,7 +815,9 @@ class SandboxManager:
                     "Genus_Problem": False,
                     "Species_Problem": False,
                     "Collection_Date_Problem": True,
+                    "Collection_Place_Problem": False,
                     "Box_Label_Problem": False,
+                    "Other_problem": False,
                     "Taxon_Mismatch": False,
                     "Coordinate_Problem": False,
                     "Unidentified": False,
@@ -803,8 +833,29 @@ class SandboxManager:
                     "Stored as": "Box",
                     "Genus_Problem": False,
                     "Species_Problem": False,
-                    "Collection_Date_Problem": False,
+                    "Collection_Date_Problem": True,
+                    "Collection_Place_Problem": True,
                     "Box_Label_Problem": False,
+                    "Other_problem": False,
+                    "Taxon_Mismatch": False,
+                    "Coordinate_Problem": False,
+                    "Unidentified": False,
+                },
+                {
+                    "ObjectID": "2004",
+                    "Reviewed": True,
+                    "ReviewedAt": "20.11.2026 10:22",
+                    "Building": "Lid's hus",
+                    "Floor": "1",
+                    "Cabinet": "21",
+                    "Shelf": "01",
+                    "Stored as": "Box",
+                    "Genus_Problem": False,
+                    "Species_Problem": False,
+                    "Collection_Date_Problem": False,
+                    "Collection_Place_Problem": False,
+                    "Box_Label_Problem": False,
+                    "Other_problem": False,
                     "Taxon_Mismatch": False,
                     "Coordinate_Problem": False,
                     "Unidentified": False,
@@ -815,7 +866,28 @@ class SandboxManager:
             df_photo = pd.DataFrame(columns=["ObjectID", "PhotoURL", "PhotoType"])
             df_log = pd.DataFrame(columns=["Timestamp", "ObjectID", "Action", "User"])
             df_unval = pd.DataFrame()
-            return df_reg, df_obs, df_photo, df_log, df_unval, []
+
+            triage_book_1 = pd.DataFrame([
+                {
+                    "ObjectID": "2003",
+                    "Collection Date": "1965",
+                    "Year": "1965",
+                    "Collection Place": "Dovre, Kongsvoll",
+                }
+            ]).set_index("ObjectID", drop=False)
+            triage_book_2 = pd.DataFrame([
+                {
+                    "ObjectID": "2003",
+                    "Collection Date": "1958",
+                    "Year": "1958",
+                    "Collection Place": "Rondane",
+                }
+            ]).set_index("ObjectID", drop=False)
+            triage_hist = [
+                {"name": "Historical Ledger Book 1", "df": triage_book_1, "reg_by_id": triage_book_1},
+                {"name": "Old Card Catalog (Ledger 2)", "df": triage_book_2, "reg_by_id": triage_book_2},
+            ]
+            return df_reg, df_obs, df_photo, df_log, df_unval, triage_hist
 
         df_reg = pd.DataFrame(reg_data).set_index("ObjectID", drop=False)
         df_obs = pd.DataFrame(obs_data).set_index("ObjectID", drop=False)
@@ -873,11 +945,13 @@ class SandboxManager:
 
             mock_hist.append({
                 "name": "Historical Ledger Book 1",
-                "df": hist_book_1
+                "df": hist_book_1,
+                "reg_by_id": hist_book_1,
             })
             mock_hist.append({
                 "name": "Old Card Catalog (Ledger 2)",
-                "df": hist_book_2
+                "df": hist_book_2,
+                "reg_by_id": hist_book_2,
             })
 
         return df_reg, df_obs, df_photo, df_log, df_unval, mock_hist

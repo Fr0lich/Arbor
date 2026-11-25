@@ -1393,9 +1393,10 @@ def test_v2_template_javascript_syntax_integrity(mock_app_state):
     assert res.status_code == 200
     html = res.get_data(as_text=True)
 
-    # 1. Ensure no stray closing brace in IIFE template interpolation
+    # 1. Ensure no stray closing brace and unified ICEDIG sheet replaces legacy inline tray
     assert "}).join('')}\n                      })()}" not in html
-    assert "}).join('')\n                      })()}" in html
+    assert "function openFieldIcedigSheet(" in html
+    assert "function toggleIcedigTray(" not in html
     assert "function onPhotoError()" in html
 
     # 2. Ensure no raw unescaped newlines in JS single/double-quoted string literals
@@ -1669,12 +1670,11 @@ def test_vault_audit_update_marks_reviewed_and_logs(mock_app_state):
 def test_zero_barcode_terms_in_mobile_templates_and_routes():
     """Enforce strict Zero Barcode constraint: auditing is solely storage location/shelf based."""
     import re
-    from backend.mobile_server import INDEX_TEMPLATE, INDEX_TEMPLATE_V2, LOGIN_TEMPLATE
+    from backend.mobile_server import INDEX_TEMPLATE_V2, LOGIN_TEMPLATE
 
     pattern = re.compile(r'barcode', re.IGNORECASE)
 
     # 1. Check template constants
-    assert not pattern.search(INDEX_TEMPLATE), "Found 'barcode' reference in INDEX_TEMPLATE"
     assert not pattern.search(INDEX_TEMPLATE_V2), "Found 'barcode' reference in INDEX_TEMPLATE_V2"
     assert not pattern.search(LOGIN_TEMPLATE), "Found 'barcode' reference in LOGIN_TEMPLATE"
 
@@ -1735,7 +1735,7 @@ def test_login_template_offline_and_no_hardcoded_pin(mock_app_state):
 
 
 def test_mobile_walkthrough_toggle_injection():
-    """Verify MobileServer defaults to showing the first-time phone walkthrough and honors live toggle OFF."""
+    """Verify MobileServer defaults to 'ask', supports all 4 tutorial modes, and honors legacy boolean toggle."""
     app = AppState()
     app.config = config.DATABASE_CONFIGS["Økonomisk Botanisk"]
     app.df_reg = pd.DataFrame([{"ObjectID": "1", "Genus": "Betula"}]).set_index("ObjectID", drop=False)
@@ -1744,39 +1744,54 @@ def test_mobile_walkthrough_toggle_injection():
     server.update_pin_requirement(False)
     client = server.flask_app.test_client()
 
-    # Default ON -> renders 'true'
+    # Legacy toggle ON -> renders 'ask'
     server.update_walkthrough_setting(True)
     res_on = client.get("/v2")
     assert res_on.status_code == 200
-    assert "const _ARBOR_WT_RAW = 'true';" in res_on.get_data(as_text=True)
+    html_on = res_on.get_data(as_text=True)
+    assert "const _ARBOR_TUT_MODE_RAW = 'ask';" in html_on
+    assert "{{ phone_tutorial_mode }}" not in html_on
 
-    # Toggled OFF -> renders 'false'
+    # Legacy toggle OFF -> renders 'off'
     server.update_walkthrough_setting(False)
     res_off = client.get("/v2")
     assert res_off.status_code == 200
-    assert "const _ARBOR_WT_RAW = 'false';" in res_off.get_data(as_text=True)
+    assert "const _ARBOR_TUT_MODE_RAW = 'off';" in res_off.get_data(as_text=True)
+
+    # Explicit 4-mode setter
+    for mode in ("ask", "trainee", "helper", "off"):
+        server.update_phone_tutorial_mode(mode)
+        res = client.get("/v2")
+        assert res.status_code == 200
+        assert f"const _ARBOR_TUT_MODE_RAW = '{mode}';" in res.get_data(as_text=True)
+
+    with pytest.raises(ValueError):
+        server.update_phone_tutorial_mode("invalid_mode")
 
 
 def test_mobile_v2_core_ui_and_offline_contracts():
     """High-signal contract check for Mobile V2: modular re-export, offline CSS, key modals, and touch gestures."""
-    from backend.mobile_server import INDEX_TEMPLATE, INDEX_TEMPLATE_V2
+    from backend.mobile_server import INDEX_TEMPLATE_V2
     from backend.mobile_template_v2 import INDEX_TEMPLATE_V2 as V2_MOD
 
-    assert INDEX_TEMPLATE == V2_MOD
     assert INDEX_TEMPLATE_V2 == V2_MOD
     # Offline-first styling & non-blocking Tailwind CDN
     assert 'arbor-offline-css' in INDEX_TEMPLATE_V2
     assert 'cdn.tailwindcss.com' in INDEX_TEMPLATE_V2
-    # Key V2 DOM contracts (modals, station launchpad, swipe area, photo viewer)
+    # Key V2 DOM contracts (modals, coach card, station launchpad, swipe area, photo viewer)
     for token in (
         'id="launchFloorSelect"',
         'id="fieldGuideModal"',
-        'id="walkthroughModal"',
+        'id="coachCard"',
+        'id="settingsPhoneTutorialSection"',
+        'id="btnDetailNeedsSpecialist"',
         'id="swipeArea"',
         'id="photoViewerViewport"',
         'id="oldNamesSheet"',
         'id="btnOldNames"',
         'function openOldNamesSheet()',
+        'function startPhoneTutorial(',
+        'function maybeShowTip(',
         'function initTouchGestures()',
         'function initPhotoViewerTouchGestures()',
     ):
@@ -1815,3 +1830,108 @@ def test_mobile_synonyms_and_check_label_endpoints():
     resp2 = client.post("/api/object/101/check-label", json={"label_name": "Compositae"})
     assert resp2.status_code == 200
     assert resp2.get_json()["verdict"] == "synonym_match"
+
+
+def test_mobile_sanitize_preserves_negative_basement_floors_and_escapes_formulas():
+    """Negative floors like '-1' and '-2' must not be corrupted into \"'-1\" on save/Undo."""
+    from backend.mobile_schemas import sanitize_string_field
+
+    assert sanitize_string_field("-1") == "-1"
+    assert sanitize_string_field("-2") == "-2"
+    assert sanitize_string_field("+1") == "+1"
+    assert sanitize_string_field("-") == "-"
+    assert sanitize_string_field("=SUM(A1:A2)") == "'=SUM(A1:A2)"
+    assert sanitize_string_field("-CMD|' /C calc'!A0") == "'-CMD|' /C calc'!A0"
+    assert sanitize_string_field("@SUM(1,2)") == "'@SUM(1,2)"
+
+
+def test_mobile_detail_accession_number_matches_list_payload():
+    """GET /api/object/<oid> must return the same accession_number as GET /api/objects."""
+    app = AppState()
+    app.config = config.DATABASE_CONFIGS["Økonomisk Botanisk"]
+    app.df_reg = pd.DataFrame(
+        [{"Accession": "ACC-42", "Genus": "Betula", "Species": "pendula"}],
+        index=["9"],
+    )
+    app.df_obs = pd.DataFrame([{"Reviewed": False}], index=["9"])
+    server = MobileServer(app)
+    server.update_pin_requirement(False)
+    client = server.flask_app.test_client()
+
+    list_resp = client.get("/api/objects")
+    detail_resp = client.get("/api/object/9")
+    assert list_resp.status_code == 200
+    assert detail_resp.status_code == 200
+    assert list_resp.get_json()["objects"][0]["accession_number"] == "ACC-42"
+    assert detail_resp.get_json()["accession_number"] == "ACC-42"
+
+
+def test_mobile_v2_phase1_to_phase6_contracts():
+    """Verify Flag Issue removal, Needs Specialist bottom bar, History labels, Lexicon, and Phone Coach Tutorial."""
+    import re
+    from backend.mobile_template_v2 import INDEX_TEMPLATE_V2
+
+    # 1. Flag Issue bug completely removed
+    for removed in (
+        "addDiscrepancyModal",
+        "openAddDiscrepancyModal",
+        "submitDiscrepancy",
+        "Physical_Damage_Problem",
+        "General_Problem",
+        ">Clear Flag<",
+    ):
+        assert removed not in INDEX_TEMPLATE_V2, f"Removed token still present: {removed}"
+
+    # 2. Needs Specialist bottom bar & toggleProblemFlag('Other_problem')
+    assert 'id="btnDetailNeedsSpecialist"' in INDEX_TEMPLATE_V2
+    assert "handleBottomNeedsSpecialistClick" in INDEX_TEMPLATE_V2
+    assert "toggleProblemFlag('Other_problem')" in INDEX_TEMPLATE_V2
+
+    # 3. Coach card engine, tips & placeholder
+    for token in (
+        "coachCard",
+        "PHONE_TUTORIALS",
+        "startPhoneTutorial",
+        "maybeShowTip",
+        "arbor_phone_tutorial",
+        "{{ phone_tutorial_mode }}",
+        "✓ Value is Correct",
+        "Problem Resolution",
+        "ICEDIG ▾",
+    ):
+        assert token in INDEX_TEMPLATE_V2, f"Missing expected V2 token: {token}"
+
+    # 4. Rendered HTML has zero leftover {{ ... }} placeholders and obeys Canonical Lexicon
+    app = AppState()
+    app.config = config.DATABASE_CONFIGS["Økonomisk Botanisk"]
+    app.df_reg = pd.DataFrame([{"ObjectID": "1", "Genus": "Betula"}]).set_index("ObjectID", drop=False)
+    app.df_obs = pd.DataFrame([{"ObjectID": "1", "Reviewed": False}]).set_index("ObjectID", drop=False)
+    server = MobileServer(app)
+    server.update_pin_requirement(False)
+    client = server.flask_app.test_client()
+    rendered = client.get("/v2").get_data(as_text=True)
+
+    assert not re.search(r"\{\{[^}]+\}\}", rendered), "Unresolved {{ ... }} placeholder in rendered /v2 HTML"
+    assert "Other Issue" not in rendered
+    assert "Physical Location" not in rendered
+
+
+def test_mobile_server_phone_tutorial_prefs_migration(monkeypatch):
+    """Verify MobileServer migrates legacy mobile_show_walkthrough=False -> 'off' when new key is missing."""
+    app = AppState()
+    app.config = config.DATABASE_CONFIGS["Økonomisk Botanisk"]
+    app.df_reg = pd.DataFrame([{"ObjectID": "1", "Genus": "Betula"}]).set_index("ObjectID", drop=False)
+    app.df_obs = pd.DataFrame([{"ObjectID": "1", "Reviewed": False}]).set_index("ObjectID", drop=False)
+
+    monkeypatch.setattr(config, "load_prefs", lambda: {"mobile_show_walkthrough": False})
+    srv_off = MobileServer(app)
+    assert srv_off._phone_tutorial_mode == "off"
+
+    monkeypatch.setattr(config, "load_prefs", lambda: {"mobile_show_walkthrough": True})
+    srv_ask = MobileServer(app)
+    assert srv_ask._phone_tutorial_mode == "ask"
+
+    monkeypatch.setattr(config, "load_prefs", lambda: {"mobile_phone_tutorial_mode": "helper"})
+    srv_helper = MobileServer(app)
+    assert srv_helper._phone_tutorial_mode == "helper"
+

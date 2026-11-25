@@ -485,7 +485,7 @@ class DatabaseOpsMixin:
 
         tk.Label(
             outer,
-            text="New to Arbor? Take the 3-Minute Quick Tour",
+            text="Welcome! Start the 2-Part Arbor Introduction",
             font=("Lora", sc(16), "bold"),
             bg=bg,
             fg=fg,
@@ -495,9 +495,9 @@ class DatabaseOpsMixin:
         ).pack(fill="x", pady=(0, sc(8)))
 
         desc = (
-            "Get a quick overview of Desktop & Mobile Arbor, practice reading real specimen photos (#110 & #198), "
-            "compare 3 historical ledger sources, flag a physical issue, and learn when to click Mark as Reviewed.\n\n"
-            "Nothing you do in Practice Mode can ever overwrite your real museum Excel files."
+            "This short 2-part introduction teaches the core workflow: first practice at your desk, "
+            "then take the same routine into the collection on your phone.\n\n"
+            "Part 1 runs in safe Practice Mode — your real museum files are never touched."
         )
         tk.Label(
             outer,
@@ -508,9 +508,9 @@ class DatabaseOpsMixin:
             anchor="w",
             justify="left",
             wraplength=sc(460),
-        ).pack(fill="x", pady=(0, sc(16)))
+        ).pack(fill="x", pady=(0, sc(14)))
 
-        # Quick highlights card
+        # Compact 2-Part Roadmap Card (Desk -> Collection)
         info_card = tk.Frame(
             outer,
             bg=card_bg,
@@ -520,10 +520,17 @@ class DatabaseOpsMixin:
             pady=sc(10),
         )
         info_card.pack(fill="x", pady=(0, sc(16)))
+        tk.Label(
+            info_card,
+            text="GETTING STARTED WITH ARBOR (2 PARTS)",
+            font=("JetBrains Mono", sc(8), "bold"),
+            bg=card_bg,
+            fg="#85e89d" if dark else "#1b5e20",
+            anchor="w",
+        ).pack(fill="x", pady=(0, sc(4)))
         for line in (
-            "•  Zero Risk — Practice Mode blocks all disk saves automatically",
-            "•  Hands-On — Visual keycaps guide every step in ~3 minutes",
-            "•  Always Available — Replay anytime from HELP ▾ or F1",
+            "1. At Your Desk — Desktop Basics (~3 min · Practice Mode with real photos #110 & #198)",
+            "2. In the Collection — Mobile Companion (~2 min · Pair your phone for the aisles)",
         ):
             tk.Label(
                 info_card,
@@ -533,7 +540,17 @@ class DatabaseOpsMixin:
                 fg=fg,
                 anchor="w",
                 justify="left",
+                wraplength=sc(430),
             ).pack(fill="x", pady=sc(2))
+        tk.Label(
+            info_card,
+            text="Find all tutorials, guides, and shortcuts anytime by clicking HELP (or pressing F1).",
+            font=("Inter", sc(8.5), "italic"),
+            bg=card_bg,
+            fg=muted,
+            anchor="w",
+            justify="left",
+        ).pack(fill="x", pady=(sc(4), 0))
 
         dont_show_var = tk.BooleanVar(value=False)
 
@@ -585,7 +602,7 @@ class DatabaseOpsMixin:
         # Row 1: Primary full-width CTA so label never clips at 125%–150% DPI
         tk.Button(
             btn_row,
-            text="🎓 Start 3-Minute Quick Tour",
+            text="🎓 Start Part 1: Desktop Basics",
             font=("Inter", sc(10.5), "bold"),
             bg=accent,
             fg="#ffffff",
@@ -604,7 +621,7 @@ class DatabaseOpsMixin:
 
         tk.Button(
             sec_row,
-            text="View Learning Path",
+            text="Open Help Center",
             font=("Inter", sc(9.5)),
             bg=card_bg,
             fg=fg,

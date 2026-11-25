@@ -494,6 +494,47 @@ def test_auto_resolve_conflicts_in_historical_resolver(tk_root, tmp_path, monkey
     resolver.win.destroy()
 
 
+def test_auto_clear_problem_and_toast_settings_persistence(tk_root, tmp_path, monkeypatch):
+    """Verify auto_clear_problem_on_fill (default False) and show_auto_clear_toasts (default True)
+    render in UnifiedSettingsWindow, sync to app, and persist to user_prefs.json."""
+    import config
+    from ui.unified_settings import UnifiedSettingsWindow
+
+    prefs_file = tmp_path / "user_prefs.json"
+    monkeypatch.setattr(config, "_PREFS_PATH", str(prefs_file))
+    config._prefs_cache = None
+
+    class _MockApp:
+        def __init__(self):
+            self.auto_clear_problem_on_fill_var = tk.BooleanVar(value=False)
+            self.show_auto_clear_toasts_var = tk.BooleanVar(value=True)
+            self.dark_mode_active = False
+
+    mock_app = _MockApp()
+    win = UnifiedSettingsWindow(tk_root, mock_app)
+    try:
+        assert win.var_auto_clear_on_fill.get() is False
+        assert win.var_show_auto_clear_toasts.get() is True
+
+        win.var_auto_clear_on_fill.set(True)
+        win.var_show_auto_clear_toasts.set(False)
+        win.save_settings()
+
+        assert mock_app.auto_clear_problem_on_fill_var.get() is True
+        assert mock_app.show_auto_clear_toasts_var.get() is False
+
+        config._write_prefs_now()
+        config._prefs_cache = None
+        saved = config.load_prefs()
+        assert saved.get("auto_clear_problem_on_fill") is True
+        assert saved.get("show_auto_clear_toasts") is False
+    finally:
+        try:
+            win.win.destroy()
+        except Exception:
+            pass
+
+
 def test_info_button_widget_interactions(tk_root):
     from ui.widgets import InfoButton, create_info_badge
 

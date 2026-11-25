@@ -74,7 +74,13 @@ class MobilePanel:
         prefs = config.load_prefs() if hasattr(config, "load_prefs") else {}
         self.auto_save_var = tk.BooleanVar(value=bool(prefs.get("mobile_autosave_on_stop", False)))
         self.require_pin_var = tk.BooleanVar(value=bool(prefs.get("require_mobile_pin", True)))
-        self.show_walkthrough_var = tk.BooleanVar(value=bool(prefs.get("mobile_show_walkthrough", True)))
+        raw_tut_mode = prefs.get("mobile_phone_tutorial_mode")
+        if raw_tut_mode in ("ask", "trainee", "helper", "off"):
+            init_tut_mode = raw_tut_mode
+        else:
+            init_tut_mode = "off" if (prefs.get("mobile_show_walkthrough", True) is False) else "ask"
+        self.phone_tutorial_mode_var = tk.StringVar(value=init_tut_mode)
+        self.show_walkthrough_var = tk.BooleanVar(value=(init_tut_mode != "off"))
 
         self._build_ui()
 
@@ -441,24 +447,53 @@ class MobilePanel:
         )
         self.lbl_pin_tip.pack(fill="x")
 
-        # First-time phone tutorial toggle (ON by default)
+        # Phone tutorial mode selector (Ask / Trainee / Helper / Off)
         self.walkthrough_row = tk.Frame(setup_card, bg="#fbfbf9")
         self.walkthrough_row.pack(fill="x", pady=(10, 0))
-        self.cb_mobile_walkthrough = tk.Checkbutton(
+        tk.Label(
             self.walkthrough_row,
-            text="Launch with mobile companion tutorial for first-time users",
-            variable=self.show_walkthrough_var,
-            command=self._on_walkthrough_toggle,
-            font=("Inter", sc(9)),
+            text="Phone tutorial:",
+            font=("Inter", sc(9), "bold"),
             bg="#fbfbf9",
             fg="#1b4332",
-            activebackground="#fbfbf9",
-            activeforeground="#1b4332",
-            selectcolor="#ffffff",
             anchor="w",
-            cursor="hand2",
-        )
-        self.cb_mobile_walkthrough.pack(fill="x")
+        ).pack(fill="x", pady=(0, 3))
+
+        self.phone_tutorial_radios = {}
+        for mode_val, mode_lbl in (
+            ("ask", "Ask on the phone (recommended)"),
+            ("trainee", "Trainee (has done the desktop tutorial)"),
+            ("helper", "Helper (helping out for a day)"),
+            ("off", "Off"),
+        ):
+            rb = tk.Radiobutton(
+                self.walkthrough_row,
+                text=mode_lbl,
+                value=mode_val,
+                variable=self.phone_tutorial_mode_var,
+                command=self._on_phone_tutorial_mode_changed,
+                font=("Inter", sc(8.5)),
+                bg="#fbfbf9",
+                fg="#2c302e",
+                activebackground="#fbfbf9",
+                activeforeground="#1b4332",
+                selectcolor="#ffffff",
+                anchor="w",
+                cursor="hand2",
+            )
+            rb.pack(fill="x", padx=(6, 0))
+            self.phone_tutorial_radios[mode_val] = rb
+
+        tk.Label(
+            self.walkthrough_row,
+            text="Anyone can also start the tutorial later from the phone's Settings.",
+            font=("Segoe UI", sc(7.5), "italic"),
+            bg="#fbfbf9",
+            fg="#5a655e",
+            anchor="w",
+            justify="left",
+            wraplength=420,
+        ).pack(fill="x", pady=(3, 0))
 
         self.start_btn = tk.Button(
             self.setup_frame,
@@ -475,6 +510,7 @@ class MobilePanel:
             cursor="hand2",
         )
         self.start_btn.pack(fill="x", pady=(10, 0))
+        self.start_btn.tutorial_id = "mobile_start_btn"
 
         # ── Active Frame (Hidden initially) ───────────────────────────
         self.active_frame = tk.Frame(main, bg="#ffffff")
@@ -811,19 +847,29 @@ class MobilePanel:
             except Exception:
                 pass
 
-    def _on_walkthrough_toggle(self):
-        enabled = bool(self.show_walkthrough_var.get())
+    def _on_phone_tutorial_mode_changed(self):
+        mode = self.phone_tutorial_mode_var.get()
+        if mode not in ("ask", "trainee", "helper", "off"):
+            mode = "ask"
+            self.phone_tutorial_mode_var.set(mode)
+        self.show_walkthrough_var.set(mode != "off")
         try:
             prefs = config.load_prefs() or {}
-            prefs["mobile_show_walkthrough"] = enabled
+            prefs["mobile_phone_tutorial_mode"] = mode
+            prefs["mobile_show_walkthrough"] = (mode != "off")
             config.save_prefs(prefs)
         except Exception:
             pass
-        if self.server and hasattr(self.server, "update_walkthrough_setting"):
+        if self.server and hasattr(self.server, "update_phone_tutorial_mode"):
             try:
-                self.server.update_walkthrough_setting(enabled)
+                self.server.update_phone_tutorial_mode(mode)
             except Exception:
                 pass
+
+    def _on_walkthrough_toggle(self):
+        enabled = bool(self.show_walkthrough_var.get())
+        self.phone_tutorial_mode_var.set("ask" if enabled else "off")
+        self._on_phone_tutorial_mode_changed()
 
     def _toggle_pin_required(self):
         new_val = not self.require_pin_var.get()
@@ -984,7 +1030,9 @@ class MobilePanel:
         # Populate PIN and local URL (kept as LAN fallback)
         if hasattr(self.server, "update_pin_requirement"):
             self.server.update_pin_requirement(self.require_pin_var.get())
-        if hasattr(self.server, "update_walkthrough_setting"):
+        if hasattr(self.server, "update_phone_tutorial_mode"):
+            self.server.update_phone_tutorial_mode(self.phone_tutorial_mode_var.get())
+        elif hasattr(self.server, "update_walkthrough_setting"):
             self.server.update_walkthrough_setting(self.show_walkthrough_var.get())
         self.pin_var.set(self.server.pin)
         self._update_pin_ui()

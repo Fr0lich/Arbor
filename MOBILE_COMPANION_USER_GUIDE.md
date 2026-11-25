@@ -79,7 +79,7 @@ Herbarium vaults are often located in basements or shielded behind heavy steel d
 * **Numeric Keypad Default**: Pull a physical box, read its accession number, and type it in the top search bar — or filter for **already-reviewed objects** when pulling items for closer inspection. Use the **`[123 / Aa]`** button to switch between numbers and plant names.
 * **Automatic Zero & Prefix Handling**: Typing `001`, `1`, or `O-V-1` all find Specimen `#1`. When you tap `< Back` to return to the list, Arbor automatically clears and focuses the search bar for the next box.
 
-### 3.2. 1-Tap Physical Location Saving (`Set Shelf` + 5-Sec Undo), `Stored as` & `Loaned Out`
+### 3.2. 1-Tap Storage Location Saving (`Set Shelf` + 5-Sec Undo), `Stored as` & `Loaned Out`
 Opening a specimen **never** overwrites its coordinates automatically — so mistyping a number (like `#101` instead of `#1001`) can never corrupt another record.
 1. **Set Your Shelf Once**: Tap **`Set Shelf`** in the compact top bar (`Shelf: Not set [Set Shelf]`) and pick the **Building, Floor** (`-2` to `4`), **Cabinet**, and **Shelf** you are standing in front of.
 2. **1-Tap Save**: Inside every next box from that shelf, a green thumb button appears right under the plant name:
@@ -87,16 +87,21 @@ Opening a specimen **never** overwrites its coordinates automatically — so mis
 3. Tap once to save all coordinates! If a specimen already belongs to a different shelf, the button turns amber **`⚠️ Move to Cab 21 · Sh 01`** so you never relocate a specimen by accident — and **every 1-tap save or move shows a protected 5-second `↩ Undo` button** in case you tapped by mistake.
 4. **Container (`Stored as`) & Lending (`Loaned Out`)**: Switch to the **Location** tab to pick **`Stored as`** from a full-width bottom sheet or toggle **`Loaned Out`** (displays an amber **`↗ Loaned`** pill on both the List and Detail header).
 
-### 3.3. Checking Old Plant Names (`📜 Old names`) & Older Books (`History` Tab)
+### 3.3. Checking Old Plant Names (`📜 Old names`) & Problem Resolution (`History` Tab)
 * **Unfamiliar Latin or family name on the box?** Tap **`📜 Old names`** (read-only) right below the scientific name to see past museum names, classical/APG old family names (like *Compositae* → *Asteraceae*), and known GBIF synonyms — if it matches, keep the modern name!
-* **Older catalog books loaded?** Swipe right to the **`History`** tab (`[CFCT]`) to compare older museum books against the current value and tap **`Apply`** if one matches the real object.
+* **Problem Resolution (`History` tab):** Swipe right to **`History`** to resolve flagged fields and older-book conflicts side by side with the label in your hand:
+  * Tap **`Apply`** on a matching older-book value,
+  * Type a corrected value manually and tap **`Apply`**,
+  * Tap **`ICEDIG ▾`** for a confirmed blank or unreadable field (only when no older books conflict), or
+  * Tap **`✓ Value is Correct`** if the current value matches the real object.
 
-### 3.4. Physical Review Rule & Inline Flagging on `Details` (`[REV+ERR]`)
-* **Only tap `✓ Mark Reviewed` once you have physically checked the object.**
+### 3.4. Physical Review Rule, Inline Flagging & `⚑ Needs Specialist`
+* **Only tap `✓ Mark Reviewed` once you have physically checked the object.** If an object still has no saved Storage Location when you mark it Reviewed, Arbor completes the review and shows a gentle 6-second **`📍 Set Shelf`** reminder toast (never blocking your flow).
 * Found a disagreeing field, bent display, crushed box, or unreadable 19th-century handwriting?
-  * Tap the **checkbox right next to that field on `Details`** (matching Desktop Arbor), or scroll to **Physical & Other Issues** at the bottom of `Details` to check **`Other Issue`** and jot a short note in **`Comment`** (e.g. `"Bent display"`), and **still tap `✓ Mark Reviewed`**.
-  * **It is completely okay if you cannot solve a problem in the hallway.** The amber **`[REV+ERR]`** badge confirms you physically held the object and verified its shelf while safely queueing the question for the office computer (**`🎯 Hallway Follow-Up (REV+ERR)`**).
-* **Not sure what a field or badge means?** Tap **`?`** in the top bar anytime to open **What the Fields Mean** or replay the 4-step **Hallway Quick Guide**.
+  * **Field problem (`[REV+ERR]`):** Tick the **checkbox right next to that field on `Details`** (matching Desktop Arbor) and still tap **`✓ Mark Reviewed`**. Leaving an unresolvable field ticked queues it safely for desk follow-up (**`🎯 Hallway Follow-Up (REV+ERR)`**).
+  * **Confirmed blank/unreadable (`ICEDIG`):** **Tap the field value** on `Details` (or **`ICEDIG ▾`** on `History`) and pick **`unknown:missing`** or **`unknown:indecipherable`** — *only* when no older catalog book has a conflicting value.
+  * **Physical damage / specialist escalation (`[REV+NOTE]`):** Tap **`⚑ Needs Specialist`** right in the bottom action bar (or above **`Comment`** on `Details`) and tap a quick tag (e.g. `+ Damaged`, `+ Mold / Pest`, `+ Mixed Specimen`). Marking Reviewed produces calm teal **`[REV+NOTE]`**, keeping it out of the default trainee desk queue so specialists can filter for it directly.
+* **Not sure what a field or badge means?** Tap **`?`** in the top bar anytime to open **What the Fields Mean** or launch the **Phone tutorial…**.
 
 ### 3.5. Viewport-Reclaimed Photo Folio
 If a specimen has no verified online scan yet, Arbor automatically collapses the empty photo frame into a compact single-line bar, keeping Registration Data and inline problem checkboxes right under your thumb.
@@ -127,11 +132,19 @@ If you accidentally swipe down to refresh or swipe backwards to close the browse
 * **Fullscreen Photo Pinch, Pan, Double-Tap & Arrows**: Tap a specimen photo to open it fullscreen, then **pinch with two fingers** to zoom (`0.8×–4.5×`), **drag with one finger** to pan across tiny handwriting, **double-tap** to jump cleanly between `1.0×` and `2.2×`, or tap `‹` / `›` to step between multiple photos.
 * **Swipe-Down Bottom Sheets**: Pull down on the top drag handle of the **Set Shelf** or **Stored as** sheet to dismiss it naturally with one thumb.
 
+### 3.10. The Phone Tutorial & One-Time Tips
+Arbor includes a built-in hands-on **coach card tutorial** that runs directly on your real collection (never modifying data on its own) and survives phone sleep or reloads:
+* **Two Versions:**
+  * **Trainee (5 steps):** For users who completed Desktop Part 1 — walks through `Set Shelf → search → screen tour → Save to Shelf & Mark Reviewed → ready`.
+  * **Helper (4 steps):** Shorter version for someone helping out for a day.
+* **One-Time Contextual Tips:** After you finish the routine, Arbor shows brief one-time tips the very first time you encounter a flagged field, open the ICEDIG sheet (Trainee), toggle **Needs Specialist**, or mark an object `[REV+ERR]`.
+* **Replay or Reset Anytime:** Open **⚙ Settings → Phone tutorial** on your phone to start either tutorial, toggle tips on/off, or reset seen tips.
+
 ---
 
 ## 4. Blank or Unreadable Labels (Standard Codes)
 
-When transcribing damaged, faded, or incomplete historical labels, use standard ICEDIG markers rather than leaving ambiguous blank fields:
+When transcribing damaged, faded, or incomplete historical labels (with **no** conflicting older catalog books), **tap the field value on `Details`** (or tap **`ICEDIG ▾`** on **`History`**) to pick a standard ICEDIG marker:
 
 | Marker String | Standard Meaning |
 | :--- | :--- |
@@ -158,4 +171,20 @@ All edits synced from your phone are protected in workstation memory (RAM) and b
 3. **Silent Auto-Save (`Auto-save: ON`)**:
    * Automatically persists in-memory edits to disk the moment the server is stopped, without prompting.
    * **Quick Toggle**: Click the `[ ⏸️ Auto-save on stop: OFF ]` / `[ 💾 Auto-save on stop: ON ]` pill directly in the Mobile Companion window at any time to switch modes, or configure it permanently in Desktop **Settings ▾ General ▾ Autosave & Storage**.
+
+---
+
+## 6. Helping Out for a Day (Quick Routine)
+
+Just helping in the collection today? You don't need to learn Desktop Arbor — scan the QR code, pick **"I'm new / helping out today"** (or start the **Helper tutorial** in **⚙ Settings**), and follow this 5-step loop:
+
+1. **Set Shelf:** Standing at a cabinet? Tap **`Set Shelf`** at the top of the list and pick your Building, Floor, Cabinet, and Shelf. Update it whenever you move to a new shelf.
+2. **Search:** Pick up a physical object and type its number into the search bar.
+3. **Check:** Compare the screen with the real object:
+   * Something wrong on a field? Tick the checkbox next to that field on **`Details`**.
+   * See a number on **`History`**? Open it and tap **`Apply`** on the value that matches the label in your hand — **not sure? Leave it.**
+   * Physical damage, mold/pest, or mixed specimen? Tap **`⚑ Needs Specialist`** in the bottom bar and tap a quick tag under **Comment**.
+4. **Save to Shelf:** Tap **`📍 Save to Cab XX · Sh YY`** (has a 5-second `↩ Undo` if you tap by mistake).
+5. **Mark Reviewed:** Tap **`✓ Mark Reviewed`**, then pick up the next object. Anything you left flagged will be checked at the desk by the main worker later.
+
 

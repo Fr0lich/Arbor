@@ -23,9 +23,20 @@ class HistoricalSuggestionsMixin:
             if oid not in cache:
                 oid_cache = {}
                 reg_by_id = db.get("reg_by_id")
+                if reg_by_id is None:
+                    reg_by_id = db.get("df")
 
-                if reg_by_id is not None and oid in reg_by_id.index:
-                    rows = reg_by_id.loc[oid]
+                lookup_oid = None
+                if reg_by_id is not None:
+                    if oid in reg_by_id.index:
+                        lookup_oid = oid
+                    elif str(oid) in reg_by_id.index:
+                        lookup_oid = str(oid)
+                    elif str(oid).isdigit() and int(str(oid)) in reg_by_id.index:
+                        lookup_oid = int(str(oid))
+
+                if reg_by_id is not None and lookup_oid is not None:
+                    rows = reg_by_id.loc[lookup_oid]
 
                     if isinstance(rows, pd.DataFrame):
                         # Handle duplicate rows with same ObjectID by gathering all unique column values across rows
@@ -56,6 +67,8 @@ class HistoricalSuggestionsMixin:
 
     def invalidate_history_cache(self, oid=None):
         with self._get_history_lock():
+            if oid is None:
+                self._history_cache_gen = getattr(self, "_history_cache_gen", 0) + 1
             if not hasattr(self, "_history_cache") or self._history_cache is None:
                 return
             if oid is None:
@@ -82,6 +95,7 @@ class HistoricalSuggestionsMixin:
         cache_key = (oid, show_all)
 
         with self._get_history_lock():
+            start_gen = getattr(self, "_history_cache_gen", 0)
             if hasattr(self, "_history_cache") and self._history_cache is not None:
                 cached = self._history_cache.get(cache_key)
                 if cached is not None:
@@ -92,7 +106,9 @@ class HistoricalSuggestionsMixin:
         suggestions = {}
 
         if not self.app.historical_dbs:
-            self._history_cache[cache_key] = suggestions
+            with self._get_history_lock():
+                if getattr(self, "_history_cache_gen", 0) == start_gen:
+                    self._history_cache[cache_key] = suggestions
             return suggestions
 
         db_oid_entries = []
@@ -161,9 +177,10 @@ class HistoricalSuggestionsMixin:
                 }
 
         with self._get_history_lock():
-            if not hasattr(self, "_history_cache") or self._history_cache is None:
-                self._history_cache = cachetools.LRUCache(maxsize=100)
-            self._history_cache[cache_key] = suggestions
+            if getattr(self, "_history_cache_gen", 0) == start_gen:
+                if not hasattr(self, "_history_cache") or self._history_cache is None:
+                    self._history_cache = cachetools.LRUCache(maxsize=100)
+                self._history_cache[cache_key] = suggestions
         return suggestions
 
 
@@ -394,10 +411,13 @@ class HistoricalSuggestionsMixin:
         for i, oid in enumerate(self.app.active_object_ids):
             # Throttled progress update to avoid flooding the Tkinter event loop
             if i % 25 == 0 or i == total - 1:
-                self.root.after(0, lambda current=i, max_val=total: (
-                    getattr(self, "image_scan_progress", None) and self.image_scan_progress.configure(value=current, maximum=max_val),
-                    getattr(self, "progress_label", None) and self.progress_label.config(text=f"Scanning suggestions... {current}/{max_val}")
-                ))
+                try:
+                    self.root.after(0, lambda current=i, max_val=total: (
+                        getattr(self, "image_scan_progress", None) and self.image_scan_progress.configure(value=current, maximum=max_val),
+                        getattr(self, "progress_label", None) and self.progress_label.config(text=f"Scanning suggestions... {current}/{max_val}")
+                    ))
+                except Exception:
+                    return
 
             suggs = self.collect_historical_suggestions(oid, show_all_override=False)
             has_valid = False

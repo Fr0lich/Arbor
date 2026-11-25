@@ -427,7 +427,7 @@ class ObjectProblemResolver:
         self.stats_label = tk.Label(footer, text="", font=FONT_MONO, fg=COLORS["text_muted"], bg=COLORS["surface_dim"])
         self.stats_label.pack(side="left", padx=sc(24), pady=sc(12))
         
-        btn_apply_all = tk.Button(footer, text="APPLY ALL RESOLVED (CTRL+A)", font=FONT_UI_BOLD, fg=COLORS["on_success"], bg=COLORS["success"], relief="flat", bd=0, padx=sc(16), pady=sc(8), command=self.apply_all, cursor="hand2")
+        btn_apply_all = tk.Button(footer, text="Save Edits", font=FONT_UI_BOLD, fg=COLORS["on_success"], bg=COLORS["success"], relief="flat", bd=0, padx=sc(16), pady=sc(8), command=self.apply_all, cursor="hand2")
         btn_apply_all.pack(side="right", padx=sc(16), pady=sc(6))
         
         if self._is_queue_mode:
@@ -831,8 +831,14 @@ class ObjectProblemResolver:
                             self.main_app.loaded_problem_states[pc] = False
                 
                 self.main_app._row_cache_dirty = True
-                if hasattr(self.main_app, "commit_current_object"):
-                    self.main_app.commit_current_object(skip_logging=True)
+                _prev_sup = getattr(self.main_app, "_suppress_auto_clear_toasts", 0)
+                _prev_sup = _prev_sup if isinstance(_prev_sup, int) else 0
+                self.main_app._suppress_auto_clear_toasts = _prev_sup + 1
+                try:
+                    if hasattr(self.main_app, "commit_current_object"):
+                        self.main_app.commit_current_object(skip_logging=True)
+                finally:
+                    self.main_app._suppress_auto_clear_toasts = _prev_sup
  
                 if hasattr(self.main_app, "log_action"):
                     self.main_app.log_action(
@@ -842,6 +848,8 @@ class ObjectProblemResolver:
                         prob_fields=prob_changed_fields,
                         prob_values=prob_changed_values
                     )
+                if prob_changed_fields and hasattr(self.main_app, "notify_auto_cleared_flags"):
+                    self.main_app.notify_auto_cleared_flags(prob_changed_fields)
  
                 if hasattr(self.main_app, "object_list") and hasattr(self.main_app.object_list, "refresh_object_card"):
                     self.main_app.object_list.refresh_object_card(self.oid)
@@ -948,11 +956,28 @@ class ObjectProblemResolver:
             btn_clear_ref[0] = btn_clear
             btn_clear.pack(side="right", padx=(sc(4), 0))
 
-        btn_illegible = tk.Button(entry_frame, text="🔍 Illegible", font=FONT_MONO_SM, fg=COLORS["text"], bg=COLORS["surface_dim"], relief="solid", bd=1, highlightthickness=0, padx=sc(8), command=lambda: _apply("unknown:indecipherable"), cursor="hand2")
-        btn_illegible.pack(side="right", padx=(sc(4), 0))
+        def _open_resolver_icedig_menu(anchor_btn=None):
+            import config as _cfg
+            menu = tk.Menu(self.win, tearoff=0)
+            menu.add_command(label=f"Set ICEDIG code — {field}", state="disabled")
+            menu.add_separator()
+            for _item in _cfg.ICEDIG_CODES:
+                _code = _item["code"]
+                _desc = _item["description"]
+                menu.add_command(
+                    label=f"{_code}  ({_desc})",
+                    command=lambda c=_code: _apply(c),
+                )
+            try:
+                x = anchor_btn.winfo_rootx() if anchor_btn else self.win.winfo_pointerx()
+                y = (anchor_btn.winfo_rooty() + anchor_btn.winfo_height()) if anchor_btn else self.win.winfo_pointery()
+                menu.tk_popup(x, y)
+            finally:
+                menu.grab_release()
 
-        btn_blank = tk.Button(entry_frame, text="📄 Blank", font=FONT_MONO_SM, fg=COLORS["text"], bg=COLORS["surface_dim"], relief="solid", bd=1, highlightthickness=0, padx=sc(8), command=lambda: _apply("unknown:missing"), cursor="hand2")
-        btn_blank.pack(side="right", padx=(sc(4), 0))
+        btn_icedig = tk.Button(entry_frame, text="ICEDIG ▾", font=FONT_MONO_SM, fg=COLORS["text"], bg=COLORS["surface_dim"], relief="solid", bd=1, highlightthickness=0, padx=sc(8), cursor="hand2")
+        btn_icedig.configure(command=lambda b=btn_icedig: _open_resolver_icedig_menu(b))
+        btn_icedig.pack(side="right", padx=(sc(4), 0))
         
         entry.bind("<Return>", lambda e, f=_apply: f())
         
@@ -1079,8 +1104,14 @@ class ObjectProblemResolver:
                         
         if reg_changed_fields or prob_changed_fields:
             self.main_app._row_cache_dirty = True
-            if hasattr(self.main_app, "commit_current_object"):
-                self.main_app.commit_current_object(skip_logging=True)
+            _prev_sup = getattr(self.main_app, "_suppress_auto_clear_toasts", 0)
+            _prev_sup = _prev_sup if isinstance(_prev_sup, int) else 0
+            self.main_app._suppress_auto_clear_toasts = _prev_sup + 1
+            try:
+                if hasattr(self.main_app, "commit_current_object"):
+                    self.main_app.commit_current_object(skip_logging=True)
+            finally:
+                self.main_app._suppress_auto_clear_toasts = _prev_sup
             if hasattr(self.main_app, "log_action"):
                 self.main_app.log_action(
                     "RESOLVE_HISTORICAL_CONFLICT",
@@ -1089,6 +1120,8 @@ class ObjectProblemResolver:
                     prob_fields=prob_changed_fields,
                     prob_values=prob_changed_values
                 )
+            if prob_changed_fields and hasattr(self.main_app, "notify_auto_cleared_flags"):
+                self.main_app.notify_auto_cleared_flags(prob_changed_fields)
 
         if hasattr(self.main_app, "object_list") and hasattr(self.main_app.object_list, "refresh_object_card"):
             self.main_app.object_list.refresh_object_card(self.oid)
@@ -1134,7 +1167,10 @@ class ProblemQueueDialog(tk.Toplevel):
         self.cat_taxonomy_var = tk.BooleanVar(value=True)
         self.cat_collection_var = tk.BooleanVar(value=True)
         self.cat_physical_var = tk.BooleanVar(value=True)
-        self.cat_notes_var = tk.BooleanVar(value=True)
+        self.cat_media_var = tk.BooleanVar(value=True)
+        # Specialist / physical escalation notes (Other_problem) are opt-in so trainees
+        # only triage actionable desk errors by default.
+        self.cat_notes_var = tk.BooleanVar(value=False)
 
         self._build_ui()
         self._update_matching_count()
@@ -1167,7 +1203,16 @@ class ProblemQueueDialog(tk.Toplevel):
         scope_box = tk.Frame(content, bg=COLORS["surface"], highlightbackground=COLORS["border"], highlightthickness=1, padx=sc(12), pady=sc(8))
         scope_box.pack(fill="x", pady=(0, sc(12)))
 
-        tk.Radiobutton(scope_box, text="All currently filtered objects in view", variable=self.scope_var, value="filtered", font=FONT_UI, bg=COLORS["surface"], activebackground=COLORS["surface"], command=self._update_matching_count).pack(anchor="w", pady=sc(2))
+        chk_opts = {
+            "font": FONT_UI,
+            "fg": COLORS["text"],
+            "bg": COLORS["surface"],
+            "activebackground": COLORS["surface"],
+            "activeforeground": COLORS["text"],
+            "selectcolor": COLORS["surface_dim"],
+            "cursor": "hand2",
+        }
+        tk.Radiobutton(scope_box, text="All currently filtered objects in view", variable=self.scope_var, value="filtered", command=self._update_matching_count, **chk_opts).pack(anchor="w", pady=sc(2))
         
         has_selection = False
         if hasattr(self.main_app, "object_list") and hasattr(self.main_app.object_list, "selection"):
@@ -1176,7 +1221,7 @@ class ProblemQueueDialog(tk.Toplevel):
             except Exception:
                 has_selection = False
         
-        rb_sel = tk.Radiobutton(scope_box, text="Selected objects only", variable=self.scope_var, value="selected", font=FONT_UI, bg=COLORS["surface"], activebackground=COLORS["surface"], state="normal" if has_selection else "disabled", command=self._update_matching_count)
+        rb_sel = tk.Radiobutton(scope_box, text="Selected objects only", variable=self.scope_var, value="selected", state="normal" if has_selection else "disabled", command=self._update_matching_count, **chk_opts)
         rb_sel.pack(anchor="w", pady=sc(2))
 
         # 2. Problem Categories
@@ -1186,19 +1231,26 @@ class ProblemQueueDialog(tk.Toplevel):
 
         row1 = tk.Frame(cat_box, bg=COLORS["surface"])
         row1.pack(fill="x", pady=sc(2))
-        tk.Checkbutton(row1, text="🧬 Taxonomy (Genus, Species, Family, Author)", variable=self.cat_taxonomy_var, font=FONT_UI, bg=COLORS["surface"], activebackground=COLORS["surface"], command=self._update_matching_count).pack(side="left")
+        tk.Checkbutton(row1, text="🧬 Taxonomy (Genus, Species, Family, Author)", variable=self.cat_taxonomy_var, command=self._update_matching_count, **chk_opts).pack(side="left")
 
         row2 = tk.Frame(cat_box, bg=COLORS["surface"])
         row2.pack(fill="x", pady=sc(2))
-        tk.Checkbutton(row2, text="📦 Collection (Collector, Date, Place)", variable=self.cat_collection_var, font=FONT_UI, bg=COLORS["surface"], activebackground=COLORS["surface"], command=self._update_matching_count).pack(side="left")
+        tk.Checkbutton(row2, text="📦 Collection (Collector, Date, Place)", variable=self.cat_collection_var, command=self._update_matching_count, **chk_opts).pack(side="left")
 
         row3 = tk.Frame(cat_box, bg=COLORS["surface"])
         row3.pack(fill="x", pady=sc(2))
-        tk.Checkbutton(row3, text="🏷️ Physical (Box Label, Plant Part)", variable=self.cat_physical_var, font=FONT_UI, bg=COLORS["surface"], activebackground=COLORS["surface"], command=self._update_matching_count).pack(side="left")
+        tk.Checkbutton(row3, text="🏷️ Physical (Box Label, Plant Part)", variable=self.cat_physical_var, command=self._update_matching_count, **chk_opts).pack(side="left")
+
+        row3b = tk.Frame(cat_box, bg=COLORS["surface"])
+        row3b.pack(fill="x", pady=sc(2))
+        tk.Checkbutton(row3b, text="📷 Media (Images)", variable=self.cat_media_var, command=self._update_matching_count, **chk_opts).pack(side="left")
+
+        tk.Frame(cat_box, bg=COLORS["border"], height=1).pack(fill="x", pady=sc(4))
 
         row4 = tk.Frame(cat_box, bg=COLORS["surface"])
         row4.pack(fill="x", pady=sc(2))
-        tk.Checkbutton(row4, text="📝 Notes & Other", variable=self.cat_notes_var, font=FONT_UI, bg=COLORS["surface"], activebackground=COLORS["surface"], command=self._update_matching_count).pack(side="left")
+        spec_opts = dict(chk_opts, fg=COLORS["text_muted"], activeforeground=COLORS["text"])
+        tk.Checkbutton(row4, text="📝 Needs Specialist (Physical / Archival Notes — opt-in)", variable=self.cat_notes_var, command=self._update_matching_count, **spec_opts).pack(side="left")
 
         # 3. Match count label
         self.count_label = tk.Label(content, text="0 objects with matching problems", font=FONT_MONO, fg=COLORS["primary"], bg=COLORS["bg"])
@@ -1225,6 +1277,8 @@ class ProblemQueueDialog(tk.Toplevel):
         if self.cat_taxonomy_var.get(): target_cats.add("taxonomy")
         if self.cat_collection_var.get(): target_cats.add("collection")
         if self.cat_physical_var.get(): target_cats.add("physical")
+        if getattr(self, "cat_media_var", None) is None or self.cat_media_var.get():
+            target_cats.add("media")
         if self.cat_notes_var.get(): 
             target_cats.add("notes")
             target_cats.add("other")
@@ -1241,8 +1295,10 @@ class ProblemQueueDialog(tk.Toplevel):
                 target_prob_cols.extend(["Collector_Problem", "Collection_Date_Problem", "Collection_Place_Problem"])
             if self.cat_physical_var.get():
                 target_prob_cols.extend(["Box_Label_Problem", "PlantPart_Problem"])
+            if getattr(self, "cat_media_var", None) is None or self.cat_media_var.get():
+                target_prob_cols.append("Images_Problem")
             if self.cat_notes_var.get():
-                target_prob_cols.extend(["Other_problem", "Images_Problem"])
+                target_prob_cols.append("Other_problem")
 
         # 3. Filter candidates
         matching = []

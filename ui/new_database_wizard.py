@@ -1399,7 +1399,7 @@ class NewDatabaseWizard:
         if self.common_problems.get("Images_Problem", True) and self.has_images:
             tk.Label(global_frame, text="[🚩 Images_Missing]", font=self.FONT_MONO_SM, bg=self.colors["card_bg"], fg=self.colors["error"]).pack(anchor="w")
         if self.common_problems.get("Other_problem", True):
-            tk.Label(global_frame, text="[🚩 Other_problem]", font=self.FONT_MONO_SM, bg=self.colors["card_bg"], fg=self.colors["error"]).pack(anchor="w")
+            tk.Label(global_frame, text="[🚩 Needs Specialist]", font=self.FONT_MONO_SM, bg=self.colors["card_bg"], fg="#4a6b7c").pack(anchor="w")
         for gf in global_flags:
             tk.Label(global_frame, text=f"[🚩 {gf.get('name')}]", font=self.FONT_MONO_SM, bg=self.colors["card_bg"], fg=self.colors["error"]).pack(anchor="w")
 

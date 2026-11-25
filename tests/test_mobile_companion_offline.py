@@ -344,7 +344,9 @@ def test_sanitize_string_field():
     assert sanitize_string_field("Normal text") == "Normal text"
     assert sanitize_string_field("=cmd|'/C calc'!A0") == "'=cmd|'/C calc'!A0"
     assert sanitize_string_field("+SUM(A1:A10)") == "'+SUM(A1:A10)"
-    assert sanitize_string_field("-123") == "'-123"
+    assert sanitize_string_field("-123") == "-123"
+    assert sanitize_string_field("-1") == "-1"
+    assert sanitize_string_field("-SUM(A1:A10)") == "'-SUM(A1:A10)"
     assert sanitize_string_field("@SUM") == "'@SUM"
     assert sanitize_string_field(None) == ""
 

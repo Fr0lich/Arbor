@@ -142,7 +142,7 @@ class TestSandboxTutorials(unittest.TestCase):
 
         runner = start_review_tutorial(self.ui)
         self.assertTrue(self.sm.is_sandboxed)
-        self.assertEqual(len(runner.steps), 11)
+        self.assertEqual(len(runner.steps), 12)
         self.assertEqual(
             [s.step_id for s in runner.steps],
             [
@@ -154,6 +154,7 @@ class TestSandboxTutorials(unittest.TestCase):
                 "open_198_history",
                 "resolve_198_date",
                 "close_198_resolver",
+                "mark_198_icedig",
                 "flag_other_issue",
                 "mark_reviewed",
                 "review_complete",
@@ -209,11 +210,17 @@ class TestSandboxTutorials(unittest.TestCase):
         finally:
             nb.destroy()
 
-        # Step 11: custom details_label + 2 direct launch action buttons
-        runner.current_idx = 10
+        # Step 12: custom details_label + 2 direct launch action buttons
+        runner.current_idx = 11
         runner.show_step()
         self.assertEqual(runner.details_toggle_btn.cget("text"), "▸ Need help opening Arbor?")
-        self.assertEqual(len(runner.action_buttons_frame.winfo_children()), 2)
+        self.assertEqual(len(runner.action_buttons_frame.winfo_children()), 1)
+
+        # Step 9 ICEDIG validator accepts unknown:missing for #198's blank Collector
+        from ui.tutorials.review_tutorial import _is_198_collector_icedig_set
+        self.assertFalse(_is_198_collector_icedig_set(self.ui))
+        self.ui.app.df_reg.loc["198", "Collector"] = "unknown:missing"
+        self.assertTrue(_is_198_collector_icedig_set(self.ui))
 
         runner.exit_tutorial()
         self.assertFalse(self.sm.is_sandboxed)
@@ -390,7 +397,7 @@ class TestSandboxTutorials(unittest.TestCase):
             runner = launcher(self.ui)
             self.assertFalse(self.sm.is_sandboxed)
             self.assertFalse(runner.use_sandbox)
-            self.assertIn("QUICK GUIDE", runner.badge_lbl.cget("text"))
+            self.assertIn("GUIDE", runner.badge_lbl.cget("text"))
             runner.finish_tutorial()
             self.assertEqual(self.ui.app.excel_path, orig_path)
             self.assertFalse(self.sm.is_sandboxed)
@@ -511,15 +518,25 @@ class TestSandboxTutorials(unittest.TestCase):
         import ui.tutorials.discrepancy_tutorial as dt_mod
 
         orig_path = self.ui.app.excel_path
-        runner = start_triage_tutorial(self.ui)
+        # Default Part 3 runs live on the user's real collection (no sandbox)
+        live_runner = start_triage_tutorial(self.ui)
+        self.assertFalse(self.sm.is_sandboxed)
+        self.assertFalse(live_runner.use_sandbox)
+        self.assertEqual(len(live_runner.steps), 5)
+        live_runner.exit_tutorial()
+
+        # Practice Mode fallback mounts artificial #2001-#2004 sandbox with 2 older books on #2003
+        runner = start_triage_tutorial(self.ui, use_sandbox=True)
         self.assertTrue(self.sm.is_sandboxed)
         self.assertIn("2001", self.ui.app.df_reg.index)
         self.assertIn("2002", self.ui.app.df_reg.index)
+        self.assertIn("2003", self.ui.app.df_reg.index)
         self.assertTrue(bool(self.ui.app.df_obs.loc["2001", "Reviewed"]))
         self.assertTrue(bool(self.ui.app.df_obs.loc["2001", "Other_problem"]))
+        self.assertEqual(len(self.ui.app.historical_dbs), 2)
         self.assertEqual(len(runner.steps), 5)
         self.assertEqual(runner.steps[0].step_id, "triage_intro")
-        self.assertEqual(runner.badge_lbl.cget("text"), "🛡️ PRACTICE SANDBOX")
+        self.assertIn("PRACTICE MODE", runner.badge_lbl.cget("text"))
         runner.finish_tutorial()
         self.assertFalse(self.sm.is_sandboxed)
         self.assertEqual(self.ui.app.excel_path, orig_path)
@@ -538,8 +555,8 @@ class TestSandboxTutorials(unittest.TestCase):
         r1 = start_review_tutorial(self.ui)
         self.assertIn("198", self.ui.app.df_reg.index)
 
-        # Switch directly into Office Triage without exiting Practice Mode first
-        r2 = start_triage_tutorial(self.ui)
+        # Switch directly into Part 3 Practice Mode without exiting Practice Mode first
+        r2 = start_triage_tutorial(self.ui, use_sandbox=True)
         self.assertIsNone(r1.hud_win)
         self.assertTrue(self.sm.is_sandboxed)
         self.assertIn("2001", self.ui.app.df_reg.index)
@@ -592,6 +609,97 @@ class TestSandboxTutorials(unittest.TestCase):
         self.assertIsNone(self.ui.image_panel.image_mode)
         self.assertEqual(self.ui.image_panel.image_index, {})
         self.assertFalse(self.ui.image_panel.show_images_var.get())
+
+    def test_review_sandbox_198_has_both_1912_and_1927_even_with_preloaded_books(self):
+        """Regression: entering Part 1 sandbox with real historical_dbs already loaded must
+        surface BOTH 1912 (Old Card Catalog) and 1927 (Historical Ledger Book 1) for #198."""
+        from models import AppState
+        from ui.main_window import ObjectProgramUI
+        import config
+
+        app = AppState()
+        app.config = next(iter(config.DATABASE_CONFIGS.values()))
+        # Pre-load a real historical book that only has a single conflicting year for #198
+        real_book = pd.DataFrame([{"ObjectID": "198", "Collection Date": "1950"}]).set_index("ObjectID", drop=False)
+        app.historical_dbs = [{"name": "Real Book", "df": real_book, "reg_by_id": real_book}]
+
+        mw = ObjectProgramUI(self.root, app)
+        mw.apply_config()
+        sm = SandboxManager()
+        try:
+            sm.enter_sandbox(mw, mock_type="review")
+            sugg = mw.collect_historical_suggestions("198", show_all_override=False)
+            date_vals = set(sugg.get("Collection Date", {}).keys())
+            self.assertIn("1912", date_vals)
+            self.assertIn("1927", date_vals)
+            self.assertNotIn("1950", date_vals)
+        finally:
+            sm.exit_sandbox(mw)
+
+    def test_hud_proximity_positioning_and_unhighlighted_retention(self):
+        """HUD anchors right beside highlighted targets (left, right, top bar) and stays in place when unhighlighted."""
+        from ui.tutorials.tutorial_runner import TutorialRunner, ActionStep
+
+        self.root.deiconify()
+        self.root.geometry("1400x800+40+40")
+        self.root.update_idletasks()
+        self.root.update()
+
+        top_btn = tk.Button(self.root, text="MOBILE")
+        top_btn.place(x=420, y=8, width=80, height=28)
+        top_btn.tutorial_id = "test_top_btn"
+
+        left_search = tk.Entry(self.root)
+        left_search.place(x=20, y=120, width=220, height=28)
+        left_search.tutorial_id = "test_left_search"
+
+        right_btn = tk.Button(self.root, text="Mark Reviewed")
+        right_btn.place(x=1120, y=680, width=240, height=40)
+        right_btn.tutorial_id = "test_right_btn"
+
+        self.root.update_idletasks()
+        self.root.update()
+
+        steps = [
+            ActionStep("s1", "Left target", "Search", target_id="test_left_search"),
+            ActionStep("s2", "No target", "Keep spot", target_id=None),
+            ActionStep("s3", "Right target", "Review", target_id="test_right_btn"),
+            ActionStep("s4", "Top bar", "Open mobile", target_id="test_top_btn"),
+        ]
+        runner = TutorialRunner(self.ui, steps, tutorial_name="Proximity Test", use_sandbox=False)
+        try:
+            self.root.update_idletasks()
+            # Step 1: Left target -> HUD immediately to its right (NOT far right edge!)
+            pos_left = runner._last_hud_pos
+            search_right = left_search.winfo_rootx() + left_search.winfo_width()
+            self.assertGreaterEqual(pos_left[0], search_right)
+            self.assertLess(pos_left[0] - search_right, 60)
+
+            # Step 2: Unhighlighted -> stays in the EXACT same spot as Step 1
+            runner.next_step()
+            self.root.update_idletasks()
+            self.assertEqual(runner._last_hud_pos, pos_left)
+
+            # Step 3: Bottom-right target -> HUD immediately to its left, near the bottom
+            runner.next_step()
+            self.root.update_idletasks()
+            pos_right = runner._last_hud_pos
+            hud_w = runner.hud_win.winfo_reqwidth()
+            self.assertLessEqual(pos_right[0] + hud_w, right_btn.winfo_rootx())
+            self.assertGreater(pos_right[1], self.root.winfo_rooty() + 200)
+
+            # Step 4: Top-bar button -> HUD directly below the button
+            runner.next_step()
+            self.root.update_idletasks()
+            pos_top = runner._last_hud_pos
+            self.assertGreaterEqual(pos_top[1], top_btn.winfo_rooty() + top_btn.winfo_height())
+            self.assertLess(abs(pos_top[0] - top_btn.winfo_rootx()), 40)
+        finally:
+            runner.exit_tutorial()
+            top_btn.destroy()
+            left_search.destroy()
+            right_btn.destroy()
+            self.root.withdraw()
 
     def test_historical_suggestions_slate_blue_pill(self):
         """Verify update_history_indicator renders the Slate-Blue pill with count, matches state, and hides when none."""
@@ -668,8 +776,8 @@ class TestSandboxTutorials(unittest.TestCase):
         self.assertIn("open_help_window", help_src)
         import ui.unified_help as uh_mod
         uh_src = inspect.getsource(uh_mod.UnifiedHelpWindow._build_tutorials_tab)
-        self.assertIn("Suggested Learning Path", uh_src)
-        self.assertIn("Office Triage (REV+ERR)", uh_src)
+        self.assertIn("2-Part Core Introduction", uh_src)
+        self.assertIn("Batch Problem Queue (One-by-One Desk Review)", uh_src)
         self.assertIn('tutorial_type == "triage"', inspect.getsource(mw_mod.ObjectProgramUI.start_tutorial_flow))
         self.assertNotIn("Open Excel Database... (Ctrl+O)", inspect.getsource(mw_mod.ObjectProgramUI.show_file_dropdown))
         self.assertIn("<Escape>", inspect.getsource(opr_mod.ProblemQueueDialog.__init__))
@@ -681,12 +789,37 @@ class TestSandboxTutorials(unittest.TestCase):
         m_runner = start_armed_shelf_guide(self.ui)
         try:
             self.assertFalse(m_runner.steps[1].validator(self.ui))
+            # Part 2 final step hands off to phone without a Part 3 action button
+            last_step = m_runner.steps[-1]
+            self.assertEqual(last_step.action_buttons, [])
+            self.assertIn("continues on your phone", last_step.instruction.lower())
             m_runner.current_idx = 2
             m_runner.prev_step()
             self.assertEqual(m_runner.current_idx, 1)
             self.assertIsNone(m_runner._poll_job)
         finally:
             m_runner.exit_tutorial()
+
+        # Verify MobilePanel 4-option phone tutorial selector persists mobile_phone_tutorial_mode
+        import config as _cfg
+        from unittest.mock import patch as _patch
+        from ui.mobile_panel import MobilePanel
+        saved_prefs = {}
+        host = tk.Frame(self.root)
+        try:
+            with _patch.object(_cfg, "load_prefs", return_value={}), _patch.object(
+                _cfg, "save_prefs", side_effect=lambda p: saved_prefs.update(p)
+            ):
+                panel = MobilePanel(parent=host, app_state=self.ui.app, root_tk=self.root)
+                panel.phone_tutorial_mode_var.set("helper")
+                panel._on_phone_tutorial_mode_changed()
+                self.assertEqual(saved_prefs.get("mobile_phone_tutorial_mode"), "helper")
+                panel.phone_tutorial_mode_var.set("off")
+                panel._on_phone_tutorial_mode_changed()
+                self.assertEqual(saved_prefs.get("mobile_phone_tutorial_mode"), "off")
+                self.assertFalse(saved_prefs.get("mobile_show_walkthrough"))
+        finally:
+            host.destroy()
 
         img_runner = start_image_controls_guide(self.ui)
         try:
@@ -744,14 +877,14 @@ class TestSandboxTutorials(unittest.TestCase):
              patch("ui.tutorials.sandbox_manager.config.save_prefs", side_effect=lambda p: fake_prefs.update(p)):
             self.assertEqual(get_completed_tutorials(), set())
             mark_tutorial_completed("review")
-            mark_tutorial_completed("discrepancy")
-            self.assertEqual(get_completed_tutorials(), {"review", "discrepancy"})
+            mark_tutorial_completed("mobile")
+            self.assertEqual(get_completed_tutorials(), {"review", "mobile"})
 
             hub = open_unified_help(self.root, app_ref=self.ui)
             try:
                 self.assertEqual(hub.win.title(), "Arbor Help Center")
                 self.assertEqual(set(hub.tabs.keys()), {"tutorials", "quick_guides", "manuals", "shortcuts", "about"})
-                self.assertIn("2 OF 5", hub.progress_footer_lbl.cget("text"))
+                self.assertIn("2 OF 2", hub.progress_footer_lbl.cget("text"))
                 for tid in ("quick_guides", "manuals", "shortcuts", "about", "tutorials"):
                     hub.show_tab(tid)
                     self.assertEqual(hub.active_tab, tid)
@@ -766,6 +899,21 @@ class TestSandboxTutorials(unittest.TestCase):
             finally:
                 hub.win.destroy()
                 UnifiedHelpWindow._active_instance = None
+
+
+    def test_post_mobile_stop_followup_popup_opens_and_closes(self):
+        """Verify MobileDialog._show_post_mobile_followup_popup renders cleanly with REV+ERR count."""
+        from ui.mobile_dialog import MobileDialog
+
+        dlg = MobileDialog.__new__(MobileDialog)
+        dlg.parent_ui = self.ui
+        dlg.root = self.root
+        dlg._show_post_mobile_followup_popup(3)
+        pop = getattr(self.ui, "_post_mobile_followup_win", None)
+        self.assertIsNotNone(pop)
+        self.assertTrue(pop.winfo_exists())
+        self.assertIn("Synced to Arbor", pop.title())
+        pop.destroy()
 
 
 if __name__ == "__main__":

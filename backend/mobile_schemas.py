@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+import re
+
 from marshmallow import Schema, fields, pre_load, EXCLUDE, ValidationError
 
 DANGEROUS_STARTS = ("=", "+", "-", "@", "\t", "\r")
+_SAFE_NUMERIC_OR_DASH_RE = re.compile(r"^(?:-|[+-]?\d+(?:\.\d+)?)$")
 
 
 def sanitize_string_field(val: str | None) -> str:
-    """Sanitize strings to prevent CSV/Excel injection formula triggers."""
+    """Sanitize strings to prevent CSV/Excel injection formula triggers.
+    Preserves plain numeric values (e.g. basement floors '-1', '-2') and standalone '-'.
+    """
     if not val:
         return ""
     s = str(val).strip()
-    if s.startswith(DANGEROUS_STARTS):
+    if s.startswith(DANGEROUS_STARTS) and not _SAFE_NUMERIC_OR_DASH_RE.match(s):
         s = "'" + s
     return s
 

@@ -67,7 +67,7 @@ class StatusBarPanel:
             return lbl
 
         def _sb_sep(parent):
-            tk.Label(parent, text="|", bg=statusbar_bg, fg="#555555",
+            tk.Label(parent, text="|", bg=statusbar_bg, fg="#8b948d",
                      font=("Courier New", sc(9))).pack(side="left")
 
         _sb_label(sb_left, "object_count", "Specimens: —")

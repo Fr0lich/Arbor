@@ -370,6 +370,62 @@ class ObjectProgramUI(
 
         return categories
 
+    def notify_auto_cleared_flags(self, cleared_cols, source: str = ""):
+        """Show a single brief, non-blocking toast when Arbor auto-clears problem flag(s).
+
+        Safe for batch/bulk operations: instant no-op when suppressed via
+        _suppress_auto_clear_toasts or when the user disabled auto-clear toasts in Settings.
+        """
+        if not cleared_cols:
+            return
+        _sup = getattr(self, "_suppress_auto_clear_toasts", 0)
+        if isinstance(_sup, int) and _sup > 0:
+            return
+        toast_var = getattr(self, "show_auto_clear_toasts_var", None)
+        if toast_var is not None:
+            try:
+                if not bool(toast_var.get()):
+                    return
+            except Exception:
+                pass
+        else:
+            try:
+                import config as _cfg
+                if not bool((_cfg.load_prefs() or {}).get("show_auto_clear_toasts", True)):
+                    return
+            except Exception:
+                pass
+
+        if not hasattr(self, "show_toast"):
+            return
+
+        import re
+        unique_cols = list(dict.fromkeys(str(c) for c in cleared_cols if c))
+        if not unique_cols:
+            return
+
+        def _fmt(col_name: str) -> str:
+            clean = re.sub(r"[_ ]?[Pp]roblem$", "", col_name).replace("_", " ").strip()
+            clean = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", clean)
+            if not clean or clean.lower() == "other":
+                return "Needs Specialist"
+            return f"{clean} Issue"
+
+        if len(unique_cols) == 1:
+            msg = f"Auto-cleared: {_fmt(unique_cols[0])}"
+        elif len(unique_cols) == 2:
+            msg = f"Auto-cleared 2 flags ({_fmt(unique_cols[0])}, {_fmt(unique_cols[1])})"
+        else:
+            msg = f"Auto-cleared {len(unique_cols)} problem flags"
+
+        if source:
+            msg = f"{msg} ({source})"
+
+        try:
+            self.show_toast(msg, "info", duration_ms=2200)
+        except Exception:
+            pass
+
     def save_user_pref(self, key, value):
         import config
         prefs = config.load_prefs()
@@ -689,8 +745,11 @@ class ObjectProgramUI(
         self.focus_dynamic_update_var = tk.BooleanVar(value=_init_prefs.get("focus_dynamic_update", True))
         self.layout_dynamic_update_var = tk.BooleanVar(value=_init_prefs.get("layout_dynamic_update", True))
         self.large_reviewed_button_var = tk.BooleanVar(value=_init_prefs.get("large_reviewed_button", True))
-        self.auto_advance_var = tk.BooleanVar(value=_init_prefs.get("auto_advance_on_review", True))
+        self.auto_advance_var = tk.BooleanVar(value=_init_prefs.get("auto_advance_on_review", False))
         self.auto_advance_history_var = tk.BooleanVar(value=_init_prefs.get("auto_advance_history", False))
+        self.auto_clear_problem_on_fill_var = tk.BooleanVar(value=_init_prefs.get("auto_clear_problem_on_fill", False))
+        self.show_auto_clear_toasts_var = tk.BooleanVar(value=_init_prefs.get("show_auto_clear_toasts", True))
+        self._suppress_auto_clear_toasts = 0
         self.auto_resolve_conflicts_var = tk.BooleanVar(value=_init_prefs.get("auto_resolve_conflicts", False))
         self.strict_input_validation_var = tk.BooleanVar(value=_init_prefs.get("strict_input_validation", False))
 
@@ -958,6 +1017,10 @@ class ObjectProgramUI(
         self.filter_vars["Unknown"] = tk.StringVar(value="Ignore")
         self.filter_vars["Needs_ICEDIG_Review"] = tk.StringVar(value="Ignore")
         self.filter_vars["Has_ICEDIG_Code"] = tk.StringVar(value="Ignore")
+        self.filter_vars["ICEDIG_Missing"] = tk.StringVar(value="Ignore")
+        self.filter_vars["ICEDIG_Indecipherable"] = tk.StringVar(value="Ignore")
+        self.filter_vars["ICEDIG_Undigitized"] = tk.StringVar(value="Ignore")
+        self.filter_vars["ICEDIG_Withheld"] = tk.StringVar(value="Ignore")
 
         # Status & Boolean filters
         self.filter_vars["Has_Images"]            = tk.StringVar(value="Ignore")
@@ -1469,6 +1532,8 @@ class ObjectProgramUI(
                                 self._cached_obs_dict[oid][pc] = False
                             if hasattr(self, "loaded_problem_states"):
                                 self.loaded_problem_states[pc] = False
+            if prob_changed_fields and hasattr(self, "notify_auto_cleared_flags"):
+                self.notify_auto_cleared_flags(prob_changed_fields, source="GBIF")
 
         # Append notes to comment
         if notes and "Comment" in self.reg_vars and "Comment" in self.reg_entries:
@@ -3364,6 +3429,29 @@ class ObjectProgramUI(
             except Exception:
                 pass
 
+        # 3. Vertical middle sash (Images top / Storage Location bottom) when Location is in center
+        if (
+            hasattr(self, "middle_panes")
+            and self.middle_panes.winfo_exists()
+            and getattr(self, "location_in_center_var", None)
+            and self.location_in_center_var.get()
+            and len(self.middle_panes.panes()) >= 2
+            and not getattr(self, "_middle_sash_user_adjusted", False)
+        ):
+            try:
+                mid_h = self.middle_panes.winfo_height()
+                if mid_h > sc(340):
+                    loc_req = sc(180)
+                    loc_horiz = getattr(self, "loc_frame_horizontal", None)
+                    if loc_horiz is not None and loc_horiz.winfo_exists():
+                        req_h = loc_horiz.winfo_reqheight()
+                        if req_h > sc(80):
+                            loc_req = max(sc(165), min(req_h + sc(12), sc(220)))
+                    target_mid_sash = max(sc(200), mid_h - loc_req)
+                    self.middle_panes.sashpos(0, target_mid_sash)
+            except Exception:
+                pass
+
     def handle_ctrl_o(self, event=None):
         return self.toggle_left_pin(event)
 
@@ -3431,12 +3519,13 @@ class ObjectProgramUI(
                 
 
     def _sync_middle_panes(self):
-        if not hasattr(self, 'middle_panes'):
+        if not hasattr(self, 'middle_panes') or not hasattr(self, 'right_frame'):
             return
 
-        img_mode = getattr(getattr(self, "image_panel", None), "image_mode", None)
         show_images_flag = bool(self.show_images_var.get()) if self.show_images_var is not None else True
-        images_visible = show_images_flag and img_mode != "offline"
+        # Offline mode and missing-image states keep the middle column open (showing the Summary Hub
+        # above Storage Location); only an explicit F8 / Hide Photo Pane toggle hides the image pane.
+        images_visible = show_images_flag
 
         focus_active = hasattr(self, "focus_mode_var") and self.focus_mode_var.get()
         show_loc = not (focus_active and not self.focus_visibility_vars.get("Location", tk.BooleanVar(value=True)).get())
@@ -3454,15 +3543,23 @@ class ObjectProgramUI(
 
         if images_visible:
             # Ensure middle_frame is mounted in the outer horizontal Panedwindow
+            restored_middle = False
             if panes is not None and mid_frame is not None and str(mid_frame) not in panes.panes():
                 try:
                     left_in = hasattr(self, "left_frame") and str(self.left_frame) in panes.panes()
                     panes.insert(1 if left_in else 0, mid_frame, weight=1)
+                    restored_middle = True
                 except Exception:
                     try:
                         panes.add(mid_frame, weight=1)
+                        restored_middle = True
                     except Exception:
                         pass
+            if restored_middle and hasattr(self, "apply_proper_sash_positions"):
+                try:
+                    self.root.after(20, self.apply_proper_sash_positions)
+                except Exception:
+                    pass
 
             # Keep Curatorial Command Strip docked at top of middle_frame
             if ctx_bar is not None and mid_frame is not None:
@@ -3472,16 +3569,20 @@ class ObjectProgramUI(
                 except Exception:
                     pass
 
-            # Mount image panel at index 0 of middle_panes (use add() when panedwindow is empty)
-            if hasattr(self, 'right_frame') and str(self.right_frame) not in self.middle_panes.panes():
-                if self.middle_panes.panes():
-                    self.middle_panes.insert(0, self.right_frame, weight=3)
-                else:
-                    self.middle_panes.add(self.right_frame, weight=3)
+            # Guarantee image panel is ALWAYS at index 0 (top) of middle_panes
             if hasattr(self, 'right_frame'):
+                current_mp = self.middle_panes.panes()
+                if str(self.right_frame) not in current_mp:
+                    if current_mp:
+                        self.middle_panes.insert(0, self.right_frame, weight=3)
+                    else:
+                        self.middle_panes.add(self.right_frame, weight=3)
+                elif current_mp and current_mp[0] != str(self.right_frame):
+                    self.middle_panes.forget(self.right_frame)
+                    self.middle_panes.insert(0, self.right_frame, weight=3)
                 self.refresh_image_view()
 
-            # Mount horizontal Location inside middle_panes (below images) if enabled
+            # Mount horizontal Location inside middle_panes (strictly below images) if enabled
             if loc_center_visible and loc_horiz is not None:
                 if loc_slot is not None:
                     if str(loc_slot) not in self.middle_panes.panes():
@@ -3505,7 +3606,7 @@ class ObjectProgramUI(
                 elif loc_horiz is not None and str(loc_horiz) in self.middle_panes.panes():
                     self.middle_panes.forget(loc_horiz)
         else:
-            # Images hidden (F8 or Offline): collapse middle_frame so Left + Right expand cleanly
+            # Images explicitly hidden via F8: collapse middle_frame so Left + Right expand cleanly
             if hasattr(self, 'right_frame') and str(self.right_frame) in self.middle_panes.panes():
                 self.middle_panes.forget(self.right_frame)
             if loc_slot is not None and str(loc_slot) in self.middle_panes.panes():
@@ -3523,7 +3624,8 @@ class ObjectProgramUI(
                 except Exception:
                     pass
 
-            # If Location is set to Center/Bottom, dock it cleanly along the bottom above the status bar
+            # If Location is in the default Center/Bottom slot, dock it cleanly along the bottom
+            # below panes and above the status bar (never overlapping any panels).
             if loc_center_visible and loc_horiz is not None and panes is not None:
                 try:
                     is_dark = getattr(self, "dark_mode_active", False)
@@ -3633,6 +3735,11 @@ class ObjectProgramUI(
             self.root.after_cancel(self._responsive_resize_job)
 
         def do_check():
+            try:
+                if not self.root.winfo_exists():
+                    return
+            except Exception:
+                return
             if not hasattr(self, 'responsive_btn_config') or not hasattr(self, '_responsive_icons_cache'):
                 return
 
@@ -3919,6 +4026,7 @@ class ObjectProgramUI(
         )
         self.right_frame = self.image_panel
         self.middle_panes.add(self.image_panel, weight=3)
+        self._sync_middle_panes()
 
         # Right (Scrollable registration area)
         reg_outer = ttk.Frame(panes, style="RightPane.TFrame")
@@ -3933,41 +4041,67 @@ class ObjectProgramUI(
         self.reg_data_frame.tutorial_id = "object_editor_frame"
         self.right_panes.add(self.reg_data_frame, weight=3)
 
-        # Registration Header Panel (fixed top inside reg_data_frame)
+        # Registration Header Panel (fixed 2-row top inside reg_data_frame — prevents horizontal clipping on 1366x768 laptops)
         reg_header = ttk.Frame(self.reg_data_frame, padding=(8, 6), style="RightPane.TFrame")
         reg_header.pack(fill="x", side="top")
         ttk.Separator(self.reg_data_frame, orient="horizontal").pack(fill="x", side="top")
 
+        reg_header_row1 = ttk.Frame(reg_header, style="RightPane.TFrame")
+        reg_header_row1.pack(fill="x", side="top")
+
         ttk.Label(
-            reg_header,
+            reg_header_row1,
             text="Registration Data",
-            font=("Inter", sc(16), "bold")
+            font=("Inter", sc(14), "bold"),
+            style="RightPane.TLabel"
         ).pack(side="left")
 
+        # Focus Mode toggle (top-right of Registration header)
+        self.focus_quick_frame = ttk.Frame(reg_header_row1, style="RightPane.TFrame")
+        self.focus_quick_frame.pack(side="right", padx=(4, 0))
+
+        self.focus_problems_cb = ToggleSwitch(
+            self.focus_quick_frame,
+            self.focus_mode_var,
+            command=self.toggle_focus_mode_from_ui,
+            ui_ref=self
+        )
+        self.focus_problems_cb.pack(side="right", padx=(4, 0))
+        ttk.Label(self.focus_quick_frame, text="Focus Mode", font=("Inter", sc(9)), style="RightPane.TLabel").pack(side="right")
+        self.update_focus_toggle_visibility()
+
+        # Row 2: Compact contextual action bar (History, Old Names, Conflict pill)
+        reg_header_row2 = ttk.Frame(reg_header, style="RightPane.TFrame")
+        reg_header_row2.pack(fill="x", side="top", pady=(sc(4), 0))
+
+        _is_dark_hdr = getattr(self, "dark_mode_active", False)
         # History suggestions button and indicator
         self.history_btn = tk.Button(
-            reg_header,
+            reg_header_row2,
             text="History",
             font=("Inter", sc(9)),
-            bg="#ffffff", fg="#2c302e",
+            bg="#2a322c" if _is_dark_hdr else "#ffffff",
+            fg="#e8ebe9" if _is_dark_hdr else "#2c302e",
+            activebackground="#343e37" if _is_dark_hdr else "#e9ece5",
+            activeforeground="#e8ebe9" if _is_dark_hdr else "#2c302e",
             relief="solid", bd=1, cursor="hand2",
             padx=sc(8), pady=sc(2),
             command=self.open_historical_suggestions
         )
-        self.history_btn.pack(side="left", padx=(8, 0))
+        self.history_btn.pack(side="left")
 
+        # Old Names button kept constructed (un-packed) to declutter Registration header;
+        # still accessible via TOOLS ▾ and Ctrl+K Command Palette.
         self.old_names_btn = ttk.Button(
-            reg_header,
+            reg_header_row2,
             text="📜 Old Names",
             style="Nav.TButton",
             cursor="hand2",
             command=self.open_old_names_dialog,
         )
-        self.old_names_btn.pack(side="left", padx=(sc(6), 0))
-        self.add_tooltip(self.old_names_btn, "View older synonyms & family names for this specimen (read-only)")
 
         self.history_indicator_label = tk.Label(
-            reg_header,
+            reg_header_row2,
             text="",
             fg="#2c536d",
             bg="#e6f0f6",
@@ -3995,20 +4129,6 @@ class ObjectProgramUI(
             self.history_indicator_label,
             "Compare against earlier historical ledgers (Ctrl+H)"
         )
-
-        # Focus Mode toggle (stays in header)
-        self.focus_quick_frame = ttk.Frame(reg_header, style="RightPane.TFrame")
-        self.focus_quick_frame.pack(side="right", padx=(0, 4))
-
-        self.focus_problems_cb = ToggleSwitch(
-            self.focus_quick_frame,
-            self.focus_mode_var,
-            command=self.toggle_focus_mode_from_ui,
-            ui_ref=self
-        )
-        self.focus_problems_cb.pack(side="right", padx=(4, 0))
-        ttk.Label(self.focus_quick_frame, text="Focus Mode", font=("Inter", sc(9))).pack(side="right")
-        self.update_focus_toggle_visibility()
 
         # -------------------------------------------------------
         # Stitch: Fixed action bar — packed at BOTTOM before canvas
@@ -4665,8 +4785,13 @@ class ObjectProgramUI(
                 reg_changed_fields.append(col)
                 reg_changed_values.append(f'{col}: "{old}"  "{new}"')
 
-                # If a field mapped to a problem column is populated with a non-empty value, auto-clear the problem flag
-                if new.strip() != "":
+                # By default (auto_clear_problem_on_fill = False), manual typing never silently unchecks
+                # problem flags so uncertain edits don't hide real issues. When opted in, only clear on
+                # a strict blank -> filled transition.
+                _auto_clear_var = getattr(self, "auto_clear_problem_on_fill_var", None)
+                _auto_clear_enabled = bool(_auto_clear_var.get()) if _auto_clear_var is not None else False
+                if _auto_clear_enabled and old.strip() == "" and new.strip() != "":
+                    _cleared_here = []
                     for p_col, f_name in self.problem_to_field.items():
                         if f_name == col and p_col in self.problem_vars:
                             if self.problem_vars[p_col].get():
@@ -4675,6 +4800,9 @@ class ObjectProgramUI(
                                 if getattr(self, "_cached_obs_dict", None) is not None and oid in self._cached_obs_dict:
                                     self._cached_obs_dict[oid][p_col] = False
                                 self.loaded_problem_states[p_col] = False
+                                _cleared_here.append(p_col)
+                    if _cleared_here:
+                        self.notify_auto_cleared_flags(_cleared_here)
 
                 if hasattr(self, "_loaded_reg_values"):
                     self._loaded_reg_values[col] = new
@@ -7827,15 +7955,16 @@ class ObjectProgramUI(
             has_problem = self._problem_cache.get(oid, False)
             has_history = oid in history_set
 
+            is_dark = getattr(self, "dark_mode_active", False)
             color = None
             if reviewed and has_problem:
-                color = "#f0ad4e"
+                color = "#f6c467" if is_dark else "#8a5200"
             elif reviewed:
-                color = "#0bd45b"
+                color = "#b0f3a9" if is_dark else "#1f5c2e"
             elif has_problem and has_history:
-                color = "#bb6bd9"
+                color = "#d3a4f7" if is_dark else "#6b2d8a"
             elif has_problem:
-                color = "#d9534f"
+                color = "#f28b82" if is_dark else "#a8242a"
 
             # PERFORMANCE OPTIMIZATION (Bolt): Pass pre-calculated color directly to bypass itemconfig Tcl queries entirely.
             has_online = self.has_online_photos(oid)
@@ -8832,13 +8961,24 @@ class ObjectProgramUI(
         
         # If toggled ON to Reviewed:
         if not was_reviewed:
-            if self.autoAdvanceOnReview:
-                if oid in self.app.active_object_ids:
-                    idx = self.app.active_object_ids.index(oid)
-                    if idx + 1 < len(self.app.active_object_ids):
-                        self.navigate_object(1)
-            elif getattr(self, "auto_advance_history_var", None) and self.auto_advance_history_var.get():
-                self.goto_next_problem_with_history()
+            # In Part 1 (Desktop Basics) Practice Mode, keep focus on the current specimen
+            # so trainees practice searching for #198 instead of auto-jumping past Step 5.
+            _suppress_auto_advance = False
+            try:
+                from ui.tutorials.sandbox_manager import SandboxManager
+                _sm = SandboxManager()
+                if _sm.is_sandboxed and getattr(_sm, "_current_mock_type", None) == "review":
+                    _suppress_auto_advance = True
+            except Exception:
+                pass
+            if not _suppress_auto_advance:
+                if self.autoAdvanceOnReview:
+                    if oid in self.app.active_object_ids:
+                        idx = self.app.active_object_ids.index(oid)
+                        if idx + 1 < len(self.app.active_object_ids):
+                            self.navigate_object(1)
+                elif getattr(self, "auto_advance_history_var", None) and self.auto_advance_history_var.get():
+                    self.goto_next_problem_with_history()
 
     def _toggle_reviewed_for_id(self, oid):
         if not oid:

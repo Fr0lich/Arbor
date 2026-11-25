@@ -54,7 +54,7 @@ class UnifiedHelpWindow:
         "keycap_border": "#b5c2b7",
     }
 
-    LEARNING_PATH_IDS = ("review", "mobile", "discrepancy", "triage", "database")
+    LEARNING_PATH_IDS = ("review", "mobile")
 
     def __init__(self, parent, app_ref=None, initial_tab="tutorials"):
         # Reuse existing open Help Center if already open
@@ -182,7 +182,7 @@ class UnifiedHelpWindow:
         count = sum(1 for tid in self.LEARNING_PATH_IDS if tid in done)
         if hasattr(self, "progress_footer_lbl") and self.progress_footer_lbl.winfo_exists():
             self.progress_footer_lbl.config(
-                text=f"LEARNING PATH: {count} OF {len(self.LEARNING_PATH_IDS)} COMPLETED"
+                text=f"CORE INTRO: {count} OF {len(self.LEARNING_PATH_IDS)} COMPLETED"
             )
 
     # ------------------------------------------------------------------
@@ -325,8 +325,8 @@ class UnifiedHelpWindow:
         inner = self._create_scrollable_tab("tutorials")
         self._add_section_intro(
             inner,
-            "Interactive Tutorials — Suggested Learning Path",
-            "Read what each walkthrough covers before you begin. Practice Mode tutorials run on safe sample data and never touch your real museum files. Your progress is saved automatically between sessions.",
+            "Getting Started with Arbor — 2-Part Core Introduction",
+            "Start at your desk in safe Practice Mode (Part 1), then bring the exact same workflow into the collection on your phone (Part 2). Progress is saved automatically between sessions.",
         )
 
         done = get_completed_tutorials()
@@ -340,83 +340,46 @@ class UnifiedHelpWindow:
             if self.app:
                 self._launch_and_close(lambda: start_armed_shelf_guide(self.app))
 
-        tutorials = [
+        def _start_triage_sandbox():
+            from ui.tutorials import start_triage_tutorial
+            if self.app:
+                self._launch_and_close(lambda: start_triage_tutorial(self.app, use_sandbox=True))
+
+        core_tutorials = [
             (
                 "review",
-                "Step 1",
-                "3-Minute Quick Tour",
-                "~3 min",
+                "Part 1 · At Your Desk",
+                "Desktop Basics",
+                "~3–4 min",
                 "Practice Mode",
                 True,
                 (
-                    "Start here if you are new to Arbor Desktop.\n"
-                    "• Inspect Object #110 and #198 using real specimen photos\n"
-                    "• Fill in a missing Collection Date and mark an object Reviewed (green [REV])\n"
-                    "• Compare conflicting older records in Problem Resolution, flag physical damage, and see amber [REV+ERR]"
+                    "Start here if you are new to Arbor — learn all 3 core paths on real photos (#110 & #198):\n"
+                    "• Check Registration Data, fill missing details, and resolve older catalog books in Problem Resolution\n"
+                    "• Mark confirmed-blank fields using per-field ⋯ canonical ICEDIG codes (unknown:missing, etc.)\n"
+                    "• Escalate physical damage with Needs Specialist ([REV+NOTE]) and learn when to click Mark Reviewed"
                 ),
                 lambda: _start_flow("review"),
+                None,
             ),
             (
                 "mobile",
-                "Step 2 · Recommended Next",
-                "Mobile Companion Hallway Guide",
+                "Part 2 · In the Collection",
+                "Mobile Companion",
                 "~2 min",
-                "Uses Your Phone",
+                "Live · Uses Your Phone",
                 False,
                 (
-                    "Walk the collection aisles with your phone without carrying a laptop.\n"
-                    "• Pair your phone with a QR code (works offline in concrete basement vaults)\n"
-                    "• Record Physical Locations for whole shelves in 1 tap (Set Shelf + 5-sec Undo)\n"
-                    "• Check older plant names (Old names), flag issues right on Details, mark Reviewed, and save on Desktop"
+                    "Translate the exact same ideas onto your phone for walking the collection aisles:\n"
+                    "• Launch Phone Connector, scan the QR code, and set your shelf once (Set Shelf + 5-sec ↩ Undo)\n"
+                    "• Use inline checkboxes, tap any field value for ICEDIG codes, swipe to History & 📜 Old names, and flag Needs Specialist ([REV+NOTE])"
                 ),
                 _start_mobile,
-            ),
-            (
-                "triage",
-                "Step 3",
-                "Office Triage (REV+ERR)",
-                "~2 min",
-                "Practice Mode",
-                True,
-                (
-                    "The desk follow-up right after a hallway shift — sort through amber [REV+ERR] objects.\n"
-                    "• Filter the Specimen Directory to Hallway Follow-Up (Ctrl+G)\n"
-                    "• Step through the Problem Queue, clear false alarms in 1 click, and leave physical damage flagged for a specialist"
-                ),
-                lambda: _start_flow("triage"),
-            ),
-            (
-                "discrepancy",
-                "Step 4",
-                "Historical Ledger Comparison",
-                "~3 min",
-                "Practice Mode",
-                True,
-                (
-                    "Use this at your desk when older museum catalog books disagree across multiple fields.\n"
-                    "• Open Problem Resolution (Ctrl+H) and browse disagreeing fields in the sidebar\n"
-                    "• Compare two conflicting catalog books carefully and apply confirmed values\n"
-                    "• Learn why desk edits leave 'Reviewed' unchecked until physical inspection"
-                ),
-                lambda: _start_flow("discrepancy"),
-            ),
-            (
-                "database",
-                "Step 5 · Optional",
-                "Collections & New Specimens",
-                "~2 min",
-                "Practice Mode",
-                True,
-                (
-                    "Optional — skip if you only work on an existing museum collection file.\n"
-                    "• See how to create a new collection Excel file from scratch\n"
-                    "• Practice adding a new specimen record (Ctrl+N) and filling in its details and storage location"
-                ),
-                lambda: _start_flow("database"),
+                None,
             ),
         ]
 
-        for tid, step_tag, title, duration, mode_lbl, is_sandbox, desc, launch_fn in tutorials:
+        def _render_tutorial_card(tid, step_tag, title, duration, mode_lbl, is_sandbox, desc, launch_fn, secondary_action=None):
             card = self._make_card(inner)
             is_done = tid in done
 
@@ -463,6 +426,62 @@ class UnifiedHelpWindow:
                 cursor="hand2",
                 command=launch_fn,
             ).pack(side="left")
+
+            if secondary_action:
+                sec_lbl, sec_fn = secondary_action
+                tk.Button(
+                    btn_row,
+                    text=sec_lbl,
+                    font=self.FONT_SMALL,
+                    bg=self.COLORS["surface_container_low"],
+                    fg=self.COLORS["on_surface"],
+                    relief="solid",
+                    bd=1,
+                    padx=sc(10),
+                    pady=sc(5),
+                    cursor="hand2",
+                    command=sec_fn,
+                ).pack(side="left", padx=(sc(8), 0))
+
+        for spec in core_tutorials:
+            _render_tutorial_card(*spec)
+
+        # Clearly separated Optional & Advanced Tutorials section
+        tk.Frame(inner, bg=self.COLORS["outline_variant"], height=1).pack(fill="x", pady=(sc(8), sc(14)))
+        self._add_section_intro(
+            inner,
+            "Optional & Advanced Tutorials",
+            "Independent guides you can try anytime once you are comfortable with the 2-part introduction.",
+        )
+        _render_tutorial_card(
+            "triage",
+            "Optional · Advanced",
+            "Batch Problem Queue (One-by-One Desk Review)",
+            "~2–3 min",
+            "Live Workspace",
+            False,
+            (
+                "An optional desk tool for stepping through every object with a flagged problem one by one:\n"
+                "• Filter with Ctrl+G (Hallway Follow-Up or Archival Gaps) — clean [REV] and [REV+NOTE] stay out automatically\n"
+                "• Step through Problem Resolution in Queue Mode, clear false alarms in 1 click, compare older books, and save (Ctrl+S)"
+            ),
+            lambda: _start_flow("triage"),
+            ("🛡️ Practice with Sample Data", _start_triage_sandbox),
+        )
+        _render_tutorial_card(
+            "database",
+            "Optional · Admin",
+            "Collections & New Specimens",
+            "~2 min",
+            "Practice Mode",
+            True,
+            (
+                "Skip if you only work on an existing museum collection file.\n"
+                "• See how to create a new collection Excel file from scratch\n"
+                "• Practice adding a new specimen record (Ctrl+N) and setting its Storage Location (Ctrl+L)"
+            ),
+            lambda: _start_flow("database"),
+        )
 
     def _build_quick_guides_tab(self):
         inner = self._create_scrollable_tab("quick_guides")

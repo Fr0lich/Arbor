@@ -228,11 +228,15 @@ class FilterDialogController:
                 raw = var.get() if hasattr(var, "get") else "Ignore"
                 val = str(raw).strip().lower()
                 if val in ("has", "true", "1"):
-                    box_btn.config(text="✓", fg=COLORS["secondary"], bg="#e8f5e9", highlightbackground=COLORS["secondary"], bd=1)
-                    badge.config(text="HAS (✓)", fg="#2e7d32", bg="#e8f5e9")
+                    has_bg = "#1e3a24" if is_dark else "#e8f5e9"
+                    has_fg = "#85e89d" if is_dark else "#2e7d32"
+                    box_btn.config(text="✓", fg=has_fg, bg=has_bg, highlightbackground=COLORS["secondary"], bd=1)
+                    badge.config(text="HAS (✓)", fg=has_fg, bg=has_bg)
                 elif val in ("not", "false", "-1"):
-                    box_btn.config(text="−", fg=COLORS["error"], bg="#ffebee", highlightbackground=COLORS["error"], bd=1)
-                    badge.config(text="NOT (−)", fg="#c93a40", bg="#ffebee")
+                    not_bg = "#3b1c1e" if is_dark else "#ffebee"
+                    not_fg = "#f28b82" if is_dark else "#c93a40"
+                    box_btn.config(text="−", fg=not_fg, bg=not_bg, highlightbackground=COLORS["error"], bd=1)
+                    badge.config(text="NOT (−)", fg=not_fg, bg=not_bg)
                 else:
                     box_btn.config(text=" ", fg=COLORS["outline"], bg=COLORS["surface"], highlightbackground=COLORS["outline"], bd=1)
                     badge.config(text="IGNORE", fg=COLORS["outline"], bg=COLORS["surface_container_low"])
@@ -333,12 +337,13 @@ class FilterDialogController:
                 bar_col = COLORS["outline"] if "PlantPart" in col else "#795548"
                 make_tristate_row(g_phys, col.replace("_", " "), ui.filter_vars.get(col), bar_col)
 
-        # 4. Other Discrepancies
+        # 4. Specialist & Notes
         other_problems = [p for p in ui.problem_columns if prob_categories.get(p) not in ("taxonomy", "collection", "physical", "media") and "Image" not in p]
         if other_problems:
-            g_oth = create_group(probs_inner, "📝 Other Discrepancies")
+            g_oth = create_group(probs_inner, "📝 Specialist & Notes")
             for col in other_problems:
-                make_tristate_row(g_oth, col.replace("_", " "), ui.filter_vars.get(col), COLORS["outline_variant"])
+                disp = "Needs Specialist" if col == "Other_problem" else col.replace("_", " ")
+                make_tristate_row(g_oth, disp, ui.filter_vars.get(col), "#4a6b7c")
 
         # Fallback if no categorized problems found
         if not tax_problems and not col_problems and not phys_problems and not other_problems:
@@ -354,13 +359,21 @@ class FilterDialogController:
         if "Historical_Data" in ui.filter_vars:
             make_tristate_row(g_glob, "Historical Data (Has / No History)", ui.filter_vars.get("Historical_Data"), COLORS["surface_tint"])
 
-        u_list = create_group(probs_inner, "Archival Gaps (Ukjent)")
+        u_list = create_group(probs_inner, "Archival Gaps (ICEDIG & Ukjent)")
         if "Unknown" in ui.filter_vars:
             make_tristate_row(u_list, "Any settled 'Ukjent' field", ui.filter_vars["Unknown"], color_bar="#d9a036")
         if "Needs_ICEDIG_Review" in ui.filter_vars:
             make_tristate_row(u_list, "Needs ICEDIG Review", ui.filter_vars["Needs_ICEDIG_Review"], color_bar="#d9a036")
         if "Has_ICEDIG_Code" in ui.filter_vars:
-            make_tristate_row(u_list, "Has ICEDIG Code", ui.filter_vars["Has_ICEDIG_Code"], color_bar="#3a7d44")
+            make_tristate_row(u_list, "Has Any ICEDIG Code", ui.filter_vars["Has_ICEDIG_Code"], color_bar="#3a7d44")
+        for _ikey, _ilbl, _icol in (
+            ("ICEDIG_Missing", "ICEDIG: unknown:missing (blank on label)", "#3a7d44"),
+            ("ICEDIG_Indecipherable", "ICEDIG: unknown:indecipherable (illegible)", "#3a7d44"),
+            ("ICEDIG_Undigitized", "ICEDIG: unknown:undigitized (skipped)", "#4a7b9d"),
+            ("ICEDIG_Withheld", "ICEDIG: withheld (restricted)", "#4a7b9d"),
+        ):
+            if _ikey in ui.filter_vars:
+                make_tristate_row(u_list, _ilbl, ui.filter_vars[_ikey], color_bar=_icol)
 
         if hasattr(ui, "unknown_columns"):
             for col in ui.unknown_columns:

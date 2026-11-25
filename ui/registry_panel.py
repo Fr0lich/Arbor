@@ -79,15 +79,83 @@ def _bind_icedig_shortcuts(ui, widget, field_name):
     widget.bind("<Control-Shift-BackSpace>", lambda e: (_apply_icedig_code(ui, field_name, ""), "break")[1])
 
 def _apply_icedig_code(ui, field_name, code):
-    """Write an ICEDIG code (or 'unknown'/empty) into a registration field and commit."""
+    """Write a canonical ICEDIG code (or empty string) into a registration field, clear its mapped problem flag, and commit."""
+    import config
     var = ui.reg_vars.get(field_name)
     if var is None:
         return
     var.set(code)
-    ui.commit_current_object()
-    # Refresh the field background so the amber tint updates immediately
+
+    # Setting a precision ICEDIG code resolves that field's missing-field problem flag
+    cleared_cols = []
+    warned_conflict = False
+    if code and code.lower() in config.ICEDIG_UNKNOWN_CODES:
+        for p_col, mapped_field in getattr(ui, "problem_to_field", {}).items():
+            if mapped_field == field_name and p_col in getattr(ui, "problem_vars", {}):
+                try:
+                    if ui.problem_vars[p_col].get():
+                        ui.problem_vars[p_col].set(False)
+                        cleared_cols.append(p_col)
+                except Exception:
+                    pass
+        # Gentle reminder if historical books have a conflicting value for this field
+        if code.lower() == "unknown:missing":
+            sugg = getattr(ui, "current_object_suggestions", None) or {}
+            if sugg.get(field_name) and hasattr(ui, "show_toast"):
+                warned_conflict = True
+                ui.show_toast(
+                    f"Heads up: historical ledgers have a value for {field_name} — press Ctrl+H to compare.",
+                    "warning",
+                    duration_ms=4500,
+                )
+
+    _prev_sup = getattr(ui, "_suppress_auto_clear_toasts", 0)
+    _prev_sup = _prev_sup if isinstance(_prev_sup, int) else 0
+    ui._suppress_auto_clear_toasts = _prev_sup + 1
+    try:
+        ui.commit_current_object()
+    finally:
+        ui._suppress_auto_clear_toasts = _prev_sup
+
+    if cleared_cols and not warned_conflict and hasattr(ui, "notify_auto_cleared_flags"):
+        ui.notify_auto_cleared_flags(cleared_cols, source="ICEDIG")
+    # Refresh the field background and per-field ICEDIG trigger immediately
     from ui.registry_panel import RegistryPanel
     RegistryPanel.refresh_field_background(ui, field_name)
+
+
+def _open_field_icedig_menu(ui, field_name, anchor_widget):
+    """Open a clean, config-driven ICEDIG status menu scoped strictly to one Registration field."""
+    import config
+    current_val = ui.reg_vars.get(field_name, tk.StringVar()).get().strip().lower()
+    menu = tk.Menu(ui.root, tearoff=0)
+    menu.add_command(label=f"ICEDIG status — {field_name}", state="disabled")
+    menu.add_separator()
+    for item in config.ICEDIG_CODES:
+        code = item["code"]
+        desc = item["description"]
+        shortcut = item.get("shortcut", "")
+        is_active = (current_val == code.lower())
+        prefix = "✓ " if is_active else "   "
+        label = f"{prefix}{code}  ({desc})"
+        menu.add_command(
+            label=label,
+            accelerator=shortcut,
+            command=lambda f=field_name, c=code: _apply_icedig_code(ui, f, c),
+        )
+    if current_val:
+        menu.add_separator()
+        menu.add_command(
+            label="Clear field value",
+            accelerator="Ctrl+Shift+Backspace",
+            command=lambda f=field_name: _apply_icedig_code(ui, f, ""),
+        )
+    try:
+        x = anchor_widget.winfo_rootx()
+        y = anchor_widget.winfo_rooty() + anchor_widget.winfo_height()
+        menu.tk_popup(x, y)
+    finally:
+        menu.grab_release()
 
 
 class RegistryPanel:
@@ -128,6 +196,24 @@ class RegistryPanel:
         ui.unval_btns = {}
         ui.unval_comment_frames = {}
         ui.unval_comment_vars = {}
+        ui.icedig_field_btns = {}
+        ui._registry_theme_widgets = {
+            "canvases": [],
+            "card_frames": [],
+            "header_frames": [],
+            "header_lbls": [],
+            "badge_lbls": [],
+            "body_frames": [],
+            "row_frames": [],
+            "field_lbls": [],
+            "spec_bars": [],
+            "spec_cbs": [],
+            "spec_subtitles": [],
+            "tag_rows": [],
+            "tag_pills": [],
+            "hint_lbls": [],
+            "comment_boxes": [],
+        }
 
         ui.no_problems_msg_label = ttk.Label(
             ui.reg_data_frame,
@@ -201,16 +287,18 @@ class RegistryPanel:
         ui.card_frames = {}
 
         is_dark = getattr(ui, "dark_mode_active", False)
-        card_bg = "#1e1e2d" if is_dark else "#ffffff"
-        header_bg = "#252538" if is_dark else "#f5f5f5"
-        border_color = "#313244" if is_dark else "#e2e2e2"
+        canvas_bg = "#181c19" if is_dark else "#fbfaf8"
+        card_bg = "#212622" if is_dark else "#ffffff"
+        header_bg = "#262c28" if is_dark else "#f5f5f5"
+        border_color = "#333a35" if is_dark else "#e2e2e2"
         fg_color = "#e8ebe9" if is_dark else "#2c302e"
 
         # Create a single tab container for Specimen Audit
         tab_container = ttk.Frame(ui.reg_notebook)
 
         # Scrollable canvas inside the tab container
-        tab_canvas = tk.Canvas(tab_container, highlightthickness=0, bg="#1e1e2d" if is_dark else "#fbfaf8")
+        tab_canvas = tk.Canvas(tab_container, highlightthickness=0, bg=canvas_bg)
+        ui._registry_theme_widgets["canvases"].append(tab_canvas)
         tab_scroll = ttk.Scrollbar(tab_container, orient="vertical", command=tab_canvas.yview)
         tab_frame = ttk.Frame(tab_canvas, style="RightPane.TFrame")
 
@@ -257,10 +345,12 @@ class RegistryPanel:
             # Card frame (outer container with 1px border)
             card_frame = tk.Frame(tab_frame, bg=card_bg, highlightthickness=1, highlightbackground=border_color, bd=0)
             card_frame.pack(fill="x", padx=sc(10), pady=sc(6))
+            ui._registry_theme_widgets["card_frames"].append(card_frame)
 
             # Header panel (interactive accordion trigger)
             header_frame = tk.Frame(card_frame, bg=header_bg, padx=sc(8), pady=sc(6), cursor="hand2")
             header_frame.pack(fill="x")
+            ui._registry_theme_widgets["header_frames"].append(header_frame)
 
             toggle_lbl = tk.Label(
                 header_frame, text="▼",
@@ -274,6 +364,7 @@ class RegistryPanel:
 
             title_lbl = tk.Label(header_frame, text=card_title, font=("Inter", sc(10), "bold"), bg=header_bg, fg=fg_color, cursor="hand2")
             title_lbl.pack(side="left")
+            ui._registry_theme_widgets["header_lbls"].extend([toggle_lbl, icon_lbl, title_lbl])
 
             # Problem count badge inside card header
             badge_lbl = tk.Label(
@@ -282,6 +373,7 @@ class RegistryPanel:
                 bg=header_bg, fg="#c93a40"
             )
             badge_lbl.pack(side="left", padx=(sc(8), 0))
+            ui._registry_theme_widgets["badge_lbls"].append(badge_lbl)
 
             if card_id == "taxonomy":
                 prefs = config.load_prefs()
@@ -298,6 +390,7 @@ class RegistryPanel:
             body_frame = tk.Frame(card_frame, bg=card_bg, padx=sc(10), pady=sc(8))
             body_frame.pack(fill="x")
             body_frame.columnconfigure(0, weight=1)
+            ui._registry_theme_widgets["body_frames"].append(body_frame)
 
             def _make_toggle_handler(b_frame, t_lbl, tc):
                 def _handler(event=None):
@@ -340,6 +433,7 @@ class RegistryPanel:
                 # Col 0: border bar + optional problem checkbox
                 col0_frame = tk.Frame(frame, bg=card_bg)
                 col0_frame.grid(row=0, column=0, sticky="nsw", padx=(2, 2))
+                ui._registry_theme_widgets["row_frames"].extend([frame, col0_frame])
 
                 prob_col = field_to_problem.get(name)
                 if prob_col:
@@ -357,6 +451,10 @@ class RegistryPanel:
                         )
                     )
                     cb.pack(side="left")
+                    cb.tutorial_id = f"inline_prob_{prob_col}"
+                    if not hasattr(ui, "inline_problem_checkbuttons") or ui.inline_problem_checkbuttons is None:
+                        ui.inline_problem_checkbuttons = {}
+                    ui.inline_problem_checkbuttons[prob_col] = cb
                     ui.add_tooltip(cb, f"Flag as having a problem ({prob_col.replace('_', ' ')}). Tab + Space to toggle.")
 
                     prob_var.trace_add(
@@ -366,9 +464,11 @@ class RegistryPanel:
                         )
                     )
                 else:
-                    tk.Frame(col0_frame, width=3, bd=0, highlightthickness=0, bg=card_bg).pack(side="left", fill="y", padx=(0, 2))
+                    bar_spacer = tk.Frame(col0_frame, width=3, bd=0, highlightthickness=0, bg=card_bg)
+                    bar_spacer.pack(side="left", fill="y", padx=(0, 2))
                     spacer_lbl = tk.Frame(col0_frame, width=16, bg=card_bg)
                     spacer_lbl.pack(side="left")
+                    ui._registry_theme_widgets["row_frames"].extend([bar_spacer, spacer_lbl])
 
                 # Col 1: Label with bold clean typography + helpful inline field tooltips
                 _display_names = {
@@ -377,9 +477,11 @@ class RegistryPanel:
                     "Problem Description": "Problem Note (Legacy)",
                 }
                 lbl_text = _display_names.get(name, name)
-                lbl_fg = "#757d77" if name in _display_names else fg_color
-                lbl = tk.Label(frame, text=lbl_text, width=18 if name in _display_names else 15, anchor="w", font=("Inter", sc(9 if name in _display_names else 10), "bold"), bg=card_bg, fg=lbl_fg)
+                is_legacy_lbl = name in _display_names
+                lbl_fg = ("#9399b2" if is_dark else "#757d77") if is_legacy_lbl else fg_color
+                lbl = tk.Label(frame, text=lbl_text, width=18 if is_legacy_lbl else 15, anchor="w", font=("Inter", sc(9 if is_legacy_lbl else 10), "bold"), bg=card_bg, fg=lbl_fg)
                 lbl.grid(row=0, column=1, sticky="w", padx=(0, 6))
+                ui._registry_theme_widgets["field_lbls"].append((lbl, is_legacy_lbl))
                 _field_tips = {
                     "Genus": "First word of the scientific name. Type what is printed on the box — outdated or synonym names can be updated later with 🔍 Check GBIF.",
                     "Species": "Second word of the scientific name. Type what is printed on the box — outdated or synonym names can be updated later with 🔍 Check GBIF.",
@@ -410,23 +512,165 @@ class RegistryPanel:
                         command=lambda n=name, v=var: ui._on_checkbox_change(n, v)
                     )
                 elif ftype == "multiline" or name in ("Conservation Status", "Observation", "Comment", "ProblemDescription", "Problem Description"):
-                    widget = tk.Text(
-                        frame, height=3,
-                        relief="flat", bd=0,
-                        highlightthickness=1, highlightbackground=border_color,
-                        highlightcolor="#3a7d44" if not is_dark else "#a6e3a1",
-                        insertbackground="#2c302e" if not is_dark else "#e8ebe9",
-                        bg="#ffffff" if not is_dark else "#212622",
-                        fg="#2c302e" if not is_dark else "#e8ebe9",
-                        font=("Inter", sc(10)),
-                        undo=True, maxundo=-1, autoseparators=True
-                    )
+                    if name == "Comment":
+                        from ui.widgets import FlowWrapFrame
+                        comment_box = tk.Frame(frame, bg=card_bg)
+                        ui._registry_theme_widgets["comment_boxes"].append(comment_box)
+                        # Synced "Needs Specialist" escalation bar + strictly non-ICEDIG physical/specialist quick tags
+                        spec_var = ui.problem_vars.get("Other_problem")
+                        if spec_var is None:
+                            spec_var = tk.BooleanVar(value=False)
+                            ui.problem_vars["Other_problem"] = spec_var
 
-                    def bind_text_events(w):
-                        w.bind("<KeyRelease>", ui._on_text_change)
-                        w.bind("<FocusOut>", lambda e: ui.commit_current_object(), add="+")
+                        spec_bg = "#222c34" if is_dark else "#eef2f5"
+                        spec_fg = "#a5bfd1" if is_dark else "#355566"
+                        spec_border = "#3a4f5e" if is_dark else "#c6d4de"
 
-                    bind_text_events(widget)
+                        spec_bar = tk.Frame(
+                            comment_box, bg=spec_bg,
+                            highlightthickness=1, highlightbackground=spec_border,
+                            padx=sc(6), pady=sc(3)
+                        )
+                        spec_bar.pack(fill="x", side="top", pady=(0, sc(3)))
+                        ui._registry_theme_widgets["spec_bars"].append(spec_bar)
+
+                        hint_lbl = tk.Label(
+                            comment_box,
+                            text="Add a short note for the specialist — for blank or unreadable label fields, use the field's ICEDIG menu (⋯).",
+                            font=("Inter", sc(8), "italic"),
+                            bg=card_bg,
+                            fg="#d9a036" if is_dark else "#9a6700",
+                            anchor="w",
+                            wraplength=sc(320),
+                            justify="left"
+                        )
+                        ui._specialist_comment_hint_lbl = hint_lbl
+                        ui._registry_theme_widgets["hint_lbls"].append(hint_lbl)
+
+                        widget = tk.Text(
+                            comment_box, height=3,
+                            relief="flat", bd=0,
+                            highlightthickness=1, highlightbackground=border_color,
+                            highlightcolor="#3a7d44" if not is_dark else "#a6e3a1",
+                            insertbackground="#2c302e" if not is_dark else "#e8ebe9",
+                            bg="#ffffff" if not is_dark else "#212622",
+                            fg="#2c302e" if not is_dark else "#e8ebe9",
+                            font=("Inter", sc(10)),
+                            undo=True, maxundo=-1, autoseparators=True
+                        )
+
+                        def _sync_specialist_hint(focus_if_empty=False, _w=widget, _v=spec_var, _h=hint_lbl):
+                            try:
+                                flagged = bool(_v.get())
+                                txt = _w.get("1.0", "end-1c").strip()
+                                if flagged and not txt:
+                                    if _h.winfo_manager() != "pack":
+                                        _h.pack(fill="x", side="top", pady=(0, sc(3)), before=_w)
+                                    if focus_if_empty:
+                                        _w.focus_set()
+                                else:
+                                    if _h.winfo_manager() == "pack":
+                                        _h.pack_forget()
+                            except Exception:
+                                pass
+
+                        ui._sync_specialist_comment_hint = _sync_specialist_hint
+
+                        def _on_spec_toggle(_sync=_sync_specialist_hint):
+                            RegistryPanel.update_reg_fields_visibility(ui, skip_snap=True)
+                            ui.commit_current_object()
+                            _sync(focus_if_empty=True)
+
+                        spec_cb = tk.Checkbutton(
+                            spec_bar,
+                            text="Needs Specialist",
+                            variable=spec_var,
+                            font=("Inter", sc(9), "bold"),
+                            bg=spec_bg, fg=spec_fg,
+                            activebackground=spec_bg, activeforeground=spec_fg,
+                            selectcolor="#1d2d35" if is_dark else "#ffffff",
+                            relief="flat", bd=0, highlightthickness=0,
+                            cursor="hand2",
+                            command=_on_spec_toggle
+                        )
+                        spec_cb.pack(side="left")
+                        ui.comment_specialist_cb = spec_cb
+                        ui._registry_theme_widgets["spec_cbs"].append(spec_cb)
+                        if hasattr(ui, "add_tooltip"):
+                            ui.add_tooltip(
+                                spec_cb,
+                                "Escalate physical damage, mold/pest, mixed specimens, or archival deadlocks to a specialist (triggers NOTE / REV+NOTE; stays out of the default trainee queue)."
+                            )
+
+                        # Responsive wrapping quick-tag pills driven by config.SPECIALIST_QUICK_TAGS
+                        tag_row = FlowWrapFrame(comment_box, bg=card_bg, hgap=sc(4), vgap=sc(3))
+                        tag_row.pack(fill="x", side="top", pady=(0, sc(2)))
+                        ui._registry_theme_widgets["tag_rows"].append(tag_row)
+
+                        def _append_specialist_tag(tag_text, _w=widget, _v=spec_var, _sync=_sync_specialist_hint):
+                            try:
+                                existing = _w.get("1.0", "end-1c").strip()
+                                if tag_text.lower() not in existing.lower():
+                                    sep = "; " if existing else ""
+                                    _w.delete("1.0", "end")
+                                    _w.insert("1.0", f"{existing}{sep}{tag_text}")
+                                _v.set(True)
+                                RegistryPanel.update_reg_fields_visibility(ui, skip_snap=True)
+                                ui.commit_current_object()
+                                _sync(focus_if_empty=False)
+                            except Exception:
+                                pass
+
+                        quick_tags = getattr(config, "SPECIALIST_QUICK_TAGS", []) or []
+                        for _tag in quick_tags:
+                            _lbl = _tag.get("label", "") if isinstance(_tag, dict) else str(_tag)
+                            _val = _tag.get("text", _lbl.lstrip("+ ").strip()) if isinstance(_tag, dict) else str(_tag)
+                            if not _lbl:
+                                continue
+                            _pill = tk.Button(
+                                tag_row, text=_lbl,
+                                font=("Inter", sc(8)),
+                                bg=spec_bg, fg=spec_fg,
+                                activebackground=spec_border, activeforeground=spec_fg,
+                                relief="flat", bd=0,
+                                highlightthickness=1, highlightbackground=spec_border,
+                                padx=sc(5), pady=sc(1), cursor="hand2",
+                                command=lambda t=_val: _append_specialist_tag(t)
+                            )
+                            tag_row.add_item(_pill)
+                            ui._registry_theme_widgets["tag_pills"].append(_pill)
+
+                        widget.pack(fill="x", expand=True)
+
+                        def bind_text_events(w, _sync=_sync_specialist_hint):
+                            w.bind("<KeyRelease>", lambda e: (ui._on_text_change(e), _sync(False)))
+                            w.bind("<FocusOut>", lambda e: (ui.commit_current_object(), _sync(False)), add="+")
+
+                        bind_text_events(widget)
+                        try:
+                            spec_var.trace_add("write", lambda *_: _sync_specialist_hint(False))
+                        except Exception:
+                            pass
+                        comment_box_widget = comment_box
+                    else:
+                        comment_box_widget = None
+                        widget = tk.Text(
+                            frame, height=3,
+                            relief="flat", bd=0,
+                            highlightthickness=1, highlightbackground=border_color,
+                            highlightcolor="#3a7d44" if not is_dark else "#a6e3a1",
+                            insertbackground="#2c302e" if not is_dark else "#e8ebe9",
+                            bg="#ffffff" if not is_dark else "#212622",
+                            fg="#2c302e" if not is_dark else "#e8ebe9",
+                            font=("Inter", sc(10)),
+                            undo=True, maxundo=-1, autoseparators=True
+                        )
+
+                        def bind_text_events(w):
+                            w.bind("<KeyRelease>", ui._on_text_change)
+                            w.bind("<FocusOut>", lambda e: ui.commit_current_object(), add="+")
+
+                        bind_text_events(widget)
                 else:
                     entry_container = tk.Frame(frame, bg=card_bg)
                     field_font = ("JetBrains Mono", sc(10)) if name in ("Collection Date", "Innsammling Nr.", "Year", "Month", "Day", "ObjectID") else ("Inter", sc(10))
@@ -444,14 +688,17 @@ class RegistryPanel:
 
                     focus_line = tk.Frame(entry_container, height=sc(2), bg=card_bg)
                     focus_line.pack(fill="x", side="bottom")
+                    ui._registry_theme_widgets["row_frames"].extend([entry_container, focus_line])
 
-                    def make_focus_handlers(w, fl, ec, default_bg):
+                    def make_focus_handlers(w, fl, ec, default_bg, field_key=name):
                         def on_focus_in(e):
                             dark = getattr(ui, "dark_mode_active", False)
                             fl.configure(bg="#a6e3a1" if dark else "#3a7d44")
+                            ui._last_focused_reg_field = field_key
 
                         def on_focus_out(e):
-                            fl.configure(bg=default_bg)
+                            dark = getattr(ui, "dark_mode_active", False)
+                            fl.configure(bg="#212622" if dark else "#ffffff")
 
                         w.bind("<FocusIn>", on_focus_in, add="+")
                         w.bind("<FocusOut>", on_focus_out, add="+")
@@ -474,37 +721,38 @@ class RegistryPanel:
                 ui.reg_entry_list.append(widget)
 
                 if ftype == "multiline" or name in ("Conservation Status", "Observation", "Comment", "ProblemDescription", "Problem Description"):
-                    widget.grid(row=0, column=2, sticky="ew", pady=sc(2))
+                    if name == "Comment" and locals().get("comment_box_widget") is not None:
+                        comment_box_widget.grid(row=0, column=2, sticky="ew", pady=sc(2))
+                    else:
+                        widget.grid(row=0, column=2, sticky="ew", pady=sc(2))
                 elif ftype in ("choice", "checkbox"):
                     widget.grid(row=0, column=2, sticky="ew")
                 else:
                     entry_container.grid(row=0, column=2, sticky="ew")
 
-                # Unvalidated Source Flag toggle button
-                unval_btn = tk.Label(
-                    frame, text="?", font=("Segoe UI", sc(9), "bold"),
-                    bg=card_bg, fg="#888888", cursor="hand2", padx=sc(4), pady=sc(1)
-                )
-                unval_btn.grid(row=0, column=3, padx=(sc(4), sc(2)), sticky="e")
-                unval_btn.bind("<Button-1>", lambda e, n=name: ui._toggle_unvalidated_source(n))
-                ui.unval_btns[name] = unval_btn
-                ui.add_tooltip(unval_btn, f"Flag as Unvalidated Source ({name})")
-
-                # Unvalidated comment container (hidden by default)
-                unval_comment_frame = tk.Frame(frame, bg=card_bg)
-                lbl_unval = tk.Label(unval_comment_frame, text="Unval Note:", font=("Segoe UI", sc(8), "italic"), bg=card_bg, fg="#f59e0b" if is_dark else "#d97706")
-                lbl_unval.pack(side="left", padx=(0, sc(4)))
-                unval_var = tk.StringVar()
-                ui.unval_comment_vars[name] = unval_var
-                unval_entry = tk.Entry(
-                    unval_comment_frame, textvariable=unval_var, font=("Segoe UI", sc(9)),
-                    bg="#2b2d30" if is_dark else "#fffbeb", fg=fg_color, relief="flat",
-                    highlightthickness=1, highlightbackground="#f59e0b" if is_dark else "#d97706", insertbackground=fg_color
-                )
-                unval_entry.pack(side="left", fill="x", expand=True, ipady=sc(2))
-                unval_entry.bind("<FocusOut>", lambda e, n=name: ui._on_unval_comment_change(n))
-                unval_entry.bind("<Return>", lambda e, n=name: (ui._on_unval_comment_change(n), ui.root.focus_set()))
-                ui.unval_comment_frames[name] = unval_comment_frame
+                # Quiet per-field ICEDIG status trigger (⋯) in Column 3 for editable text fields
+                if ftype not in ("multiline", "checkbox", "choice") and not field.get("readonly"):
+                    icedig_btn = tk.Button(
+                        frame, text="⋯",
+                        font=("JetBrains Mono", sc(9), "bold"),
+                        bg=card_bg, fg="#8b948d",
+                        activebackground="#2a322c" if is_dark else "#e9ece5",
+                        activeforeground=fg_color,
+                        relief="flat", bd=0, highlightthickness=0,
+                        cursor="hand2", padx=sc(6), pady=sc(1),
+                    )
+                    icedig_btn.configure(command=lambda n=name, b=icedig_btn: _open_field_icedig_menu(ui, n, b))
+                    icedig_btn.grid(row=0, column=3, padx=(sc(3), sc(1)), sticky="e")
+                    ui.icedig_field_btns[name] = icedig_btn
+                    if name == "Collection Date":
+                        icedig_btn.tutorial_id = "icedig_field_btn"
+                    elif name == "Collector":
+                        icedig_btn.tutorial_id = "icedig_collector_btn"
+                    if hasattr(ui, "add_tooltip"):
+                        ui.add_tooltip(
+                            icedig_btn,
+                            f"Set ICEDIG code for {name} (unknown:missing, unknown:indecipherable, unknown:undigitized, withheld). Shortcuts: Ctrl+Shift+M / I / U / W."
+                        )
 
                 widget.bind("<Shift-Up>", ui._reg_nav_up)
                 widget.bind("<Shift-Down>", ui._reg_nav_down)
@@ -557,12 +805,20 @@ class RegistryPanel:
             clean = re.sub(r"[_ ]?[Pp]roblem$", "", str(col_name or "")).replace("_", " ").strip()
             clean = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", clean)
             if not clean or clean.lower() == "other":
-                return "Other Issue"
+                return "Needs Specialist"
             return f"{clean} Issue"
 
         ui.problem_checkbuttons = []
         ui.problem_checkbutton_map = {}
-        for i, field in enumerate(ui.app.config["ui_sections"]["problems"]):
+        data_problem_fields = []
+        specialist_problem_field = None
+        for field in ui.app.config["ui_sections"]["problems"]:
+            if field["name"] == "Other_problem":
+                specialist_problem_field = field
+            else:
+                data_problem_fields.append(field)
+
+        for i, field in enumerate(data_problem_fields):
             name = field["name"]
             var = ui.problem_vars.get(name)
             if not var:
@@ -581,13 +837,61 @@ class RegistryPanel:
             row = i // 2
             col = i % 2
             cb.grid(row=row, column=col, sticky="w", padx=10, pady=6)
-            if name == "Other_problem":
-                cb.tutorial_id = "other_problem_checkbox"
             ui.problem_checkbuttons.append(cb)
             ui.problem_checkbutton_map[name] = cb
 
         edit_frame.columnconfigure(0, weight=1)
         edit_frame.columnconfigure(1, weight=1)
+
+        # Visually distinct Tier-2 Specialist Escalation strip (separated from desk data errors)
+        if specialist_problem_field is not None:
+            name = specialist_problem_field["name"]
+            var = ui.problem_vars.get(name)
+            if not var:
+                var = tk.BooleanVar()
+                ui.problem_vars[name] = var
+
+            is_dark_tab = getattr(ui, "dark_mode_active", False)
+            spec_bg = "#222c34" if is_dark_tab else "#eef2f5"
+            spec_fg = "#a5bfd1" if is_dark_tab else "#355566"
+            spec_border = "#3a4f5e" if is_dark_tab else "#c6d4de"
+
+            spec_strip = tk.Frame(
+                tab_frame, bg=spec_bg,
+                highlightthickness=1, highlightbackground=spec_border,
+                padx=sc(10), pady=sc(8)
+            )
+            spec_strip.pack(fill="x", padx=sc(12), pady=(sc(4), sc(2)))
+            ui._registry_theme_widgets["spec_bars"].append(spec_strip)
+
+            cb = tk.Checkbutton(
+                spec_strip, cursor="hand2",
+                text="Needs Specialist",
+                variable=var,
+                font=("Inter", sc(9), "bold"),
+                bg=spec_bg, fg=spec_fg,
+                activebackground=spec_bg, activeforeground=spec_fg,
+                selectcolor="#1d2d35" if is_dark_tab else "#ffffff",
+                relief="flat", bd=0, highlightthickness=0,
+                command=lambda: (
+                    RegistryPanel.update_reg_fields_visibility(ui, skip_snap=True),
+                    ui.commit_current_object()
+                )
+            )
+            cb.pack(anchor="w")
+            cb.tutorial_id = "other_problem_checkbox"
+            ui._registry_theme_widgets["spec_cbs"].append(cb)
+            spec_sub_lbl = tk.Label(
+                spec_strip,
+                text="Physical / archival escalation (NOTE / REV+NOTE) for broken specimens, mold/pest, or deadlocks — synced with Comment and excluded from the default trainee queue.",
+                font=("Inter", sc(8)),
+                bg=spec_bg, fg=spec_fg,
+                wraplength=sc(340), justify="left", anchor="w"
+            )
+            spec_sub_lbl.pack(anchor="w", padx=(sc(22), 0), pady=(sc(2), 0))
+            ui._registry_theme_widgets["spec_subtitles"].append(spec_sub_lbl)
+            ui.problem_checkbuttons.append(cb)
+            ui.problem_checkbutton_map[name] = cb
 
         ttk.Separator(tab_frame, orient="horizontal").pack(fill="x", pady=10)
 
@@ -869,6 +1173,158 @@ class RegistryPanel:
                     widget.configure(style="TEntry")
         except Exception as e:
             debug_error("Suppressed Error in _refresh_field_background", str(e))
+
+        # Sync per-field ICEDIG trigger button highlight
+        icedig_btn = getattr(ui, "icedig_field_btns", {}).get(field_name)
+        if icedig_btn is not None:
+            try:
+                if icedig_btn.winfo_exists():
+                    val_str = str(ui.reg_vars.get(field_name, tk.StringVar()).get() or "").strip().lower()
+                    is_icedig = val_str in config.ICEDIG_UNKNOWN_CODES
+                    card_bg = "#212622" if is_dark else "#ffffff"
+                    if is_icedig:
+                        icedig_btn.configure(
+                            bg="#3b2e15" if is_dark else "#fef3c7",
+                            fg="#fcd34d" if is_dark else "#92400e",
+                            activebackground="#4d3b1a" if is_dark else "#fde68a",
+                            activeforeground="#fcd34d" if is_dark else "#78350f",
+                        )
+                    else:
+                        icedig_btn.configure(
+                            bg=card_bg,
+                            fg="#8b948d",
+                            activebackground="#2a322c" if is_dark else "#e9ece5",
+                            activeforeground="#e8ebe9" if is_dark else "#2c302e",
+                        )
+            except Exception:
+                pass
+
+    @staticmethod
+    def apply_theme(ui, is_dark: bool):
+        """Live-update custom tk widgets inside Registration & Problems tabs when toggling Light/Dark mode."""
+        canvas_bg = "#181c19" if is_dark else "#fbfaf8"
+        card_bg = "#212622" if is_dark else "#ffffff"
+        header_bg = "#262c28" if is_dark else "#f5f5f5"
+        border_color = "#333a35" if is_dark else "#e2e2e2"
+        fg_color = "#e8ebe9" if is_dark else "#2c302e"
+        legacy_fg = "#9399b2" if is_dark else "#757d77"
+        spec_bg = "#222c34" if is_dark else "#eef2f5"
+        spec_fg = "#a5bfd1" if is_dark else "#355566"
+        spec_border = "#3a4f5e" if is_dark else "#c6d4de"
+        spec_sel = "#1d2d35" if is_dark else "#ffffff"
+        hint_fg = "#d9a036" if is_dark else "#9a6700"
+
+        tw = getattr(ui, "_registry_theme_widgets", None) or {}
+        for w in tw.get("canvases", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=canvas_bg)
+            except Exception:
+                pass
+        for w in tw.get("card_frames", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=card_bg, highlightbackground=border_color)
+            except Exception:
+                pass
+        for w in tw.get("header_frames", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=header_bg)
+            except Exception:
+                pass
+        for w in tw.get("header_lbls", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=header_bg, fg=fg_color)
+            except Exception:
+                pass
+        for w in tw.get("badge_lbls", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=header_bg)
+            except Exception:
+                pass
+        for w in tw.get("body_frames", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=card_bg)
+            except Exception:
+                pass
+        for w in tw.get("row_frames", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=card_bg)
+            except Exception:
+                pass
+        for item in tw.get("field_lbls", []):
+            try:
+                w, is_legacy = item
+                if w.winfo_exists():
+                    w.configure(bg=card_bg, fg=legacy_fg if is_legacy else fg_color)
+            except Exception:
+                pass
+        for w in tw.get("comment_boxes", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=card_bg)
+            except Exception:
+                pass
+        for w in tw.get("spec_bars", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=spec_bg, highlightbackground=spec_border)
+            except Exception:
+                pass
+        for w in tw.get("spec_cbs", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=spec_bg, fg=spec_fg, activebackground=spec_bg, activeforeground=spec_fg, selectcolor=spec_sel)
+            except Exception:
+                pass
+        for w in tw.get("spec_subtitles", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=spec_bg, fg=spec_fg)
+            except Exception:
+                pass
+        for w in tw.get("tag_rows", []):
+            try:
+                if w.winfo_exists():
+                    if hasattr(w, "set_bg"):
+                        w.set_bg(card_bg)
+                    else:
+                        w.configure(bg=card_bg)
+            except Exception:
+                pass
+        for w in tw.get("tag_pills", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(
+                        bg=spec_bg, fg=spec_fg,
+                        activebackground=spec_border, activeforeground=spec_fg,
+                        highlightbackground=spec_border,
+                    )
+            except Exception:
+                pass
+        for w in tw.get("hint_lbls", []):
+            try:
+                if w.winfo_exists():
+                    w.configure(bg=card_bg, fg=hint_fg)
+            except Exception:
+                pass
+
+        for fname in list(getattr(ui, "icedig_field_btns", {}).keys()):
+            RegistryPanel.refresh_field_background(ui, fname)
+        for fname, bar in list(getattr(ui, "prob_border_bars", {}).items()):
+            try:
+                if bar and bar.winfo_exists():
+                    prob_col = getattr(ui, "field_to_problem", {}).get(fname)
+                    is_flagged = bool(ui.problem_vars.get(prob_col).get()) if prob_col and prob_col in getattr(ui, "problem_vars", {}) else False
+                    if not is_flagged:
+                        bar.configure(bg=card_bg)
+            except Exception:
+                pass
 
     @staticmethod
     def validate_fields(ui, event=None):

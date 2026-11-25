@@ -951,3 +951,74 @@ class TestHybridDockableRail(unittest.TestCase):
         mw._hide_progress("Export complete", task_id="export_filtered")
         self.assertEqual(str(mw.image_scan_progress.cget("mode")), "determinate")
         self.assertEqual(mw.system_status.cget("text"), "Export complete")
+
+    def test_needs_specialist_badges_and_synced_comment_ui(self):
+        """Needs Specialist (Other_problem) emits NOTE / REV+NOTE (never REV+ERR),
+        plain Comments do not trigger NOTE, synced checkbox sits above Comment,
+        ProblemQueueDialog excludes Other_problem by default, and ICEDIG button exists."""
+        import config
+        from ui.main_window import ObjectProgramUI
+        from ui.object_problem_resolver import ProblemQueueDialog
+
+        self.app.config = next(iter(config.DATABASE_CONFIGS.values()))
+        mw = ObjectProgramUI(self.root, self.app)
+        mw.apply_config()
+
+        # 1. Badge logic: Other_problem only -> REV+NOTE (reviewed) or NOTE (unreviewed)
+        prefs = config.DEFAULT_DIRECTORY_CARD_PREFS
+        _, lbl_rev_note, _, _ = mw.object_list._resolve_card_badge_display(
+            {"notes"}, True, True, False, {"Other_problem": True}, False, "#fbfaf8", prefs
+        )
+        self.assertEqual(lbl_rev_note, "REV+NOTE")
+
+        _, lbl_note, _, _ = mw.object_list._resolve_card_badge_display(
+            {"notes"}, False, True, False, {"Other_problem": True}, False, "#fbfaf8", prefs
+        )
+        self.assertEqual(lbl_note, "NOTE")
+
+        # Actionable error + Other_problem -> actionable error wins (REV+ERR)
+        _, lbl_rev_err, _, _ = mw.object_list._resolve_card_badge_display(
+            {"taxonomy", "notes"}, True, True, False, {"Other_problem": True, "Genus_Problem": True}, False, "#fbfaf8", prefs
+        )
+        self.assertEqual(lbl_rev_err, "REV+ERR")
+
+        # Plain Comment WITHOUT Other_problem -> UNREV / REV (never NOTE)
+        _, lbl_comment_only, _, _ = mw.object_list._resolve_card_badge_display(
+            set(), True, False, False, {"Other_problem": False, "Comment": "From 1924 ledger"}, False, "#fbfaf8", prefs
+        )
+        self.assertEqual(lbl_comment_only, "REV")
+
+        # 2. Synced "Needs Specialist" checkbox above Comment shares Other_problem BooleanVar
+        self.assertTrue(hasattr(mw, "comment_specialist_cb"))
+        self.assertIn("Other_problem", mw.problem_checkbutton_map)
+        self.assertIn("Needs Specialist", mw.problem_checkbutton_map["Other_problem"].cget("text"))
+        mw.problem_vars["Other_problem"].set(True)
+        self.assertTrue(mw.problem_vars["Other_problem"].get())
+
+        # 3. Per-field ICEDIG trigger buttons exist on editable fields (and legacy '?' unval buttons removed)
+        self.assertTrue(hasattr(mw, "icedig_field_btns"))
+        self.assertGreater(len(mw.icedig_field_btns), 0)
+        self.assertEqual(len(getattr(mw, "unval_btns", {})), 0)
+        if "Collection Date" in mw.icedig_field_btns:
+            self.assertEqual(getattr(mw.icedig_field_btns["Collection Date"], "tutorial_id", ""), "icedig_field_btn")
+
+        # 4. Live Dark Mode switching updates specialist bars, quick-tag pills, and per-field ICEDIG triggers
+        from ui.registry_panel import RegistryPanel
+        RegistryPanel.apply_theme(mw, True)
+        tw = getattr(mw, "_registry_theme_widgets", {})
+        self.assertEqual(len(tw.get("tag_pills", [])), len(config.SPECIALIST_QUICK_TAGS))
+        if tw.get("spec_bars"):
+            self.assertEqual(tw["spec_bars"][0].cget("bg"), "#222c34")
+        RegistryPanel.apply_theme(mw, False)
+        if tw.get("spec_bars"):
+            self.assertEqual(tw["spec_bars"][0].cget("bg"), "#eef2f5")
+
+        # 5. ProblemQueueDialog defaults Needs Specialist (cat_notes_var) to False
+        dlg = ProblemQueueDialog(self.root, mw)
+        try:
+            self.assertFalse(dlg.cat_notes_var.get())
+            self.assertTrue(dlg.cat_taxonomy_var.get())
+            self.assertTrue(dlg.cat_collection_var.get())
+            self.assertTrue(dlg.cat_media_var.get())
+        finally:
+            dlg.destroy()

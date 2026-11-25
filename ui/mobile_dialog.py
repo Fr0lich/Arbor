@@ -32,8 +32,17 @@ class MobileDialog:
         self.win.resizable(True, True)
         self.win.transient(root)
 
-        # Only lock if simultaneous edit is not enabled
-        if hasattr(self.parent_ui, "simultaneous_edit_var") and self.parent_ui.simultaneous_edit_var.get():
+        # Only lock if simultaneous edit is not enabled and no interactive tutorial HUD is active
+        _tutorial_active = False
+        try:
+            from ui.tutorials.tutorial_runner import TutorialRunner
+            _inst = getattr(TutorialRunner, "_active_instance", None)
+            _hud = getattr(_inst, "hud_win", None) if _inst is not None else None
+            if _hud is not None and _hud.winfo_exists():
+                _tutorial_active = True
+        except Exception:
+            pass
+        if (hasattr(self.parent_ui, "simultaneous_edit_var") and self.parent_ui.simultaneous_edit_var.get()) or _tutorial_active:
             pass
         else:
             self.win.grab_set()
@@ -163,22 +172,203 @@ class MobileDialog:
 
         self.win.destroy()
 
-        # Notify desktop curator if REV+ERR specimens are ready for office follow-up
+        # Notify desktop curator & offer Post-Shift Batch Follow-Up Popup
         try:
             df_obs = getattr(self.app_state, "df_obs", None)
+            rev_err_count = 0
             if df_obs is not None and not df_obs.empty and "Reviewed" in df_obs.columns:
                 rev_mask = df_obs["Reviewed"].fillna(False).astype(bool)
-                prob_cols = [c for c in df_obs.columns if c.endswith("_Problem") or c == "Other_problem"]
+                prob_cols = [c for c in df_obs.columns if c.endswith("_Problem") and c != "Other_problem"]
                 if prob_cols:
                     prob_mask = df_obs[prob_cols].fillna(False).astype(bool).any(axis=1)
                     rev_err_count = int((rev_mask & prob_mask).sum())
-                    if rev_err_count > 0 and hasattr(self.parent_ui, "show_toast"):
-                        self.parent_ui.show_toast(
-                            f"Mobile sync complete · {rev_err_count} specimen(s) ready for Hallway Follow-Up (REV+ERR)",
-                            "info",
-                        )
+
+            import config
+            prefs = config.load_prefs() if hasattr(config, "load_prefs") else {}
+            if prefs.get("suppress_mobile_stop_followup_popup", False):
+                if rev_err_count > 0 and hasattr(self.parent_ui, "show_toast"):
+                    self.parent_ui.show_toast(
+                        f"Mobile sync complete · {rev_err_count} specimen(s) ready for Hallway Follow-Up (REV+ERR)",
+                        "info",
+                    )
+            else:
+                self._show_post_mobile_followup_popup(rev_err_count)
         except Exception:
             pass
+
+    def _show_post_mobile_followup_popup(self, rev_err_count: int):
+        """Show a calm post-session wrap-up popup confirming mobile edits are synced in Arbor,
+        reminding the user to save (Ctrl+S), and pointing to Filter (Ctrl+G) and Help tutorials."""
+        import config
+        import utils
+        from config import sc
+
+        parent_root = getattr(self.parent_ui, "root", self.root)
+        if not parent_root or not parent_root.winfo_exists():
+            return
+
+        pop = tk.Toplevel(parent_root)
+        pop.title("Mobile Session Complete — Synced to Arbor")
+        pop.transient(parent_root)
+        pop.resizable(False, False)
+        self.parent_ui._post_mobile_followup_win = pop
+
+        dark = getattr(self.parent_ui, "dark_mode_active", getattr(self.parent_ui, "dark_mode", False))
+        bg = "#1e211f" if dark else "#f7f5f0"
+        card_bg = "#252926" if dark else "#ffffff"
+        fg = "#eef1ef" if dark else "#2c302e"
+        muted = "#a2aba5" if dark else "#5e6560"
+        border = "#3a403c" if dark else "#d8ddd6"
+        accent = "#3a7d44"
+        pop.configure(bg=bg)
+
+        outer = tk.Frame(pop, bg=bg, padx=sc(22), pady=sc(18))
+        outer.pack(fill="both", expand=True)
+
+        tk.Label(
+            outer,
+            text="📱 MOBILE SESSION COMPLETE",
+            font=("JetBrains Mono", sc(8.5), "bold"),
+            bg="#1e3a24" if dark else "#eaf5ec",
+            fg="#85e89d" if dark else "#1b5e20",
+            padx=sc(8),
+            pady=sc(3),
+        ).pack(anchor="w", pady=(0, sc(10)))
+
+        tk.Label(
+            outer,
+            text="All Your Phone Work Is Now in Arbor!",
+            font=("Lora", sc(13), "bold"),
+            bg=bg, fg=fg, anchor="w", justify="left", wraplength=sc(430),
+        ).pack(fill="x", pady=(0, sc(6)))
+
+        flagged_note = (
+            f" ({rev_err_count} reviewed object{'s' if rev_err_count != 1 else ''} currently have open flags you can review whenever you're ready.)"
+            if rev_err_count > 0
+            else ""
+        )
+        body_txt = (
+            "Every location, edit, and flag you recorded on Mobile Companion is already synced into your open Arbor workspace."
+            f"{flagged_note}\n\n"
+            "Remember to save your Excel file (Ctrl+S) so your changes are written safely to disk."
+        )
+        tk.Label(
+            outer, text=body_txt, font=("Inter", sc(9.5)),
+            bg=bg, fg=muted, anchor="w", justify="left", wraplength=sc(430),
+        ).pack(fill="x", pady=(0, sc(12)))
+
+        # Next-steps exploration card
+        tip_card = tk.Frame(
+            outer, bg=card_bg, highlightbackground=border, highlightthickness=1,
+            padx=sc(12), pady=sc(9),
+        )
+        tip_card.pack(fill="x", pady=(0, sc(12)))
+        tk.Label(
+            tip_card,
+            text=(
+                "Where to explore next:\n"
+                "• Use Filter (Ctrl+G) to find objects with specific qualities — flagged issues, Needs Specialist, ICEDIG codes, or shelf locations\n"
+                "• Open Help (HELP in the top bar) anytime to browse optional & advanced tutorials"
+            ),
+            font=("Inter", sc(9)), bg=card_bg, fg=fg, anchor="w", justify="left", wraplength=sc(400),
+        ).pack(fill="x")
+
+        dont_show_var = tk.BooleanVar(value=False)
+
+        def _persist_opt():
+            if dont_show_var.get():
+                try:
+                    p = config.load_prefs() or {}
+                    p["suppress_mobile_stop_followup_popup"] = True
+                    config.save_prefs(p)
+                except Exception:
+                    pass
+
+        def _close():
+            _persist_opt()
+            if pop.winfo_exists():
+                pop.destroy()
+
+        def _save_now():
+            _persist_opt()
+            if pop.winfo_exists():
+                pop.destroy()
+            for fn_name in ("save_excel", "save_changes", "save_file"):
+                fn = getattr(self.parent_ui, fn_name, None)
+                if callable(fn):
+                    fn()
+                    break
+
+        def _open_filter():
+            _persist_opt()
+            if pop.winfo_exists():
+                pop.destroy()
+            for fn_name in ("open_filter_dialog", "show_filter_dialog"):
+                fn = getattr(self.parent_ui, fn_name, None)
+                if callable(fn):
+                    fn()
+                    break
+
+        def _open_help():
+            _persist_opt()
+            if pop.winfo_exists():
+                pop.destroy()
+            for fn_name in ("open_help_window", "show_main_help"):
+                fn = getattr(self.parent_ui, fn_name, None)
+                if callable(fn):
+                    fn()
+                    break
+
+        tk.Checkbutton(
+            outer,
+            text="Don't show this popup again when stopping Mobile Companion",
+            variable=dont_show_var,
+            font=("Inter", sc(9)),
+            bg=bg, fg=muted, activebackground=bg, activeforeground=fg,
+            selectcolor=card_bg, cursor="hand2",
+        ).pack(anchor="w", pady=(0, sc(12)))
+
+        btn_row = tk.Frame(outer, bg=bg)
+        btn_row.pack(fill="x")
+
+        tk.Button(
+            btn_row,
+            text="💾 Save File Now (Ctrl+S)",
+            font=("Inter", sc(9.5), "bold"),
+            bg=accent, fg="#ffffff", activebackground="#2f6638", activeforeground="#ffffff",
+            relief="flat", padx=sc(12), pady=sc(7), cursor="hand2", command=_save_now,
+        ).pack(fill="x", pady=(0, sc(6)))
+
+        sec_row = tk.Frame(btn_row, bg=bg)
+        sec_row.pack(fill="x")
+        tk.Button(
+            sec_row,
+            text="🔍 Filter (Ctrl+G)",
+            font=("Inter", sc(9)), bg=card_bg, fg=fg,
+            relief="flat", highlightbackground=border, highlightthickness=1,
+            padx=sc(10), pady=sc(6), cursor="hand2", command=_open_filter,
+        ).pack(side="left", expand=True, fill="x", padx=(0, sc(6)))
+
+        tk.Button(
+            sec_row,
+            text="❓ Help & Tutorials",
+            font=("Inter", sc(9)), bg=card_bg, fg=fg,
+            relief="flat", highlightbackground=border, highlightthickness=1,
+            padx=sc(10), pady=sc(6), cursor="hand2", command=_open_help,
+        ).pack(side="left", expand=True, fill="x", padx=(0, sc(6)))
+
+        tk.Button(
+            sec_row,
+            text="Close",
+            font=("Inter", sc(9)), bg=card_bg, fg=fg,
+            relief="flat", highlightbackground=border, highlightthickness=1,
+            padx=sc(14), pady=sc(6), cursor="hand2", command=_close,
+        ).pack(side="right")
+
+        pop.protocol("WM_DELETE_WINDOW", _close)
+        pop.bind("<Escape>", lambda e: _close())
+        pop.update_idletasks()
+        utils.center_and_fit_toplevel(pop, sc(490), sc(410))
 
     # ------------------------------------------------------------------
     # Edit callback — notify desktop UI of each incoming mobile edit
