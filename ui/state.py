@@ -43,7 +43,8 @@ class EventBus:
             try:
                 callback(*args, **kwargs)
             except Exception as e:
-                print(f"Error in event {event_type} handler: {e}")
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"Error in event {event_type} handler: {e}")
 
 # Standard Event Names
 LOCATION_DATA_CHANGED = "LOCATION_DATA_CHANGED"

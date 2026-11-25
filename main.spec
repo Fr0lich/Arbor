@@ -2,7 +2,7 @@
 import os
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
-# ── Dynamic / Hidden Imports ──────────────────────────────────────────────────
+# â”€â”€ Dynamic / Hidden Imports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 hiddenimports = []
 hiddenimports += collect_submodules('ui')
 hiddenimports += collect_submodules('backend')
@@ -35,7 +35,7 @@ hiddenimports += [
     'blinker',
 ]
 
-# ── Bundled Data Files ────────────────────────────────────────────────────────
+# â”€â”€ Bundled Data Files â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 datas = [
     ('ignored_words.json', '.'),
     ('USER_GUIDE.md', '.'),
@@ -46,10 +46,9 @@ if os.path.exists('data/demo_collection.xlsx'):
 if os.path.isdir('data/tutorial_images'):
     datas.append(('data/tutorial_images', 'data/tutorial_images'))
 datas += collect_data_files('pytablericons')
-datas += collect_data_files('flask')
 datas += collect_data_files('jinja2')
 
-# ── Analysis ──────────────────────────────────────────────────────────────────
+# â”€â”€ Analysis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 a = Analysis(
     ['main.py'],
     pathex=[],
@@ -62,7 +61,6 @@ a = Analysis(
     excludes=[
         'PySide6',
         'shiboken6',
-        'archive',
         'pytest',
         '_pytest',
         'pytest_xvfb',
@@ -85,7 +83,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,  # UPX packing triggers antivirus false positives and can corrupt Tcl/Tk DLLs
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,

@@ -777,10 +777,8 @@ class ObjectProgramUI(
 
 
         self.dark_mode_active = False
-        if getattr(sys, 'frozen', False):
-            _app_base_dir = os.path.dirname(sys.executable)
-        else:
-            _app_base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        import utils as _utils_paths
+        _app_base_dir = _utils_paths.get_user_data_dir()
         self.ignored_words_file = os.path.join(_app_base_dir, "ignored_words.json")
         self.ignored_words = []
         self.ignored_words_variations = tk.BooleanVar(value=True)
@@ -2461,19 +2459,22 @@ class ObjectProgramUI(
             try:
                 self.refresh_image_view()
             except Exception as e:
-                print(f"Error refreshing image view: {e}")
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"Error refreshing image view: {e}")
 
     def refresh_styles_and_highlights(self, enable_hl_override=None, color_override=None):
         if hasattr(self, "apply_theme"):
             try:
                 self.apply_theme(enable_hl_override=enable_hl_override, color_override=color_override)
             except Exception as e:
-                print(f"Error applying theme: {e}")
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"Error applying theme: {e}")
         if hasattr(self, "_update_all_problem_row_styles"):
             try:
                 self._update_all_problem_row_styles(enable_hl_override=enable_hl_override, color_override=color_override)
             except Exception as e:
-                print(f"Error updating problem styles: {e}")
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"Error updating problem styles: {e}")
 
     def show_load_data_preset_popup(self):
         PresetsManager.show_load_data_preset_popup(self)
@@ -3767,7 +3768,8 @@ class ObjectProgramUI(
                             btn.config(text=full_text, image="", compound="none")
                 except Exception as e:
                     import sys
-                    print(f"Error making button {btn_name} responsive: {e}", file=sys.stderr)
+                    from utils import debug_log as _debug_log
+                    _debug_log("WARNING", f"Error making button {btn_name} responsive: {e}")
 
         self._responsive_resize_job = self.root.after(50, do_check)
 
@@ -3813,7 +3815,8 @@ class ObjectProgramUI(
                 self._responsive_icons_cache[btn_name] = ImageTk.PhotoImage(pil_img)
             except Exception as e:
                 import sys
-                print(f"Error loading icon for {btn_name}: {e}", file=sys.stderr)
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"Error loading icon for {btn_name}: {e}")
 
     # ---------- UI ----------
     def build_ui(self):
@@ -6303,8 +6306,9 @@ class ObjectProgramUI(
             if os.path.exists(autosave_path):
                 try:
                     os.remove(autosave_path)
-                except Exception:
-                    pass
+                except Exception as e:
+                    from utils import debug_log
+                    debug_log("WARNING", f"Could not remove autosave on exit: {e}")
 
         # If errors were logged this session, offer to view the log before exit
         try:
@@ -6321,6 +6325,17 @@ class ObjectProgramUI(
                     return   # Let user close the log window; they can exit from there
         except Exception:
             pass
+
+        # Stop any active Mobile Companion session so internet tunnels
+        # (ssh.exe / cloudflared.exe) and the firewall rule never outlive Arbor.
+        try:
+            dlg = getattr(self, "_mobile_dialog", None)
+            panel = getattr(dlg, "panel", None) if dlg is not None else None
+            if panel is not None:
+                panel.stop()
+        except Exception as e:
+            from utils import debug_error
+            debug_error("on_close mobile companion stop", str(e))
 
         try:
             from backend.task_queue import app_worker

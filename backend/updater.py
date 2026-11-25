@@ -283,7 +283,8 @@ def save_session_state(app):
             json.dump(state, f, indent=2)
         return True
     except Exception as e:
-        print(f"Warning: Failed to save session restore state: {e}", file=sys.stderr)
+        from utils import debug_log as _debug_log
+        _debug_log("WARNING", f"Warning: Failed to save session restore state: {e}")
         return False
 
 

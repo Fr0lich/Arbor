@@ -445,7 +445,8 @@ class QuickPeekController:
                 else:
                     ui.root.after(0, lambda: ui.qp_image_label.config(text="No Image Available"))
             except Exception as e:
-                print(f"QuickPeek image err: {e}")
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"QuickPeek image err: {e}")
                 ui.root.after(0, lambda: ui.qp_image_label.config(text="Error loading image"))
 
         import threading

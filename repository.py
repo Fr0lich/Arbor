@@ -736,7 +736,8 @@ class SQLiteRepository:
                 os.path.basename(excel_path) + f".backup_{timestamp}.xlsx"
             )
             shutil.copy2(excel_path, backup_path)
-            print(f"Backed up {excel_path} to {backup_path}")
+            from utils import debug_log as _debug_log
+            _debug_log("INFO", f"Backed up {excel_path} to {backup_path}")
 
         df_reg, df_obs, df_photo, df_log, df_unvalidated = ExcelRepository.load_excel(excel_path, config)
         SQLiteRepository.save_sqlite(sqlite_path, df_reg, df_obs, df_photo, df_log, df_unvalidated)

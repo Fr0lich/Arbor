@@ -610,7 +610,8 @@ class GBIFBatchConfigDialog(tk.Toplevel):
             except Exception as e:
                 diff_results = []
                 stats["error_count"] = stats.get("error_count", 0) + 1
-                print(f"Error in batch GBIF worker: {e}")
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"Error in batch GBIF worker: {e}")
 
             if not self.cancel_event.is_set():
                 from backend.task_queue import app_worker

@@ -448,3 +448,30 @@ def test_frozen_demo_path_prefers_writable_exe_dir(tmp_path, monkeypatch):
     assert resolved == expected
     assert os.path.exists(expected)
     assert open(expected, "rb").read() == b"mock-demo-xlsx"
+
+
+# ── Release prep: writable user-data folder never lands in a read-only exe dir ──
+def test_user_data_dir_uses_exe_folder_when_writable(tmp_path, monkeypatch):
+    import sys
+    import utils
+    exe_dir = tmp_path / "portable"
+    exe_dir.mkdir()
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(exe_dir / "Arbor.exe"))
+    monkeypatch.setattr(utils, "_USER_DATA_DIR", None)
+    assert utils.get_user_data_dir() == str(exe_dir)
+
+
+def test_user_data_dir_falls_back_to_localappdata_when_exe_folder_read_only(tmp_path, monkeypatch):
+    import sys
+    import utils
+    exe_dir = tmp_path / "Program Files" / "Arbor"
+    local = tmp_path / "LocalAppData"
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(exe_dir / "Arbor.exe"))
+    monkeypatch.setenv("LOCALAPPDATA", str(local))
+    monkeypatch.setattr(utils, "_USER_DATA_DIR", None)
+    monkeypatch.setattr(utils, "_dir_is_writable", lambda p: False)
+    result = utils.get_user_data_dir()
+    assert result == os.path.join(str(local), "Arbor")
+    assert os.path.isdir(result)

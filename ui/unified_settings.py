@@ -1099,7 +1099,8 @@ class UnifiedSettingsWindow:
             # Publish layout change event to EventBus
             app_bus.publish(LAYOUT_CHANGED, preset=self._collect_layout_state())
         except Exception as e:
-            print(f"[UnifiedSettings] Error pushing layout to app: {e}")
+            from utils import debug_log as _debug_log
+            _debug_log("WARNING", f"[UnifiedSettings] Error pushing layout to app: {e}")
 
     # ── TAB 4: FOCUS MODE ────────────────────────────────────────────────────
     def _build_tab_focus(self):
@@ -2190,7 +2191,8 @@ class UnifiedSettingsWindow:
                 if hasattr(self.app, "_schedule_autosave"):
                     self.app._schedule_autosave()
             except Exception as e:
-                print(f"[UnifiedSettings] Autosave reschedule error: {e}")
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"[UnifiedSettings] Autosave reschedule error: {e}")
 
         # 3. Push layout changes & apply
         if self.app:
@@ -2203,7 +2205,8 @@ class UnifiedSettingsWindow:
                 try:
                     self.app.refresh_styles_and_highlights()
                 except Exception as e:
-                    print(f"[UnifiedSettings] refresh_styles_and_highlights error: {e}")
+                    from utils import debug_log as _debug_log
+                    _debug_log("WARNING", f"[UnifiedSettings] refresh_styles_and_highlights error: {e}")
 
         # 5. Refresh image rendering if algorithm or pattern changed
         if self.app and (new_resampling != old_resampling or p["image_url_pattern_override"] != old_prefs.get("image_url_pattern_override", "")):
@@ -2211,7 +2214,8 @@ class UnifiedSettingsWindow:
                 try:
                     self.app.refresh_image_rendering()
                 except Exception as e:
-                    print(f"[UnifiedSettings] refresh_image_rendering error: {e}")
+                    from utils import debug_log as _debug_log
+                    _debug_log("WARNING", f"[UnifiedSettings] refresh_image_rendering error: {e}")
             if hasattr(self.app, "load_images_for_current"):
                 try:
                     self.app.load_images_for_current()
@@ -2224,7 +2228,8 @@ class UnifiedSettingsWindow:
                 try:
                     self.app.update_focus_toggle_visibility()
                 except Exception as e:
-                    print(f"[UnifiedSettings] update_focus_toggle_visibility error: {e}")
+                    from utils import debug_log as _debug_log
+                    _debug_log("WARNING", f"[UnifiedSettings] update_focus_toggle_visibility error: {e}")
 
         # 7. Handle restart-required settings
         if scale_changed or p.get("enable_bulk_editor") != old_prefs.get("enable_bulk_editor", False):

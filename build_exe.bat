@@ -80,7 +80,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 :: 4. Copy external resources to dist folder
 echo.
-echo [3/3] Copying external configuration and data resources...
+echo [3/3] Copying readable user guides next to Arbor.exe...
 if exist "USER_GUIDE.md" (
     copy /Y "USER_GUIDE.md" "dist\USER_GUIDE.md" >nul
     if !ERRORLEVEL! NEQ 0 (
@@ -103,38 +103,8 @@ if exist "MOBILE_COMPANION_USER_GUIDE.md" (
     echo [WARNING] MOBILE_COMPANION_USER_GUIDE.md not found in root.
 )
 
-if exist "ignored_words.json" (
-    copy /Y "ignored_words.json" "dist\ignored_words.json" >nul
-    if !ERRORLEVEL! NEQ 0 (
-        echo [WARNING] Failed to copy ignored_words.json to dist.
-    ) else (
-        echo   - ignored_words.json copied
-    )
-) else (
-    echo [WARNING] ignored_words.json not found in root.
-)
-
-if exist "data\demo_collection.xlsx" (
-    if not exist "dist\data" mkdir "dist\data"
-    copy /Y "data\demo_collection.xlsx" "dist\data\demo_collection.xlsx" >nul
-    if !ERRORLEVEL! NEQ 0 (
-        echo [WARNING] Failed to copy demo_collection.xlsx to dist\data.
-    ) else (
-        echo   - data\demo_collection.xlsx copied
-    )
-) else (
-    echo [WARNING] data\demo_collection.xlsx not found; Demo Project will not be bundled.
-)
-
-if exist "data\tutorial_images" (
-    if not exist "dist\data\tutorial_images" mkdir "dist\data\tutorial_images"
-    xcopy /Y /Q "data\tutorial_images\*.*" "dist\data\tutorial_images\" >nul
-    if !ERRORLEVEL! NEQ 0 (
-        echo [WARNING] Failed to copy data\tutorial_images to dist\data\tutorial_images.
-    ) else (
-        echo   - data\tutorial_images copied
-    )
-)
+:: ignored_words.json, data\demo_collection.xlsx and data\tutorial_images are bundled
+:: inside Arbor.exe (see main.spec), so they are intentionally NOT copied here.
 
 echo.
 echo ===================================================

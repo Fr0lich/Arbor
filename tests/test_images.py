@@ -683,7 +683,7 @@ def test_design_mode_toggle(tk_root):
     assert "standard" in toggled_modes
 
 
-def test_callbacks_invocation(tk_root):
+def test_image_toolbar_callbacks_invocation(tk_root):
     invoked = []
 
     callbacks = {

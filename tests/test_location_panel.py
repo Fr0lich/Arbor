@@ -149,7 +149,7 @@ def test_unified_settings_location_center_live_callback(loc_toggle_tk_root):
     win.win.destroy()
 
 
-def test_unified_settings_push_layout_to_app(loc_toggle_tk_root):
+def test_unified_settings_push_location_center_to_app(loc_toggle_tk_root):
     mock_app = MagicMock()
     mock_app.show_list_var = tk.BooleanVar(value=True)
     mock_app.show_search_var = tk.BooleanVar(value=True)

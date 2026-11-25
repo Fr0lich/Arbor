@@ -107,8 +107,12 @@ def load_prefs():
                 os.replace(_PREFS_PATH, backup)
             except Exception:
                 pass
-        except Exception:
-            pass
+        except Exception as e:
+            try:
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"Could not read user preferences, using defaults: {e}")
+            except Exception:
+                pass
     _prefs_cache = {}
     return _prefs_cache
 
@@ -157,7 +161,8 @@ def _write_prefs_now():
                     os.remove(tmp_path)
                 except OSError:
                     pass
-            print(f"CRITICAL: Failed to save user preferences: {e}", file=sys.stderr)
+            from utils import debug_error as _debug_error
+            _debug_error("Failed to save user preferences", str(e))
 
 def flush_prefs():
     """Synchronously flush any pending debounced preference write (safe at exit)."""

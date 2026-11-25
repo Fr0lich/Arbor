@@ -163,15 +163,57 @@ def parse_bool(val) -> bool:
     return False
 
 
-# -- Canonical log directory --------------------------------------------------
-# Always sits in a "logs/" folder next to the .exe (frozen) or main.py (dev).
-def _get_log_dir() -> str:
-    if getattr(sys, "frozen", False):
-        base = os.path.dirname(sys.executable)
+# -- Canonical writable user-data directory ----------------------------------
+_USER_DATA_DIR: tuple | None = None
+
+
+def _dir_is_writable(path: str) -> bool:
+    try:
+        os.makedirs(path, exist_ok=True)
+        probe = os.path.join(path, f".arbor_write_probe_{os.getpid()}")
+        with open(probe, "w", encoding="utf-8") as f:
+            f.write("ok")
+        os.remove(probe)
+        return True
+    except Exception:
+        return False
+
+
+def get_user_data_dir() -> str:
+    """Return the folder for user-writable files (prefs, logs, word lists, presets).
+
+    Dev mode: the repository root (unchanged behaviour).
+    Frozen exe: the folder containing Arbor.exe (portable) when writable,
+    otherwise %LOCALAPPDATA%\\Arbor (e.g. when installed under Program Files).
+    Never returns the read-only PyInstaller _MEIPASS extraction folder.
+    """
+    global _USER_DATA_DIR
+    frozen = bool(getattr(sys, "frozen", False))
+    cache_key = (frozen, sys.executable if frozen else "")
+    if _USER_DATA_DIR is not None and _USER_DATA_DIR[0] == cache_key:
+        return _USER_DATA_DIR[1]
+    if not frozen:
+        result = os.path.dirname(os.path.abspath(__file__))
+        _USER_DATA_DIR = (cache_key, result)
+        return result
+    exe_dir = os.path.dirname(sys.executable)
+    if _dir_is_writable(exe_dir):
+        result = exe_dir
     else:
-        here = os.path.dirname(os.path.abspath(__file__))
-        base = here
-    log_dir = os.path.join(base, "logs")
+        base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA") or os.path.expanduser("~")
+        result = os.path.join(base, "Arbor")
+        try:
+            os.makedirs(result, exist_ok=True)
+        except Exception:
+            pass
+    _USER_DATA_DIR = (cache_key, result)
+    return result
+
+
+# -- Canonical log directory --------------------------------------------------
+# Sits in a "logs/" folder inside get_user_data_dir().
+def _get_log_dir() -> str:
+    log_dir = os.path.join(get_user_data_dir(), "logs")
     os.makedirs(log_dir, exist_ok=True)
     return log_dir
 
@@ -230,11 +272,7 @@ def _read_log_level_from_disk() -> str:
     """Read verbosity from user_prefs.json. Returns ''ERROR'' on any failure."""
     try:
         import json
-        if getattr(sys, "frozen", False):
-            base_dir = os.path.dirname(sys.executable)
-        else:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-        prefs_path = os.path.join(base_dir, "user_prefs.json")
+        prefs_path = os.path.join(get_user_data_dir(), "user_prefs.json")
         if os.path.exists(prefs_path):
             with open(prefs_path, "r", encoding="utf-8") as f:
                 prefs = json.load(f)
@@ -290,6 +328,7 @@ def _ensure_logger_configured() -> None:
                 format="[{time:YYYY-MM-DD HH:mm:ss}] [{level}] {message}",
                 filter=_log_filter,
                 rotation="10 MB",
+                delay=True,  # Only create the file once something is actually logged
                 retention="7 days",
                 compression="zip",
                 enqueue=True,

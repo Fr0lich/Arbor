@@ -985,7 +985,7 @@ def test_search_and_action_filtering(tk_root, mock_data):
     dialog.destroy()
 
 
-def test_callbacks_invocation(tk_root, mock_data):
+def test_recent_activity_callbacks_invocation(tk_root, mock_data):
     history, df_log = mock_data
     nav_events = []
     ref_events = []

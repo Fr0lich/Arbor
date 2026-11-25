@@ -54,7 +54,7 @@ arbor/
 │   ├── status_bar.py     # Compact telemetry strip (progress, count, autosave)
 │   ├── navigation_bar.py # Top dropdown header menus
 │   └── tutorials/        # Interactive walkthrough tutorial system in memory sandbox
-└── archive/              # Preserved historical prototypes and deprecated exploratory code
+
 ```
 
 ---
@@ -138,9 +138,8 @@ Arbor contains several UI directories from its development history. Future devel
 * **Entry Point**: `python main.py`.
 * **Contents**: 43 active Python modules building the entire curatorial inspection system.
 
-### 2. archive/ (PRESERVED ARCHIVE)
-* **Status**: Preserved prototypes and retired test suites.
-* **Contents**: `ui/mobile_conflict_resolver.py`, `ui/advanced_search.py`, `ui/advanced_settings.py`, `backend/mobile_scanner.py`, `stitch designs/`, and specialized unit tests (`test_advanced_settings.py`, `test_qt_advanced_search.py`). Documented in `archive/README.md`.
+### 2. archive/ (REMOVED)
+* **Status**: REMOVED during the release-prep pass (2026-11-25). Nothing in the active app imported it; the retired prototypes, Qt tests, and design mockups remain recoverable from Git history (and tag `archive/pyside6-blueprint`).
 
 ### 3. pyside_new_uis/ (COMPLETED PHASE 1 ASSET - 32 UI FILES)
 * **Status**: Completed Phase 1 blueprint / future migration asset.

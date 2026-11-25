@@ -28,10 +28,10 @@ import backend.filter
 # ── User preferences file ────────────────────────────────────────────────────
 # When frozen as a PyInstaller exe, __file__ points to a temp extraction folder
 # that is deleted on exit.  Use sys.executable (the actual .exe) instead.
-if getattr(sys, 'frozen', False):
-    _BASE_DIR = os.path.dirname(sys.executable)
-else:
-    _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+import utils as _utils_paths
+
+# Exe folder when writable (portable), else %LOCALAPPDATA%\Arbor; repo root in dev.
+_BASE_DIR = _utils_paths.get_user_data_dir()
 
 _PREFS_PATH = os.path.join(_BASE_DIR, "user_prefs.json")
 

@@ -886,7 +886,8 @@ class MobileServer:
                 f'name=Arbor Mobile Server (port {self.port})',
                 'dir=in', 'action=allow', 'protocol=TCP',
                 f'localport={self.port}'
-            ], capture_output=True, timeout=5)
+            ], capture_output=True, timeout=5,
+               creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
         except Exception:
             pass  # No admin rights or netsh unavailable — safe to ignore
 
@@ -898,7 +899,8 @@ class MobileServer:
             subprocess.run([
                 'netsh', 'advfirewall', 'firewall', 'delete', 'rule',
                 f'name=Arbor Mobile Server (port {self.port})'
-            ], capture_output=True, timeout=5)
+            ], capture_output=True, timeout=5,
+               creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
         except Exception:
             pass
 

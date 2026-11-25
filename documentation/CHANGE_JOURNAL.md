@@ -1283,3 +1283,22 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 - **Plain-Language Trainee Impact**: After a desk shift or vault walk, users can see all objects they reviewed today or during their mobile session in 1 click — and send that exact batch straight into the Batch Problem Solver to finish flagged items at a keyboard.
 - **Documentation Sync Checklist**:
   - [ ] `USER_GUIDE.md` & `MOBILE_COMPANION_USER_GUIDE.md` — can be synced in the next doc pass if desired
+
+
+---
+
+### Entry 76: Standalone `Arbor.exe` Release-Prep & Hardening Pass
+- **Date**: 2026-11-25
+- **Area**: Packaging (`main.spec`, `build_exe.bat`), Writable File Locations (`utils.py`, `main.py`, `ui/main_window.py`, `ui/dialogs.py`), Mobile Companion shutdown (`backend/mobile_server.py`, `ui/main_window.py`), Logging, Repo hygiene
+- **Code Delta**:
+  - Added `utils.get_user_data_dir()`: settings (`user_prefs.json`), `logs/`, `ignored_words.json`, `filter_presets.json`, and the Demo Project copy are saved next to `Arbor.exe` when that folder is writable, otherwise in `%LOCALAPPDATA%\Arbor` (e.g. when Arbor sits in `Program Files`). They never go into the temporary unpack folder.
+  - Log files are now only created when something is actually logged (no more empty `arbor_*.log` files every launch). Leftover `print()` calls now go to the session log instead.
+  - Windows Firewall helper calls in the Mobile Companion no longer flash a black console window. Closing Arbor now also ends any active Mobile Companion session so internet tunnels never keep running in the background.
+  - `main.spec`: disabled UPX packing (avoids antivirus false alarms), removed unneeded Flask data collection and the stale `archive` exclude. `build_exe.bat`: only the two readable user guides are copied next to `Arbor.exe`; the word list, Demo Project and tutorial images are already bundled inside the exe.
+  - Fixed a pandas FutureWarning in the problem-flag check (`ui/database_ops.py`) with identical results.
+  - Removed retired `archive/` folder (Qt prototypes, Qt tests, design mockups), `backend/mobile_archived_flag_issue.py`, throwaway `scripts/test_*.py`, and untracked `scratch/` and `filter_presets.json`. Merged the duplicate `.Jules`/`.jules` folder. Everything stays recoverable from Git history.
+  - Tests: renamed 3 same-named tests for clarity, added 2 tests for the writable-folder fallback.
+- **Plain-Language Trainee Impact**: No visible change to screens, buttons, shortcuts, or workflows. Arbor is safer to run from any folder (including read-only ones), leaves no empty log clutter, shows no console flashes, and fully stops phone sessions when closed.
+- **Documentation Sync Checklist**:
+  - [x] No shortcut, setting, badge, or workflow changed — `USER_GUIDE.md` / `MOBILE_COMPANION_USER_GUIDE.md` need no sync
+  - [x] `documentation/agent/codebase_guide.md` updated (archive removed)

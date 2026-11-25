@@ -755,7 +755,12 @@ class DatabaseOpsMixin:
                 else:
                     obs_val = pd.Series(False, index=df_reg.index)
                     if df_obs is not None and p in df_obs.columns:
-                        vals = df_obs[p].fillna(False).astype(bool)
+                        def _truthy(v):
+                            try:
+                                return False if pd.isna(v) else bool(v)
+                            except (TypeError, ValueError):
+                                return True
+                        vals = df_obs[p].map(_truthy).astype(bool)
                         obs_val = vals.reindex(has_prob_series.index, fill_value=False)
 
                     auto_val = pd.Series(False, index=df_reg.index)

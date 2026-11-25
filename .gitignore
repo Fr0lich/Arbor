@@ -28,3 +28,5 @@ logs/
 scratch/
 scratch_*.png
 node_modules/
+filter_presets.json
+scratch_pytest.txt

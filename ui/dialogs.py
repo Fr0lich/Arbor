@@ -1076,7 +1076,7 @@ class StartupDialog:
 
         rel_demo = os.path.join("data", "demo_collection.xlsx")
         if getattr(sys, "frozen", False):
-            exe_demo = os.path.join(os.path.dirname(sys.executable), rel_demo)
+            exe_demo = os.path.join(utils.get_user_data_dir(), rel_demo)
             if os.path.exists(exe_demo):
                 return exe_demo
             bundled = utils.get_resource_path(rel_demo)

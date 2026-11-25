@@ -53,7 +53,8 @@ class BackgroundWorker:
                     try:
                         task()
                     except Exception as e:
-                        print(f"Background task callback error: {e}")
+                        from utils import debug_log as _debug_log
+                        _debug_log("WARNING", f"Background task callback error: {e}")
         except queue.Empty:
             pass
         finally:
@@ -81,7 +82,8 @@ class BackgroundWorker:
                 result = func()
             except Exception as e:
                 err = e
-                print(f"Background task error: {e}")
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"Background task error: {e}")
 
             with self._lock:
                 is_active = self.root is not None and self._polling

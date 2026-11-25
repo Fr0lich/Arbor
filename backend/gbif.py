@@ -151,7 +151,8 @@ def check_gbif(genus: str, species: str):
             _check_gbif_cache[cache_key] = result
         return result.copy()
     except Exception as e:
-        print(f"Error checking GBIF: {e}")
+        from utils import debug_log as _debug_log
+        _debug_log("WARNING", f"Error checking GBIF: {e}")
         # Never cache transient/offline errors so reconnecting works immediately
         return {"error": str(e)}
 
@@ -223,7 +224,8 @@ def get_accepted_name(usage_key: int):
             _accepted_name_cache[usage_key] = result
         return result.copy()
     except Exception as e:
-        print(f"Error checking GBIF accepted name: {e}")
+        from utils import debug_log as _debug_log
+        _debug_log("WARNING", f"Error checking GBIF accepted name: {e}")
         return {"error": str(e)}
 
 
@@ -682,7 +684,8 @@ def batch_gbif_match(
                 if isinstance(gbif_res, dict) and gbif_res.get("error"):
                     error_count += 1
             except Exception as e:
-                print(f"Error querying taxon {key}: {e}")
+                from utils import debug_log as _debug_log
+                _debug_log("WARNING", f"Error querying taxon {key}: {e}")
                 taxon_cache[key] = None
                 error_count += 1
 
