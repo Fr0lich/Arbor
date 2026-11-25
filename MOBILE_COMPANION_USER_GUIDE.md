@@ -129,6 +129,8 @@ If you accidentally swipe down to refresh or swipe backwards to close the browse
 
 ### 3.9. Touch Gestures (One-Handed Hallway Navigation & Photo Inspection)
 * **Horizontal Tab Swipe**: Swipe left or right on any specimen screen to glide effortlessly between **Data ↔ Location ↔ Problems** with one thumb (vertical scrolling stays locked so swipes never misfire).
+* **Predictive Back (Left-Edge Swipe & Phone Back Button)**: Drag inward from the left edge of any specimen screen to peek at the Specimen Directory underneath and slide smoothly back—or press your phone's Back button to close open sheets or return to the list without accidentally leaving Arbor.
+* **Fast Hallway Browsing**: Neighboring specimens and their primary photos are quietly pre-loaded in the background while you inspect a record, and clean loading placeholders appear automatically on slower vault connections.
 * **Fullscreen Photo Pinch, Pan, Double-Tap & Arrows**: Tap a specimen photo to open it fullscreen, then **pinch with two fingers** to zoom (`0.8×–4.5×`), **drag with one finger** to pan across tiny handwriting, **double-tap** to jump cleanly between `1.0×` and `2.2×`, or tap `‹` / `›` to step between multiple photos.
 * **Swipe-Down Bottom Sheets**: Pull down on the top drag handle of the **Set Shelf** or **Stored as** sheet to dismiss it naturally with one thumb.
 

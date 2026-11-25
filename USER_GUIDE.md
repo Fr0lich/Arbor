@@ -431,6 +431,10 @@ If something unexpected happens, do not panic! Arbor is engineered with multiple
   2. If the photo was stored on an external USB hard drive, check that the drive cable is securely plugged into your computer.
   3. If the photo is still missing, check the **Images_Problem** checkbox to alert the digitization team.
 
+### 7. Checking for Updates & Running Arbor from Any Folder
+* **Checking for Updates**: Open **Help → Check for Updates** (or **Settings → Check for Updates**) to see if a newer version of `Arbor.exe` is available. After downloading, you can choose **Restart & Restore Session** (Arbor will prompt to save any unsaved work first) or **Apply on Next Exit** to install the update automatically the next time you close Arbor.
+* **Read-Only Folders**: If Arbor is placed in a locked folder (such as `Program Files`), it automatically saves your settings, word lists, and error logs in your personal Windows AppData folder (`%LOCALAPPDATA%\Arbor`) so nothing is ever lost.
+
 ---
 
 *End of Trainee Work Manual. Happy Curating!*

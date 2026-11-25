@@ -20,6 +20,7 @@ Arbor is a Python-based desktop application designed to visualize, edit, and rev
 7. [Configuration](#configuration)
 8. [Troubleshooting & FAQ](#troubleshooting--faq)
 9. [Contributing Guidelines](#contributing-guidelines)
+10. [Handover & GitHub Releases](#handover--github-releases-for-future-maintainers)
 
 ---
 
@@ -79,8 +80,8 @@ python main.py
 The Mobile Companion App runs as a local background Flask service, allowing a mobile device on the same network (or via tunnel) to interact with the database.
 
 - **Starting the Server:** The desktop application dynamically assigns available ports and spawns the background daemon thread.
-- **Tunneling:** You can expose this local server using tunnels like Pinggy. The desktop app manages authentication via an `X-Session-Token`.
-- **Offline Mode:** The mobile companion uses a Service Worker and a `localStorage` offline queue (`arbor_offline_queue`) to cache the UI and store mutations locally when offline. Edits are flushed to the server once the connection is restored.
+- **Tunneling:** You can expose this local server over the internet using Cloudflare Quick Tunnels or Pinggy/SSH tunnels. The desktop app manages authentication via an `X-Session-Token` and optional 4-digit PIN.
+- **Offline Mode & Mobile UX:** The mobile companion uses a Service Worker, IndexedDB / `localStorage` offline queue, pure-CSS skeleton loaders, adjacent-specimen prefetching, and predictive back navigation (History API + left-edge swipe preview). Edits are flushed to the server automatically once connectivity is restored.
 
 ---
 
@@ -145,7 +146,7 @@ A: Check your connection status in the mobile app header. If offline, edits are 
 1. **Verify Your Work:** Always run the complete `pytest` suite before submitting changes.
 2. **EventBus Over Direct Calls:** Never update the Tkinter UI directly from a background thread. Publish events to the global `app_bus` and let the UI subscribe to them.
 3. **Widget Lifecycle:** Always use `.winfo_exists()` checks before querying widget geometry if `update_idletasks()` has been called, to prevent `bad window path name` exceptions.
-4. **Mobile Frontend:** Do not create separate `.html` files for the mobile app. The single source of truth is the `INDEX_TEMPLATE` string within `backend/mobile_server.py`.
+4. **Mobile Frontend:** Do not create separate `.html` files for the mobile app. The single source of truth is `INDEX_TEMPLATE_V2` within `backend/mobile_template_v2.py` (re-exported by `backend/mobile_server.py`).
 
 ---
 
