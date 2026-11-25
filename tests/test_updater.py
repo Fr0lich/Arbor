@@ -224,3 +224,32 @@ class TestUpdater:
         """Test write permission check."""
         with patch("backend.updater.get_install_dir", return_value=str(tmp_path)):
             assert is_install_dir_writable() is True
+
+    def test_update_repo_env_override(self, monkeypatch):
+        """ARBOR_UPDATE_REPO env var takes priority over prefs and DEFAULT_GITHUB_REPO."""
+        monkeypatch.setenv("ARBOR_UPDATE_REPO", "https://github.com/NewMuseum/arbor/")
+        assert config.get_update_repo() == "NewMuseum/arbor"
+
+    def test_apply_staged_update_on_exit(self, tmp_path, monkeypatch):
+        """apply_staged_update_on_exit swaps a valid PE binary in frozen mode."""
+        from backend.updater import apply_staged_update_on_exit
+
+        curr_exe = tmp_path / "Arbor.exe"
+        curr_exe.write_bytes(b"old-exe")
+        staging = tmp_path / ".arbor_update"
+        staging.mkdir()
+        staged_exe = staging / "arbor_update.exe"
+        pe_bytes = bytearray(1024)
+        pe_bytes[0:2] = b"MZ"
+        pe_bytes[0x3C:0x40] = (0x80).to_bytes(4, "little")
+        pe_bytes[0x80:0x84] = b"PE\x00\x00"
+        staged_exe.write_bytes(bytes(pe_bytes))
+
+        monkeypatch.setattr("backend.updater.is_frozen", lambda: True)
+        monkeypatch.setattr("backend.updater.get_staging_dir", lambda: str(staging))
+        monkeypatch.setattr("sys.executable", str(curr_exe))
+
+        assert apply_staged_update_on_exit() is True
+        assert curr_exe.read_bytes() == bytes(pe_bytes)
+        assert not staged_exe.exists()
+

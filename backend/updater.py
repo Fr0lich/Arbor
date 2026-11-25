@@ -383,3 +383,33 @@ def execute_swap_and_restart(app=None):
         app.root.after(100, _clean_exit)
     else:
         sys.exit(0)
+
+
+def apply_staged_update_on_exit():
+    """Install a previously staged update when Arbor closes ('Apply on Next Exit').
+
+    Only runs in frozen exe mode when a valid PE binary exists at
+    ``.arbor_update/arbor_update.exe``. Returns True if swapped, False otherwise.
+    """
+    if not is_frozen():
+        return False
+    staged_exe = os.path.join(get_staging_dir(), "arbor_update.exe")
+    if not os.path.isfile(staged_exe) or not validate_pe_executable(staged_exe):
+        return False
+
+    current_exe = os.path.abspath(sys.executable)
+    old_exe = f"{current_exe}.old.{int(time.time())}.exe"
+    try:
+        os.rename(current_exe, old_exe)
+    except Exception:
+        return False
+    try:
+        os.replace(staged_exe, current_exe)
+        return True
+    except Exception:
+        try:
+            os.rename(old_exe, current_exe)
+        except Exception:
+            pass
+        return False
+

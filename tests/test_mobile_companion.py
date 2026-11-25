@@ -1999,6 +1999,8 @@ def test_mobile_v2_skeletons_prefetch_and_predictive_back():
         "window.addEventListener('popstate'",
         "history.pushState(",
         "edgeStartX",
+        "invalidatePrefetchCache(payload.id)",
+        "invalidatePrefetchCache(updatedId || null)",
     ):
         assert token in INDEX_TEMPLATE_V2, f"Missing expected V2 UX token: {token}"
 

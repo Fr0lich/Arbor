@@ -210,7 +210,13 @@ def set_last_dir(key, path):
     save_prefs(prefs)
 
 def get_update_repo():
-    """Retrieve the configured update repository (or fallback to DEFAULT_GITHUB_REPO)."""
+    """Retrieve the configured update repository.
+
+    Priority: ``ARBOR_UPDATE_REPO`` env var -> ``user_prefs.json`` -> ``DEFAULT_GITHUB_REPO``.
+    """
+    env_repo = os.environ.get("ARBOR_UPDATE_REPO", "").strip()
+    if env_repo:
+        return env_repo.replace("https://github.com/", "").replace("http://github.com/", "").strip("/")
     return load_prefs().get("update_repository", DEFAULT_GITHUB_REPO)
 
 def set_update_repo(repo_str):

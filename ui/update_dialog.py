@@ -210,11 +210,16 @@ class UpdateDialog:
                     progress_callback=_prog,
                     cancel_event=self.cancel_download_event
                 )
-                if final_exe and self.win.winfo_exists():
-                    self.win.after(0, lambda: self._on_download_complete(final_exe))
+                if final_exe:
+                    try:
+                        self.win.after(0, lambda: self.win.winfo_exists() and self._on_download_complete(final_exe))
+                    except tk.TclError:
+                        pass
             except Exception as e:
-                if self.win.winfo_exists():
-                    self.win.after(0, lambda err=e: self._on_download_error(err))
+                try:
+                    self.win.after(0, lambda err=e: self.win.winfo_exists() and self._on_download_error(err))
+                except tk.TclError:
+                    pass
 
         threading.Thread(target=_worker, daemon=True).start()
 
@@ -252,8 +257,17 @@ class UpdateDialog:
         self.win.destroy()
 
     def _restart_now(self):
-        # In-flight task check
-        if self.app and hasattr(self.app, "mobile_server_running") and self.app.mobile_server_running:
+        # In-flight Mobile Companion check (works with both MobileDialog and direct server attr)
+        mobile_active = False
+        if self.app:
+            dlg = getattr(self.app, "_mobile_dialog", None)
+            if dlg is not None and getattr(dlg, "panel", None) is not None:
+                mobile_active = True
+            elif getattr(getattr(self.app, "mobile_server", None), "is_running", False):
+                mobile_active = True
+            elif getattr(self.app, "mobile_server_running", False):
+                mobile_active = True
+        if mobile_active:
             messagebox.showwarning(
                 "Mobile Server Active",
                 "The Mobile Companion server is actively running. Please stop the server before restarting, or choose 'Apply on Next Exit'.",
@@ -261,8 +275,20 @@ class UpdateDialog:
             )
             return
 
+        def _do_swap():
+            try:
+                execute_swap_and_restart(self.app)
+            except Exception as e:
+                messagebox.showerror("Restart Failed", f"Could not complete update handoff:\n{e}", parent=self.win)
+
         # Prompt unsaved changes if needed
-        if self.app and hasattr(self.app, "has_unsaved_changes") and self.app.has_unsaved_changes:
+        is_dirty = bool(
+            self.app and (
+                getattr(getattr(self.app, "app", None), "dirty", False)
+                or getattr(self.app, "has_unsaved_changes", False)
+            )
+        )
+        if is_dirty:
             res = messagebox.askyesnocancel(
                 "Unsaved Changes",
                 "You have unsaved changes in your active catalog.\nWould you like to save before restarting?",
@@ -270,13 +296,23 @@ class UpdateDialog:
             )
             if res is None:  # Cancel
                 return
-            if res and hasattr(self.app, "save_file"):
-                self.app.save_file()
+            if res:
+                if hasattr(self.app, "save_session"):
+                    def _after_save(success, err=None):
+                        if success:
+                            _do_swap()
+                        else:
+                            messagebox.showerror(
+                                "Save Failed",
+                                f"Could not save before restarting:\n{err or 'Unknown error'}",
+                                parent=self.win
+                            )
+                    self.app.save_session("SAVE", on_complete=_after_save)
+                    return
+                elif hasattr(self.app, "save_file"):
+                    self.app.save_file()
 
-        try:
-            execute_swap_and_restart(self.app)
-        except Exception as e:
-            messagebox.showerror("Restart Failed", f"Could not complete update handoff:\n{e}", parent=self.win)
+        _do_swap()
 
     def _on_cancel(self):
         self.cancel_download_event.set()
@@ -416,8 +452,10 @@ def check_for_updates_ui(parent_root, app=None, manual=True):
     """
     def _worker():
         result = check_for_updates()
-        if parent_root.winfo_exists():
-            parent_root.after(0, lambda: _handle_result(result))
+        try:
+            parent_root.after(0, lambda: parent_root.winfo_exists() and _handle_result(result))
+        except tk.TclError:
+            pass
 
     def _handle_result(result):
         status = result.get("status")

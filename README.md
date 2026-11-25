@@ -154,3 +154,17 @@ To build a standalone executable for Windows environments, simply run:
 ```batch
 build_exe.bat
 ```
+
+---
+
+### Handover & GitHub Releases (For Future Maintainers)
+Arbor includes a built-in GitHub Releases updater (`backend/updater.py` + `ui/update_dialog.py`):
+
+1. **Pointing Arbor to a new GitHub repository**:
+   - **Code default (for new builds)**: Update `DEFAULT_GITHUB_REPO` (and `APP_VERSION`) at the top of `config.py`.
+   - **Existing installs**: Users can change the repository live in **Settings → Check for Updates → Update Repository** (`owner/repo`), or set the `ARBOR_UPDATE_REPO` environment variable. If the original GitHub repository is transferred to a new owner/org, Arbor automatically follows GitHub's redirect and updates `user_prefs.json`.
+2. **Publishing a new release**:
+   - Bump `APP_VERSION` in `config.py` (e.g., `"2.2.0"`).
+   - Run `build_exe.bat` to generate `dist\Arbor.exe`.
+   - Create a GitHub Release tagged `v2.2.0` and attach `Arbor.exe` as a release asset.
+

@@ -2119,6 +2119,7 @@ INDEX_TEMPLATE_V2 = """
             if (!evt || !evt.type) continue;
             if (evt.type === 'record_updated' || evt.type === 'object_updated') {
               const updatedId = String((evt.data && (evt.data.id || evt.data.oid)) || evt.id || '');
+              invalidatePrefetchCache(updatedId || null);
               if (state.currentOid && updatedId && updatedId === String(state.currentOid)) {
                 fetchObjectDetail(state.currentOid, false);
               }
@@ -5556,6 +5557,7 @@ INDEX_TEMPLATE_V2 = """
           body: payload
         });
         if (res && res.success) {
+          invalidatePrefetchCache(payload.id);
           dirtyFields.clear();
           triggerHaptic('save_success');
           showToast('✓ Saved & synchronized', { passive: true });

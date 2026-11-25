@@ -6343,6 +6343,13 @@ class ObjectProgramUI(
         except Exception:
             pass
 
+        # Apply any staged GitHub update queued via "Apply on Next Exit"
+        try:
+            from backend.updater import apply_staged_update_on_exit
+            apply_staged_update_on_exit()
+        except Exception:
+            pass
+
         self.root.destroy()
 
 
