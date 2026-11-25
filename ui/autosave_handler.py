@@ -94,7 +94,11 @@ class AutosaveMixin:
                                 raise
                             import time
                             time.sleep(0.1 * (attempt + 1))
-                    self.root.after(0, lambda: callback(True, None) if callback else None)
+                    def _finish_ok():
+                        self._end_io(IoState.SAVING_AUTOSAVE)
+                        if callback:
+                            callback(True, None)
+                    self.root.after(0, _finish_ok)
                 finally:
                     if os.path.exists(tmp_path):
                         try:
@@ -105,7 +109,14 @@ class AutosaveMixin:
                 from utils import debug_error
                 debug_error("_write_autosave_async worker", str(e))
                 err_msg = str(e)
-                self.root.after(0, lambda err=err_msg: callback(False, err) if callback else None)
+                def _finish_err(err=err_msg):
+                    self._end_io(IoState.SAVING_AUTOSAVE)
+                    if callback:
+                        callback(False, err)
+                try:
+                    self.root.after(0, _finish_err)
+                except Exception:
+                    self._end_io(IoState.SAVING_AUTOSAVE)
             finally:
                 try:
                     self.root.after(0, lambda: self._end_io(IoState.SAVING_AUTOSAVE))
