@@ -248,6 +248,12 @@ if __name__ == "__main__":
 
         app = AppState()
         root = tk.Tk()
+        try:
+            _ico = get_resource_path("arbor.ico")
+            if os.path.exists(_ico):
+                root.iconbitmap(default=_ico)
+        except Exception:
+            pass
 
         # ── Detect DPI scale factor (stored for info display only) ──────────────
         # winfo_fpixels('1i') returns pixels-per-inch on this screen.

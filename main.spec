@@ -41,6 +41,8 @@ datas = [
     ('USER_GUIDE.md', '.'),
     ('MOBILE_COMPANION_USER_GUIDE.md', '.'),
 ]
+if os.path.exists('arbor.ico'):
+    datas.append(('arbor.ico', '.'))
 if os.path.exists('data/demo_collection.xlsx'):
     datas.append(('data/demo_collection.xlsx', 'data'))
 if os.path.isdir('data/tutorial_images'):
@@ -87,6 +89,7 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
+    icon='arbor.ico',
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
