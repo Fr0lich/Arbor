@@ -558,7 +558,12 @@ def fuzzy_extract(query: str, choices: list[str], limit: int = 10, score_cutoff:
 
 
 def apply_window_icon(window, ico_filename: str = "arbor.ico") -> bool:
-    """Apply arbor.ico to a Tk root/Toplevel so both the title bar and Windows taskbar display it."""
+    """Apply arbor.ico sharply to a Tk root/Toplevel for both title bar and Windows taskbar.
+
+    On Windows, uses native multi-resolution .ico loading (iconbitmap + Win32 LoadImageW/WM_SETICON)
+    and deliberately avoids iconphoto(), which overwrites the crisp native .ico with a crudely
+    downscaled single-resolution Tk PhotoImage.
+    """
     try:
         ico_path = get_resource_path(ico_filename)
         if not os.path.exists(ico_path):
@@ -572,10 +577,54 @@ def apply_window_icon(window, ico_filename: str = "arbor.ico") -> bool:
                 window.iconbitmap(ico_path)
             except Exception:
                 pass
+            # Also apply exact DPI-native ICON_BIG (taskbar/Alt+Tab) and ICON_SMALL (title bar)
+            try:
+                import ctypes
+                user32 = ctypes.windll.user32
+                IMAGE_ICON = 1
+                LR_LOADFROMFILE = 0x0010
+                WM_SETICON = 0x0080
+                ICON_SMALL = 0
+                ICON_BIG = 1
+                SM_CXICON, SM_CYICON = 11, 12
+                SM_CXSMICON, SM_CYSMICON = 49, 50
+
+                def _apply_win32_icons():
+                    try:
+                        if not window.winfo_exists():
+                            return
+                        hwnd = user32.GetParent(window.winfo_id()) or window.winfo_id()
+                        h_big = user32.LoadImageW(
+                            None, ico_path, IMAGE_ICON,
+                            user32.GetSystemMetrics(SM_CXICON),
+                            user32.GetSystemMetrics(SM_CYICON),
+                            LR_LOADFROMFILE,
+                        )
+                        h_small = user32.LoadImageW(
+                            None, ico_path, IMAGE_ICON,
+                            user32.GetSystemMetrics(SM_CXSMICON),
+                            user32.GetSystemMetrics(SM_CYSMICON),
+                            LR_LOADFROMFILE,
+                        )
+                        if h_big:
+                            user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, h_big)
+                            window._win32_icon_big = h_big
+                        if h_small:
+                            user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, h_small)
+                            window._win32_icon_small = h_small
+                    except Exception:
+                        pass
+
+                window.after(50, _apply_win32_icons)
+            except Exception:
+                pass
+            return True
+
+        # Non-Windows (macOS / Linux): use iconphoto
         try:
             from PIL import Image, ImageTk
             with Image.open(ico_path) as im:
-                photo = ImageTk.PhotoImage(im.convert("RGBA"))
+                photo = ImageTk.PhotoImage(im.convert("RGBA"), master=window)
             window._app_icon_photo = photo  # Prevent GC
             window.iconphoto(True, photo)
         except Exception:
