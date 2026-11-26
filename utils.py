@@ -556,3 +556,51 @@ def fuzzy_extract(query: str, choices: list[str], limit: int = 10, score_cutoff:
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored[:limit]
 
+
+def apply_window_icon(window, ico_filename: str = "arbor.ico") -> bool:
+    """Apply arbor.ico to a Tk root/Toplevel so both the title bar and Windows taskbar display it."""
+    try:
+        ico_path = get_resource_path(ico_filename)
+        if not os.path.exists(ico_path):
+            return False
+        if sys.platform.startswith("win"):
+            try:
+                window.iconbitmap(default=ico_path)
+            except Exception:
+                pass
+            try:
+                window.iconbitmap(ico_path)
+            except Exception:
+                pass
+        try:
+            from PIL import Image, ImageTk
+            with Image.open(ico_path) as im:
+                photo = ImageTk.PhotoImage(im.convert("RGBA"))
+            window._app_icon_photo = photo  # Prevent GC
+            window.iconphoto(True, photo)
+        except Exception:
+            pass
+        return True
+    except Exception:
+        return False
+
+
+def load_app_icon_image(size_px: int = 24, master=None, ico_filename: str = "arbor.ico"):
+    """Load arbor.ico resized to size_px x size_px as an ImageTk.PhotoImage (or None on failure).
+
+    Callers should retain a reference to the returned PhotoImage (e.g. on the widget)
+    to prevent garbage collection.
+    """
+    try:
+        ico_path = get_resource_path(ico_filename)
+        if not os.path.exists(ico_path):
+            return None
+        from PIL import Image, ImageTk
+        px = max(12, int(size_px))
+        with Image.open(ico_path) as im:
+            rgba = im.convert("RGBA").resize((px, px), Image.Resampling.LANCZOS)
+        return ImageTk.PhotoImage(rgba, master=master)
+    except Exception:
+        return None
+
+

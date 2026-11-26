@@ -53,7 +53,8 @@ ui/tutorials/
 ├── micro_guides.py           # Part 2 of 3: Mobile Companion launch handoff + 20–30s Quick Guides (use_sandbox=False)
 ├── triage_tutorial.py        # Part 3 of 3: Desk Follow-Up & Batch Tools (REV+ERR, live-by-default + sandbox fallback)
 ├── discrepancy_tutorial.py   # Legacy standalone: Historical Ledger Comparison
-└── database_tutorial.py      # Optional guide: Creating collections & new specimens
+├── database_tutorial.py      # Optional guide: Creating collections & new specimens
+└── startup_guide.py          # Project Setup Quick Guide: Loading Economic Botany collection (F1 / Help)
 ```
 
 ---

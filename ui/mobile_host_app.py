@@ -32,6 +32,11 @@ class MobileHostApp:
             self.root = tk.Tk()
 
         self.root.title("Arbor Mobile Companion")
+        try:
+            from utils import apply_window_icon
+            apply_window_icon(self.root)
+        except Exception:
+            pass
         self.root.geometry("540x730")
         self.root.minsize(500, 690)
         self.root.configure(bg="#ffffff")

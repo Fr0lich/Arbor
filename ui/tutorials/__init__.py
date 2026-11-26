@@ -14,6 +14,7 @@ from .micro_guides import (
     start_armed_shelf_guide,
     start_image_controls_guide,
 )
+from .startup_guide import start_economic_botany_startup_guide
 
 __all__ = [
     "SandboxManager",
@@ -26,4 +27,5 @@ __all__ = [
     "start_hallway_followup_guide",
     "start_armed_shelf_guide",
     "start_image_controls_guide",
+    "start_economic_botany_startup_guide",
 ]

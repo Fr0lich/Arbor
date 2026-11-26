@@ -199,14 +199,24 @@ class UnifiedSettingsWindow:
         left = tk.Frame(header, bg=self.COLORS["surface_container_low"])
         left.pack(side="left", fill="y", padx=sc(16))
 
+        import utils as _set_utils
+        _set_icon = _set_utils.load_app_icon_image(sc(26), master=left)
+        if _set_icon:
+            ico_lbl = tk.Label(left, image=_set_icon, bg=self.COLORS["surface_container_low"])
+            ico_lbl._icon_ref = _set_icon
+            ico_lbl.pack(side="left", padx=(0, sc(10)), pady=sc(8))
+
+        text_col = tk.Frame(left, bg=self.COLORS["surface_container_low"])
+        text_col.pack(side="left", fill="y")
+
         title_lbl = tk.Label(
-            left, text="Application Settings", font=self.FONT_HEADLINE,
+            text_col, text="Application Settings", font=self.FONT_HEADLINE,
             fg=self.COLORS["primary"], bg=self.COLORS["surface_container_low"]
         )
         title_lbl.pack(side="top", pady=(sc(6), 0), anchor="w")
 
         sub_lbl = tk.Label(
-            left, text="Configure system preferences, workspace layout, theme options, and focus modes",
+            text_col, text="Configure system preferences, workspace layout, theme options, and focus modes",
             font=self.FONT_SUBTITLE, fg=self.COLORS["on_surface_variant"],
             bg=self.COLORS["surface_container_low"]
         )

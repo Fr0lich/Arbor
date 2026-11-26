@@ -142,13 +142,23 @@ class UnifiedHelpWindow:
         left = tk.Frame(header, bg=self.COLORS["surface_container_low"])
         left.pack(side="left", fill="y", padx=sc(16))
 
+        import utils as _help_utils
+        _help_icon = _help_utils.load_app_icon_image(sc(28), master=left)
+        if _help_icon:
+            ico_lbl = tk.Label(left, image=_help_icon, bg=self.COLORS["surface_container_low"])
+            ico_lbl._icon_ref = _help_icon
+            ico_lbl.pack(side="left", padx=(0, sc(10)), pady=sc(8))
+
+        text_col = tk.Frame(left, bg=self.COLORS["surface_container_low"])
+        text_col.pack(side="left", fill="y")
+
         tk.Label(
-            left, text="Arbor Help Center", font=self.FONT_HEADLINE,
+            text_col, text="Arbor Help Center", font=self.FONT_HEADLINE,
             fg=self.COLORS["primary"], bg=self.COLORS["surface_container_low"],
         ).pack(side="top", pady=(sc(6), 0), anchor="w")
 
         tk.Label(
-            left, text="Read about each interactive tutorial before starting, or browse quick guides, manuals, and shortcuts",
+            text_col, text="Read about each interactive tutorial before starting, or browse quick guides, manuals, and shortcuts",
             font=self.FONT_SUBTITLE, fg=self.COLORS["on_surface_variant"],
             bg=self.COLORS["surface_container_low"],
         ).pack(side="top", anchor="w")

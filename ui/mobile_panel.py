@@ -1,4 +1,5 @@
 import os
+import queue
 import tkinter as tk
 from tkinter import ttk
 import threading
@@ -8,8 +9,14 @@ from PIL import ImageTk
 import config
 from config import sc
 
-from backend.mobile_server import MobileServer, get_local_ip
-from backend.tunnel import PinggyTunnel, CloudflareTunnel
+from backend.mobile_server import MobileServer, get_local_ip, is_waitress_available
+from backend.tunnel import (
+    PinggyTunnel,
+    CloudflareTunnel,
+    get_all_local_ips,
+    run_connection_diagnostics,
+    format_diagnostic_report,
+)
 
 
 from enum import Enum
@@ -77,6 +84,8 @@ class MobilePanel:
 
         self.server = reuse_server
         self.tunnel = None
+        self._destroyed = False
+        self._ui_queue = queue.Queue()
         self.connection_state = MobileConnectionState.STOPPED
         self.qr_image_ref = None
         self.local_url_with_token = ""
@@ -95,6 +104,30 @@ class MobilePanel:
         self.show_walkthrough_var = tk.BooleanVar(value=(init_tut_mode != "off"))
 
         self._build_ui()
+        self._schedule_ui_drain()
+
+    def _post_ui(self, fn):
+        """Thread-safe dispatch of a UI callback onto the Tk main thread."""
+        if not self._destroyed:
+            self._ui_queue.put(fn)
+
+    def _schedule_ui_drain(self):
+        if self._destroyed:
+            return
+        try:
+            while True:
+                fn = self._ui_queue.get_nowait()
+                try:
+                    fn()
+                except Exception:
+                    pass
+        except queue.Empty:
+            pass
+        if not self._destroyed:
+            try:
+                self.root.after(80, self._schedule_ui_drain)
+            except Exception:
+                pass
 
     # ------------------------------------------------------------------
     # UI construction
@@ -108,6 +141,7 @@ class MobilePanel:
         main = tk.Frame(self.parent, bg=self._bg_main, padx=20, pady=16)
         main.pack(fill="both", expand=True)
         self._main = main
+        main.bind("<Destroy>", lambda e: setattr(self, "_destroyed", True) if e.widget is main else None)
 
         # ── Header ────────────────────────────────────────────────────
         hdr = tk.Frame(main, bg=self._bg_main)
@@ -116,13 +150,20 @@ class MobilePanel:
         hdr_top = tk.Frame(hdr, bg=self._bg_main)
         hdr_top.pack(fill="x")
 
-        tk.Label(
+        import utils as _mob_utils
+        _mob_icon = _mob_utils.load_app_icon_image(sc(22), master=hdr_top)
+        mob_title_lbl = tk.Label(
             hdr_top,
-            text="📱 Arbor Mobile Companion",
+            text=" Arbor Mobile Companion" if _mob_icon else "📱 Arbor Mobile Companion",
+            image=_mob_icon if _mob_icon else "",
+            compound="left" if _mob_icon else "none",
             font=("Lora", sc(15), "bold"),
             bg=self._bg_main,
             fg=self._fg_title,
-        ).pack(side="left", anchor="w")
+        )
+        if _mob_icon:
+            mob_title_lbl._icon_ref = _mob_icon
+        mob_title_lbl.pack(side="left", anchor="w")
 
         def _open_armed_guide():
             from ui.tutorials import start_armed_shelf_guide
@@ -386,6 +427,128 @@ class MobilePanel:
             cursor="hand2",
         )
         self.btn_ver_v1.pack(side="right", expand=True, fill="x", padx=(1, 0))
+
+        # Experimental HTTP Server Engine Selector (inside advanced_setup_frame)
+        self.server_engine_choice = tk.StringVar(value="flask")
+        eng_frame = tk.Frame(self.advanced_setup_frame, bg="#fbfbf9")
+        eng_frame.pack(fill="x", pady=(10, 0))
+        tk.Label(
+            eng_frame,
+            text="HTTP Server Engine (Experimental):",
+            font=("Segoe UI", sc(9), "bold"),
+            bg="#fbfbf9",
+            fg="#1b4332",
+        ).pack(anchor="w", pady=(0, 2))
+        waitress_ok = is_waitress_available()
+        eng_hint = (
+            "Flask is the tested default. Waitress is an experimental WSGI alternative (32 threads)."
+            if waitress_ok
+            else "Flask is the tested default. Waitress is not installed here (will fall back safely to Flask)."
+        )
+        tk.Label(
+            eng_frame,
+            text=eng_hint,
+            font=("Segoe UI", sc(7.5)),
+            bg="#fbfbf9",
+            fg="#5a655e",
+            wraplength=sc(430),
+            justify="left",
+        ).pack(anchor="w", pady=(0, 4))
+        eng_btn_row = tk.Frame(eng_frame, bg="#ffffff")
+        eng_btn_row.pack(fill="x", pady=(0, 2))
+
+        def _set_engine(eng):
+            self.server_engine_choice.set(eng)
+            if eng == "flask":
+                self.btn_eng_flask.config(bg="#1b4332", fg="white", font=("Segoe UI", sc(8.5), "bold"))
+                self.btn_eng_waitress.config(bg="#e0e3df", fg="#333", font=("Segoe UI", sc(8.5)))
+            else:
+                self.btn_eng_waitress.config(bg="#1b4332", fg="white", font=("Segoe UI", sc(8.5), "bold"))
+                self.btn_eng_flask.config(bg="#e0e3df", fg="#333", font=("Segoe UI", sc(8.5)))
+
+        self.btn_eng_flask = tk.Button(
+            eng_btn_row,
+            text="Flask (Default)",
+            font=("Segoe UI", sc(8.5), "bold"),
+            bg="#1b4332",
+            fg="white",
+            relief="flat",
+            padx=4,
+            pady=3,
+            command=lambda: _set_engine("flask"),
+            cursor="hand2",
+        )
+        self.btn_eng_flask.pack(side="left", expand=True, fill="x", padx=(0, 1))
+        self.btn_eng_waitress = tk.Button(
+            eng_btn_row,
+            text="Waitress (Experimental)",
+            font=("Segoe UI", sc(8.5)),
+            bg="#e0e3df",
+            fg="#333",
+            relief="flat",
+            padx=4,
+            pady=3,
+            command=lambda: _set_engine("waitress"),
+            cursor="hand2",
+        )
+        self.btn_eng_waitress.pack(side="right", expand=True, fill="x", padx=(1, 0))
+
+        # Local Network Adapter Picker (LAN / Tailscale / Phone Hotspot / USB)
+        adapter_frame = tk.Frame(self.advanced_setup_frame, bg="#fbfbf9")
+        adapter_frame.pack(fill="x", pady=(10, 0))
+        tk.Label(
+            adapter_frame,
+            text="Local Network Adapter (LAN / Tailscale / Hotspot):",
+            font=("Segoe UI", sc(9), "bold"),
+            bg="#fbfbf9",
+            fg="#1b4332",
+        ).pack(anchor="w", pady=(0, 2))
+        self._ip_options = [("Auto", "Auto (Recommended)")] + [
+            (ip, f"{lbl} — {ip}") for ip, lbl in get_all_local_ips()
+        ]
+        self.local_adapter_var = tk.StringVar(value=self._ip_options[0][1])
+        ttk.Combobox(
+            adapter_frame,
+            textvariable=self.local_adapter_var,
+            values=[disp for _, disp in self._ip_options],
+            state="readonly",
+            width=36,
+            cursor="hand2",
+        ).pack(anchor="w", fill="x", pady=(0, 2))
+
+        # Optional Named Cloudflare Tunnel (Permanent Museum URL)
+        named_cf_frame = tk.Frame(self.advanced_setup_frame, bg="#fbfbf9")
+        named_cf_frame.pack(fill="x", pady=(10, 0))
+        tk.Label(
+            named_cf_frame,
+            text="Named Cloudflare Tunnel (Optional — Permanent URL):",
+            font=("Segoe UI", sc(9), "bold"),
+            bg="#fbfbf9",
+            fg="#1b4332",
+        ).pack(anchor="w", pady=(0, 2))
+        tk.Label(
+            named_cf_frame,
+            text="Leave blank to use automatic Quick Tunnels. Fill in both fields only if IT set up a permanent Cloudflare Tunnel.",
+            font=("Segoe UI", sc(7.5)),
+            bg="#fbfbf9",
+            fg="#5a655e",
+            wraplength=sc(430),
+            justify="left",
+        ).pack(anchor="w", pady=(0, 4))
+
+        _prefs_cf = config.load_prefs() if hasattr(config, "load_prefs") else {}
+        self.cf_named_token_var = tk.StringVar(value=str(_prefs_cf.get("mobile_cf_tunnel_token", "") or ""))
+        self.cf_named_url_var = tk.StringVar(value=str(_prefs_cf.get("mobile_cf_custom_url", "") or ""))
+
+        cf_tok_row = tk.Frame(named_cf_frame, bg="#fbfbf9")
+        cf_tok_row.pack(fill="x", pady=1)
+        tk.Label(cf_tok_row, text="Token:", font=("Segoe UI", sc(8)), bg="#fbfbf9", fg="#2c302e", width=8, anchor="w").pack(side="left")
+        ttk.Entry(cf_tok_row, textvariable=self.cf_named_token_var, show="•", font=("Consolas", sc(8))).pack(side="left", fill="x", expand=True)
+
+        cf_url_row = tk.Frame(named_cf_frame, bg="#fbfbf9")
+        cf_url_row.pack(fill="x", pady=1)
+        tk.Label(cf_url_row, text="URL:", font=("Segoe UI", sc(8)), bg="#fbfbf9", fg="#2c302e", width=8, anchor="w").pack(side="left")
+        ttk.Entry(cf_url_row, textvariable=self.cf_named_url_var, font=("Consolas", sc(8))).pack(side="left", fill="x", expand=True)
 
         # Auto-save setting row
         self.autosave_row = tk.Frame(setup_card, bg="#fbfbf9")
@@ -708,6 +871,52 @@ class MobilePanel:
         )
         self.tunnel_lbl.pack(anchor="w", pady=(4, 0))
 
+        # Active Connection Recovery & Diagnostics Toolbar
+        diag_row = tk.Frame(info, bg="#fbfbf9")
+        diag_row.pack(fill="x", pady=(6, 0))
+
+        self.btn_reconnect_tunnel = tk.Button(
+            diag_row,
+            text="🔄 Reconnect",
+            font=("Segoe UI", sc(7.5), "bold"),
+            bg="#e0e3df",
+            fg="#1b4332",
+            relief="flat",
+            padx=6,
+            pady=2,
+            cursor="hand2",
+            command=self._reconnect_tunnel,
+        )
+        self.btn_reconnect_tunnel.pack(side="left", padx=(0, 3))
+
+        self.btn_switch_provider = tk.Button(
+            diag_row,
+            text="⇄ Switch Provider",
+            font=("Segoe UI", sc(7.5), "bold"),
+            bg="#e0e3df",
+            fg="#1b4332",
+            relief="flat",
+            padx=6,
+            pady=2,
+            cursor="hand2",
+            command=self._switch_active_provider,
+        )
+        self.btn_switch_provider.pack(side="left", padx=(0, 3))
+
+        self.btn_test_connection = tk.Button(
+            diag_row,
+            text="🩺 Test Connection",
+            font=("Segoe UI", sc(7.5), "bold"),
+            bg="#e8f5e9",
+            fg="#1b5e20",
+            relief="flat",
+            padx=6,
+            pady=2,
+            cursor="hand2",
+            command=self._open_diagnostics_dialog,
+        )
+        self.btn_test_connection.pack(side="left")
+
         # Active Version Toggle
         active_ver_row = tk.Frame(info, bg="#fbfbf9")
         active_ver_row.pack(fill="x", pady=(4, 0))
@@ -1020,21 +1229,57 @@ class MobilePanel:
         """
         pass
 
+    def _get_selected_local_ip(self):
+        """Return the user-selected local adapter IP, or auto-detected get_local_ip()."""
+        if hasattr(self, "local_adapter_var") and hasattr(self, "_ip_options"):
+            chosen = self.local_adapter_var.get()
+            for ip, disp in self._ip_options:
+                if disp == chosen and ip != "Auto":
+                    return ip
+        return get_local_ip()
+
     def _start_services(self):
         """Start (or reuse) MobileServer and conditionally launch tunnel."""
-        # Start or reuse MobileServer
+        # Start or reuse MobileServer — always verify it is actually running & healthy
+        selected_engine = (
+            self.server_engine_choice.get()
+            if hasattr(self, "server_engine_choice")
+            else "flask"
+        )
+        server_ok = True
         if self.server is None:
             self.server = MobileServer(
                 self.app_state,
                 root_tk=self.root,
                 port=self.port,
                 on_edit_callback=self._on_mobile_edit,
+                server_engine=selected_engine,
             )
-            self.server.start()
+            server_ok = bool(self.server.start())
         else:
             self.server.app_state = self.app_state
             self.server.root_tk = self.root
             self.server.on_edit_callback = self._on_mobile_edit
+            healthy = False
+            if getattr(self.server, "is_running", False):
+                if hasattr(self.server, "check_local_health"):
+                    healthy, _ = self.server.check_local_health(timeout=1.0)
+                else:
+                    healthy = True
+            if not healthy:
+                server_ok = bool(self.server.start())
+            elif hasattr(self.server, "_add_firewall_rule") and not getattr(self.server, "_firewall_rule_active", False):
+                self.server._add_firewall_rule()
+
+        if not server_ok:
+            err_msg = getattr(self.server, "last_error", None) or "Local server did not respond on startup."
+            self.connection_state = MobileConnectionState.ERROR
+            self.status_dot.config(fg="#ba1a1a")
+            self.status_lbl.config(text="🔴 Local Server Failed to Start", fg="#ba1a1a")
+            self.tunnel_lbl.config(text=f"Error: {err_msg}", fg="#ba1a1a")
+            self.url_var.set("Local server unavailable")
+            self.log(f"🔴 Local server failed to start: {err_msg}")
+            return
 
         self.server.on_client_connect_callback = self._on_client_connect
         self.server.on_presence_callback = self._on_client_presence
@@ -1057,7 +1302,7 @@ class MobilePanel:
             self.server.update_walkthrough_setting(self.show_walkthrough_var.get())
         self.pin_var.set(self.server.pin)
         self._update_pin_ui()
-        local_ip = get_local_ip()
+        local_ip = self._get_selected_local_ip()
         if hasattr(self, "local_ip_lbl") and self.local_ip_lbl:
             try:
                 self.local_ip_lbl.config(text=f"📶 Local Wi-Fi IP: {local_ip}")
@@ -1081,32 +1326,280 @@ class MobilePanel:
 
         choice = self.network_choice.get()
         if choice == "public":
-            # Render LAN fallback QR immediately so user can scan right away while public tunnel warms up
-            self.connection_state = MobileConnectionState.TUNNEL_CONNECTING
-            self.current_qr_mode = "public"
-            self.url_var.set("🔄 Connecting public tunnel…")
-            self._render_qr(self.local_url_with_token)
-            self.status_lbl.config(text="🔄 Warming up public tunnel… (LAN QR active)", fg="#d97706")
-            self.tunnel_lbl.config(text="Tunnel: Establishing secure public tunnel...", fg="#d97706")
             self.log(f"Local LAN ready: http://{local_ip}:{self.server.port}")
-            self.log("Establishing secure public tunnel in background...")
-
-            # Start tunnel in background based on provider choice
-            if getattr(self, 'provider_choice', tk.StringVar(value='cloudflare')).get() == 'cloudflare':
-                self.tunnel = CloudflareTunnel(self.server.port)
-            else:
-                self.tunnel = PinggyTunnel(self.server.port)
-
-            self.tunnel.start(self._on_tunnel_ready, self._on_tunnel_status)
+            provider = getattr(self, 'provider_choice', tk.StringVar(value='cloudflare')).get()
+            self._launch_tunnel(provider)
         else:
             # Local only mode
             self.connection_state = MobileConnectionState.LOCAL_READY
             self.tunnel_lbl.config(
                 text="Tunnel: Disabled (LAN Only)", fg="#5a655e")
             self.status_lbl.config(text="🟢 Local Server Ready", fg="#1b4332")
+            self.status_dot.config(fg="#2e7d32")
             self.switch_qr("local")
             self.log(
                 f"Server started in LAN-only mode: http://{local_ip}:{self.server.port}")
+
+    def _launch_tunnel(self, provider="cloudflare"):
+        """Stop any existing tunnel and launch a fresh public tunnel for the given provider."""
+        if not self.server:
+            return
+        if self.tunnel:
+            try:
+                self.tunnel.stop()
+            except Exception:
+                pass
+            self.tunnel = None
+
+        self.public_url_with_token = ""
+        self.connection_state = MobileConnectionState.TUNNEL_CONNECTING
+        self.current_qr_mode = "public"
+        if hasattr(self, "provider_choice"):
+            self.provider_choice.set(provider)
+
+        prov_label = "Cloudflare (HTTP/2)" if provider == "cloudflare" else "Pinggy / SSH"
+        self.url_var.set(f"🔄 Connecting {prov_label}…")
+        try:
+            self.qr_image_ref = None
+            self.qr_label.config(
+                image="",
+                text=f"⏳ Connecting {prov_label}…\n\nVerifying DNS & link.\n(Or click 'Local Wi-Fi' above)",
+            )
+            self.btn_qr_public.config(
+                text="🌐 Public (Internet)",
+                bg="#1b4332", fg="white", font=("Segoe UI", sc(7), "bold"),
+            )
+            self.btn_qr_local.config(
+                bg="#e0e3df", fg="#333", font=("Segoe UI", sc(7)),
+            )
+            self.status_dot.config(fg="#d97706")
+            self.status_lbl.config(text=f"🔄 Connecting {prov_label}…", fg="#d97706")
+            self.tunnel_lbl.config(text=f"Tunnel: Starting {prov_label}…", fg="#d97706")
+        except Exception:
+            pass
+
+        self.log(f"Establishing secure public tunnel via {prov_label}...")
+        if provider == "cloudflare":
+            cf_tok = self.cf_named_token_var.get().strip() if hasattr(self, "cf_named_token_var") else ""
+            cf_url = self.cf_named_url_var.get().strip() if hasattr(self, "cf_named_url_var") else ""
+            if cf_tok and not cf_url:
+                self.log("⚠ Named Cloudflare Tunnel Token set without a Custom URL — using Quick Tunnel instead.")
+                cf_tok = ""
+            elif cf_tok and cf_url:
+                try:
+                    _p = config.load_prefs() or {}
+                    _p["mobile_cf_tunnel_token"] = cf_tok
+                    _p["mobile_cf_custom_url"] = cf_url
+                    config.save_prefs(_p)
+                except Exception:
+                    pass
+            self.tunnel = CloudflareTunnel(
+                self.server.port,
+                tunnel_token=cf_tok or None,
+                custom_public_url=cf_url or None,
+            )
+        else:
+            self.tunnel = PinggyTunnel(self.server.port)
+        self.tunnel.start(self._on_tunnel_ready, self._on_tunnel_status)
+
+    def _reconnect_tunnel(self):
+        """Restart the active public tunnel to obtain a fresh, verified URL."""
+        if not self.server:
+            return
+        provider = getattr(self, "provider_choice", tk.StringVar(value="cloudflare")).get()
+        self.network_choice.set("public")
+        self.log("🔄 Reconnecting public tunnel…")
+        self._launch_tunnel(provider)
+
+    def _switch_active_provider(self):
+        """Toggle between Cloudflare and Pinggy/SSH on the fly without ending the session."""
+        if not self.server:
+            return
+        curr = getattr(self, "provider_choice", tk.StringVar(value="cloudflare")).get()
+        nxt = "pinggy" if curr == "cloudflare" else "cloudflare"
+        self.network_choice.set("public")
+        self.log(f"⇄ Switching tunnel provider to {nxt.title()}…")
+        self._launch_tunnel(nxt)
+
+    def _open_diagnostics_dialog(self):
+        """Open a built-in 5-step Connection Diagnostics & Troubleshooting dialog."""
+        if not self._is_alive():
+            return
+        import utils
+
+        dlg = tk.Toplevel(self.root)
+        dlg.title("Arbor Mobile Companion — Connection Diagnostics")
+        dlg.transient(self.root)
+        dlg.resizable(True, True)
+        dlg.minsize(sc(560), sc(500))
+        dlg.configure(bg="#f7f5f0")
+
+        outer = tk.Frame(dlg, bg="#f7f5f0", padx=sc(16), pady=sc(14))
+        outer.pack(fill="both", expand=True)
+
+        tk.Label(
+            outer,
+            text="🩺 Mobile Connection Diagnostics",
+            font=("Lora", sc(13), "bold"),
+            bg="#f7f5f0",
+            fg="#1b4332",
+            anchor="w",
+        ).pack(fill="x")
+        tk.Label(
+            outer,
+            text="Tests your local Arbor server, Wi-Fi interface, outbound internet, tunnel process, and public URL end-to-end.",
+            font=("Inter", sc(9)),
+            bg="#f7f5f0",
+            fg="#5a655e",
+            anchor="w",
+            justify="left",
+            wraplength=sc(540),
+        ).pack(fill="x", pady=(sc(2), sc(10)))
+
+        # Results card
+        res_card = tk.Frame(
+            outer, bg="#ffffff", highlightbackground="#c4c7c7", highlightthickness=1,
+            padx=sc(12), pady=sc(10),
+        )
+        res_card.pack(fill="x", pady=(0, sc(10)))
+
+        # Tunnel logs card
+        log_card = tk.Frame(
+            outer, bg="#ffffff", highlightbackground="#c4c7c7", highlightthickness=1,
+            padx=sc(10), pady=sc(8),
+        )
+        log_card.pack(fill="both", expand=True, pady=(0, sc(10)))
+        tk.Label(
+            log_card, text="Recent Tunnel Output", font=("Inter", sc(9), "bold"),
+            bg="#ffffff", fg="#1b4332", anchor="w",
+        ).pack(fill="x", pady=(0, sc(4)))
+        log_text = tk.Text(
+            log_card, height=6, font=("Consolas", sc(8)),
+            bg="#f2f5f1", fg="#2c302e", bd=0, wrap="word",
+        )
+        log_text.pack(fill="both", expand=True)
+        log_text.config(state="disabled")
+
+        # Future-proof campus firewall playbook
+        guide_card = tk.Frame(
+            outer, bg="#fffbeb", highlightbackground="#d97706", highlightthickness=1,
+            padx=sc(10), pady=sc(8),
+        )
+        guide_card.pack(fill="x", pady=(0, sc(10)))
+        tk.Label(
+            guide_card,
+            text=(
+                "Can't reach the site on campus / corporate Wi-Fi?\n"
+                "• Click '⇄ Switch Provider' to swap between Cloudflare (HTTP/2) and Pinggy / SSH if one is filtered.\n"
+                "• Click '🔄 Reconnect' to generate a fresh link if your phone/PC cached a DNS error.\n"
+                "• Firewall-proof fallback: Turn on your phone's Mobile Hotspot, connect your laptop to it, and use '📶 Local Wi-Fi' (LAN) mode — works even if campus IT blocks all tunnels."
+            ),
+            font=("Inter", sc(8.5)),
+            bg="#fffbeb",
+            fg="#78350f",
+            anchor="w",
+            justify="left",
+            wraplength=sc(540),
+        ).pack(fill="x")
+
+        latest_report = [""]
+
+        def _render_results(results):
+            if not dlg.winfo_exists():
+                return
+            for w in res_card.winfo_children():
+                w.destroy()
+            icons = {"pass": ("✅", "#1b5e20"), "warn": ("⚠️", "#b45309"), "fail": ("❌", "#ba1a1a")}
+            for item in results:
+                ico, col = icons.get(item["status"], ("•", "#2c302e"))
+                row = tk.Frame(res_card, bg="#ffffff")
+                row.pack(fill="x", pady=sc(2))
+                tk.Label(
+                    row, text=f"{ico} {item['step']}:", font=("Inter", sc(9), "bold"),
+                    bg="#ffffff", fg=col, anchor="w",
+                ).pack(anchor="w")
+                tk.Label(
+                    row, text=item["detail"], font=("Consolas", sc(8)),
+                    bg="#ffffff", fg="#2c302e", anchor="w", justify="left", wraplength=sc(520),
+                ).pack(anchor="w", padx=(sc(18), 0))
+                if item.get("advice"):
+                    tk.Label(
+                        row, text=f"→ {item['advice']}", font=("Inter", sc(8.5), "italic"),
+                        bg="#ffffff", fg="#5a655e", anchor="w", justify="left", wraplength=sc(520),
+                    ).pack(anchor="w", padx=(sc(18), 0))
+
+            logs = list(getattr(self.tunnel, "recent_logs", [])) if self.tunnel else []
+            log_text.config(state="normal")
+            log_text.delete("1.0", tk.END)
+            log_text.insert("1.0", "\n".join(logs[-20:]) if logs else "(No tunnel log output captured yet.)")
+            log_text.config(state="disabled")
+
+            latest_report[0] = format_diagnostic_report(
+                results, server=self.server, tunnel=self.tunnel, local_ip=get_local_ip()
+            )
+
+        def _run_checks():
+            if not dlg.winfo_exists():
+                return
+            for w in res_card.winfo_children():
+                w.destroy()
+            tk.Label(
+                res_card, text="⏳ Running 5-step connection checks…",
+                font=("Inter", sc(9), "italic"), bg="#ffffff", fg="#5a655e",
+            ).pack(anchor="w")
+
+            sel_ip = self._get_selected_local_ip()
+
+            def _worker(_ip=sel_ip):
+                res = run_connection_diagnostics(
+                    server=self.server, tunnel=self.tunnel, local_ip=_ip
+                )
+                self._post_ui(lambda: dlg.winfo_exists() and _render_results(res))
+
+            threading.Thread(target=_worker, daemon=True).start()
+
+        def _copy_report():
+            if latest_report[0]:
+                try:
+                    dlg.clipboard_clear()
+                    dlg.clipboard_append(latest_report[0])
+                    btn_copy.config(text="✓ Copied (Redacted)!")
+                    dlg.after(2000, lambda: dlg.winfo_exists() and btn_copy.config(text="📋 Copy Diagnostic Report"))
+                except Exception:
+                    pass
+
+        # Footer action buttons
+        btn_bar = tk.Frame(outer, bg="#f7f5f0")
+        btn_bar.pack(fill="x")
+
+        tk.Button(
+            btn_bar, text="🔄 Re-run Checks", font=("Inter", sc(8.5), "bold"),
+            bg="#1b4332", fg="#ffffff", relief="flat", padx=sc(10), pady=sc(4),
+            cursor="hand2", command=_run_checks,
+        ).pack(side="left", padx=(0, sc(6)))
+
+        btn_copy = tk.Button(
+            btn_bar, text="📋 Copy Diagnostic Report", font=("Inter", sc(8.5)),
+            bg="#ffffff", fg="#1b4332", bd=1, relief="solid", padx=sc(10), pady=sc(4),
+            cursor="hand2", command=_copy_report,
+        )
+        btn_copy.pack(side="left", padx=(0, sc(6)))
+
+        tk.Button(
+            btn_bar, text="⇄ Switch Provider", font=("Inter", sc(8.5)),
+            bg="#ffffff", fg="#2c302e", bd=1, relief="solid", padx=sc(8), pady=sc(4),
+            cursor="hand2", command=lambda: (self._switch_active_provider(), dlg.after(1500, _run_checks)),
+        ).pack(side="left", padx=(0, sc(6)))
+
+        tk.Button(
+            btn_bar, text="Close", font=("Inter", sc(8.5)),
+            bg="#ffffff", fg="#2c302e", bd=1, relief="solid", padx=sc(12), pady=sc(4),
+            cursor="hand2", command=dlg.destroy,
+        ).pack(side="right")
+
+        dlg.bind("<Escape>", lambda e: dlg.destroy())
+        utils.center_and_fit_toplevel(dlg, sc(620), sc(600))
+        _run_checks()
 
     def _is_alive(self):
         """Check if widget hierarchy is still valid and not destroyed."""
@@ -1161,11 +1654,7 @@ class MobilePanel:
             if not self._is_alive():
                 return
             self.log(f"📱 Phone inspecting Specimen #{oid}")
-        try:
-            if self._is_alive():
-                self.root.after(0, _update)
-        except Exception:
-            pass
+        self._post_ui(_update)
 
     def log(self, message: str):
         """Append a timestamped line to the activity feed."""
@@ -1178,11 +1667,7 @@ class MobilePanel:
                 self.feed_list.see(tk.END)
             except Exception:
                 pass
-        try:
-            if self._is_alive():
-                self.root.after(0, _append)
-        except Exception:
-            pass
+        self._post_ui(_append)
 
     # ------------------------------------------------------------------
     # Internal callbacks
@@ -1276,7 +1761,7 @@ class MobilePanel:
                         bg="#e0e3df", fg="#333", font=("Segoe UI", sc(7)))
 
             if self.server:
-                local_ip = get_local_ip()
+                local_ip = self._get_selected_local_ip()
                 v_path = "/v2" if version == "v2" else "/"
                 self.local_url_with_token = (
                     f"http://{local_ip}:{self.server.port}{v_path}?token={self.server.session_token}"
@@ -1319,20 +1804,26 @@ class MobilePanel:
             if not self._is_alive():
                 return
             try:
-                if status.startswith("🔴") or status.startswith("🟡"):
+                if status.startswith("🔄"):
+                    self.connection_state = MobileConnectionState.TUNNEL_CONNECTING
+                    self.status_lbl.config(text=status, fg="#d97706")
+                    self.status_dot.config(fg="#d97706")
+                    self.tunnel_lbl.config(text=f"Tunnel: {status.lstrip('🔄 ').strip()}", fg="#d97706")
+                elif status.startswith("🔴") or status.startswith("🟡"):
                     self.connection_state = MobileConnectionState.ERROR
-                self.status_lbl.config(text=status, fg="#d95c14")
-                self.status_dot.config(fg="#d95c14")
-                self.tunnel_lbl.config(text="Tunnel: Disconnected", fg="#d95c14")
-                self.feed_list.insert(tk.END, status)
+                    self.public_url_with_token = ""
+                    color = "#ba1a1a" if status.startswith("🔴") else "#d95c14"
+                    self.status_lbl.config(text=status, fg=color)
+                    self.status_dot.config(fg=color)
+                    self.tunnel_lbl.config(text="Tunnel: Disconnected — click Reconnect or Test Connection", fg=color)
+                    self.btn_qr_public.config(text="🌐 Public (Internet)")
+                else:
+                    self.status_lbl.config(text=status, fg="#5a655e")
+                self.feed_list.insert(tk.END, f"[{datetime.now().strftime('%H:%M:%S')}] {status}")
                 self.feed_list.see(tk.END)
             except Exception:
                 pass
-        try:
-            if self._is_alive():
-                self.root.after(0, _update)
-        except Exception:
-            pass
+        self._post_ui(_update)
 
     def _on_tunnel_ready(self, url):
         def _update():
@@ -1357,11 +1848,7 @@ class MobilePanel:
                 self.feed_list.see(tk.END)
             except Exception:
                 pass
-        try:
-            if self._is_alive():
-                self.root.after(0, _update)
-        except Exception:
-            pass
+        self._post_ui(_update)
 
     def _on_client_connect(self, active_count):
         def _update():
@@ -1380,11 +1867,7 @@ class MobilePanel:
                     )
             except Exception:
                 pass
-        try:
-            if self._is_alive():
-                self.root.after(0, _update)
-        except Exception:
-            pass
+        self._post_ui(_update)
 
     def _on_mobile_edit(self, oid, summary):
         # Log to feed

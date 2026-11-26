@@ -219,8 +219,10 @@ class StartupDialog:
 
         self.completed = False
         self.mobile_mode = False
+        self._startup_tutorial_runner = None
         self.win.protocol("WM_DELETE_WINDOW", self.on_close)
         self.win.bind("<Escape>", lambda e: self.on_close())
+        self.win.bind("<F1>", lambda e: self.start_economic_botany_guide())
 
         # State vars
         self.db_path_var      = tk.StringVar()
@@ -355,19 +357,70 @@ class StartupDialog:
         header = tk.Frame(card, bg=self.C_HEADER_BG, padx=sc(16), pady=sc(12))
         header.pack(fill="x")
 
-        tk.Label(
-            header, text="arbor",
+        import utils as _dlg_utils
+        _brand_icon = _dlg_utils.load_app_icon_image(sc(20), master=header)
+        brand_lbl = tk.Label(
+            header, text=" arbor" if _brand_icon else "arbor",
+            image=_brand_icon if _brand_icon else "",
+            compound="left" if _brand_icon else "none",
             bg=self.C_HEADER_BG, fg=self.C_PRIMARY,
-            font=("JetBrains Mono", sc(9), "bold"),
+            font=("JetBrains Mono", sc(9.5), "bold"),
             anchor="w"
-        ).pack(anchor="w")
+        )
+        if _brand_icon:
+            brand_lbl._icon_ref = _brand_icon
+        brand_lbl.pack(anchor="w")
 
         tk.Label(
             header, text="Project Setup",
             bg=self.C_HEADER_BG, fg=self.C_ON_SURFACE,
             font=("Lora", sc(18), "bold"),
             anchor="w"
-        ).pack(anchor="w", pady=(sc(2), 0))
+        ).pack(anchor="w", pady=(sc(2), sc(6)))
+
+        # Subtle clickable onboarding tip banner for first-time users
+        tip_bar = tk.Frame(
+            header,
+            bg="#eef6ef",
+            highlightthickness=1,
+            highlightbackground="#b9d6bd",
+            padx=sc(10),
+            pady=sc(6),
+            cursor="hand2",
+        )
+        tip_bar.pack(fill="x", pady=(0, sc(8)))
+
+        tip_lbl = tk.Label(
+            tip_bar,
+            text="💡 New to Arbor? Check how to load the Economic Botany collection",
+            bg="#eef6ef",
+            fg="#1b5e20",
+            font=("Segoe UI", sc(9), "bold"),
+            anchor="w",
+            cursor="hand2",
+        )
+        tip_lbl.pack(side="left", fill="x", expand=True)
+
+        tip_btn = tk.Button(
+            tip_bar,
+            text="Start Guide · F1",
+            bg="#3a7d44",
+            fg="#ffffff",
+            activebackground="#2e6537",
+            activeforeground="#ffffff",
+            font=("Segoe UI", sc(8.5), "bold"),
+            relief="flat",
+            bd=0,
+            padx=sc(10),
+            pady=sc(3),
+            cursor="hand2",
+            command=self.start_economic_botany_guide,
+        )
+        tip_btn.pack(side="right", padx=(sc(8), 0))
+        self._startup_tip_btn = tip_btn
+
+        for w in (tip_bar, tip_lbl):
+            w.bind("<Button-1>", lambda e: self.start_economic_botany_guide())
 
         self._sep(header, self.C_OUTLINE_VAR)
 
@@ -706,6 +759,7 @@ class StartupDialog:
         self._build_section_header(container, "Historical Data (Books)", status_type="optional")
 
         row = tk.Frame(container, bg=self.C_CARD)
+        row.tutorial_id = "books_path_entry"
         row.pack(fill="x", expand=True)
 
         entry = tk.Entry(
@@ -954,6 +1008,7 @@ class StartupDialog:
         if not self._resolve_config_and_path(path):
             return
 
+        self._close_startup_tutorial()
         self.mobile_mode = True
         self.completed = True
         self.win.destroy()
@@ -1133,7 +1188,23 @@ class StartupDialog:
             self.db_path_var.set(file_path)
             self._refresh_launch_state()
 
+    def _close_startup_tutorial(self):
+        runner = getattr(self, "_startup_tutorial_runner", None)
+        if runner is not None:
+            try:
+                runner._cleanup()
+            except Exception:
+                pass
+            self._startup_tutorial_runner = None
+
+    def start_economic_botany_guide(self):
+        """Launch the interactive Startup Guide for loading the Economic Botany collection."""
+        from ui.tutorials import start_economic_botany_startup_guide
+        self._startup_tutorial_runner = start_economic_botany_startup_guide(self)
+        return self._startup_tutorial_runner
+
     def on_close(self):
+        self._close_startup_tutorial()
         self.completed = False
         self.win.destroy()
 
@@ -1212,6 +1283,7 @@ class StartupDialog:
         if not self._resolve_config_and_path(path):
             return
 
+        self._close_startup_tutorial()
         self.completed = True
         self.win.update_idletasks()
         self.win.destroy()
@@ -1220,6 +1292,10 @@ class StartupDialog:
         from ui.help_dialogs import show_main_help, show_shortcuts
 
         menu = tk.Menu(self.win, tearoff=0)
+        menu.add_command(
+            label="🌿 Load Economic Botany Collection (Guide · F1)",
+            command=self.start_economic_botany_guide,
+        )
         menu.add_command(label="How to Open Arbor", command=self._show_setup_help_msg)
         menu.add_separator()
         menu.add_command(label="📖 Desktop Work Manual", command=lambda: show_main_help(self.win, initial_tab="desktop"))

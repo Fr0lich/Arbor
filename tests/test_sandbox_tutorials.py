@@ -915,6 +915,49 @@ class TestSandboxTutorials(unittest.TestCase):
         self.assertIn("Synced to Arbor", pop.title())
         pop.destroy()
 
+    def test_economic_botany_startup_guide_runs_on_startup_dialog(self):
+        """Verify the interactive Economic Botany startup guide attaches to StartupDialog,
+        validates file selections, and cleans up on close."""
+        from ui.tutorials import start_economic_botany_startup_guide
+
+        class _FakeStartupDialog:
+            def __init__(self, parent_root):
+                self.win = tk.Toplevel(parent_root)
+                self.win.withdraw()
+                self.db_path_var = tk.StringVar(value="")
+                self.image_folder_var = tk.StringVar(value="")
+                self.books_path_var = tk.StringVar(value="")
+
+        dlg = _FakeStartupDialog(self.root)
+        try:
+            runner = start_economic_botany_startup_guide(dlg)
+            self.assertFalse(runner.use_sandbox)
+            self.assertEqual(len(runner.steps), 5)
+            self.assertEqual(runner.steps[0].step_id, "eb_startup_intro")
+
+            # Step 1 -> Step 2 (Excel)
+            runner.next_step()
+            self.assertEqual(runner.steps[runner.current_idx].step_id, "eb_startup_excel")
+            self.assertFalse(runner.steps[runner.current_idx].validator(runner.ui))
+            dlg.db_path_var.set(r"\\hypatia.uio.no\lh-nhm-felles\objekt-bilder\johannes.d.f\Arbor\Økonomisk_Botanisk_Arbor.xlsx")
+            self.assertTrue(runner.steps[runner.current_idx].validator(runner.ui))
+
+            # Step 3 (Photos)
+            runner.next_step()
+            self.assertEqual(runner.steps[runner.current_idx].step_id, "eb_startup_photos")
+            dlg.image_folder_var.set(r"\\hypatia.uio.no\lh-nhm-felles\objekt-bilder\eirik\Øko")
+            self.assertTrue(runner.steps[runner.current_idx].validator(runner.ui))
+
+            # Step 4 (Books)
+            runner.next_step()
+            self.assertEqual(runner.steps[runner.current_idx].step_id, "eb_startup_books")
+            dlg.books_path_var.set(r"\\hypatia.uio.no\lh-nhm-felles\objekt-bilder\johannes.d.f\Arbor\Books.xlsx")
+            self.assertTrue(runner.steps[runner.current_idx].validator(runner.ui))
+
+            runner.finish_tutorial()
+        finally:
+            dlg.win.destroy()
+
 
 if __name__ == "__main__":
     unittest.main()

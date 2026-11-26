@@ -817,12 +817,23 @@ def get_local_ip():
     return _tunnel_get_local_ip()
 
 
+def is_waitress_available() -> bool:
+    """Return True if the optional Waitress WSGI server package is installed."""
+    import importlib.util
+    try:
+        return importlib.util.find_spec("waitress") is not None
+    except Exception:
+        return False
+
+
 class MobileServer:
-    def __init__(self, app_state, root_tk=None, port=5055, on_edit_callback=None):
+    def __init__(self, app_state, root_tk=None, port=5055, on_edit_callback=None, server_engine="flask"):
         self.app_state = app_state
         self.root_tk = root_tk
         self.port = port
         self.on_edit_callback = on_edit_callback
+        self.server_engine = "waitress" if str(server_engine or "").strip().lower() == "waitress" else "flask"
+        self.active_server_engine = "flask"
         self.session_id = uuid.uuid4().hex[:12]
         prefs = config.load_prefs()
         self._pin_required = prefs.get("require_mobile_pin", True)
@@ -871,6 +882,7 @@ class MobileServer:
         self.on_presence_callback = None
         self.presence = {}  # session_id -> {"oid": oid_str or None, "last_seen": timestamp}
         self.presence_lock = threading.Lock()
+        self.last_error = None
         self._setup_routes()
 
     @property
@@ -908,12 +920,44 @@ class MobileServer:
         except Exception:
             pass
 
+    def check_local_health(self, timeout=1.5):
+        """Verify that the local Flask server is responding on 127.0.0.1:<port>/api/ping."""
+        import urllib.request
+        url = f"http://127.0.0.1:{self.port}/api/ping"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "ArborHealthCheck/1.0"})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                if resp.status == 200:
+                    return True, f"Listening on 127.0.0.1:{self.port} (HTTP 200)"
+                return False, f"Unexpected HTTP {resp.status} from local server"
+        except Exception as e:
+            return False, f"Local server unreachable on port {self.port}: {e}"
+
+    def wait_until_ready(self, timeout=4.0):
+        """Poll local /api/ping until Flask is accepting connections or timeout expires."""
+        deadline = time.time() + max(0.2, float(timeout))
+        last_detail = "Server did not start in time"
+        while time.time() < deadline:
+            if not self._is_running:
+                return False, self.last_error or "Server thread exited before becoming ready"
+            ok, detail = self.check_local_health(timeout=0.5)
+            if ok:
+                return True, detail
+            last_detail = detail
+            time.sleep(0.1)
+        return False, last_detail
+
     def start(self):
         if self._is_running:
-            if not self._firewall_rule_active:
-                self._add_firewall_rule()
-            return
+            ok, _ = self.check_local_health(timeout=1.0)
+            if ok:
+                if not self._firewall_rule_active:
+                    self._add_firewall_rule()
+                return True
+            # Thread marked running but not responding — fall through to restart on an available port
+            self._is_running = False
 
+        self.last_error = None
         # Test port binding synchronously to prevent zombie conflicts
         max_port = self.port + 50
         while self.port < max_port:
@@ -924,15 +968,45 @@ class MobileServer:
             except OSError:
                 self.port += 1
 
-        self._add_firewall_rule()
+        if not self._firewall_rule_active:
+            self._add_firewall_rule()
         self._is_running = True
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
+        ready, detail = self.wait_until_ready(timeout=4.0)
+        if not ready:
+            self.last_error = detail
+        return ready
 
     def _run(self):
         try:
-            self.flask_app.run(host='0.0.0.0', port=self.port, debug=False, use_reloader=False)
+            if self.server_engine == "waitress":
+                try:
+                    from waitress import serve as _waitress_serve
+                    self.active_server_engine = "waitress"
+                    _waitress_serve(
+                        self.flask_app,
+                        host='0.0.0.0',
+                        port=self.port,
+                        threads=32,
+                        channel_timeout=120,
+                    )
+                    return
+                except ImportError:
+                    logging.warning("Waitress requested but not installed; falling back to Flask.")
+                except Exception as w_err:
+                    logging.warning(f"Waitress failed to start ({w_err}); falling back to Flask.")
+
+            self.active_server_engine = "flask"
+            self.flask_app.run(
+                host='0.0.0.0',
+                port=self.port,
+                debug=False,
+                use_reloader=False,
+                threaded=True,
+            )
         except Exception as e:
+            self.last_error = str(e)
             debug_error("Mobile Server Crash", str(e))
         finally:
             self._is_running = False

@@ -37,11 +37,19 @@ _PREFS_PATH = os.path.join(_BASE_DIR, "user_prefs.json")
 
 # Load/save logic moved to config.py
 
-# ── Enable DPI awareness BEFORE creating the Tk window ───────────────────────
+# ── Enable DPI awareness & Windows Taskbar AppUserModelID BEFORE creating Tk ─
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(1)
 except Exception as e:
     pass  # Non-Windows or already set — safe to ignore
+
+if sys.platform.startswith("win"):
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "Arbor.MuseumVisualizer.Desktop"
+        )
+    except Exception:
+        pass
 
 # Disable decompression bomb limits for legitimate 100MP+ museum scans
 try:
@@ -248,12 +256,7 @@ if __name__ == "__main__":
 
         app = AppState()
         root = tk.Tk()
-        try:
-            _ico = get_resource_path("arbor.ico")
-            if os.path.exists(_ico):
-                root.iconbitmap(default=_ico)
-        except Exception:
-            pass
+        _utils_paths.apply_window_icon(root)
 
         # ── Detect DPI scale factor (stored for info display only) ──────────────
         # winfo_fpixels('1i') returns pixels-per-inch on this screen.

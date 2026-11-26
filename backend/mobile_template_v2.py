@@ -6220,7 +6220,7 @@ INDEX_TEMPLATE_V2 = """
           id: 't_shelf',
           badge: 'TRAINEE · STEP 1 OF 5',
           title: 'Set your shelf',
-          body: "You practiced at your desk — now you'll do the exact same work in the collection. First, tap Set Shelf for the cabinet and shelf you're standing at so Arbor can save it in one tap for every object here.",
+          body: "In Part 1 you practiced checking specimen data at your desk — in the collection, you also record each object's physical storage location (Building, Floor, Cabinet, and Shelf). Registering where every specimen lives is essential so curators and researchers can find it again later without searching through dozens of cabinets. Tap Set Shelf for the cabinet and shelf you're standing at so Arbor can save that location for every object here in one tap.",
           waitingText: 'Waiting for you to set a shelf…',
           target: '#btnStationSheetTrigger',
           check: () => Boolean(state.armedLocation && (state.armedLocation.cabinet || state.armedLocation.shelf))
@@ -6266,7 +6266,7 @@ INDEX_TEMPLATE_V2 = """
           id: 'h_shelf',
           badge: 'HELPER · STEP 1 OF 4',
           title: 'Set your shelf',
-          body: "First, tap Set Shelf for the cabinet and shelf you're standing at so you can save each object's location in one tap. Update this whenever you move to a new shelf.",
+          body: "A key part of working in the collection is recording each object's physical storage location (Building, Floor, Cabinet, and Shelf) so staff and researchers can find it again later without searching through dozens of cabinets. Tap Set Shelf for the cabinet and shelf you're standing at so you can save each object's location in one tap — and update it whenever you move to a new shelf.",
           waitingText: 'Waiting for you to set a shelf…',
           target: '#btnStationSheetTrigger',
           check: () => Boolean(state.armedLocation && (state.armedLocation.cabinet || state.armedLocation.shelf))

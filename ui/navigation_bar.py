@@ -37,15 +37,21 @@ class NavigationBar:
         app.nav_bar = nav_bar
         app.nav_separators = []
 
-        # App title
+        # App title (with arbor.ico brand mark)
+        import utils as _nav_utils
+        _nav_icon = _nav_utils.load_app_icon_image(sc(22), master=nav_bar)
         app.nav_title_lbl = tk.Label(
             nav_bar,
-            text="arbor",
+            text=" arbor" if _nav_icon else "arbor",
+            image=_nav_icon if _nav_icon else "",
+            compound="left" if _nav_icon else "none",
             bg=nav_bar_bg,
             fg="#000000",
             font=("Lora", sc(13), "bold"),
-            padx=sc(16)
+            padx=sc(12) if _nav_icon else sc(16),
         )
+        if _nav_icon:
+            app.nav_title_lbl._icon_ref = _nav_icon
         app.nav_title_lbl.pack(side="left", anchor="center")
 
         # 1px vertical separator after title

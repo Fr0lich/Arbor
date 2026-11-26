@@ -38,6 +38,7 @@ The **Arbor Mobile Companion** is a dedicated, zero-install mobile web applicati
 * **Live 4-Digit PIN Toggle**: By default, phones typing the address manually must enter the 4-digit PIN shown on your desktop screen. You can toggle **`🔒 Require 4-Digit PIN: ON / OFF`** directly inside the Mobile Companion window at any time (even while the server is running).
   * *Safety Tip*: Turning PIN **OFF** is great on a private, offline vault Wi-Fi router so staff can reconnect effortlessly. Keep PIN **ON** whenever using a **Public (Internet)** tunnel.
 * **Phone Tutorial Dropdown & `?` Quick Reference**: In the desktop Mobile Companion launcher, use the compact **`Phone tutorial:`** dropdown to choose **Ask on the phone (recommended)**, **Trainee (after Desktop Part 1)**, **Helper (short — helping out today)**, or **Off (no tutorial)**. Even when set to **Off**, you can always tap **`?`** in the phone's top bar to open the **Badges, ICEDIG & Field Reference** or launch either tutorial from **`⚙ Settings → Phone tutorial`**.
+* **Server Engine (`Flask` vs. `Waitress (Experimental)`)**: By default, Mobile Companion runs on **Flask** (the tested default). Under **Server Engine**, you can optionally switch to **Waitress (Experimental)**—a multi-threaded WSGI server designed for smoother multi-phone concurrency. If `waitress` is not installed in a Python-from-source setup, Arbor falls back to Flask automatically.
 
 ---
 
@@ -186,5 +187,22 @@ Just helping in the collection today? You don't need to learn Desktop Arbor — 
    * Broken objects or storage, or mixed specimen? Tap **`⚑ Needs Specialist`** in the bottom bar and tap a quick tag under **Comment**.
 4. **Save to Shelf:** Tap **`📍 Save to Cab XX · Sh YY`** (has a 5-second `↩ Undo` if you tap by mistake).
 5. **Mark Reviewed:** Tap **`✓ Mark Reviewed`**, then pick up the next object. Anything you left flagged will be checked at the desk by the main worker later.
+
+---
+
+## 7. Troubleshooting Connection Issues & Campus Firewalls
+
+If your phone or PC cannot reach the Mobile Companion website, click **`🩺 Test Connection`** inside the Mobile Companion window. Arbor runs a 5-step health check (Local Server, Local Wi-Fi, Outbound HTTPS, Tunnel Process, and Public URL Reachability), shows recent tunnel logs, and lets you click **`📋 Copy Diagnostic Report`** (with your session token and PIN automatically redacted) to share with IT support.
+
+### Quick Ways to Solve or Avoid Network Blocks
+1. **Wait for the green `🟢 Public Tunnel Live & Secure` status**: Arbor automatically uses **Cloudflare HTTP/2 (TCP 443)** to bypass university/Eduroam UDP blocks and verifies that the public link responds before showing the QR code.
+2. **Switch Tunnel Provider (`⇄ Switch Provider`)**: If a campus or corporate DNS filter blocks `trycloudflare.com`, click **`⇄ Switch Provider`** to switch live to **Pinggy / Serveo (SSH)** without ending your session or losing edits.
+3. **Reconnect for a Fresh Link (`🔄 Reconnect`)**: If a phone or PC browser cached an early `NXDOMAIN` ("site can't be reached") error, clicking **`🔄 Reconnect`** creates a brand-new tunnel URL immediately.
+4. **Firewall-Proof Fallback — Phone Mobile Hotspot + `📶 LAN only` Mode**: If campus IT blocks *all* public tunnels and isolates Wi-Fi devices from each other:
+   * Turn on your phone's **Mobile Hotspot**,
+   * Connect your laptop to your phone's hotspot, and
+   * Launch Mobile Companion in **`📶 LAN only`** mode (works 100% independently of campus networks, and even offline in basements).
+5. **Windows Defender Firewall (LAN Mode)**: If LAN mode is unreachable, set your Wi-Fi network profile in Windows from **Public** to **Private** (or allow Arbor through Windows Defender Firewall).
+
 
 

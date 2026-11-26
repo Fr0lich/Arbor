@@ -1302,3 +1302,17 @@ This file tracks all user-facing changes made to Arbor. Whenever a feature, shor
 - **Documentation Sync Checklist**:
   - [x] No shortcut, setting, badge, or workflow changed — `USER_GUIDE.md` / `MOBILE_COMPANION_USER_GUIDE.md` need no sync
   - [x] `documentation/agent/codebase_guide.md` updated (archive removed)
+
+
+---
+
+## 2026-11-26 — Startup Quick Guide for Economic Botany Collection (`F1` & Help Menu)
+- **Feature Area:** Project Setup (`StartupDialog`) & Interactive Tutorials (`ui/tutorials/startup_guide.py`)
+- **Code Delta:**
+  - Added `ui/tutorials/startup_guide.py` (`start_economic_botany_startup_guide`) using `TutorialRunner` (`use_sandbox=False`) to guide first-time users step-by-step through selecting `Økonomisk_Botanisk_Arbor.xlsx`, the `Øko` photo folder, and `Books.xlsx` with one-click folder path copy buttons and glowing widget highlights.
+  - Wired `<F1>`, a subtle clickable onboarding tip banner (*"New to Arbor? Check how to load the Economic Botany collection"*), and a top `Help` menu item in `StartupDialog` (`ui/dialogs.py`), with automatic HUD cleanup on close/launch.
+  - Updated `README.md` (English) with clear purpose (auditing collections & preparing data for Specify), Windows `.exe` quick start, Mobile Companion multi-user workflow, and AI Agent Guide overview.
+- **Trainee Impact:** First-time users landing on the Project Setup screen can now press `F1` or click the tip banner / `Help` button to get an interactive walkthrough of how to load the Economic Botany collection before entering the main workspace.
+- **Documentation Sync Checklist:**
+  - [x] `README.md` updated
+  - [x] `tests/test_sandbox_tutorials.py` updated

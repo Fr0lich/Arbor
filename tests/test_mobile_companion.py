@@ -2005,5 +2005,210 @@ def test_mobile_v2_skeletons_prefetch_and_predictive_back():
         assert token in INDEX_TEMPLATE_V2, f"Missing expected V2 UX token: {token}"
 
 
+def test_cloudflare_tunnel_http2_default_and_readiness_gate(monkeypatch):
+    """Verify CloudflareTunnel uses --protocol http2 --no-autoupdate and gates url_callback on edge registration + ping."""
+    import time
+    from backend import tunnel as tun_mod
+
+    captured_cmds = []
+    probe_calls = []
+
+    class _FakeStderr:
+        def __init__(self, lines):
+            self._lines = list(lines)
+
+        def readline(self):
+            if self._lines:
+                return self._lines.pop(0)
+            time.sleep(0.05)
+            return ""
+
+    class _FakeProc:
+        def __init__(self, lines):
+            self.stderr = _FakeStderr(lines)
+            self.returncode = None
+            self._alive = True
+
+        def poll(self):
+            return None if self._alive else 0
+
+        def terminate(self):
+            self._alive = False
+
+        def wait(self, timeout=None):
+            self._alive = False
+            return 0
+
+        def kill(self):
+            self._alive = False
+
+    def _fake_popen(cmd, **kwargs):
+        captured_cmds.append(list(cmd))
+        return _FakeProc([
+            "2026-01-01T00:00:00Z INF |  https://demo-test-link.trycloudflare.com  |\n",
+            "2026-01-01T00:00:01Z INF Registered tunnel connection connIndex=0\n",
+        ])
+
+    monkeypatch.setattr(tun_mod, "ensure_cloudflared", lambda: "/fake/cloudflared")
+    monkeypatch.setattr(tun_mod.subprocess, "Popen", _fake_popen)
+    monkeypatch.setattr(tun_mod, "_check_doh_dns_ready", lambda host, timeout=2.5: True)
+
+    def _fake_probe(url, timeout=3.0):
+        probe_calls.append(url)
+        return True, "Reachable (HTTP 200)"
+
+    monkeypatch.setattr(tun_mod, "probe_public_url", _fake_probe)
+
+    cf = tun_mod.CloudflareTunnel(5055, max_attempts=1)
+    assert cf.protocols == ("http2", "quic")
+
+    urls = []
+    statuses = []
+    cf.start(lambda u: urls.append(u), lambda st: statuses.append(st))
+    deadline = time.time() + 5.0
+    while not urls and time.time() < deadline:
+        time.sleep(0.05)
+    cf.stop()
+
+    assert urls == ["https://demo-test-link.trycloudflare.com"]
+    assert probe_calls == ["https://demo-test-link.trycloudflare.com"]
+    assert captured_cmds and "--protocol" in captured_cmds[0] and "http2" in captured_cmds[0]
+    assert "--no-autoupdate" in captured_cmds[0]
+    assert len(cf.recent_logs) >= 2
+
+
+def test_diagnostic_report_redacts_token_and_pin():
+    """Verify format_diagnostic_report never leaks session tokens or PINs."""
+    from backend.tunnel import format_diagnostic_report
+
+    fake_srv = type("S", (), {
+        "port": 5055,
+        "is_running": True,
+        "session_token": "SECRET_TOK_998877",
+        "pin": "4829",
+    })()
+    fake_tun = type("T", (), {
+        "active_protocol": "http2",
+        "state": type("St", (), {"value": "connected"})(),
+        "recent_logs": ["Connected URL: https://x.trycloudflare.com/v2?token=SECRET_TOK_998877 pin=4829"],
+    })()
+    results = [{
+        "step": "5. Public URL Reachability",
+        "status": "pass",
+        "detail": "https://x.trycloudflare.com/?token=SECRET_TOK_998877 — Reachable (HTTP 200)",
+        "advice": "",
+    }]
+    report = format_diagnostic_report(results, server=fake_srv, tunnel=fake_tun, local_ip="192.168.1.5")
+    assert "SECRET_TOK_998877" not in report
+    assert "4829" not in report
+    assert "[REDACTED_TOKEN]" in report
+    assert "[REDACTED_PIN]" in report
+
+
+def test_mobile_server_start_and_local_health_check(mock_app_state):
+    """Verify MobileServer.start() waits until /api/ping responds and check_local_health() passes."""
+    srv = MobileServer(mock_app_state, port=5179)
+    ready = srv.start()
+    assert ready is True
+    ok, detail = srv.check_local_health(timeout=1.5)
+    assert ok is True
+    assert "HTTP 200" in detail
+    srv.stop()
+
+
+def test_mobile_server_waitress_falls_back_cleanly_to_flask(mock_app_state):
+    """Verify experimental Waitress mode never crashes if waitress is missing and falls back to Flask."""
+    srv = MobileServer(mock_app_state, port=5185, server_engine="waitress")
+    ready = srv.start()
+    assert ready is True
+    ok, _ = srv.check_local_health(timeout=1.5)
+    assert ok is True
+    assert srv.active_server_engine in ("flask", "waitress")
+    srv.stop()
+
+
+def test_local_ip_classification_tailscale_and_hotspot():
+    """Verify _classify_local_ip detects Tailscale, Hotspot/USB, and standard Wi-Fi/LAN subnets."""
+    from backend.tunnel import _classify_local_ip, get_all_local_ips
+
+    assert "Tailscale" in _classify_local_ip("100.80.12.34")
+    assert "Hotspot" in _classify_local_ip("172.20.10.2")
+    assert "Hotspot" in _classify_local_ip("192.168.137.1")
+    assert "Wi-Fi" in _classify_local_ip("192.168.1.42")
+    ips = get_all_local_ips()
+    assert len(ips) >= 1 and all(isinstance(ip, str) and isinstance(lbl, str) for ip, lbl in ips)
+
+
+def test_named_cloudflare_tunnel_uses_token_and_redacts_in_report(monkeypatch):
+    """Verify Named Cloudflare Tunnel runs with --token, emits custom URL, and redacts token in reports."""
+    import time
+    from backend import tunnel as tun_mod
+
+    captured_cmds = []
+
+    class _FakeStderr:
+        def __init__(self, lines):
+            self._lines = list(lines)
+
+        def readline(self):
+            if self._lines:
+                return self._lines.pop(0)
+            time.sleep(0.05)
+            return ""
+
+    class _FakeProc:
+        def __init__(self, lines):
+            self.stderr = _FakeStderr(lines)
+            self.returncode = None
+            self._alive = True
+
+        def poll(self):
+            return None if self._alive else 0
+
+        def terminate(self):
+            self._alive = False
+
+        def wait(self, timeout=None):
+            self._alive = False
+            return 0
+
+        def kill(self):
+            self._alive = False
+
+    monkeypatch.setattr(tun_mod, "ensure_cloudflared", lambda: "/fake/cloudflared")
+    monkeypatch.setattr(
+        tun_mod.subprocess,
+        "Popen",
+        lambda cmd, **kw: (captured_cmds.append(list(cmd)), _FakeProc(["INF Registered tunnel connection connIndex=0\n"]))[1],
+    )
+    monkeypatch.setattr(tun_mod, "probe_public_url", lambda url, timeout=3.0: (True, "Reachable (HTTP 200)"))
+    monkeypatch.setattr(tun_mod, "_check_doh_dns_ready", lambda host, timeout=2.5: True)
+
+    secret_cf_tok = "eyJhIjoiU0VDUkVUX0NGX1RPS0VOIn0="
+    cf = tun_mod.CloudflareTunnel(
+        5055,
+        max_attempts=1,
+        tunnel_token=secret_cf_tok,
+        custom_public_url="https://arbor.museum.org/",
+    )
+    urls = []
+    cf.start(lambda u: urls.append(u))
+    deadline = time.time() + 5.0
+    while not urls and time.time() < deadline:
+        time.sleep(0.05)
+    cf.stop()
+
+    assert urls == ["https://arbor.museum.org"]
+    assert captured_cmds and "run" in captured_cmds[0] and "--token" in captured_cmds[0]
+    assert secret_cf_tok in captured_cmds[0]
+
+    cf.recent_logs.append(f"Using token {secret_cf_tok}")
+    report = tun_mod.format_diagnostic_report([], server=None, tunnel=cf, local_ip="10.0.0.2")
+    assert secret_cf_tok not in report
+    assert "[REDACTED_CF_TOKEN]" in report
+
+
+
+
 
 

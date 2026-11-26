@@ -18,6 +18,7 @@ hiddenimports += [
     'qrcode',
     'qrcode.image.pil',
     'flask',
+    'waitress',
     'werkzeug',
     'jinja2',
     'jinja2.ext',
