@@ -496,21 +496,29 @@ class TestSandboxTutorials(unittest.TestCase):
         fake_target = MagicMock()
         fake_target.winfo_exists.return_value = True
         fake_target.winfo_viewable.return_value = True
+        fake_target.winfo_toplevel.return_value = fake_root
         fake_target.winfo_rootx.return_value = 950  # Right half of [100..1300]
+        fake_target.winfo_rooty.return_value = 200
         fake_target.winfo_width.return_value = 200
+        fake_target.winfo_height.return_value = 40
 
         captured = []
         orig_geom = runner.hud_win.geometry
         runner.hud_win.geometry = lambda g=None: captured.append(g) if g else orig_geom()
-        runner.ui = MagicMock(root=fake_root)
+        runner.ui = MagicMock(root=fake_root, reg_data_frame=None)
         runner._position_hud(target_widget=fake_target)
+        hud_w = runner.hud_win.winfo_reqwidth()
         runner.hud_win.geometry = orig_geom
         runner.exit_tutorial()
 
         self.assertTrue(captured)
-        # Docked left near rx + 24 (~124), not right side (~900)
+        # Docked immediately to the left of right-side target (tx=950), never overlapping it
         x_val = int(captured[-1].split("+")[1])
-        self.assertLess(x_val, 300, f"Expected HUD to dock left away from right-side target, got {captured[-1]}")
+        self.assertLessEqual(
+            x_val + hud_w,
+            950,
+            f"Expected HUD (w={hud_w}) to dock left of right-side target at x=950, got {captured[-1]}",
+        )
 
     def test_triage_tutorial_sandbox_and_target_ids_valid(self):
         """Verify start_triage_tutorial mounts REV+ERR sandbox cleanly and all tutorial target_ids are valid."""

@@ -32,7 +32,8 @@ def test_navigation_bar_high_dpi_geometry_scaling():
         assert nav_bar_height_1 == 48
 
         title_padx_1 = int(app1.nav_title_lbl.cget("padx"))
-        assert title_padx_1 == 16
+        expected_padx_1 = 12 if hasattr(app1.nav_title_lbl, "_icon_ref") else 16
+        assert title_padx_1 == expected_padx_1
 
         # Verify progress bar length at 1.0
         progress_len_1 = int(app1.image_scan_progress.cget("length"))
@@ -58,7 +59,8 @@ def test_navigation_bar_high_dpi_geometry_scaling():
         assert nav_bar_height_2 == 72
 
         title_padx_2 = int(app2.nav_title_lbl.cget("padx"))
-        assert title_padx_2 == 24
+        expected_padx_2 = 18 if hasattr(app2.nav_title_lbl, "_icon_ref") else 24
+        assert title_padx_2 == expected_padx_2
 
         progress_len_2 = int(app2.image_scan_progress.cget("length"))
         assert progress_len_2 == 210

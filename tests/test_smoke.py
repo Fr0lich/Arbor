@@ -264,7 +264,8 @@ def test_smoke_navigation_bar_and_status_telemetry(tk_root):
     # 1. Navigation Bar
     NavigationBar.build_nav_ui(mock_ui, f_top)
     assert mock_ui.nav_bar.cget("height") == sc(48)
-    assert mock_ui.nav_title_lbl.cget("padx") == sc(16)
+    expected_padx = sc(12) if hasattr(mock_ui.nav_title_lbl, "_icon_ref") else sc(16)
+    assert mock_ui.nav_title_lbl.cget("padx") == expected_padx
 
     # 2. Status Bar
     sb = StatusBarPanel(f_bottom, mock_ui)

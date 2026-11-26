@@ -83,6 +83,8 @@ class ImagePanel(ttk.Frame):
         self._pil_cache_lock = threading.Lock()
         self._is_panning = False
         self._ui_queue = queue.Queue()
+        self._ui_destroyed = False
+        self._ui_poll_job = None
 
         self.image_zoom_factor = 1.0
         self.image_rotation_angle = 0
@@ -111,6 +113,31 @@ class ImagePanel(ttk.Frame):
         if self.keybindings and hasattr(self.keybindings, "bind_image_shortcuts"):
             self.keybindings.bind_image_shortcuts(self)
         self._bind_panel_shortcuts()
+        self.bind("<Destroy>", self._on_panel_destroy, add="+")
+        self._schedule_ui_queue_poll()
+
+    def _on_panel_destroy(self, event=None):
+        """Stop main-thread UI queue polling when this ImagePanel is destroyed."""
+        if event is not None and event.widget is not self:
+            return
+        self._ui_destroyed = True
+        job = getattr(self, "_ui_poll_job", None)
+        if job is not None:
+            self._ui_poll_job = None
+            try:
+                self.after_cancel(job)
+            except Exception:
+                pass
+
+    def _schedule_ui_queue_poll(self):
+        """Schedule the next main-thread UI queue drain tick."""
+        if getattr(self, "_ui_destroyed", False):
+            return
+        try:
+            if self.winfo_exists():
+                self._ui_poll_job = self.after(30, self._poll_ui_queue)
+        except Exception:
+            self._ui_poll_job = None
 
     @property
     def root(self):
@@ -121,6 +148,9 @@ class ImagePanel(ttk.Frame):
 
     def _poll_ui_queue(self):
         """Drains pending UI updates on the Tkinter main thread."""
+        self._ui_poll_job = None
+        if getattr(self, "_ui_destroyed", False):
+            return
         try:
             while True:
                 task = self._ui_queue.get_nowait()
@@ -129,17 +159,17 @@ class ImagePanel(ttk.Frame):
                         task()
                     except Exception:
                         pass
+        except queue.Empty:
+            pass
         except Exception:
             pass
+        finally:
+            self._schedule_ui_queue_poll()
 
     def _post_ui_task(self, fn):
-        """Thread-safe queue dispatch for main-thread UI operations."""
-        self._ui_queue.put(fn)
-        try:
-            if hasattr(self, "root") and self.root and self.root.winfo_exists():
-                self.root.after(0, self._poll_ui_queue)
-        except Exception:
-            pass
+        """Thread-safe queue dispatch for main-thread UI operations (zero Tcl calls)."""
+        if not getattr(self, "_ui_destroyed", False):
+            self._ui_queue.put(fn)
 
     def set_dark_mode(self, is_dark):
         self.dark_mode = is_dark

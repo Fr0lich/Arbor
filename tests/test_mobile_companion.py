@@ -427,7 +427,8 @@ def test_sse_headers_and_initial_connect_handshake(mock_app_state):
     assert response.headers.get("Content-Type") == "text/event-stream; charset=utf-8"
     assert "no-cache" in response.headers.get("Cache-Control", "")
     assert response.headers.get("X-Accel-Buffering") == "no"
-    assert response.headers.get("Connection") == "keep-alive"
+    # PEP 3333 forbids hop-by-hop 'Connection' headers in WSGI apps (Waitress rejects them with 500)
+    assert response.headers.get("Connection") is None
 
     # Read the first event yielded by the generator
     first_line = next(response.iter_encoded())
@@ -2206,6 +2207,53 @@ def test_named_cloudflare_tunnel_uses_token_and_redacts_in_report(monkeypatch):
     report = tun_mod.format_diagnostic_report([], server=None, tunnel=cf, local_ip="10.0.0.2")
     assert secret_cf_tok not in report
     assert "[REDACTED_CF_TOKEN]" in report
+
+
+def test_sse_events_omits_hop_by_hop_connection_header_and_streams_under_waitress():
+    """Regression: /api/events must not emit hop-by-hop 'Connection' header (PEP 3333 / Waitress)."""
+    import socket
+    import time
+    import requests
+    from models import AppState
+    from backend.mobile_server import MobileServer, is_waitress_available
+
+    app_state = AppState()
+    srv = MobileServer(app_state, port=0, server_engine="flask")
+    client = srv.flask_app.test_client()
+    resp = client.get(f"/api/events?token={srv.session_token}")
+    assert resp.status_code == 200
+    assert "connection" not in {k.lower() for k in resp.headers.keys()}
+    resp.close()
+
+    if not is_waitress_available():
+        pytest.skip("waitress not installed")
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+
+    live_srv = MobileServer(app_state, port=port, server_engine="waitress")
+    live_srv.start()
+    try:
+        deadline = time.time() + 5.0
+        while time.time() < deadline:
+            try:
+                if requests.get(f"http://127.0.0.1:{port}/api/health", timeout=0.5).status_code == 200:
+                    break
+            except Exception:
+                time.sleep(0.05)
+
+        with requests.get(
+            f"http://127.0.0.1:{port}/api/events?token={live_srv.session_token}",
+            stream=True,
+            timeout=5,
+        ) as sse_resp:
+            assert sse_resp.status_code == 200
+            first_line = next(sse_resp.iter_lines(decode_unicode=True))
+            assert '"type": "connected"' in first_line
+    finally:
+        live_srv.stop()
+
 
 
 

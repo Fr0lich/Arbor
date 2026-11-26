@@ -1691,7 +1691,6 @@ self.addEventListener('fetch', (event) => {
                 "Content-Type": "text/event-stream",
                 "Cache-Control": "no-cache, no-transform",
                 "X-Accel-Buffering": "no",
-                "Connection": "keep-alive"
             }
             return Response(generate(), mimetype="text/event-stream", headers=headers)
 

@@ -1,5 +1,6 @@
 import gc
 import os
+import threading
 import tkinter as tk
 import pytest
 
@@ -29,6 +30,8 @@ tk.Tk.__init__ = _safe_tk_init
 _orig_var_del = tk.Variable.__del__
 
 def _safe_var_del(self):
+    if threading.current_thread() is not threading.main_thread():
+        return
     try:
         _orig_var_del(self)
     except (RuntimeError, tk.TclError):

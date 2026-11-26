@@ -1046,3 +1046,44 @@ class TestOnlinePhotos(unittest.TestCase):
         self.assertFalse(df_obs.at[oid, ONLINE_EXISTS_COLUMN])
         self.assertFalse(cached_obs_dict[oid][ONLINE_EXISTS_COLUMN])
         self.assertNotIn(oid, has_online_set)
+
+
+def test_image_panel_post_ui_task_never_calls_tcl_from_worker_thread(tk_root):
+    """Regression: _post_ui_task from a background thread must only enqueue (zero Tcl/Tk calls)."""
+    import threading
+    from ui.image_panel import ImagePanel
+
+    panel = ImagePanel(tk_root, app=MagicMock(), main_ui=None)
+    tcl_calls_from_worker = []
+    executed_on_thread = []
+
+    orig_winfo_toplevel = panel.winfo_toplevel
+    orig_after = panel.after
+
+    def guard_winfo_toplevel(*a, **k):
+        if threading.current_thread() is not threading.main_thread():
+            tcl_calls_from_worker.append("winfo_toplevel")
+        return orig_winfo_toplevel(*a, **k)
+
+    def guard_after(*a, **k):
+        if threading.current_thread() is not threading.main_thread():
+            tcl_calls_from_worker.append("after")
+        return orig_after(*a, **k)
+
+    panel.winfo_toplevel = guard_winfo_toplevel
+    panel.after = guard_after
+
+    def worker():
+        panel._post_ui_task(lambda: executed_on_thread.append(threading.current_thread()))
+
+    t = threading.Thread(target=worker)
+    t.start()
+    t.join(timeout=2.0)
+
+    # Drain on main thread
+    panel._poll_ui_queue()
+    panel.destroy()
+
+    assert tcl_calls_from_worker == [], f"Worker thread invoked Tcl/Tk: {tcl_calls_from_worker}"
+    assert executed_on_thread == [threading.main_thread()]
+
