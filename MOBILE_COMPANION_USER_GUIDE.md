@@ -100,7 +100,7 @@ Opening a specimen **never** overwrites its coordinates automatically — so mis
 * Always give the **`Data`** tab a quick glance against the real object in your hand:
   * **Field mismatch (`[REV+ERR]`):** If something clearly disagrees with the real object (for example, the label says Africa while the file says China), tick the **checkbox right next to that field on `Data`** and still tap **`✓ Mark Reviewed`**. Leaving an unresolvable field ticked queues it safely for desk follow-up (**`🎯 Hallway Follow-Up (REV+ERR)`**).
   * **Confirmed blank/unreadable (`ICEDIG`):** **Tap the field value** on **`Data`** (or **`ICEDIG ▾`** on **`Problems`**) and pick **`unknown:missing`** or **`unknown:indecipherable`** — *only* when no older catalog book has a conflicting value.
-  * **Physical damage / specialist escalation (`[REV+NOTE]`):** Tap **`⚑ Needs Specialist`** right in the bottom action bar (or above **`Comment`** on **`Data`**) and tap a quick tag (e.g. `+ Damaged`, `+ Mold / Pest`, `+ Mixed Specimen`). Marking Reviewed produces calm teal **`[REV+NOTE]`**, keeping it out of the default trainee desk queue so specialists can filter for it directly.
+  * **Broken objects or storage / specialist escalation (`[REV+NOTE]`):** Tap **`⚑ Needs Specialist`** right in the bottom action bar (or above **`Comment`** on **`Data`**) and tap a quick tag (e.g. `+ Damaged`, `+ Broken Object / Storage`, `+ Mixed Specimen`). Marking Reviewed produces calm teal **`[REV+NOTE]`**, keeping it out of the default trainee desk queue so specialists can filter for it directly.
 * **Not sure what a badge, code, or field means?** Tap **`?`** in the top bar anytime to open the **Badges, ICEDIG & Field Reference** or launch the **Phone tutorial…**.
 
 ### 3.5. Viewport-Reclaimed Photo Folio
@@ -183,7 +183,7 @@ Just helping in the collection today? You don't need to learn Desktop Arbor — 
 3. **Check:** Compare the screen with the real object:
    * Something wrong on a field? Tick the checkbox next to that field on **`Data`**.
    * See a number on **`Problems`**? Open it and tap **`Apply`** on the value that matches the label in your hand — **not sure? Leave it.**
-   * Physical damage, mold/pest, or mixed specimen? Tap **`⚑ Needs Specialist`** in the bottom bar and tap a quick tag under **Comment**.
+   * Broken objects or storage, or mixed specimen? Tap **`⚑ Needs Specialist`** in the bottom bar and tap a quick tag under **Comment**.
 4. **Save to Shelf:** Tap **`📍 Save to Cab XX · Sh YY`** (has a 5-second `↩ Undo` if you tap by mistake).
 5. **Mark Reviewed:** Tap **`✓ Mark Reviewed`**, then pick up the next object. Anything you left flagged will be checked at the desk by the main worker later.
 

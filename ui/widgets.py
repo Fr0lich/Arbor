@@ -8,7 +8,7 @@ from ui.context_menu import ContextMenuManager
 
 STATUS_BADGE_TOOLTIPS = {
     "REV+ERR": "Reviewed with Actionable Error — Physically checked, with a data/label mismatch still flagged for desk follow-up.",
-    "REV+NOTE": "Reviewed — Needs Specialist — Physically checked; only Needs Specialist is ticked (damage, pests, or expert question).",
+    "REV+NOTE": "Reviewed — Needs Specialist — Physically checked; only Needs Specialist is ticked (broken objects or storage, or expert question).",
     "REV": "Reviewed & Verified — Physically checked and matches what is on file, with no open flags.",
     "TAX": "Plant Name Issue — Unreviewed card with a Genus, Species, Author, or Family flag. Check the label or Old names.",
     "PROV": "Origin / Collector Issue — Unreviewed card with a Collector, Collection Date, or Collection Place flag.",

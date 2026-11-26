@@ -140,10 +140,6 @@ class FilterDialogController:
                 "📱 This Mobile Session",
                 lambda: ui.apply_reviewed_batch_filter("mobile_session", win=win),
             )
-        def _open_hallway_guide():
-            from ui.tutorials import start_hallway_followup_guide
-            start_hallway_followup_guide(ui)
-        make_btn(right_header, "?", _open_hallway_guide)
         make_btn(right_header, "Load Preset...", lambda: FilterDialogController.load_filter_preset(ui))
         make_btn(right_header, "Save Preset...", lambda: FilterDialogController.save_filter_preset(ui))
 
@@ -680,7 +676,15 @@ class FilterDialogController:
         ui._filter_widgets = all_inputs
         ui._filter_index = 0
 
-        utils.center_and_fit_toplevel(win, sc(860), sc(680))
+        win.update_idletasks()
+        required_w = max(
+            sc(1080),
+            left_header.winfo_reqwidth() + right_header.winfo_reqwidth() + sc(48),
+        )
+        screen_w = win.winfo_screenwidth()
+        min_w = min(required_w, max(sc(640), screen_w - sc(80)))
+        win.minsize(min_w, sc(480))
+        utils.center_and_fit_toplevel(win, required_w, sc(680))
 
     @staticmethod
     def apply_filter_with_history(ui, win):

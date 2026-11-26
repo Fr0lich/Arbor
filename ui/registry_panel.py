@@ -599,7 +599,7 @@ class RegistryPanel:
                         if hasattr(ui, "add_tooltip"):
                             ui.add_tooltip(
                                 spec_cb,
-                                "Escalate physical damage, mold/pest, mixed specimens, or archival deadlocks to a specialist (triggers NOTE / REV+NOTE; stays out of the default trainee queue)."
+                                "Escalate broken objects or storage, mixed specimens, or archival deadlocks to a specialist (triggers NOTE / REV+NOTE; stays out of the default trainee queue)."
                             )
 
                         # Responsive wrapping quick-tag pills driven by config.SPECIALIST_QUICK_TAGS
@@ -883,7 +883,7 @@ class RegistryPanel:
             ui._registry_theme_widgets["spec_cbs"].append(cb)
             spec_sub_lbl = tk.Label(
                 spec_strip,
-                text="Physical / archival escalation (NOTE / REV+NOTE) for broken specimens, mold/pest, or deadlocks — synced with Comment and excluded from the default trainee queue.",
+                text="Physical / archival escalation (NOTE / REV+NOTE) for broken objects or storage, mixed specimens, or deadlocks — synced with Comment and excluded from the default trainee queue.",
                 font=("Inter", sc(8)),
                 bg=spec_bg, fg=spec_fg,
                 wraplength=sc(340), justify="left", anchor="w"

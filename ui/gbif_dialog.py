@@ -92,7 +92,7 @@ class GBIFUpdateDialog(tk.Toplevel):
 
         tk.Label(
             header,
-            text="GBIF_TAXONOMIC_RECONCILIATION",
+            text="GBIF Plant Name Check",
             font=FONT_UI_LG,
             fg=text_color,
             bg=surface
@@ -109,7 +109,7 @@ class GBIFUpdateDialog(tk.Toplevel):
 
         tk.Label(
             ctx_header,
-            text=f"RECORD REVIEW: {len(self.updates)} PROPOSED UPDATE{'S' if len(self.updates) != 1 else ''}",
+            text=f"Suggested Updates from GBIF ({len(self.updates)} found)",
             font=FONT_UI_XL,
             fg=text_color,
             bg=surface
@@ -117,10 +117,16 @@ class GBIFUpdateDialog(tk.Toplevel):
 
         tk.Label(
             ctx_header,
-            text="Review GBIF taxonomic backbone suggestions below. Select the changes you wish to apply.",
+            text=(
+                "GBIF (the global online plant catalog) found possible spelling fixes, modern accepted names, "
+                "or missing Family/Author details for this specimen. Compare each card below and tick only "
+                "the updates you want to apply — nothing changes until you click Apply."
+            ),
             font=FONT_UI,
             fg=text_muted,
-            bg=surface
+            bg=surface,
+            wraplength=sc(580),
+            justify="left"
         ).pack(anchor="w", padx=sc(20), pady=(0, sc(10)))
 
         # Quick Actions Bar

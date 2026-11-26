@@ -121,7 +121,7 @@ class GBIFBatchConfigDialog(tk.Toplevel):
 
         tk.Label(
             header,
-            text="BATCH_GBIF_TAXONOMY_ANALYSIS",
+            text="Check Plant Names with GBIF",
             font=FONT_UI_LG,
             fg=text_color,
             bg=surface
@@ -182,7 +182,7 @@ class GBIFBatchConfigDialog(tk.Toplevel):
 
         tk.Label(
             ctx_header,
-            text="RECONCILE COLLECTION TAXONOMY",
+            text="How GBIF Name Checking Works",
             font=FONT_UI_XL,
             fg=text_color,
             bg=surface
@@ -190,7 +190,12 @@ class GBIFBatchConfigDialog(tk.Toplevel):
 
         tk.Label(
             ctx_header,
-            text="Query the GBIF Backbone Taxonomy to detect spelling errors, outdated synonyms, and accepted scientific names across your collection.",
+            text=(
+                "GBIF (Global Biodiversity Information Facility) is the world's shared online plant catalog — "
+                "think of it as an up-to-date scientific spell-checker and name dictionary for your specimens. "
+                "Arbor compares your collection against GBIF to spot spelling mistakes, outdated plant names (synonyms), "
+                "and missing Family or Author details."
+            ),
             font=FONT_UI,
             fg=text_muted,
             bg=surface,
@@ -215,7 +220,7 @@ class GBIFBatchConfigDialog(tk.Toplevel):
 
         tk.Label(
             notice_frame,
-            text="🛡️  SAFETY GUARANTEE: Full Review Required",
+            text="🛡️  Safe to Run — Nothing Changes Automatically",
             font=FONT_UI_BOLD,
             fg=notice_fg,
             bg=notice_bg
@@ -223,7 +228,11 @@ class GBIFBatchConfigDialog(tk.Toplevel):
 
         tk.Label(
             notice_frame,
-            text="No data will be changed automatically. You will be presented with an interactive review screen to inspect, compare, and select every change before applying.",
+            text=(
+                "Running this check never edits your Excel file by itself. Arbor shows every suggested update "
+                "side by side with your current record so you can inspect, pick only the changes you trust, "
+                "and undo anytime. (Requires an internet connection.)"
+            ),
             font=FONT_UI,
             fg=text_color,
             bg=notice_bg,

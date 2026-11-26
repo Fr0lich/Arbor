@@ -463,7 +463,7 @@ class UnifiedSettingsWindow:
             ("layout",     "📐  Layout"),
             ("presets",    "📁  Presets"),
             ("advanced",   "⚡  Advanced"),
-            ("tools",      "🛠️  Tools"),
+            ("tools",      "🛠️  Tools (beta)"),
         ]
 
         title_frame = tk.Frame(self.sidebar_frame, bg=self.COLORS["sidebar_bg"])
@@ -859,6 +859,28 @@ class UnifiedSettingsWindow:
     # ── TAB 3: LAYOUT ────────────────────────────────────────────────────────
     def _build_tab_layout(self):
         c = self._create_scrollable_tab("layout")
+
+        # Intro / Explanation Box: What a Layout is & what these features do
+        info_card = self._create_card(c, "About Layouts")
+        tk.Label(
+            info_card,
+            text=(
+                "A layout is your personalized workspace arrangement — controlling which panels, image views, "
+                "and toolbar buttons are visible while you work. You can save your favorite arrangements and "
+                "switch between them anytime in the Presets tab.\n\n"
+                "• Workspace Panel Visibility: Show or hide major workspace sections (Object List, Live Search, "
+                "Registration Form, Images, Location placement, Image Toolbar, and Quick Navigation).\n"
+                "• View Display Options: Choose whether to combine local and online photos and display them as a stack.\n"
+                "• Live Update Behaviour: Apply layout changes immediately as you toggle them, or wait until you click Save.\n"
+                "• Toolbar Button Visibility: Show or hide individual buttons in the top bar and search bar to declutter your screen."
+            ),
+            font=self.FONT_SUBTITLE,
+            fg=self.COLORS["on_surface"],
+            bg=self.COLORS["card_bg"],
+            justify="left",
+            anchor="w",
+            wraplength=sc(540),
+        ).pack(fill="x", anchor="w")
 
         # Card 1: Workspace Panels
         card1 = self._create_card(c, "Workspace Panel Visibility")
@@ -1422,13 +1444,77 @@ class UnifiedSettingsWindow:
         url_entry_frame = tk.Frame(f_url, bg=self.COLORS["card_bg"],
                                    highlightbackground=self.COLORS["outline_variant"],
                                    highlightthickness=1)
-        url_entry_frame.pack(side="left", padx=sc(4))
+        url_entry_frame.pack(side="left", fill="x", expand=True, padx=sc(4))
         tk.Entry(url_entry_frame, textvariable=self.var_url_pattern,
                  font=self.FONT_DATA, fg=self.COLORS["on_surface"],
-                 bg=self.COLORS["card_bg"], bd=0, width=28).pack(padx=sc(4), pady=sc(2))
-        tk.Label(card1, text="Leave empty to use the database's default URL pattern.",
+                 bg=self.COLORS["card_bg"], bd=0, width=28).pack(fill="x", padx=sc(4), pady=sc(2))
+
+        DEFAULT_FALLBACK_URL_PATTERN = "https://www.unimus.no/photos/image/jpeg/O-V-OE-{num:04d}{suffix}.jpg"
+
+        def _get_default_url_pattern():
+            cfg = None
+            if self.app is not None:
+                if hasattr(self.app, "app") and hasattr(self.app.app, "config") and isinstance(self.app.app.config, dict):
+                    cfg = self.app.app.config
+                elif hasattr(self.app, "config") and isinstance(self.app.config, dict):
+                    cfg = self.app.config
+            if cfg is not None and "image_url_pattern" in cfg:
+                val = str(cfg.get("image_url_pattern") or "").strip()
+                if val:
+                    return val
+            return DEFAULT_FALLBACK_URL_PATTERN
+
+        self.var_current_url_pattern = tk.StringVar()
+
+        def _refresh_current_url_pattern(*_args):
+            override = self.var_url_pattern.get().strip()
+            self.var_current_url_pattern.set(override if override else _get_default_url_pattern())
+
+        _refresh_current_url_pattern()
+        self.var_url_pattern.trace_add("write", _refresh_current_url_pattern)
+
+        f_curr_url = tk.Frame(card1, bg=self.COLORS["card_bg"])
+        f_curr_url.pack(fill="x", pady=(sc(4), sc(2)))
+        tk.Label(f_curr_url, text="Current URL Pattern:", font=self.FONT_DATA,
+                 fg=self.COLORS["on_surface"], bg=self.COLORS["card_bg"]).pack(side="left", padx=(0, sc(8)))
+        curr_url_frame = tk.Frame(f_curr_url, bg=self.COLORS["surface_container_low"],
+                                  highlightbackground=self.COLORS["outline_variant"],
+                                  highlightthickness=1)
+        curr_url_frame.pack(side="left", fill="x", expand=True)
+        tk.Entry(curr_url_frame, textvariable=self.var_current_url_pattern,
+                 font=("JetBrains Mono", sc(8.5)), fg=self.COLORS["on_surface_variant"],
+                 readonlybackground=self.COLORS["surface_container_low"],
+                 bg=self.COLORS["surface_container_low"],
+                 bd=0, state="readonly").pack(fill="x", padx=sc(6), pady=sc(3))
+
+        f_url_actions = tk.Frame(card1, bg=self.COLORS["card_bg"])
+        f_url_actions.pack(fill="x", pady=(sc(4), 0))
+        tk.Label(f_url_actions, text="Leave override empty to use the database's default URL pattern.",
                  font=self.FONT_SUBTITLE, fg=self.COLORS["on_surface_variant"],
-                 bg=self.COLORS["card_bg"]).pack(anchor="w", pady=(sc(2), 0))
+                 bg=self.COLORS["card_bg"]).pack(side="left")
+
+        def _restore_default_url_pattern():
+            if messagebox.askyesno(
+                "Restore Default URL Pattern",
+                f"Restore the image URL pattern to the default?\n\n{_get_default_url_pattern()}",
+                parent=self.win,
+            ):
+                self.var_url_pattern.set("")
+                _refresh_current_url_pattern()
+
+        tk.Button(
+            f_url_actions,
+            text="Restore to default?",
+            font=self.FONT_SUBTITLE,
+            fg=self.COLORS["on_surface"],
+            bg=self.COLORS["surface"],
+            bd=1,
+            relief="solid",
+            padx=sc(10),
+            pady=sc(2),
+            cursor="hand2",
+            command=_restore_default_url_pattern,
+        ).pack(side="right")
 
         # Card 2: Feature Flags & Experimental
         card2 = self._create_card(c, "Unfinished & Experimental Features")
@@ -1445,7 +1531,7 @@ class UnifiedSettingsWindow:
         card3 = self._create_card(c, "Taxonomy & Validation")
         create_toggle_row(card3, "Enable GBIF Validation", self.var_enable_gbif,
                           command=lambda: self._notify_live("enable_gbif", self.var_enable_gbif.get()),
-                          ui_ref=self.app or self, info_text="Shows the 'Check GBIF' button to verify plant names against global taxonomic databases.\n\nExcel Impact: Matched names update Genus and Species columns on the Registration sheet upon curator confirmation.")
+                          ui_ref=self.app or self, info_text="Shows the 'GBIF Name Check' button so you can check a plant's spelling, modern accepted name (synonym), Family, and Author against GBIF — the world's shared online plant catalog.\n\nSafe to use: nothing changes automatically until you review and approve the suggested updates (requires internet).")
 
         f_workers = tk.Frame(card3, bg=self.COLORS["card_bg"])
         f_workers.pack(fill="x", pady=sc(6))
@@ -1456,9 +1542,38 @@ class UnifiedSettingsWindow:
                      values=[1, 2, 3, 4, 5, 6, 8, 10],
                      state="readonly", width=6, cursor="hand2").pack(side="left", padx=sc(4))
 
-    # ── TAB 7: TOOLS ─────────────────────────────────────────────────────────
+    # ── TAB 7: TOOLS (BETA) ──────────────────────────────────────────────────
     def _build_tab_tools(self):
         c = self._create_scrollable_tab("tools")
+
+        # Beta Warning Banner
+        warn_banner = tk.Frame(
+            c,
+            bg="#fff4e5",
+            highlightbackground=self.COLORS["search_orange"],
+            highlightthickness=1,
+            padx=sc(12),
+            pady=sc(10),
+        )
+        warn_banner.pack(fill="x", padx=sc(16), pady=(sc(12), sc(4)))
+        tk.Label(
+            warn_banner,
+            text="⚠  Tools (beta) — Experimental Settings",
+            font=self.FONT_LABEL,
+            fg=self.COLORS["search_orange"],
+            bg="#fff4e5",
+            anchor="w",
+        ).pack(fill="x")
+        tk.Label(
+            warn_banner,
+            text="These settings are not properly tested and may lead to the application crashing. Please save your work before using them.",
+            font=self.FONT_SUBTITLE,
+            fg=self.COLORS["on_surface"],
+            bg="#fff4e5",
+            anchor="w",
+            justify="left",
+            wraplength=sc(540),
+        ).pack(fill="x", pady=(sc(2), 0))
 
         def _action_btn(parent, label, description, btn_text, callback_name):
             """Helper: one row with a label, description, and action button."""

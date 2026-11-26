@@ -3709,26 +3709,118 @@ class ObjectProgramUI(
 
 
 
-    def _toggle_toolbar_buttons(self):
+    def _capture_toolbar_layout(self):
+        """Snapshot each toolbar button's original geometry manager, pack options, and sibling order."""
+        if not hasattr(self, "_toolbar_layout_cache"):
+            self._toolbar_layout_cache = {}
+        if not hasattr(self, "_toolbar_container_order"):
+            self._toolbar_container_order = {}
+
         for name, btn in self.toolbar_buttons.items():
-            if name not in self.toolbar_vars:
+            if btn is None:
                 continue
-            visible = self.toolbar_vars[name].get()
-            manager = btn.winfo_manager()  # 'grid', 'pack', or '' if not mapped
-            if visible:
-                if manager == "grid":
-                    btn.grid()
-                elif manager in ("pack", ""):
-                    # For pack-managed buttons, use pack_info to restore position
+            try:
+                if not btn.winfo_exists():
+                    continue
+            except Exception:
+                continue
+
+            btn_id = id(btn)
+            if btn_id in self._toolbar_layout_cache:
+                continue
+
+            mgr = btn.winfo_manager()
+            if mgr == "pack":
+                try:
+                    info = dict(btn.pack_info())
+                except Exception:
+                    info = {"side": "left"}
+                info.pop("in", None)
+                parent = btn.master
+                if parent is not None and id(parent) not in self._toolbar_container_order:
                     try:
-                        btn.pack()
+                        self._toolbar_container_order[id(parent)] = list(parent.pack_slaves())
+                    except Exception:
+                        self._toolbar_container_order[id(parent)] = []
+                self._toolbar_layout_cache[btn_id] = {
+                    "manager": "pack",
+                    "pack_info": info,
+                    "parent": parent,
+                }
+            elif mgr == "grid":
+                self._toolbar_layout_cache[btn_id] = {
+                    "manager": "grid",
+                    "parent": btn.master,
+                }
+
+    def _toggle_toolbar_buttons(self):
+        self._capture_toolbar_layout()
+
+        widget_visibility = {}
+        widget_by_id = {}
+        for name, btn in self.toolbar_buttons.items():
+            if name not in self.toolbar_vars or btn is None:
+                continue
+            try:
+                if not btn.winfo_exists():
+                    continue
+            except Exception:
+                continue
+            btn_id = id(btn)
+            widget_by_id[btn_id] = btn
+            if btn_id not in widget_visibility:
+                widget_visibility[btn_id] = bool(self.toolbar_vars[name].get())
+
+        for btn_id, visible in widget_visibility.items():
+            btn = widget_by_id[btn_id]
+            meta = self._toolbar_layout_cache.get(btn_id)
+            mgr = meta["manager"] if meta else btn.winfo_manager()
+
+            if visible:
+                if mgr == "grid":
+                    try:
+                        btn.grid()
                     except Exception:
                         pass
+                elif mgr == "pack":
+                    if btn.winfo_manager() != "pack":
+                        pack_opts = dict(meta.get("pack_info", {})) if meta else {"side": "left"}
+                        pack_opts.pop("before", None)
+                        pack_opts.pop("after", None)
+                        parent = meta.get("parent") if meta else btn.master
+                        order = self._toolbar_container_order.get(id(parent), []) if parent is not None else []
+                        before_widget = None
+                        if btn in order:
+                            idx = order.index(btn)
+                            for sib in order[idx + 1:]:
+                                try:
+                                    if sib.winfo_exists() and sib.winfo_manager() == "pack":
+                                        before_widget = sib
+                                        break
+                                except Exception:
+                                    continue
+                        try:
+                            if before_widget is not None:
+                                btn.pack(before=before_widget, **pack_opts)
+                            else:
+                                btn.pack(**pack_opts)
+                        except Exception:
+                            try:
+                                btn.pack(**pack_opts)
+                            except Exception:
+                                pass
             else:
-                if manager == "grid":
-                    btn.grid_remove()
-                elif manager == "pack":
-                    btn.pack_forget()
+                if mgr == "grid":
+                    try:
+                        btn.grid_remove()
+                    except Exception:
+                        pass
+                elif mgr == "pack":
+                    if btn.winfo_manager() == "pack":
+                        try:
+                            btn.pack_forget()
+                        except Exception:
+                            pass
 
     def _check_responsive_buttons(self, event):
         # Debounce to prevent layout thrashing

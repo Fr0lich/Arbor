@@ -385,7 +385,7 @@ class GBIFReviewDialog(tk.Toplevel):
 
         tk.Label(
             hdr_left,
-            text="GBIF_TAXONOMIC_RECONCILIATION",
+            text="GBIF Plant Name Review",
             font=FONT_UI_LG,
             fg=C["text"],
             bg=C["surface"]

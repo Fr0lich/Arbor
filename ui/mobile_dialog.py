@@ -240,7 +240,8 @@ class MobileDialog:
         pop = tk.Toplevel(parent_root)
         pop.title("Mobile Session Complete — Synced to Arbor")
         pop.transient(parent_root)
-        pop.resizable(False, False)
+        pop.resizable(True, True)
+        pop.minsize(sc(480), sc(420))
         self.parent_ui._post_mobile_followup_win = pop
 
         dark = getattr(self.parent_ui, "dark_mode_active", getattr(self.parent_ui, "dark_mode", False))
@@ -265,12 +266,13 @@ class MobileDialog:
             pady=sc(3),
         ).pack(anchor="w", pady=(0, sc(10)))
 
-        tk.Label(
+        title_lbl = tk.Label(
             outer,
             text="All Your Phone Work Is Now in Arbor!",
             font=("Lora", sc(13), "bold"),
-            bg=bg, fg=fg, anchor="w", justify="left", wraplength=sc(430),
-        ).pack(fill="x", pady=(0, sc(6)))
+            bg=bg, fg=fg, anchor="w", justify="left", wraplength=sc(490),
+        )
+        title_lbl.pack(fill="x", pady=(0, sc(6)))
 
         if session_reviewed_count > 0:
             clean_cnt = max(0, session_reviewed_count - session_flagged_count - session_specialist_count)
@@ -293,14 +295,19 @@ class MobileDialog:
                 "Every location, edit, and flag you recorded on Mobile Companion is already synced into your open Arbor workspace."
                 f"{flagged_note}"
             )
-        body_txt = (
-            f"{session_line}\n\n"
-            "Remember to save your Excel file (Ctrl+S) so your changes are written safely to disk."
+        session_lbl = tk.Label(
+            outer, text=session_line, font=("Inter", sc(9.5)),
+            bg=bg, fg=muted, anchor="w", justify="left", wraplength=sc(490),
         )
-        tk.Label(
-            outer, text=body_txt, font=("Inter", sc(9.5)),
-            bg=bg, fg=muted, anchor="w", justify="left", wraplength=sc(430),
-        ).pack(fill="x", pady=(0, sc(12)))
+        session_lbl.pack(fill="x", pady=(0, sc(8)))
+
+        save_reminder_lbl = tk.Label(
+            outer,
+            text="IMPORTANT: Remember to save your Excel file (Ctrl+S) so your changes are written safely to disk.",
+            font=("Inter", sc(9.5), "bold"),
+            bg=bg, fg=fg, anchor="w", justify="left", wraplength=sc(490),
+        )
+        save_reminder_lbl.pack(fill="x", pady=(0, sc(12)))
 
         # Next-steps exploration card
         tip_card = tk.Frame(
@@ -308,15 +315,24 @@ class MobileDialog:
             padx=sc(12), pady=sc(9),
         )
         tip_card.pack(fill="x", pady=(0, sc(12)))
-        tk.Label(
+        tip_lbl = tk.Label(
             tip_card,
             text=(
                 "Where to explore next:\n"
                 "• Use Filter (Ctrl+G) to find objects with specific qualities — flagged issues, Needs Specialist, ICEDIG codes, or shelf locations\n"
                 "• Open Help (HELP in the top bar) anytime to browse optional & advanced tutorials"
             ),
-            font=("Inter", sc(9)), bg=card_bg, fg=fg, anchor="w", justify="left", wraplength=sc(400),
-        ).pack(fill="x")
+            font=("Inter", sc(9)), bg=card_bg, fg=fg, anchor="w", justify="left", wraplength=sc(460),
+        )
+        tip_lbl.pack(fill="x")
+
+        def _on_outer_resize(event):
+            avail = max(sc(280), event.width - sc(48))
+            for lbl in (title_lbl, session_lbl, save_reminder_lbl):
+                lbl.configure(wraplength=avail)
+            tip_lbl.configure(wraplength=max(sc(250), avail - sc(28)))
+
+        outer.bind("<Configure>", _on_outer_resize)
 
         dont_show_var = tk.BooleanVar(value=False)
 
@@ -455,7 +471,9 @@ class MobileDialog:
         pop.protocol("WM_DELETE_WINDOW", _close)
         pop.bind("<Escape>", lambda e: _close())
         pop.update_idletasks()
-        utils.center_and_fit_toplevel(pop, sc(500), sc(465 if session_reviewed_count > 0 else 410))
+        init_w = max(sc(560), pop.winfo_reqwidth() + sc(24))
+        init_h = max(sc(520 if session_reviewed_count > 0 else 460), pop.winfo_reqheight() + sc(24))
+        utils.center_and_fit_toplevel(pop, init_w, init_h)
 
     # ------------------------------------------------------------------
     # Edit callback — notify desktop UI of each incoming mobile edit

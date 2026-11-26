@@ -290,26 +290,34 @@ class QuickPeekController:
                     df = df[mask]
 
         if query:
-            # Use search engine for universal query
-            se = SearchEngine()
-            idx = se.get_search_index(df, ui.app.config.get("reg_dict", {}))
+            # Reuse the main window's search engine & cached index so ranking
+            # (exact ID -> partial ID -> genus/species -> family -> other -> fuzzy)
+            # matches the main object list identically.
+            if hasattr(ui, "_get_search_index") and hasattr(ui, "search_engine"):
+                idx = ui._get_search_index()
+                matched = ui.search_engine.apply_search(query, idx)
+            else:
+                se = SearchEngine()
+                idx = se.get_search_index(ui.app.df_reg, ui.app.config.get("reg_dict", {}))
+                matched = se.apply_search(query, idx)
 
-            matched_oids = set()
-            query_parts = query.split()
-            for oid, tokens in idx.items():
-                if all(q in tokens.get("all", "") for q in query_parts):
-                    matched_oids.add(str(oid))
-
-            mask = df.index.astype(str).isin(matched_oids)
-            df = df[mask]
+            if matched is None:
+                ordered_oids = list(df.index)
+            else:
+                # Preserve ranked order while intersecting with any active advanced filters
+                allowed = set(df.index)
+                ordered_oids = [oid for oid in matched if oid in allowed]
+        else:
+            ordered_oids = list(df.index)
 
         # Limit to 500 for performance
-        df = df.head(500)
+        ordered_oids = ordered_oids[:500]
 
         ui.quick_peek_listbox.delete(0, tk.END)
         ui.qp_results_oids = []
 
-        for oid, row in df.iterrows():
+        for oid in ordered_oids:
+            row = df.loc[oid]
             genus = str(row.get("Genus", "")).strip()
             species = str(row.get("Species", "")).strip()
             name = f"{genus} {species}".strip()

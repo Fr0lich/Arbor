@@ -65,7 +65,7 @@ ICEDIG_CODE_LABELS: dict = {
 # (consumed dynamically by both Desktop Comment bar and Mobile Companion V2)
 SPECIALIST_QUICK_TAGS: list = [
     {"label": "+ Damaged", "text": "Damaged"},
-    {"label": "+ Mold / Pest", "text": "Mold / Pest"},
+    {"label": "+ Broken Object / Storage", "text": "Broken object or storage"},
     {"label": "+ Mixed Specimen", "text": "Mixed specimen"},
     {"label": "+ Needs Specialist ID", "text": "Needs specialist ID"},
 ]

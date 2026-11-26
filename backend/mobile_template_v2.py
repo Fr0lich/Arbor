@@ -875,7 +875,7 @@ INDEX_TEMPLATE_V2 = """
             onclick="handleBottomNeedsSpecialistClick()"
             aria-pressed="false"
             class="min-h-[42px] px-3.5 py-2.5 bg-white hover:bg-stone-50 text-muted border border-stone-300 rounded font-sans font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors tap-active"
-            title="Flag physical damage, mold/pest, or mixed specimen for a specialist"
+            title="Flag broken objects or storage, or mixed specimen for a specialist"
           >
             <span>⚑</span>
             <span>Needs Specialist</span>
@@ -2330,18 +2330,18 @@ INDEX_TEMPLATE_V2 = """
               </div>
               
               <div class="flex items-center gap-1 shrink-0">
-                ${isLoaned ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'LOAN\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 cursor-help">↗ Loaned</span>' : ''}
+                ${isLoaned ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \\'LOAN\\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 cursor-help">↗ Loaned</span>' : ''}
                 ${isRev && hasActionable
-                  ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'REV+ERR\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300 cursor-help">[REV+ERR]</span>'
+                  ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \\'REV+ERR\\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300 cursor-help">[REV+ERR]</span>'
                   : (isRev && isSpecNote
-                    ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'REV+NOTE\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-300 cursor-help">[REV+NOTE]</span>'
+                    ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \\'REV+NOTE\\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-300 cursor-help">[REV+NOTE]</span>'
                     : (isRev
-                      ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'REV\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-50 text-fern-dark border border-fern/30 cursor-help">[REV]</span>'
+                      ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \\'REV\\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-50 text-fern-dark border border-fern/30 cursor-help">[REV]</span>'
                       : (hasActionable
-                        ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'FLAGGED\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 cursor-help">Flagged ⚠</span>'
+                        ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \\'FLAGGED\\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 cursor-help">Flagged ⚠</span>'
                         : (isSpecNote
-                          ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'NOTE\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-300 cursor-help">[NOTE]</span>'
-                          : '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \'UNREV\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300 cursor-help">[UNREV]</span>'
+                          ? '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \\'NOTE\\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-300 cursor-help">[NOTE]</span>'
+                          : '<span onclick="event.stopPropagation(); showBadgeTooltip(this, \\'UNREV\\')" role="button" class="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300 cursor-help">[UNREV]</span>'
                         )
                       )
                     )
@@ -4150,7 +4150,7 @@ INDEX_TEMPLATE_V2 = """
         ? state.specialistQuickTags
         : [
             { label: '+ Damaged', text: 'Damaged' },
-            { label: '+ Mold / Pest', text: 'Mold / Pest' },
+            { label: '+ Broken Object / Storage', text: 'Broken object or storage' },
             { label: '+ Mixed Specimen', text: 'Mixed specimen' },
             { label: '+ Needs Specialist ID', text: 'Needs specialist ID' }
           ];
@@ -6036,7 +6036,7 @@ INDEX_TEMPLATE_V2 = """
             <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300">[UNREV]</span> — Nobody has checked this physical object yet.</div>
             <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-fern-dark border border-fern/30">[REV]</span> — Checked physically and everything matches what is on file.</div>
             <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">[REV+ERR]</span> — Checked physically, with an actionable data/label mismatch flagged. <strong>You don’t have to solve every problem today</strong> — leaving it flagged queues it safely for the desk computer.</div>
-            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-900 border border-teal-300">[REV+NOTE]</span> / <span class="font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-900 border border-indigo-200">[NOTE]</span> — <strong>Needs Specialist</strong> only (damage, mold, pest, or expert question). Kept out of the everyday trainee Problem Queue.</div>
+            <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-900 border border-teal-300">[REV+NOTE]</span> / <span class="font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-900 border border-indigo-200">[NOTE]</span> — <strong>Needs Specialist</strong> only (broken objects or storage, mixed specimens, or expert question). Kept out of the everyday trainee Problem Queue.</div>
             <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300">[CFCT]</span> — Older catalog books disagree with the current record. Swipe to the <strong>Problems</strong> tab to compare them.</div>
             <div><span class="font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300">↗ Loaned</span> — Currently loaned out (toggle on the <strong>Location</strong> tab; shown as <code>LOAN</code> on Desktop).</div>
           </div>
@@ -6118,7 +6118,7 @@ INDEX_TEMPLATE_V2 = """
     // Compact tap popover for status badges on List cards & Loaned header pill
     const MOBILE_BADGE_TOOLTIPS = {
       'REV+ERR': { label: '[REV+ERR]', desc: 'Checked physically, with a data/label mismatch flagged for desk follow-up.' },
-      'REV+NOTE': { label: '[REV+NOTE]', desc: 'Checked physically; only Needs Specialist is ticked (damage, pests, or expert question).' },
+      'REV+NOTE': { label: '[REV+NOTE]', desc: 'Checked physically; only Needs Specialist is ticked (broken objects or storage, or expert question).' },
       'REV': { label: '[REV]', desc: 'Checked physically and matches what is on file, with no open flags.' },
       'FLAGGED': { label: 'Flagged ⚠', desc: 'Not reviewed yet, with an actionable field problem flagged. Open Problems tab to inspect.' },
       'NOTE': { label: '[NOTE]', desc: 'Not reviewed yet; only Needs Specialist is ticked.' },
@@ -6238,7 +6238,7 @@ INDEX_TEMPLATE_V2 = """
           id: 't_tour',
           badge: 'TRAINEE · STEP 3 OF 5',
           title: 'How the 3 tabs fit your check',
-          body: 'Glance at Data against the real object in your hand: if something is wildly off (e.g. the label says Africa but Data says China), tick that field\'s box to flag it. If Problems shows a number (e.g. one source says England and another says Finland), open Problems — it works just like Problem Resolution on Desktop — check the object and tap Apply to fix it on the spot. Location holds the shelf coordinates.',
+          body: 'Glance at Data against the real object in your hand: if something is wildly off (e.g. the label says Africa but Data says China), tick that field\\'s box to flag it. If Problems shows a number (e.g. one source says England and another says Finland), open Problems — it works just like Problem Resolution on Desktop — check the object and tap Apply to fix it on the spot. Location holds the shelf coordinates.',
           target: () => document.querySelector(_COACH_TOUR_TABS[_coachTourCycleIdx % _COACH_TOUR_TABS.length]),
           check: null
         },
@@ -6284,7 +6284,7 @@ INDEX_TEMPLATE_V2 = """
           id: 'h_check_save_review',
           badge: 'HELPER · STEP 3 OF 4',
           title: 'Quick check, save, mark reviewed',
-          body: 'Glance at Data against the object in your hand. Spot a clear mismatch (e.g. label says Africa, file says China)? Tick that field\'s box, or tap ⚑ Needs Specialist for physical damage. If Problems shows a number (conflicting sources like England vs. Finland), check the object and tap Apply on the right one — not sure? Leave it. Then tap 📍 Save to Shelf and ✓ Mark Reviewed.',
+          body: 'Glance at Data against the object in your hand. Spot a clear mismatch (e.g. label says Africa, file says China)? Tick that field\\'s box, or tap ⚑ Needs Specialist for physical damage. If Problems shows a number (conflicting sources like England vs. Finland), check the object and tap Apply on the right one — not sure? Leave it. Then tap 📍 Save to Shelf and ✓ Mark Reviewed.',
           waitingText: 'Waiting for Save to Shelf & ✓ Mark Reviewed…',
           target: _twoStageSaveReviewTarget,
           check: () => Boolean(_isCoachLocationSaved() && state.isReviewed)
@@ -6329,8 +6329,8 @@ INDEX_TEMPLATE_V2 = """
         title: 'Flagged as Needs Specialist',
         versions: ['trainee', 'helper'],
         explicitTool: true,
-        bodyTrainee: 'Needs Specialist is for physical damage, mold/pest, mixed specimens, or mysteries desk tools cannot fix. Add a short Comment (or tap a quick tag like + Damaged) so a specialist knows what to check — it marks the object [REV+NOTE] and keeps it out of your regular desk queue.',
-        bodyHelper: 'Needs Specialist is for physical damage, mold/pest, or mixed specimens. Add a short Comment (or tap a quick tag like + Damaged) so a specialist knows what to check.'
+        bodyTrainee: 'Needs Specialist is for broken objects or storage, mixed specimens, or mysteries desk tools cannot fix. Add a short Comment (or tap a quick tag like + Broken Object / Storage) so a specialist knows what to check — it marks the object [REV+NOTE] and keeps it out of your regular desk queue.',
+        bodyHelper: 'Needs Specialist is for broken objects or storage, or mixed specimens. Add a short Comment (or tap a quick tag like + Broken Object / Storage) so a specialist knows what to check.'
       },
       tip_rev_err: {
         label: 'Saved for desk follow-up ([REV+ERR])',

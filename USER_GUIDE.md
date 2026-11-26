@@ -79,7 +79,7 @@ When you open Arbor, the workspace is arranged into three clean vertical columns
 ### 3. The Right Column: "Registration Data, Problems & Review"
 * **The Big Green Button**: The prominent **✓ MARK AS REVIEWED** button at the top stamps your physical verification into the record.
 * **Registration Form**: Displays the plant's scientific name (`Genus`, `Species`, `Author`), `Family`, `Collector`, `Collection Date`, `Collection Place`, `Box Label`, and `Comment`. Every editable field has a **`⋯`** button on its right edge for standard ICEDIG missing-data codes.
-* **Problem Checkboxes & `Needs Specialist`**: Tick the checkbox next to any field that disagrees with the real object, or check **`Needs Specialist`** right above **`Comment`** for physical damage, pests, or expert botanical questions.
+* **Problem Checkboxes & `Needs Specialist`**: Tick the checkbox next to any field that disagrees with the real object, or check **`Needs Specialist`** right above **`Comment`** for broken objects or storage, mixed specimens, or expert botanical questions.
 
 ---
 
@@ -110,7 +110,7 @@ Look at the physical object (or its photograph in the center) and compare it wit
 Arbor separates three different situations so every issue reaches the right person:
 1. **Confirmed Blank or Unreadable Label → Use ICEDIG (`⋯` button)**: If the physical label genuinely has no date, collector, or readable ink *(and no older catalog book has a value)*, click the **`⋯`** button on the right edge of that field (or type `?m` / `?i`) to insert `unknown:missing` or `unknown:indecipherable`. Do **not** flag a problem for genuinely missing label info.
 2. **Data or Label Mismatch → Tick the Field's Problem Box**: If the real object disagrees with what is on file (for example, the box says Africa while the record says China), tick that field's problem checkbox, or press **`Ctrl+H`** to compare older books in **Problem Resolution**. *(Note: Typing a new value into a flagged field does **not** automatically untick its problem box by default — untick the box once you are confident the fix is verified.)*
-3. **Physical Damage or Expert Question → `Needs Specialist` + `Comment`**: For torn/moldy/pest-damaged boxes, mixed specimens, or botanical doubts that need a specialist, check **`Needs Specialist`** (right above **`Comment`**) and write a short note.
+3. **Broken Objects or Storage, or Expert Question → `Needs Specialist` + `Comment`**: For broken objects or storage, mixed specimens, or botanical doubts that need a specialist, check **`Needs Specialist`** (right above **`Comment`**) and write a short note.
 > **In the Excel Spreadsheet**: Checking **`Needs Specialist`** writes `TRUE` into `Other_problem` on the `Observation` sheet; field-specific checkboxes write `TRUE` into columns like `Collection_Date_Problem`.
 
 ### Step 4: Mark Done After Physical Inspection
@@ -364,6 +364,7 @@ When you open a cabinet, you will usually inspect dozens of consecutive specimen
 
 #### 3. Checking Old Names (`📜 Old names`) & Solving Conflicts (`Problems` Tab)
 * **Unfamiliar Latin or family name on the box?** Tap **`📜 Old names`** (read-only) to immediately check past museum names, classical/APG old family names (like *Compositae* for *Asteraceae*), and known GBIF synonyms — if it matches, keep the modern name!
+* **Checking Plant Names with GBIF (Online Name Dictionary)**: On Desktop, **GBIF** (Global Biodiversity Information Facility) acts like an up-to-date scientific spell-checker and plant-name dictionary. Click **`GBIF Name Check`** on a single specimen (or open **`TOOLS ▾` → GBIF** for a batch) to spot spelling mistakes, outdated synonyms, and missing `Family` or `Author` details. Nothing is changed automatically — Arbor shows every suggestion side by side so you pick only the updates you trust, and you can undo changes afterward *(requires an internet connection)*.
 * **Disagreement between older catalog books?** Swipe right to the **`Problems`** tab (`[CFCT]`) — it works just like Desktop's Problem Resolution. For example, if one source says England and another says Finland, look at the physical object in your hand and tap **`Apply`** on the matching value (or **`✓ Value is Correct`**).
 
 #### 4. Flagging Problems While Marking Reviewed (`[REV+ERR]`)

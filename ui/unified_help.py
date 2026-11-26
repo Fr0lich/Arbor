@@ -516,7 +516,7 @@ class UnifiedHelpWindow:
 
         badge_rows = [
             ("REV+ERR", "#F57C00", "#ffffff", "Reviewed with Actionable Error — Physically checked, but a data/label mismatch is flagged. Queued safely for desk follow-up (Ctrl+G → Hallway Follow-Up)."),
-            ("REV+NOTE", "#e3f2ef", "#1b5e55", "Reviewed — Needs Specialist — Physically checked; ONLY Needs Specialist is ticked (damage, mold, pest, or expert question). Kept out of the default trainee queue."),
+            ("REV+NOTE", "#e3f2ef", "#1b5e55", "Reviewed — Needs Specialist — Physically checked; ONLY Needs Specialist is ticked (broken objects or storage, mixed specimens, or expert question). Kept out of the default trainee queue."),
             ("REV", "#f2f9f3", "#3a7d44", "Reviewed & Verified — Physically checked and matches what is on file, with no open flags. All done!"),
             ("TAX", "#fdf2f2", "#c93a40", "Plant Name Issue (Desktop) — Unreviewed card with a Genus, Species, Author, or Family flag. Check the label or 📜 Old names."),
             ("PROV", "#fef9e7", "#b45309", "Origin / Collector Issue (Desktop) — Unreviewed card with a Collector, Collection Date, or Collection Place flag."),
@@ -532,18 +532,17 @@ class UnifiedHelpWindow:
         for label, bg, fg, desc in badge_rows:
             row = tk.Frame(badge_card, bg=self.COLORS["card_bg"])
             row.pack(fill="x", pady=sc(2))
-            pill_wrap = tk.Frame(row, bg=self.COLORS["card_bg"], width=sc(92))
-            pill_wrap.pack(side="left", anchor="n")
-            pill_wrap.pack_propagate(False)
+            row.columnconfigure(0, minsize=sc(96))
+            row.columnconfigure(1, weight=1)
             tk.Label(
-                pill_wrap,
+                row,
                 text=f" {label} ",
                 font=self.FONT_MONO,
                 bg=bg,
                 fg=fg,
                 padx=sc(4),
                 pady=sc(1),
-            ).pack(side="left")
+            ).grid(row=0, column=0, sticky="nw", padx=(0, sc(8)))
             tk.Label(
                 row,
                 text=desc,
@@ -552,8 +551,8 @@ class UnifiedHelpWindow:
                 bg=self.COLORS["card_bg"],
                 anchor="w",
                 justify="left",
-                wraplength=sc(445),
-            ).pack(side="left", fill="x", expand=True)
+                wraplength=sc(440),
+            ).grid(row=0, column=1, sticky="nw")
 
         # 2. Card Chips & Visual Markers
         chip_card = self._make_card(inner)
@@ -577,18 +576,17 @@ class UnifiedHelpWindow:
         for label, bg, fg, desc in chip_rows:
             row = tk.Frame(chip_card, bg=self.COLORS["card_bg"])
             row.pack(fill="x", pady=sc(2))
-            pill_wrap = tk.Frame(row, bg=self.COLORS["card_bg"], width=sc(112))
-            pill_wrap.pack(side="left", anchor="n")
-            pill_wrap.pack_propagate(False)
+            row.columnconfigure(0, minsize=sc(138))
+            row.columnconfigure(1, weight=1)
             tk.Label(
-                pill_wrap,
+                row,
                 text=f" {label} ",
                 font=self.FONT_MONO,
                 bg=bg,
                 fg=fg,
                 padx=sc(4),
                 pady=sc(1),
-            ).pack(side="left")
+            ).grid(row=0, column=0, sticky="nw", padx=(0, sc(8)))
             tk.Label(
                 row,
                 text=desc,
@@ -597,8 +595,8 @@ class UnifiedHelpWindow:
                 bg=self.COLORS["card_bg"],
                 anchor="w",
                 justify="left",
-                wraplength=sc(425),
-            ).pack(side="left", fill="x", expand=True)
+                wraplength=sc(400),
+            ).grid(row=0, column=1, sticky="nw")
 
         # 3. The 3-Way Problem Rule
         rule_card = self._make_card(inner)
@@ -614,7 +612,7 @@ class UnifiedHelpWindow:
         rules = [
             ("1. Confirmed Blank or Illegible → ICEDIG Code", "Click the ⋯ button on the field (Desktop) or tap the field value (Phone) to insert unknown:missing or unknown:indecipherable. Do NOT flag a problem when the label genuinely lacks that detail."),
             ("2. Data or Label Mismatch → Tick the Field's Problem Box", "Use when the physical object disagrees with what is on file (e.g. label says Africa, file says China) or older catalog books conflict. Resolve in Problem Resolution (Ctrl+H / Phone Problems tab) or leave flagged ([REV+ERR]) for desk follow-up."),
-            ("3. Damage, Pests, or Expert Question → Needs Specialist + Comment", "Use for torn/moldy boxes, mixed specimens, or taxonomic doubts needing a curator. Shows calm [REV+NOTE] or [NOTE] and stays out of the everyday trainee Problem Queue."),
+            ("3. Broken Objects or Storage, or Expert Question → Needs Specialist + Comment", "Use for broken objects or storage, mixed specimens, or taxonomic doubts needing a curator. Shows calm [REV+NOTE] or [NOTE] and stays out of the everyday trainee Problem Queue."),
         ]
         for heading, body_txt in rules:
             tk.Label(
@@ -709,6 +707,40 @@ class UnifiedHelpWindow:
         tk.Label(
             conv_card,
             text=conventions,
+            font=self.FONT_BODY,
+            fg=self.COLORS["on_surface_variant"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+            justify="left",
+            wraplength=sc(540),
+        ).pack(fill="x")
+
+        # 6. Checking Plant Names with GBIF (Online Name Dictionary)
+        gbif_card = self._make_card(inner)
+        tk.Label(
+            gbif_card,
+            text="6. Checking Plant Names with GBIF (Online Name Dictionary)",
+            font=self.FONT_CARD_TITLE,
+            fg=self.COLORS["primary"],
+            bg=self.COLORS["card_bg"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, sc(6)))
+
+        gbif_guide = (
+            "GBIF (Global Biodiversity Information Facility) is the world's shared online plant catalog — "
+            "think of it as an up-to-date scientific spell-checker and name dictionary for your specimens.\n\n"
+            "• What it helps you spot: Spelling mistakes in Latin names (Genus/Species), outdated plant names "
+            "that now have a modern accepted name (synonyms), and missing Family or Author details.\n"
+            "• Single specimen or whole collection: Click GBIF Name Check on the current specimen to check one record, "
+            "or open TOOLS ▾ → GBIF to scan a whole batch at once.\n"
+            "• Always safe to run: Nothing is changed automatically. Arbor shows every GBIF suggestion side by side "
+            "with your current record so you pick only the updates you trust — and you can undo changes afterward.\n"
+            "• Tip: GBIF requires an internet connection. Before changing an unfamiliar name on an old box, "
+            "check 📜 Old names too — old museum labels often use valid historical synonyms."
+        )
+        tk.Label(
+            gbif_card,
+            text=gbif_guide,
             font=self.FONT_BODY,
             fg=self.COLORS["on_surface_variant"],
             bg=self.COLORS["card_bg"],
